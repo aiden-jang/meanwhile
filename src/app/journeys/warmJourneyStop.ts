@@ -1,7 +1,7 @@
 import { loadSource } from "../observations/load";
 
 let smoke: Promise<void> | undefined;
-export function warmThroughAir(next: string | undefined) {
+export function warmJourneyStop(next: string | undefined) {
   if (next === "smoke") {
     smoke ??= loadSource
       .smoke()
@@ -20,5 +20,19 @@ export function warmThroughAir(next: string | undefined) {
   } else if (next === "tonga") {
     void import("../tonga/TongaStage").catch(() => {});
     void import("../tonga/useTongaPlayback").then(({ warmTongaScans }) => warmTongaScans()).catch(() => {});
+  } else if (next === "glacier") {
+    void import("../earth-stories/atlasTerrain")
+      .then(async ({ glacierStory }) => {
+        const { glacier } = await glacierStory("2024");
+        for (const url of [glacier?.earlier, glacier?.later]) {
+          if (!url) continue;
+          const image = new Image();
+          image.fetchPriority = "low";
+          image.src = url;
+        }
+      })
+      .catch(() => {});
+  } else if (next === "iceberg") {
+    void import("../iceberg/IcebergDrift").catch(() => {});
   }
 }

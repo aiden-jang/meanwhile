@@ -365,7 +365,9 @@ export function createObservationLayer(morph: { value: number }) {
       const flowing = prior.frame.flow && !reduced && travel < 1;
       lineMaterial.uniforms.opacity!.value = strength * (prior.frame.pathOpacity ?? 0.88);
       lineMaterial.uniforms.phase!.value = flowing ? travel : -1;
-      lineMaterial.uniforms.traceProgress!.value = flowing ? travel * 1.03 : 1.1;
+      lineMaterial.uniforms.traceProgress!.value = reduced
+        ? 1.1
+        : (prior.traceProgress ?? (flowing ? travel * 1.03 : 1.1));
       return reveal < 1 || !!flowing || !!sweeping || unfolding || lifting;
     },
   };

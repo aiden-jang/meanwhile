@@ -7,6 +7,7 @@ import type { ObservationId } from "./catalogue";
 import type { ReplayId } from "./replays";
 import type { ObservationView } from "./types";
 import type { CameraState } from "../../globe/controls";
+import type { JourneyArrival } from "../journeys/connectedStops";
 
 export type AfterDarkArchive = "lights" | "shadow";
 export type StoryId = ObservationId | AfterDarkArchive | ReplayId | EarthStoryId | "kilauea";
@@ -143,12 +144,7 @@ export function useObservationDeck(
     getMoment: current,
     query,
     setQuery,
-    open(
-      next: StoryId,
-      from: string,
-      resume?: StoryMoment | null,
-      arrival?: { pose?: CameraState | undefined; departure?: StoryPlace | undefined },
-    ) {
+    open(next: StoryId, from: string, resume?: StoryMoment | null, arrival?: JourneyArrival) {
       before();
       recipient.current = false;
       setRevision((value) => value + 1);
@@ -181,7 +177,7 @@ export function useObservationDeck(
             }
           : null,
       );
-      const nextMap = memory.current.get(next)?.map ?? projection.current;
+      const nextMap = arrival?.map ?? memory.current.get(next)?.map ?? projection.current;
       if (view) queuedProjection.current = nextMap;
       else setMap(nextMap);
       setEntry(next);

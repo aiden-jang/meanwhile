@@ -4,6 +4,7 @@ import {
   END,
   dateIso,
   dateLabel,
+  icebergOverview,
   latestIndex,
   nameOf,
   positionAt,
@@ -19,7 +20,6 @@ const photos = new Map([
   ["2020-12-23", { url: breakup, alt: "Landsat 8 · Dec 23, 2020 · False color" }],
   ["2021-01-11", { url: fragments, alt: "NOAA-20 VIIRS · Jan 11, 2021" }],
 ]);
-const target = { lon: -37.5, lat: -54.8, zoom: 2.4 };
 const lens = { globe: 2.6, map: 5.6 };
 const point = (lon: number, lat: number) => ({ lon, lat, lift: 0.009 });
 
@@ -41,20 +41,28 @@ export const iceberg: ObservationSource = {
       const marks = [];
       for (const track of tracks) {
         const highlighted = track.id === selected.id;
+        const trace = track !== tracks[0];
         const stop = latestIndex(track.fixes, day);
         const color = highlighted ? 0xe6c49c : 0x7b9cae;
         let segment = [];
         for (let i = 0; i <= stop; i++) {
           const [date] = track.fixes[i]!;
           if (i > 0 && date !== track.fixes[i - 1]![0] + 1) {
-            if (segment.length > 1) paths.push({ points: segment, color });
+            if (segment.length > 1) paths.push({ points: segment, color, trace });
             segment = [];
           }
           segment.push(positions.get(track.id)![i]!);
         }
-        if (segment.length > 1) paths.push({ points: segment, color });
+        if (segment.length > 1) paths.push({ points: segment, color, trace });
         const fix = positionAt(track, day, stop);
-        if (fix) marks.push({ ...point(...fix), id: track.id, color, size: highlighted ? 14 : 8 });
+        if (fix)
+          marks.push({
+            ...point(...fix),
+            id: track.id,
+            color,
+            size: highlighted ? 14 : 8,
+            elapsed: trace ? track.fixes[0]![0] : -1,
+          });
       }
       const date = dateIso(day);
       const photograph = photos.get(date);
@@ -77,7 +85,7 @@ export const iceberg: ObservationSource = {
     }
     return {
       frames,
-      target,
+      target: icebergOverview,
       lens,
       initial: selected === tracks[0] ? 0 : selected.fixes.at(-1)![0],
       chapters: [

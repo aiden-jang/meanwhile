@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
-import { warmThroughAir } from "./warmThroughAir";
+import { warmJourneyStop } from "./warmJourneyStop";
 
 export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
   const navigation = useStoryNavigation();
@@ -10,8 +10,8 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
   const journey = journeys.find(({ id }) => id === route?.id);
   const next = route && journey?.steps[route.step + 1]?.id;
   useEffect(() => {
-    if (route?.id === "through-the-air") warmThroughAir(next ?? undefined);
-  }, [route?.id, next]);
+    warmJourneyStop(next ?? undefined);
+  }, [next]);
   if (!navigation || !route || !journey?.guide) return null;
   const step = journey.steps[route.step]!;
   const nextTitle = searchStories.find(({ id }) => id === next)?.title;

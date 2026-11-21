@@ -21,6 +21,8 @@ export const tracks = data.tracks as Track[];
 export const { coast } = data;
 export const END = day(data.end);
 export const BREAKUP = day("2020-12-23");
+export const FIRST_FRAGMENT = day("2020-12-17");
+export const BREAKUP_END = day("2021-02-04");
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function dayAt(at: number | undefined) {
@@ -62,18 +64,23 @@ export function positionAt(track: Track, date: number, index = latestIndex(track
   return null;
 }
 
-const overview = { lon: -37.5, lat: -54.8, zoom: 2.4 };
+export const icebergOverview = { lon: -37.5, lat: -56.2, zoom: 2.16 };
 const mainTrack = tracks[0]!;
 
-export function driftCamera(day: number) {
+export function driftCamera(day: number, selected = "A") {
+  const fragment = tracks.find((track) => track.id === selected && track !== mainTrack);
+  const fixAt = fragment && latestIndex(fragment.fixes, day);
+  const last = fragment?.fixes[fixAt ?? -1];
+  const recorded = fragment && (positionAt(fragment, day, fixAt) ?? (last && [last[1], last[2]]));
+  if (recorded) return { lon: recorded[0], lat: recorded[1], zoom: 2.7, bank: 0 };
   const fix = mainTrack.fixes[latestIndex(mainTrack.fixes, day)] ?? mainTrack.fixes[0]!;
   const point = positionAt(mainTrack, day) ?? [fix[1], fix[2]];
   const progress = Math.min(1, Math.max(0, (day - (BREAKUP - 3)) / 22));
   const release = progress * progress * (3 - 2 * progress);
   return {
-    lon: mix(point[0] + 1.6, overview.lon, release),
-    lat: mix(point[1] + 0.45, overview.lat, release),
-    zoom: mix(3.6, overview.zoom, release),
+    lon: mix(point[0] + 1.6, icebergOverview.lon, release),
+    lat: mix(point[1] + 0.45, icebergOverview.lat, release),
+    zoom: mix(3.6, icebergOverview.zoom, release),
     bank: 0.055 * (1 - release),
   };
 }

@@ -163,6 +163,31 @@ export const journeys: readonly Journey[] = [
     ],
   },
   {
+    id: "ice-in-motion",
+    title: "Ice in Motion",
+    guide: ["Sea-ice extent", "Glacier velocity", "Iceberg tracks"],
+    summary: "Start over the Arctic, sample one Greenland glacier, then follow an iceberg’s fragments.",
+    ending:
+      "Sea-ice extent, glacier speed and tracked iceberg positions each measure a different kind of change.",
+    steps: [
+      {
+        id: "ice",
+        prompt: "Drag the extent chart to see the Arctic ice edge change through the season.",
+        context: "Arctic Ocean · 2012 daily extent and the 1981–2010 reference · NOAA and NSIDC.",
+      },
+      {
+        id: "glacier",
+        prompt: "Pin a point on Jakobshavn and slide between its two velocity maps.",
+        context: "West Greenland · 2013 and 2024 annual velocity · NASA ITS_LIVE.",
+      },
+      {
+        id: "iceberg",
+        prompt: "Play the breakup, then pick a fragment to inspect its recorded route.",
+        context: "Southern Ocean · 2020–2021 · A‑68A’s separate satellite track record.",
+      },
+    ],
+  },
+  {
     id: "reading-the-coast",
     title: "Reading the coast",
     summary: "New land, a passing wave, and the daily rise and fall of water.",

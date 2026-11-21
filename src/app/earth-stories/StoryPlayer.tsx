@@ -57,7 +57,7 @@ export function StoryPlayer({
   const meta = earthStories[id];
   const { initial, remember } = useStorySession();
   const fault = id === "fault";
-  const fieldStory = id === "dust" || fault || id === "glacier" || !!data.coastalTarget;
+  const fieldStory = id === "dust" || fault || id === "ice" || id === "glacier" || !!data.coastalTarget;
   const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
@@ -297,7 +297,7 @@ export function StoryPlayer({
     }
   };
   const readings = (
-    <StoryReadings {...{ data, frame, index, site, selected, chooseSite }} north={id === "north"} />
+    <StoryReadings {...{ id, data, frame, index, site, selected, chooseSite }} seek={clock.seek} />
   );
   return (
     <ReplayPanel

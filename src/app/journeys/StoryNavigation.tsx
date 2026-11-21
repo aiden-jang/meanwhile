@@ -333,7 +333,15 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           reportAnalytics({ name: "journey_started", journey: id });
           stops.current.clear();
           // Explore's synchronous handoff briefly has no active story; record the route afterward.
-          navigate(first.id, `journey-${id}`, undefined, false, !!journey?.guide);
+          navigate(
+            first.id,
+            `journey-${id}`,
+            undefined,
+            false,
+            !!journey?.guide,
+            undefined,
+            journey?.guide ? { map: props.explorer.flat } : undefined,
+          );
           setRoute({ id, step: 0 });
         },
         tour() {

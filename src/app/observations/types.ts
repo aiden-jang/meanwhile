@@ -162,6 +162,7 @@ export interface ObservationView {
   arrive?: (scale: number, reduced: boolean) => void;
   /** Called once the requested projection, flight and regional lens are all in place. */
   comparisonFrame?: { map: boolean; onReady: () => void };
+  traceProgress?: number;
 }
 
 export interface ObservationOption {

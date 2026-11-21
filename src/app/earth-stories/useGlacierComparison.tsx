@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { refreshAnnotations } from "../../globe/annotationInput";
 import { surveyComparison } from "../observations/surveyComparison";
 import type { GeoPoint, ObservationFrame } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
@@ -66,7 +65,6 @@ export function useGlacierComparison(
             aria-pressed={comparing}
             onClick={() => {
               pause();
-              refreshAnnotations({ camera: "hold" });
               setComparing(!comparing);
             }}
           >

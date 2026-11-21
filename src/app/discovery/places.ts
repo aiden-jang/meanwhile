@@ -14,6 +14,7 @@ export const storyPlaces: Record<string, StoryPlace> = {
   lights: { lon: -66.45, lat: 18.2, label: "Puerto Rico" },
   seafloor: { lon: 144.6, lat: 13.5, label: "Mariana Trench" },
   glacier: { lon: -49.55, lat: 69.15, label: "Jakobshavn, Greenland" },
+  iceberg: { lon: -40.5, lat: -56.4, label: "Scotia Sea" },
   "atmospheric-river": { lon: -143, lat: 38, label: "North Pacific" },
   bloom: { lon: -23, lat: 52, label: "North Atlantic" },
   aral: { lon: 59.5, lat: 45, label: "Aral Sea" },

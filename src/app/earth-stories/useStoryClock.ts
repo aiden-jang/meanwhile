@@ -15,6 +15,7 @@ export function useStoryClock(
   );
   const [cinematic, setCinematic] = useState(!restored);
   const clock = useRef(position);
+  const stopAt = useRef<number>();
   clock.current = position;
   useEffect(() => {
     if (!playing || count < 2) return;
@@ -22,19 +23,23 @@ export function useStoryClock(
     let previous: number | undefined;
     let readout = 0;
     function tick(now: number) {
+      const last = stopAt.current ?? count - 1;
       const dt = previous === undefined ? 0 : Math.min(100, now - previous);
       previous = now;
       if (!waiting.current)
         clock.current = Math.min(
-          count - 1,
+          last,
           clock.current + (dt * (count - 1) * (pace?.(clock.current) ?? 1)) / duration,
         );
-      if (now - readout >= 65 || clock.current === count - 1) {
+      if (now - readout >= 65 || clock.current === last) {
         setPosition(clock.current);
         readout = now;
       }
-      if (clock.current < count - 1) request = requestAnimationFrame(tick);
-      else setPlaying(false);
+      if (clock.current < last) request = requestAnimationFrame(tick);
+      else {
+        stopAt.current = undefined;
+        setPlaying(false);
+      }
     }
     function visibility() {
       cancelAnimationFrame(request);
@@ -68,22 +73,25 @@ export function useStoryClock(
     playing,
     cinematic,
     seek(index: number) {
+      stopAt.current = undefined;
       setPlaying(false);
       setCinematic(false);
       setPosition(Math.max(0, Math.min(count - 1, index)));
     },
     pause,
-    playFrom(index: number) {
+    playFrom(index: number, through?: number) {
       const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      stopAt.current = through;
       setPosition(index);
       setCinematic(motion);
-      setPlaying(motion && index < count - 1);
+      setPlaying(motion && index < (through ?? count - 1));
     },
     resume() {
       setCinematic(!matchMedia("(prefers-reduced-motion: reduce)").matches);
       setPlaying(clock.current < count - 1);
     },
     replay() {
+      stopAt.current = undefined;
       setPosition(0);
       setCinematic(!matchMedia("(prefers-reduced-motion: reduce)").matches);
       setPlaying(!matchMedia("(prefers-reduced-motion: reduce)").matches);
