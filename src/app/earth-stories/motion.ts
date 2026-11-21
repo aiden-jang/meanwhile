@@ -22,10 +22,11 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
   if (id === "glacier")
     return {
       ...target,
-      lon: target.lon + 0.35 * (1 - settle),
-      lat: target.lat + 0.06 * bank,
-      bank: -0.025 * bank,
-      pitch: 0.035 * bank,
+      lon: target.lon + 0.24 * bank - 0.18 * settle,
+      lat: target.lat + 0.065 * bank,
+      zoom: target.zoom + 0.16 * bank,
+      bank: -0.032 * bank,
+      pitch: 0.08 * bank,
     };
   if (id === "aral") return { ...target, lon: target.lon + 0.35 * (1 - settle), bank: 0.025 * bank };
   if (id === "atmospheric-river")
@@ -39,9 +40,9 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
     };
   if (id === "dust")
     return {
-      lon: -20 - 65 * settle,
-      lat: 23,
-      zoom: 1.2 + 0.2 * bank,
+      lon: -24 - 55 * (p * p * (3 - 2 * p)),
+      lat: 21 + 2 * bank,
+      zoom: 1.35 + 0.25 * p + 0.16 * bank,
       bank: -0.08 * bank,
       pitch: 0.12 * bank,
     };
@@ -64,6 +65,13 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
       pitch: 0.04 * bank,
     };
   if (id === "fault")
-    return { ...target, lat: target.lat - 0.06 + 0.12 * settle, bank: 0.025 * bank, pitch: 0.03 * bank };
+    return {
+      ...target,
+      lon: target.lon + 0.18 * bank,
+      lat: target.lat - 0.12 * bank,
+      zoom: target.zoom + 0.16 * bank,
+      bank: 0.055 * bank,
+      pitch: 0.08 * bank,
+    };
   return { ...target, lon: target.lon - 2 * (1 - settle), bank: -0.04 * bank };
 }

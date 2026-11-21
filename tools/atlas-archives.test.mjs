@@ -29,3 +29,19 @@ test("scientific archives and rasters retain usable data and provenance", () => 
   }
   assert.ok(archive("reef").frames.some((f) => f.keys !== null && f.sst !== null));
 });
+
+test("glacier readings share the annual mosaics' coverage and provenance", () => {
+  const grid = archive("glacier_readings");
+  assert.deepEqual(grid.bounds, archive("glacier").bounds);
+  const original = archive("glacier-sources").sha256;
+  const samples = Object.entries(archive("glacier_readings-sources").sha256);
+  assert.equal(samples.length, 4);
+  for (const [source, digest] of samples) assert.equal(digest, original[source]);
+  for (const year of [2013, 2024]) {
+    const cells = grid.samples[year];
+    assert.equal(cells.length, grid.columns * grid.rows);
+    assert.ok(cells.some((value) => value === -1));
+    assert.ok(cells.some((value) => value > 10_000));
+    assert.ok(cells.every((value) => Number.isInteger(value) && value >= -1));
+  }
+});

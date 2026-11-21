@@ -21,6 +21,7 @@ export interface ObservationPath {
   points: readonly GeoPoint[];
   color?: number;
   spaceOnly?: boolean;
+  trace?: boolean;
 }
 
 export interface ObservationRaster {

@@ -122,7 +122,13 @@ export function createObservationLayer(morph: { value: number }) {
   const markWindow = { value: new Vector3(0, 0, -1) };
   let fault: ReturnType<typeof createObservationFault> | undefined;
   const lineMaterial = new ShaderMaterial({
-    uniforms: { uMorph: morph, opacity: { value: 0.88 }, phase: { value: -1 }, orbital },
+    uniforms: {
+      uMorph: morph,
+      opacity: { value: 0.88 },
+      phase: { value: -1 },
+      traceProgress: { value: 1.1 },
+      orbital,
+    },
     vertexShader: /* glsl */ `
       ${MORPH_GLSL}
       attribute vec3 color;
@@ -130,12 +136,14 @@ export function createObservationLayer(morph: { value: number }) {
       varying vec3 tint;
       varying float trail;
       varying float pathVisibility;
+      varying float traced;
       attribute float aElapsed;
       uniform float orbital;
       void main() {
         tint = color;
         trail = aSize;
-        pathVisibility = 1.0 - aElapsed * smoothstep(0.0, 0.75, uMorph);
+        pathVisibility = 1.0 - mod(aElapsed, 2.0) * smoothstep(0.0, 0.75, uMorph);
+        traced = step(1.5, aElapsed);
         vec3 point=mix(position,normalize(position)*1.012,uMorph*orbital);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(point), 1.0);
       }
@@ -144,13 +152,16 @@ export function createObservationLayer(morph: { value: number }) {
       varying vec3 tint;
       varying float trail;
       varying float pathVisibility;
+      varying float traced;
       uniform float phase;
+      uniform float traceProgress;
       uniform float opacity;
       void main() {
         float distance = (trail - phase) * 6.0;
         float head = exp(-distance * distance);
         float amount = phase < 0.0 ? 1.0 : (0.35 + 0.65 * head);
-        gl_FragColor = vec4(tint, opacity * amount * pathVisibility);
+        float drawn = 1.0 - traced * smoothstep(traceProgress - 0.018, traceProgress + 0.012, trail);
+        gl_FragColor = vec4(tint, opacity * amount * pathVisibility * drawn);
         #include <colorspace_fragment>
       }
     `,
@@ -276,11 +287,11 @@ export function createObservationLayer(morph: { value: number }) {
     if (view?.frame.paths !== prior?.frame.paths || view?.frame.raster !== prior?.frame.raster) travel = 0;
     if (view?.frame.paths !== prior?.frame.paths) {
       const paths = rows();
-      for (const { points, color = INK, spaceOnly = false } of view?.frame.paths ?? []) {
+      for (const { points, color = INK, spaceOnly = false, trace = false } of view?.frame.paths ?? []) {
         for (let i = 1; i < points.length; i++)
           wrapSegment(points[i - 1]!, points[i]!, (a, b) => {
-            paths.push(a, color, (i - 1) / (points.length - 1), Number(spaceOnly));
-            paths.push(b, color, i / (points.length - 1), Number(spaceOnly));
+            paths.push(a, color, (i - 1) / (points.length - 1), Number(spaceOnly) + 2 * Number(trace));
+            paths.push(b, color, i / (points.length - 1), Number(spaceOnly) + 2 * Number(trace));
           });
       }
       line.geometry.dispose();
@@ -353,6 +364,7 @@ export function createObservationLayer(morph: { value: number }) {
       const flowing = prior.frame.flow && !reduced && travel < 1;
       lineMaterial.uniforms.opacity!.value = strength * (prior.frame.pathOpacity ?? 0.88);
       lineMaterial.uniforms.phase!.value = flowing ? travel : -1;
+      lineMaterial.uniforms.traceProgress!.value = flowing ? travel * 1.03 : 1.1;
       return reveal < 1 || !!flowing || !!sweeping || unfolding || lifting;
     },
   };

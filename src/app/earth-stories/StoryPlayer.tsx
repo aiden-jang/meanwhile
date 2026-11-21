@@ -1,3 +1,5 @@
+import { FaultComparison } from "./FaultComparison";
+import { refreshAnnotations } from "../../globe/annotationInput";
 import { useArchiveSky } from "./CelestialView";
 import { StoryFinding } from "../journeys/StoryFinding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
@@ -12,10 +14,9 @@ import { useObservationImage } from "../observations/useObservationData";
 import { useStorySession } from "../observations/StorySession";
 import { type SkyCityPreference } from "../tonight/SkyCityPicker";
 import { earthStories, type EarthStoryId } from "./catalogue";
-import { asset, point, type EarthStoryData } from "./types";
+import type { EarthStoryData } from "./types";
 import { useStoryClock } from "./useStoryClock";
 import { storyCamera } from "./motion";
-import transect from "../../sources/earth-stories/dust-transect.json";
 import { StoryOverlay } from "./StoryOverlay";
 import { StoryReadings } from "./StoryReadings";
 import { StoryImageRecovery, StoryRecovery } from "./StoryRecovery";
@@ -25,9 +26,9 @@ import { useMooringInspection } from "./useMooringInspection";
 import { useBloomComparison } from "./useBloomComparison";
 import { useShorelineComparison } from "./useShorelineComparison";
 import { StorySources } from "./StorySources";
+import { useGlacierComparison } from "./useGlacierComparison";
 import { useTerrainSection } from "./useTerrainSection";
-const dustPoints = transect.points.map(point);
-const dustTarget = { lon: -84, lat: 22, zoom: 1.8 };
+import { addDustTrack, useDustSlice } from "./useDustSlice";
 const format = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
@@ -55,9 +56,9 @@ export function StoryPlayer({
 }): JSX.Element {
   const meta = earthStories[id];
   const { initial, remember } = useStorySession();
+  const fieldStory = id === "dust" || id === "fault" || id === "glacier";
   const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
-  const [slice, setSlice] = useState(initial?.chapter === "slice");
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
   const arrive = useCallback(() => setReady(true), []);
   const [start] = useState(() => openingFrame(data, id, initial?.at));
@@ -66,6 +67,7 @@ export function StoryPlayer({
   const startLabel =
     id === "seafloor" ? "Begin the descent" : id === "aral" ? "Follow the shoreline" : undefined;
   const surveyed = id === "bloom" || id === "nino";
+  const journeyClass = surveyed || id === "seafloor" ? `${id}-journey` : "";
   const clock = useStoryClock(
     data.frames.length,
     start,
@@ -89,10 +91,7 @@ export function StoryPlayer({
     pause: clock.pause,
   });
   const lunarImage = useObservationImage(data.lunarImage);
-  const curtainImage = useObservationImage(
-    requested.section?.image ?? (id === "dust" && slice ? asset(transect.image) : undefined),
-    `${id}:section`,
-  );
+  const curtainImage = useObservationImage(requested.section?.image, `${id}:section`);
   const holding = useRef({
     frame: requested,
     element: image.element,
@@ -111,6 +110,8 @@ export function StoryPlayer({
       surface: bloom.surface,
     };
   const { frame, element, caption, surface } = holding.current;
+  const glacier = useGlacierComparison(data.glacier, initial?.chapter, clock.pause);
+  const dust = useDustSlice(id === "dust", data, frame.at, initial?.chapter, panel.map, clock);
   const moorings = useMooringInspection(frame.moorings, data.frames, initial?.chapter, clock.pause);
   const openCurtain = id !== "nino" || ready || initial?.at !== undefined;
   const section = useTerrainSection(
@@ -143,17 +144,22 @@ export function StoryPlayer({
   const mapTarget = useMemo(() => storyMapTarget(data), [data]);
   const target = useMemo(
     () =>
-      id === "dust" && slice
-        ? dustTarget
+      dust.target
+        ? dust.target
         : selected
           ? { ...data.target, lon: selected.lon, lat: selected.lat }
           : panel.map
             ? mapTarget
             : data.target,
-    [selected, data.target, mapTarget, panel.map, id, slice],
+    [selected, data.target, mapTarget, panel.map, dust.target],
   );
   const sky = useArchiveSky(data, viewFrame, initial, panel, clock, orbitStory);
   const { localSky, skyMode, setSkyMode } = sky;
+  const fieldFrame = useMemo(
+    () =>
+      glacier.mark ? { ...sky.sceneFrame, marks: glacier.mark } : addDustTrack(sky.sceneFrame, dust.track),
+    [sky.sceneFrame, glacier.mark, dust.track],
+  );
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const settled = !busy && status === "ready" && bloom.status === "ready";
   const finished = settled && !clock.playing && clock.position >= duration;
@@ -169,13 +175,13 @@ export function StoryPlayer({
   });
   waiting.current ||= shoreline.holding;
   const displayedImage = shoreline.image ?? element;
+  const framing = shoreline.framing ?? dust.framing;
   const comparingShoreline = id === "aral" && finished;
-  const holdGeography = ready && (shoreline.holding || (!!shoreline.basin && !clock.playing));
-  const flying = clock.cinematic && clock.playing;
-  const motionProgress =
-    flying && !orbitStory && !surveyed && !panel.map && !localSky && !shoreline.holding
-      ? clock.position / duration
-      : undefined;
+  const holdGeography =
+    ready && (glacier.comparing || shoreline.holding || (!!shoreline.basin && !clock.playing));
+  const inspecting = dust.forcedPause || glacier.comparing || selected || shoreline.holding;
+  const canFly = !(inspecting || panel.map || localSky || orbitStory || surveyed);
+  const motionProgress = canFly && clock.cinematic && clock.playing ? clock.position / duration : undefined;
   const terrainProgress = data.terrain
     ? section.inspecting || panel.map
       ? 1
@@ -186,18 +192,20 @@ export function StoryPlayer({
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
-      frame: sky.sceneFrame,
+      frame: fieldFrame,
       target,
       image: displayedImage,
       ...(bloom.comparing && surface ? { surface, surveyDivider: bloom.divider } : {}),
+      ...(glacier.surface ? { surface: glacier.surface, surveyDivider: glacier.divider } : {}),
       moonImage: lunarImage.element,
-      onPick: section.pick,
+      onPick: glacier.pick ?? section.pick,
+      pickOnGlobe: !!glacier.pick,
       pickMarks: shoreline.pickMarks ?? (openCurtain ? moorings.picks : undefined),
       holdGeography,
       ...(data.lens && !localSky ? { lens: data.lens } : {}),
       ...(data.terrain ? { terrain: { grid: data.terrain, progress: terrainProgress } } : {}),
       arrive,
-      ...(shoreline.framing ? { comparisonFrame: shoreline.framing } : {}),
+      ...(framing ? { comparisonFrame: framing } : {}),
       sky: localSky,
       ...(frame.section && curtainImage.element && openCurtain
         ? {
@@ -209,16 +217,10 @@ export function StoryPlayer({
               mooringFocus: moorings.selected,
             },
           }
-        : id === "dust" && slice && curtainImage.element
-          ? {
-              curtain: {
-                points: dustPoints,
-                heightKm: transect.height,
-                exaggeration: transect.exaggeration,
-                image: curtainImage.element,
-              },
-            }
+        : dust.curtain
+          ? { curtain: dust.curtain }
           : {}),
+
       follow: motionProgress === undefined ? undefined : storyCamera(id, target, motionProgress),
     });
     remember?.({
@@ -230,12 +232,14 @@ export function StoryPlayer({
         section.chapter ||
         moorings.chapter ||
         bloom.chapter ||
-        (skyMode ? "sky" : slice ? "slice" : site ? `site:${site}` : ""),
+        dust.chapter ||
+        glacier.chapter ||
+        (skyMode ? "sky" : site ? `site:${site}` : ""),
       map: panel.map,
     });
   }, [
     frame,
-    sky.sceneFrame,
+    fieldFrame,
     bloom.comparing,
     bloom.divider,
     bloom.chapter,
@@ -246,7 +250,7 @@ export function StoryPlayer({
     target,
     element,
     displayedImage,
-    shoreline.framing,
+    framing,
     shoreline.chapter,
     shoreline.pickMarks,
     holdGeography,
@@ -261,7 +265,12 @@ export function StoryPlayer({
     displayedChoice,
     city.name,
     skyMode,
-    slice,
+    glacier.surface,
+    glacier.divider,
+    glacier.pick,
+    glacier.chapter,
+    dust.chapter,
+    dust.curtain,
     site,
     remember,
     curtainImage.element,
@@ -277,7 +286,10 @@ export function StoryPlayer({
   const chooseSite = (value: string) => {
     setSite(value);
     const point = data.sites?.find((p) => p.id === value);
-    if (point) clock.seek(nearestFrame(data, point.at));
+    if (point) {
+      clock.seek(nearestFrame(data, point.at));
+      refreshAnnotations({ lon: point.lon, lat: point.lat, zoom: data.target.zoom });
+    }
   };
   return (
     <ReplayPanel
@@ -288,7 +300,7 @@ export function StoryPlayer({
       title={meta.title}
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}
-      className={orbitStory ? "celestial-journey" : surveyed || id === "seafloor" ? `${id}-journey` : ""}
+      className={fieldStory ? "field-journey" : orbitStory ? "celestial-journey" : journeyClass}
       finding={id !== "aral"}
       status={
         failed && id === "reef" && choice === "Recent observations"
@@ -298,7 +310,7 @@ export function StoryPlayer({
             : (sky.status ?? caption)
       }
       at={
-        comparingShoreline || orbitStory ? undefined : (
+        comparingShoreline || orbitStory || fieldStory ? undefined : (
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
         )
       }
@@ -326,22 +338,9 @@ export function StoryPlayer({
       {section.controls}
       {section.chart}
       {moorings.controls}
-      {!orbitStory && (
-        <StorySideActions
-          {...{
-            id,
-            data,
-            map: panel.map,
-            onMap: panel.onMap,
-            onRadar,
-            clock,
-            skyMode,
-            setSkyMode,
-            slice,
-            setSlice,
-          }}
-        />
-      )}
+      {dust.control}
+      {glacier.control}
+      {!orbitStory && <StorySideActions {...panel} {...{ id, data, onRadar, clock, skyMode, setSkyMode }} />}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       {shoreline.reading}
       <StoryTimeline
@@ -355,6 +354,7 @@ export function StoryPlayer({
         time={time}
         restored={initial?.at !== undefined}
         comparison={bloom.controls}
+        compareDates={id !== "fault"}
         label={
           data.timelineLabel ??
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
@@ -366,6 +366,9 @@ export function StoryPlayer({
         </StoryFinding>
       ) : (
         shoreline.controls
+      )}
+      {id === "fault" && (
+        <FaultComparison {...panel} data={data} selected={selected} at={frame.at} seek={clock.seek} />
       )}
       <StoryReadings
         data={data}

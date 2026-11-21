@@ -218,6 +218,7 @@ test("the lidar slice keeps its scientific explanation clear of shared world con
   await panel.getByRole("button", { name: "Open lidar slice", exact: true }).click();
   const caption = panel.locator(".story-section-caption");
   await expect(caption).toContainText("Clouds also scatter light.");
+  await expect(panel.getByText("Read the lidar profile")).toBeVisible();
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await annotationLayouts(page, caption, "lidar-caption");
   await panel.getByRole("button", { name: "Map", exact: true }).click();

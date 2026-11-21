@@ -41,8 +41,15 @@ export async function satelliteStory(
       }));
     return {
       frames,
-      target: { lon: -47, lat: 22, zoom: 1.35 },
-      chapters: chapters(frames, ["Atlantic", "Caribbean", "Gulf"]),
+      target: { lon: -24, lat: 21, zoom: 1.35 },
+      mapTarget: { lon: -54, lat: 21, zoom: 1.15 },
+      timelineCues: true,
+      playbackDuration: 11_500,
+      chapters: [
+        { at: frames[0]!.at, label: "Atlantic" },
+        { at: date("2020-06-23"), label: "Caribbean" },
+        { at: frames.at(-1)!.at, label: "Gulf" },
+      ],
       legend: [
         { color: "#a1b579", label: "Dust score · 425" },
         { color: "#f2782d", label: "475" },

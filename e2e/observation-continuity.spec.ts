@@ -92,3 +92,45 @@ test("one click reopens the local sky after switching to the map", async ({ page
     "true",
   );
 });
+
+test("the glacier comparison keeps its sample and divider across projections and shared links", async ({
+  page,
+  context,
+}) => {
+  await open(page, "glacier");
+  const panel = page.getByRole("region", { name: "Glacier Flow", exact: true });
+  await panel.getByRole("button", { name: "Compare 2013 and 2024" }).click();
+  const divide = panel.getByRole("slider", { name: "Velocity map divider" });
+  await expect(divide).toBeEnabled();
+  const location = panel.getByRole("combobox", { name: "Reading location" });
+  await location.selectOption({ label: "Inland ice" });
+  const values = panel.locator(".velocity-readings");
+  await expect(values).toContainText("1,699 m/year");
+  await expect(values).toContainText("1,405 m/year");
+  await divide.press("ArrowRight");
+  await expect(divide).toHaveValue("51");
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(divide).toHaveValue("51");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: () => false });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async (url: string) => Object.assign(window, { glacierLink: url }) },
+    });
+  });
+  await panel.getByRole("button", { name: "Share this moment", exact: true }).click();
+  await expect(panel.getByRole("status", { name: "Sharing status" })).toContainText("Link copied");
+  const url = await page.evaluate(() => Reflect.get(window, "glacierLink") as string);
+  await page.close();
+  const reopened = await context.newPage();
+  await reopened.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(reopened, { presentation: "fresh", empty: true });
+  await reopened.goto(url);
+  const restored = reopened.getByRole("region", { name: "Glacier Flow", exact: true });
+  await expect(restored.getByRole("slider", { name: "Velocity map divider" })).toHaveValue("51");
+  await expect(restored.locator(".velocity-readings")).toContainText("1,405 m/year");
+  await expect(restored.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});

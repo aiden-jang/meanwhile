@@ -34,7 +34,9 @@ export async function faultStory(): Promise<EarthStoryData> {
       value: `${(p.cm / 100).toFixed(2)} m ${p.sense.toLowerCase()} horizontal offset · surveyed ${p.observed}`,
     }));
   return {
-    target: { lon: -117.57, lat: 35.78, zoom: 2.2 },
+    target: { lon: -117.57, lat: 35.78, zoom: 2.0 },
+    timelineCues: true,
+    playbackDuration: 10_200,
     lens: { globe: 17, map: 36 },
     frames: [
       {
@@ -42,7 +44,7 @@ export async function faultStory(): Promise<EarthStoryData> {
         caption: "4 July · M6.4 surface rupture",
         raster: { url: asset("fault-relief.webp"), bounds: [-118.12, 35.2, -117.0, 36.2], opacity: 1 },
         flow: true,
-        paths: paths.filter((p) => p.event === 0),
+        paths: paths.filter((p) => p.event === 0).map((p) => ({ ...p, trace: true })),
         marks: sites.filter((p) => p.at === first).map((p) => ({ ...p, size: 8, lift: 0.01 })),
       },
       {
@@ -50,7 +52,7 @@ export async function faultStory(): Promise<EarthStoryData> {
         caption: "6 July UTC · M7.1 joins the fault system",
         raster: { url: asset("fault-relief.webp"), bounds: [-118.12, 35.2, -117.0, 36.2], opacity: 1 },
         flow: true,
-        paths,
+        paths: paths.map((p) => ({ ...p, trace: p.event === 1 })),
         marks: sites.map((p) => ({ ...p, size: 8, lift: 0.01 })),
       },
       {

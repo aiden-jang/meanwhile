@@ -10,6 +10,7 @@ import { StorySession } from "./StorySession";
 import { searchStories } from "../storyIndex";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
+import "../earth-stories/field-journeys.css";
 import "../earth-stories/celestial.css";
 import "./orbital-pass.css";
 import "./observations.css";

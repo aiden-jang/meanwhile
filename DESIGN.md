@@ -907,6 +907,11 @@ a compass. Controls remain mounted across panel scrolling and resizing.
 Scientific explanations and measured section charts sit beside their actions in the reading panel,
 leaving the world clear for the actual terrain, section line and lidar curtain. Newly measured sections
 reveal their chart within that panel without moving keyboard focus or the globe.
+Dust Curtain brings the airborne view to the Caribbean ground track, then lifts the recorded
+CALIPSO profile into that geography. Fault Offset draws each mapped rupture in sequence and
+holds the selected survey site while the radar sweep replaces shaded terrain. Glacier Flow
+holds one camera and a pinned sample across its two annual velocity mosaics. Its slider divides
+the registered maps, and the selected year still controls the illustrative traces.
 Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
 Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.
 Source replacement preserves the focused logical control and reading position. A failed selection

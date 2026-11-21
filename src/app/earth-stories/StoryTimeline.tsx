@@ -22,6 +22,7 @@ export function StoryTimeline({
   time,
   restored,
   comparison,
+  compareDates = true,
 }: {
   startLabel?: string | undefined;
   data: EarthStoryData;
@@ -34,6 +35,7 @@ export function StoryTimeline({
   time: string;
   restored: boolean;
   comparison?: ReactNode;
+  compareDates?: boolean;
 }) {
   const annual = frame.dateTime?.length === 4;
   const [expandedAt, expand] = useState<number | null>(null);
@@ -164,7 +166,7 @@ export function StoryTimeline({
           );
         })}
       </div>
-      <FrameComparison frames={data.frames} index={index} select={clock.seek} />
+      {compareDates && <FrameComparison frames={data.frames} index={index} select={clock.seek} />}
       {settled &&
         index === data.frames.length - 1 &&
         frame.at === data.frames[index]!.at &&

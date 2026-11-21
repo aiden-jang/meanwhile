@@ -1,3 +1,4 @@
+import type { GlacierReadings } from "./glacierReadings";
 import type { ObservationTerrain } from "../observations/types";
 import { atlasArchive, atlasImage } from "./atlasArchive";
 import { date, point, type EarthStoryData, type StoryFrame } from "./types";
@@ -56,7 +57,10 @@ export async function glacierStory(choice: string): Promise<EarthStoryData> {
     maxVelocity: number;
     medianError: number;
   };
-  const data = await atlasArchive<{ bounds: [number, number, number, number]; frames: Glacier[] }>("glacier");
+  const [data, readings] = await Promise.all([
+    atlasArchive<{ bounds: [number, number, number, number]; frames: Glacier[] }>("glacier"),
+    atlasArchive<GlacierReadings>("glacier_readings"),
+  ]);
   const selected = data.frames.find((f) => String(f.year) === choice)!;
   const paths = selected.paths.map((points) => ({ points: points.map(point), color: 0xddebf0 }));
   const frames = Array.from({ length: 49 }, (_, i): StoryFrame => ({
@@ -79,6 +83,13 @@ export async function glacierStory(choice: string): Promise<EarthStoryData> {
   return {
     frames,
     timelineLabel: "Trace progress",
+    timelineCues: true,
+    playbackDuration: 9500,
+    glacier: {
+      readings,
+      earlier: atlasImage(data.frames.find((frame) => frame.year === 2013)!.image),
+      later: atlasImage(data.frames.find((frame) => frame.year === 2024)!.image),
+    },
     target: { lon: -49.55, lat: 69.15, zoom: 2 },
     lens: { globe: 37, map: 74 },
     chapters: [

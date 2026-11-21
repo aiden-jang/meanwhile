@@ -1,4 +1,3 @@
-import { DustSliceControls } from "./DustSliceControls";
 import { nearestFrame } from "./nearestFrame";
 import type { EarthStoryId } from "./catalogue";
 import type { EarthStoryData } from "./types";
@@ -13,8 +12,6 @@ export function StorySideActions({
   clock,
   skyMode,
   setSkyMode,
-  slice,
-  setSlice,
 }: {
   id: EarthStoryId;
   data: EarthStoryData;
@@ -24,8 +21,6 @@ export function StorySideActions({
   clock: ReturnType<typeof useStoryClock>;
   skyMode: boolean;
   setSkyMode: (open: boolean) => void;
-  slice: boolean;
-  setSlice: (open: boolean) => void;
 }) {
   if (id === "atmospheric-river")
     return (
@@ -55,17 +50,6 @@ export function StorySideActions({
           {skyMode && !map ? "Back to Earth" : "See from my city"}
         </button>
       </div>
-    );
-  if (id === "dust")
-    return (
-      <DustSliceControls
-        open={slice}
-        toggle={() => {
-          if (!slice) clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
-          else clock.pause();
-          setSlice(!slice);
-        }}
-      />
     );
   return null;
 }

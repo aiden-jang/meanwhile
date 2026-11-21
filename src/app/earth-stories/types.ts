@@ -6,6 +6,7 @@ import type {
   ObservationView,
 } from "../observations/types";
 
+import type { GlacierReadings } from "./glacierReadings";
 import type { BasinReadings, ShorelineBasin } from "./shorelineBasins";
 
 export interface StoryFrame extends ObservationFrame {
@@ -41,6 +42,7 @@ export interface EarthStoryData {
   timelineLabel?: string;
   lunarImage?: string;
   basins?: readonly ShorelineBasin[];
+  glacier?: { readings: GlacierReadings; earlier: string; later: string };
 }
 const files = import.meta.glob<string>("../../sources/earth-stories/assets/*.webp", {
   eager: true,

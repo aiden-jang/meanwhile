@@ -75,7 +75,7 @@ export function EarthStory(props: Props): JSX.Element {
     );
   return (
     <StoryPlayer
-      key={id === "apophis" || id === "eclipse" ? id : loaded.key}
+      key={id === "apophis" || id === "eclipse" || id === "glacier" ? id : loaded.key}
       {...props}
       data={loaded.data}
       displayedChoice={loaded.choice}

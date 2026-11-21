@@ -33,26 +33,48 @@ def seafloor():
                          elevation=grid.flatten().tolist(), tid=tid.flatten().tolist(), image='seafloor.webp'))
 
 
+GLACIER_BOUNDS = [-50.4, 68.8, -48.7, 69.5]
+
+
+def glacier_window(year, fields):
+    arrays = {}
+    for field in fields:
+        url = f'https://its-live-data.s3.amazonaws.com/velocity_mosaic/v2.1/annual/cog/ITS_LIVE_velocity_120m_RGI05A_{year}_V02.1_{field}.tif'
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='EMPTY_DIR', GDAL_HTTP_TIMEOUT='60'):
+            with rasterio.open(url) as source:
+                box = transform_bounds('EPSG:4326', source.crs, *GLACIER_BOUNDS)
+                window = from_bounds(*box, source.transform)
+                data = source.read(1, window=window, out_shape=(96, 96), masked=True).astype(float).filled(np.nan)
+                arrays[field] = data
+                INPUTS[url + '#window=' + ','.join(map(str, GLACIER_BOUNDS))] = sha256(data.tobytes()).hexdigest()
+    x = np.linspace(box[0], box[2], 96, endpoint=False) + (box[2] - box[0]) / 192
+    y = np.linspace(box[3], box[1], 96, endpoint=False) - (box[3] - box[1]) / 192
+    inverse = Transformer.from_crs('EPSG:3413', 'EPSG:4326', always_xy=True)
+    xx, yy = np.meshgrid(x, y)
+    lon, lat = inverse.transform(xx, yy)
+    valid = np.isfinite(arrays['v']) & (arrays['v'] >= 0) & (arrays['count'] >= 5)
+    return arrays, lon, lat, valid, x, y, inverse
+
+
+def glacier_readings():
+    columns, rows = 68, 40
+    west, south, east, north = GLACIER_BOUNDS
+    gx, gy = np.meshgrid(np.linspace(west, east, columns), np.linspace(north, south, rows))
+    samples = {}
+    for year in (2013, 2024):
+        arrays, lon, lat, valid, *_ = glacier_window(year, ['v', 'count'])
+        values = np.where(valid, np.rint(arrays['v']), -1)
+        window = griddata(np.column_stack((lon.flatten(), lat.flatten())), values.flatten(),
+                          (gx, gy), method='nearest')
+        samples[year] = window.astype(int).flatten().tolist()
+    save('glacier_readings', dict(bounds=GLACIER_BOUNDS, columns=columns, rows=rows, samples=samples))
+
+
 def glacier():
-    bounds = [-50.4, 68.8, -48.7, 69.5]
+    bounds = GLACIER_BOUNDS
     frames = []
     for year in [2013, 2024]:
-        arrays = {}
-        for field in ['vx', 'vy', 'v', 'v_error', 'count']:
-            url = f'https://its-live-data.s3.amazonaws.com/velocity_mosaic/v2.1/annual/cog/ITS_LIVE_velocity_120m_RGI05A_{year}_V02.1_{field}.tif'
-            with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN='EMPTY_DIR', GDAL_HTTP_TIMEOUT='60'):
-                with rasterio.open(url) as source:
-                    box = transform_bounds('EPSG:4326', source.crs, *bounds)
-                    window = from_bounds(*box, source.transform)
-                    data = source.read(1, window=window, out_shape=(96, 96), masked=True).astype(float).filled(np.nan)
-                    arrays[field] = data
-                    INPUTS[url + '#window=' + ','.join(map(str, bounds))] = sha256(data.tobytes()).hexdigest()
-        x = np.linspace(box[0], box[2], 96, endpoint=False) + (box[2] - box[0]) / 192
-        y = np.linspace(box[3], box[1], 96, endpoint=False) - (box[3] - box[1]) / 192
-        inverse = Transformer.from_crs('EPSG:3413', 'EPSG:4326', always_xy=True)
-        xx, yy = np.meshgrid(x, y)
-        lon, lat = inverse.transform(xx, yy)
-        valid = np.isfinite(arrays['v']) & (arrays['v'] >= 0) & (arrays['count'] >= 5)
+        arrays, lon, lat, valid, x, y, inverse = glacier_window(year, ['vx', 'vy', 'v', 'v_error', 'count'])
         gx, gy = np.meshgrid(np.linspace(bounds[0], bounds[2], 384), np.linspace(bounds[3], bounds[1], 384))
         v = griddata(np.column_stack((lon[valid], lat[valid])), arrays['v'][valid], (gx, gy), method='nearest')
         footprint = griddata(np.column_stack((lon.flatten(), lat.flatten())), valid.astype(float).flatten(), (gx, gy), method='nearest')
