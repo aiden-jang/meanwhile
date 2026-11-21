@@ -8,6 +8,7 @@ export function useStoryClock(
   autoPlay: boolean,
   duration = Math.min(24000, Math.max(6000, count * 900)),
   pace?: (position: number) => number,
+  timing: "sampled" | "elapsed" = "sampled",
 ) {
   const [position, setPosition] = useState(initial);
   const [playing, setPlaying] = useState(
@@ -24,7 +25,8 @@ export function useStoryClock(
     let readout = 0;
     function tick(now: number) {
       const last = stopAt.current ?? count - 1;
-      const dt = previous === undefined ? 0 : Math.min(100, now - previous);
+      const elapsed = previous === undefined ? 0 : now - previous;
+      const dt = timing === "elapsed" ? elapsed : Math.min(100, elapsed);
       previous = now;
       if (!waiting.current)
         clock.current = Math.min(
@@ -52,7 +54,7 @@ export function useStoryClock(
       cancelAnimationFrame(request);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [count, duration, pace, playing, waiting]);
+  }, [count, duration, pace, playing, timing, waiting]);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const stop = () => {

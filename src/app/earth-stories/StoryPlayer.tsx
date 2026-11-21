@@ -30,7 +30,6 @@ import { useGlacierComparison } from "./useGlacierComparison";
 import { useTerrainSection } from "./useTerrainSection";
 import { addDustTrack, useDustSlice } from "./useDustSlice";
 const format = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
-
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
 export function StoryPlayer({
   data,
@@ -77,6 +76,7 @@ export function StoryPlayer({
     !startLabel && !surveyed,
     id === "seafloor" ? 8500 : data.playbackDuration,
     data.pace,
+    id === "seafloor" ? "elapsed" : "sampled",
   );
   const index = Math.min(data.frames.length - 1, Math.floor(clock.position));
   const duration = Math.max(1, data.frames.length - 1);
