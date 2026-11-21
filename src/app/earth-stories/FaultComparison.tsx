@@ -30,7 +30,14 @@ export function FaultComparison({
         <button type="button" aria-pressed={!radarVisible} onClick={() => radarVisible && show(terrain)}>
           Shaded terrain
         </button>
-        <button type="button" aria-pressed={radarVisible} onClick={() => show(radar)}>
+        <button
+          type="button"
+          aria-pressed={radarVisible}
+          onClick={(event) => {
+            event.currentTarget.focus({ preventScroll: true });
+            show(radar);
+          }}
+        >
           Radar displacement
         </button>
       </div>

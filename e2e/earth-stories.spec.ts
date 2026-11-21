@@ -52,11 +52,10 @@ for (const [id, title, action] of stories) {
       await expect(panel.getByRole("combobox", { name: "Survey measurement" })).not.toHaveValue("");
       await expect(panel.getByText(/m .* horizontal offset · surveyed/)).toBeVisible();
       const site = await panel.getByRole("combobox", { name: "Survey measurement" }).inputValue();
-      await panel.getByRole("button", { name: "Radar displacement", exact: true }).click();
-      await expect(panel.getByRole("button", { name: "Radar displacement", exact: true })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
+      const radar = panel.getByRole("button", { name: "Radar displacement", exact: true });
+      await radar.dispatchEvent("click");
+      await expect(radar).toBeFocused();
+      await expect(radar).toHaveAttribute("aria-pressed", "true");
       await expect(panel.getByRole("combobox", { name: "Survey measurement" })).toHaveValue(site);
       await panel.getByRole("button", { name: "Shaded terrain", exact: true }).click();
       await expect(panel.getByRole("button", { name: "Shaded terrain", exact: true })).toHaveAttribute(
