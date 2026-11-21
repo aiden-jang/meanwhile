@@ -2,6 +2,7 @@ import { StoryDeparture } from "./StoryDeparture";
 import type { StoryMoment } from "./storyMoment";
 import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
+import { WaterJourney } from "../journeys/WaterJourney";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { CameraState } from "../../globe/controls";
@@ -137,6 +138,7 @@ export function ReplayPanel({
             </div>
             <p className="observation-note">{subtitle}</p>
             <SharedStory moment={sharedMoment} />
+            <WaterJourney />
             {children}
             {sharing && <ShareMoment />}
             {ending && <ExperienceEnding showFinding={finding} showSave={save} />}

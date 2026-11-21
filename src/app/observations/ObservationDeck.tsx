@@ -2,6 +2,8 @@ import { StoryDeparture } from "./StoryDeparture";
 import { SharedStory } from "./SharedStory";
 import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
+import { WaterJourney } from "../journeys/WaterJourney";
+import { RiverWorldReading } from "./RiverReading";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { observations, type ObservationId } from "./catalogue";
@@ -61,7 +63,10 @@ export function ObservationDeck({
   }, [id, revision]);
 
   return (
-    <section className="replay-region" aria-label={title}>
+    <section
+      className={id === "rain" || id === "river" ? "replay-region field-journey" : "replay-region"}
+      aria-label={title}
+    >
       <div
         className="observatory-stage replay-stage"
         data-stage="observation"
@@ -85,8 +90,13 @@ export function ObservationDeck({
           <span>{meta.source}</span>
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
+        {id === "river" && <RiverWorldReading frame={deck.view?.frame} />}
         <div className="stage-readout">
-          {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · {meta.group}
+          {id === "rain"
+            ? "Satellite estimate · Precipitation rate"
+            : id === "river"
+              ? "Gauge readings · Discharge"
+              : `${id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · ${meta.group}`}
         </div>
         {id !== "epic" && (
           <StoryProjection map={deck.map} onMap={deck.setMap}>
@@ -127,6 +137,7 @@ export function ObservationDeck({
             </div>
             <p className="observation-note observation-introduction">{meta.description}</p>
             <SharedStory />
+            <WaterJourney />
             {loaded?.id === id ? (
               loaded.source ? (
                 <ObservationPlayer

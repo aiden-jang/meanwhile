@@ -96,20 +96,18 @@ export const journeys: readonly Journey[] = [
     steps: [
       {
         id: "atmospheric-river",
-        prompt: "Scrub the forecast and follow the strongest band of moisture toward the coast.",
-        context: "NOAA GFS forecast. Check the model issue time before comparing it with observations.",
+        prompt: "Follow the moisture toward the coast, then inspect the forecast there.",
+        context: "Model output with its own run and valid times.",
       },
       {
         id: "rain",
-        prompt:
-          "Play the recent rain estimates. Compare where rain appears with where moisture was forecast.",
-        context: "NASA GPM satellite estimates arrive with a delay; coverage and time differ from GFS.",
+        prompt: "Scrub the satellite frames and watch where precipitation appears.",
+        context: "Satellite estimates arrive after observation and have their own timestamps.",
       },
       {
         id: "river",
-        prompt: "Choose a gauge and inspect its recorded rise or fall.",
-        context:
-          "USGS gauge measurements. This is a separate location and record, not proof that the forecast caused a particular rise.",
+        prompt: "Pick a gauge and drag the chart to read its rise or fall.",
+        context: "These are independent river measurements from the basin you choose.",
       },
     ],
   },

@@ -31,6 +31,7 @@ export interface EarthStoryData {
   sky?: (at: number) => NonNullable<ObservationView["sky"]>;
   geometry?: (frame: StoryFrame) => ObservationFrame;
   target: CameraState;
+  coastalTarget?: CameraState;
   mapTarget?: CameraState;
   lens?: { globe: number; map: number };
   chapters: readonly { at: number; label: string; timeLabel?: string }[];

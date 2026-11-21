@@ -38,9 +38,13 @@ test("River Pulse highlights a gauge, keeps gaps and saves the exact USGS readin
   await expect(upper).toHaveAttribute("aria-pressed", "true");
   await lower.press("Enter");
   await expect(lower).toHaveAttribute("aria-pressed", "true");
-  await clock.press("ArrowLeft");
+  const surface = await chart.locator("svg").boundingBox();
+  expect(surface).not.toBeNull();
+  await chart.locator("svg").click({ position: { x: surface!.width / 2, y: surface!.height / 2 } });
+  await expect(clock).toHaveValue("1");
   await expect(upper).toContainText("No reading");
   await expect(lower).toContainText("3,115 ft³/s");
+  await expect(panel.locator(".river-world-reading")).toContainText("3,115 ft³/s");
   await upper.click();
   await expect(panel.getByRole("button", { name: "Keep reading" })).toBeDisabled();
   await expect(chart.locator(".chart-sample")).toHaveCount(0);

@@ -15,6 +15,7 @@ import { useObservationData, useObservationImage } from "./useObservationData";
 import { observationReadiness } from "./observationReadiness";
 import { useReportStorySource } from "./StorySourceStatus";
 import { StoryDock } from "./StoryDock";
+import { RainbeltControls } from "./RainbeltControls";
 
 import { useStorySession } from "./StorySession";
 
@@ -52,7 +53,11 @@ export function ObservationPlayer({
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);
   const index = frame ? frames.indexOf(frame) : 0;
-  const { element, status } = useObservationImage(
+  const {
+    element,
+    status,
+    retry: retryImage,
+  } = useObservationImage(
     frame?.photograph?.url ?? frame?.raster?.url,
     frame?.photograph ? option : undefined,
   );
@@ -64,8 +69,8 @@ export function ObservationPlayer({
   const inspection = useObservationInspection(frame);
   const inspect = inspection.pick;
   const river = useRiverGauge(frame, initial?.chapter);
-  const { gauge, shown, pick } = river;
-  const presented = useRef<ObservationFrame | null>(null);
+  const { gauge, shown, pickMarks } = river;
+  const presented = useRef<{ frame: ObservationFrame; image: HTMLImageElement | null }>();
   const readiness = observationReadiness({
     hasFrame: !!frame,
     loadingData: state === "loading",
@@ -73,7 +78,8 @@ export function ObservationPlayer({
     image: status,
   });
   const preparing = readiness === "preparing";
-  const heldFrame = preparing ? presented.current : null;
+  const heldRain = id === "rain" && status === "failed" ? presented.current : undefined;
+  const heldFrame = (preparing ? presented.current : heldRain)?.frame;
   const heldTime = heldFrame ? (heldFrame.timeLabel ?? `${clock.format(heldFrame.at)} UTC`) : null;
   useStoryCompletion(
     selectedAt !== null &&
@@ -92,16 +98,17 @@ export function ObservationPlayer({
         ? {
             kind: "observation",
             target: (map ? data.mapTarget : undefined) ?? frame.camera ?? data.target,
-            frame: shown ?? frame,
-            image: element,
+            frame: heldRain?.frame ?? shown ?? frame,
+            image: heldRain?.image ?? element,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
-            ...(id === "river" ? { onPick: pick, pickOnGlobe: true } : {}),
+            ...(id === "river" ? { pickMarks, cameraKey: option } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
           }
         : null,
     );
-    presented.current = readiness === "ready" ? (frame ?? null) : null;
+    if (readiness === "ready" && frame) presented.current = { frame, image: element };
+    else if (!heldRain) presented.current = undefined;
     if (frame)
       remember?.({
         choice: option,
@@ -124,7 +131,8 @@ export function ObservationPlayer({
     readiness,
     gauge,
     shown,
-    pick,
+    pickMarks,
+    heldRain,
   ]);
 
   useEffect(() => {
@@ -187,6 +195,7 @@ export function ObservationPlayer({
           }}
         />
       )}
+      {id === "rain" && <RainbeltControls pause={() => setPlaying(false)} />}
       {frame && data && (
         <>
           <StoryDock>
@@ -195,7 +204,6 @@ export function ObservationPlayer({
                 {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
                 {" · "}
                 {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
-                {id === "rain" && " · Data arrives several hours after observation"}
               </span>
               {frames.length > 1 && (
                 <input
@@ -258,6 +266,10 @@ export function ObservationPlayer({
                 selection={river}
                 current={state === "ready"}
                 pause={() => setPlaying(false)}
+                seek={(at) => {
+                  setPlaying(false);
+                  setSelectedAt(nearest(frames, at, (value) => value.at)?.at ?? null);
+                }}
               />
             ) : (
               <ObservationChart series={data.series} at={frame.at} units={data.units} tide={frame.tide} />
@@ -333,15 +345,26 @@ export function ObservationPlayer({
         </p>
       )}
       {status === "failed" && (
-        <p className="observation-note" role="status">
-          No image could be loaded for this timestamp.
-          {frame?.photograph && element ? " Showing the last loaded photograph." : ""}
-        </p>
+        <div className="observation-note">
+          <p role="status">
+            No image could be loaded for this timestamp.
+            {heldRain
+              ? ` Still showing ${heldTime}.`
+              : frame?.photograph && element
+                ? " Showing the last loaded photograph."
+                : ""}
+          </p>
+          {id === "rain" && (
+            <button type="button" onClick={retryImage}>
+              Retry satellite frame
+            </button>
+          )}
+        </div>
       )}
       {status === "loading" && (
         <p className="observation-note" role="status">
           {heldTime !== null
-            ? `Loading this image… The globe still shows ${heldTime}.`
+            ? `Loading this image… Still showing ${heldTime}.`
             : frame?.photograph && element
               ? "Loading this image… Showing the last loaded photograph."
               : "Loading this image…"}
@@ -349,7 +372,7 @@ export function ObservationPlayer({
       )}
       {state === "loading" && heldTime !== null && status !== "loading" && (
         <p className="observation-note" role="status">
-          The globe still shows {heldTime} while these readings load.
+          Still showing {heldTime} while these readings load.
         </p>
       )}
       {data && <p className="observation-note">{data.note}</p>}

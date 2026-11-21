@@ -57,7 +57,7 @@ export function StoryPlayer({
   const meta = earthStories[id];
   const { initial, remember } = useStorySession();
   const fault = id === "fault";
-  const fieldStory = id === "dust" || fault || id === "glacier";
+  const fieldStory = id === "dust" || fault || id === "glacier" || !!data.coastalTarget;
   const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
@@ -222,7 +222,10 @@ export function StoryPlayer({
           ? { curtain: dust.curtain }
           : {}),
 
-      follow: motionProgress === undefined ? undefined : storyCamera(id, target, motionProgress),
+      follow:
+        motionProgress === undefined
+          ? undefined
+          : storyCamera(id, target, motionProgress, data.coastalTarget),
     });
     remember?.({
       at: frame.at,
@@ -257,6 +260,7 @@ export function StoryPlayer({
     holdGeography,
     data.lens,
     data.terrain,
+    data.coastalTarget,
     arrive,
     motionProgress,
     localSky,

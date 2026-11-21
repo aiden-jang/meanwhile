@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type PointerEvent } from "react";
 import type { ObservationFrame, ObservationSeries } from "./types";
 import { summarizeSeries } from "./seriesSummary";
 import { layerTime } from "../layerTime";
@@ -27,6 +27,7 @@ export function ObservationChart({
   tide,
   station,
   river,
+  onSeek,
 }: {
   series: readonly ObservationSeries[];
   at: number;
@@ -34,6 +35,7 @@ export function ObservationChart({
   tide?: ObservationFrame["tide"];
   station?: string | undefined;
   river?: boolean;
+  onSeek?: (at: number) => void;
 }): JSX.Element | null {
   const chart = useMemo(() => {
     const points = series.flatMap(({ samples }) => samples);
@@ -47,6 +49,8 @@ export function ObservationChart({
     return {
       x,
       y,
+      start,
+      end,
       min,
       max,
       lines: series.map((entry, index) => ({
@@ -65,9 +69,35 @@ export function ObservationChart({
   const selected = series
     .find((entry) => entry.id === station && station)
     ?.samples.find(([time]) => time === at);
+  const seek = (event: PointerEvent<SVGSVGElement>) => {
+    const matrix = event.currentTarget.getScreenCTM();
+    if (!matrix || !onSeek) return;
+    const { x } = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const progress = Math.min(1, Math.max(0, (x - 1) / (WIDTH - 2)));
+    onSeek(chart.start + progress * (chart.end - chart.start));
+  };
   return (
     <div className="observation-chart" data-river={river || undefined}>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        aria-hidden="true"
+        onPointerDown={
+          onSeek
+            ? (event) => {
+                if (event.button !== 0 || !event.isPrimary) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                seek(event);
+              }
+            : undefined
+        }
+        onPointerMove={
+          onSeek
+            ? (event) => {
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) seek(event);
+              }
+            : undefined
+        }
+      >
         <path d={`M1 1V${HEIGHT - 1}H${WIDTH - 1}`} />
         {chart.lines.map(({ id, label, path, secondary }) => (
           <path

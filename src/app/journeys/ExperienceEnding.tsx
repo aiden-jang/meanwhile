@@ -12,10 +12,18 @@ const StoryFinding = lazy(() =>
     .then(({ StoryFinding }) => ({ default: StoryFinding }))
     .catch(() => ({ default: () => null })),
 );
-function Finding({ id, completed }: { id: string; completed: boolean }) {
+function Finding({
+  id,
+  completed,
+  autoReveal = true,
+}: {
+  id: string;
+  completed: boolean;
+  autoReveal?: boolean;
+}) {
   return completed ? (
     <Suspense fallback={null}>
-      <StoryFinding id={id} completed />
+      <StoryFinding id={id} completed autoReveal={autoReveal} />
     </Suspense>
   ) : null;
 }
@@ -40,6 +48,13 @@ export function ExperienceEnding({
       : null;
   const journey = journeys.find((entry) => entry.id === route?.id);
   const step = route && journey?.steps[route.step];
+  if (route?.id === "water-in-motion")
+    return (
+      <>
+        {showFinding && <Finding id={active} completed={completed} autoReveal={false} />}
+        {showSave && <SaveVisit />}
+      </>
+    );
   if (route && journey && step) {
     const last = route.step === journey.steps.length - 1;
     const next = journey.steps[route.step + 1];

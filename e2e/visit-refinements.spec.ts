@@ -60,6 +60,39 @@ test("Open latest ignores an old held observation instead of resuming it", async
   await expect(slider).toHaveValue(newest);
 });
 
+test("Rainbelt holds the last satellite frame during a failed request and can retry it in place", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.clock.setFixedTime(new Date("2026-11-20T20:00:00Z"));
+  let fail = true;
+  await page.route("https://gibs.earthdata.nasa.gov/wms/**", (route) => {
+    const time = new URL(route.request().url()).searchParams.get("TIME");
+    return fail && time === "2026-11-20T11:30:00Z"
+      ? route.abort()
+      : route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" });
+  });
+  await page.goto("/#v=observe&story=rain&p=map");
+  const rain = page.getByRole("region", { name: "Rainbelt", exact: true });
+  const slider = rain.getByRole("slider", { name: "Satellite estimate time", exact: true });
+  await expect(slider).toHaveValue("48");
+  await expect(rain.getByText("Loading this image…", { exact: false })).toHaveCount(0);
+  await slider.press("ArrowLeft");
+  await expect(rain.getByRole("status").filter({ hasText: "No image could be loaded" })).toContainText(
+    "12:00 UTC",
+  );
+  await expect(slider).toHaveValue("47");
+  fail = false;
+  await rain.getByRole("button", { name: "Retry satellite frame", exact: true }).click();
+  await expect(rain.getByRole("button", { name: "Retry satellite frame", exact: true })).toHaveCount(0);
+  await expect(rain.getByText("Loading this image…", { exact: false })).toHaveCount(0);
+  await expect(slider).toHaveValue("47");
+  await expect(rain.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});
+
 test("onward recommendations avoid the last story and preserve the original return path", async ({
   page,
 }) => {

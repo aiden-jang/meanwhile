@@ -9,10 +9,12 @@ const datedFindings = new Set(["tonga", "katrina", "kilauea", "iceberg", "aral",
 export function StoryFinding({
   id,
   completed,
+  autoReveal = true,
   children,
 }: {
   id: string;
   completed: boolean;
+  autoReveal?: boolean;
   children?: ReactNode;
 }) {
   const navigation = useStoryNavigation();
@@ -21,7 +23,7 @@ export function StoryFinding({
   useLayoutEffect(() => {
     const title = heading.current;
     const reading = title?.closest<HTMLElement>("#observatory-intro");
-    if (!completed || !title || !reading) return;
+    if (!autoReveal || !completed || !title || !reading) return;
     const focus = document.activeElement;
     if (focus !== reading && reading.contains(focus) && !focus?.closest(".story-milestones")) return;
     if (focus?.closest(".story-milestones")) title.focus({ preventScroll: true });
@@ -30,7 +32,7 @@ export function StoryFinding({
       top: title.getBoundingClientRect().top - reading.getBoundingClientRect().top - inset,
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
-  }, [completed, id]);
+  }, [autoReveal, completed, id]);
   if (!completed || !finding) return null;
   const held = navigation?.current()?.position.moment;
   const time = datedFindings.has(id) && held?.id === id && held.at !== undefined ? held.at : null;

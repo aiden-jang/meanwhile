@@ -6,6 +6,7 @@ import type { StoryMoment } from "./storyMoment";
 import type { ObservationId } from "./catalogue";
 import type { ReplayId } from "./replays";
 import type { ObservationView } from "./types";
+import type { CameraState } from "../../globe/controls";
 
 export type AfterDarkArchive = "lights" | "shadow";
 export type StoryId = ObservationId | AfterDarkArchive | ReplayId | EarthStoryId | "kilauea";
@@ -24,6 +25,8 @@ export function useObservationDeck(
   const [view, setView] = useState<ObservationView | null>(null);
   const [map, setProjection] = useState(initialMap);
   const queuedProjection = useRef<boolean>();
+  const journeyCamera = useRef<CameraState>();
+  const runningCameraKey = useRef<string>();
   const published = useRef<StoryId | null>(null);
   const departure = useRef<StoryPlace>();
   const setMap = useCallback((next: boolean) => {
@@ -44,11 +47,19 @@ export function useObservationDeck(
       if (next) {
         pending.current = false;
         published.current = entry;
+        if (next.follow || (runningCameraKey.current && runningCameraKey.current !== next.cameraKey))
+          journeyCamera.current = undefined;
+        runningCameraKey.current = next.cameraKey;
         if (queuedProjection.current !== undefined) setMap(map);
       }
+      const pose = journeyCamera.current;
       setView((previous) =>
         next
-          ? { ...next, cameraKey: [entry ?? "observation", next.cameraKey].filter(Boolean).join(":") }
+          ? {
+              ...next,
+              ...(pose ? { target: pose, holdGeography: false } : {}),
+              cameraKey: [entry ?? "observation", next.cameraKey].filter(Boolean).join(":"),
+            }
           : pending.current
             ? previous
             : null,
@@ -86,6 +97,7 @@ export function useObservationDeck(
     pending.current = false;
     published.current = null;
     departure.current = undefined;
+    journeyCamera.current = undefined;
     active.current = null;
     setView(null);
     setEntry(null);
@@ -101,6 +113,7 @@ export function useObservationDeck(
       recipient.current = saved.recipient;
       pending.current = false;
       departure.current = undefined;
+      journeyCamera.current = undefined;
       published.current = null;
       active.current = saved.entry;
       setEntry(saved.entry);
@@ -130,13 +143,15 @@ export function useObservationDeck(
     getMoment: current,
     query,
     setQuery,
-    open(next: StoryId, from: string, resume?: StoryMoment | null) {
+    open(next: StoryId, from: string, resume?: StoryMoment | null, pose?: CameraState) {
       before();
       recipient.current = false;
       setRevision((value) => value + 1);
       if (resume === null) memory.current.delete(next);
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
+      journeyCamera.current = pose;
+      runningCameraKey.current = undefined;
       const fromPlace = published.current ? storyPlace(published.current) : undefined;
       const destination = storyPlace(next);
       departure.current =

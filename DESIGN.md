@@ -912,6 +912,13 @@ CALIPSO profile into that geography. Fault Offset draws each mapped rupture in s
 holds the selected survey site while the radar sweep replaces shaded terrain. Glacier Flow
 holds one camera and a pinned sample across its two annual velocity mosaics. Its slider divides
 the registered maps, and the selected year still controls the illustrative traces.
+Water in Motion carries the Pacific framing from the GFS moisture-transport flight into
+NASA satellite precipitation estimates. A coastal grid cell highlights the current forecast,
+and a failed satellite frame can be retried while the previous image and timestamp stay visible.
+The journey restores each stop’s camera, projection and reading. River Pulse frames the
+selected basin with a generalized Natural Earth river line. Both gauges can be picked and
+the chart can be scrubbed directly.
+The world label reports the selected observation and leaves gaps explicit.
 Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
 Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.
 Source replacement preserves the focused logical control and reading position. A failed selection

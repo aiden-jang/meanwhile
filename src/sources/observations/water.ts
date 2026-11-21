@@ -1,6 +1,8 @@
 import type { ObservationData, ObservationSource } from "../../app/observations/types";
 import { HOUR, MINUTE, request, utc } from "./common";
 import { riverBasins, riverUnit } from "../../app/observations/riverGauges";
+import { spanDeg } from "../../geo/sphere";
+import riverReaches from "./river-reaches.json";
 
 const TIDE = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
 const RIVERS = "https://api.waterdata.usgs.gov/ogcapi/v0/collections";
@@ -143,6 +145,11 @@ export const river: ObservationSource = {
     const times = [...new Set(stations.flatMap(({ samples }) => samples.map(([at]) => at)))].sort(
       (a, b) => a - b,
     );
+    const paths = riverReaches.reaches[basin.id].map((line) => ({
+      points: line.map(([lon, lat]) => ({ lon: lon!, lat: lat!, lift: 0.01 })),
+      color: 0x69bfd4,
+      trace: true,
+    }));
     const frames = times.map((at) => {
       const gauges = basin.stations.map(({ id, label }) => {
         const station = stations.find((entry) => entry.id === id);
@@ -151,6 +158,8 @@ export const river: ObservationSource = {
       return {
         at,
         gauges,
+        paths,
+        flow: true,
         marks: stations.map(({ id, lat, lon, byTime }) => ({
           id,
           lat,
@@ -162,8 +171,11 @@ export const river: ObservationSource = {
     });
     const first = stations[0]!;
     const last = stations.at(-1)!;
+    const span = spanDeg(first.lon, first.lat, last.lon, last.lat);
+    const lens = Math.min(48, 11 / Math.max(0.35, span));
     return {
       target: { lon: (first.lon + last.lon) / 2, lat: (first.lat + last.lat) / 2, zoom: 2.8 },
+      lens: { globe: lens, map: lens * 2 },
       frames,
       initial: frames.length - 1,
       units: riverUnit,
@@ -174,7 +186,7 @@ export const river: ObservationSource = {
         gapAfter: 15 * MINUTE,
         secondary: id === basin.stations[1].id,
       })),
-      note: "Provisional USGS discharge. Markers sit at the gauges. The chart uses one scale and clock.",
+      note: "Provisional USGS discharge. Both gauges share one chart scale and clock.",
     };
   },
 };

@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { distanceKm } from "../../geo/sphere";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import { ObservationChart } from "./ObservationChart";
 import { discharge, gaugeUrl, riverUnit } from "./riverGauges";
-import type { GeoPoint, ObservationFrame, ObservationSeries, RiverGaugeReading } from "./types";
+import riverReaches from "../../sources/observations/river-reaches.json";
+import type { ObservationFrame, ObservationSeries, ObservationView, RiverGaugeReading } from "./types";
 
 export function useRiverGauge(frame: ObservationFrame | undefined, chapter: string | undefined) {
   const [selected, select] = useState(chapter?.startsWith("gauge:") ? chapter.slice(6) : undefined);
@@ -19,34 +19,51 @@ export function useRiverGauge(frame: ObservationFrame | undefined, chapter: stri
     if (!frame?.gauges || !frame.marks) return frame;
     return {
       ...frame,
-      marks: frame.marks.map((mark) =>
-        mark.id === active
-          ? {
-              ...mark,
-              size: 20,
-              color: gauges?.find(({ id }) => id === active)?.value === undefined ? 0xc4ccd6 : 0x8ae7ef,
-            }
-          : mark,
-      ),
+      marks: frame.marks.map((mark) => {
+        const reading = mark.id === active ? gauges?.find(({ id }) => id === active) : undefined;
+        if (!reading) return mark;
+        return {
+          ...mark,
+          size: 20,
+          color: reading.value === undefined ? 0xc4ccd6 : 0x8ae7ef,
+          reading: {
+            label: reading.label,
+            value: reading.value === undefined ? "No reading at this time" : discharge(reading.value),
+          },
+        };
+      }),
     } satisfies ObservationFrame;
   }, [frame, gauges, active]);
-  const pick = useCallback(
-    (point: GeoPoint) => {
-      const marks = frame?.marks;
-      if (!marks) return;
-      const distances = marks.map(({ id, lon, lat }) => ({
-        id,
-        km: distanceKm(point.lon, point.lat, lon, lat),
-      }));
-      const nearest = distances.sort((a, b) => a.km - b.km)[0];
-      if (nearest && nearest.km < 28) {
-        setPreview(undefined);
-        select(nearest.id);
-      }
+  const marks = frame?.gauges ? frame.marks : undefined;
+  const selectMark = useCallback(
+    (index: number) => {
+      select(marks?.[index]?.id);
+      setPreview(undefined);
     },
-    [frame],
+    [marks],
   );
-  return { gauge, active, shown, pick, select, setPreview };
+  const pickMarks = useMemo<ObservationView["pickMarks"]>(
+    () => (marks ? { points: marks, select: selectMark } : undefined),
+    [marks, selectMark],
+  );
+  return { gauge, active, shown, pickMarks, select, setPreview };
+}
+
+export function RiverWorldReading({ frame }: { frame: ObservationFrame | undefined }) {
+  const mark = frame?.marks?.find(({ reading }) => reading);
+  if (!mark?.reading) return null;
+  return (
+    <span
+      className="river-world-reading"
+      data-observation-anchor=""
+      data-lon={mark.lon}
+      data-lat={mark.lat}
+      aria-hidden="true"
+    >
+      <span>{mark.reading.label}</span>
+      <strong>{mark.reading.value}</strong>
+    </span>
+  );
 }
 
 export function RiverReading({
@@ -56,6 +73,7 @@ export function RiverReading({
   selection,
   current,
   pause,
+  seek,
 }: {
   at: number;
   gauges: readonly RiverGaugeReading[];
@@ -63,6 +81,7 @@ export function RiverReading({
   selection: ReturnType<typeof useRiverGauge>;
   current: boolean;
   pause: () => void;
+  seek: (at: number) => void;
 }) {
   const navigation = useStoryNavigation();
   const { gauge, active, select, setPreview } = selection;
@@ -100,7 +119,7 @@ export function RiverReading({
           </button>
         ))}
       </div>
-      <ObservationChart series={series} at={at} units={riverUnit} station={active} river />
+      <ObservationChart series={series} at={at} units={riverUnit} station={active} river onSeek={seek} />
       {gauge && (
         <div className="river-reading">
           <button
@@ -131,6 +150,12 @@ export function RiverReading({
           {attempted === key && <span role="status">{navigation?.library.notice}</span>}
         </div>
       )}
+      <small className="observation-note">
+        River outline ·{" "}
+        <a href={riverReaches.source} target="_blank" rel="noreferrer">
+          Natural Earth
+        </a>
+      </small>
     </>
   );
 }

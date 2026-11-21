@@ -1,4 +1,6 @@
 import { nearestFrame } from "./nearestFrame";
+import { refreshAnnotations } from "../../globe/annotationInput";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { EarthStoryId } from "./catalogue";
 import type { EarthStoryData } from "./types";
 import type { useStoryClock } from "./useStoryClock";
@@ -22,13 +24,29 @@ export function StorySideActions({
   skyMode: boolean;
   setSkyMode: (open: boolean) => void;
 }) {
+  const guided = useStoryNavigation()?.route?.id === "water-in-motion";
   if (id === "atmospheric-river")
     return (
       <div className="observatory-actions">
-        <button type="button" onClick={onRadar}>
-          View current Pacific radar
+        <button
+          type="button"
+          onClick={() => {
+            clock.pause();
+            const cell = data.frames[Math.floor(clock.position)]?.marks?.[0];
+            refreshAnnotations(
+              cell
+                ? { lon: cell.lon, lat: cell.lat, zoom: data.coastalTarget?.zoom ?? 1.88 }
+                : data.coastalTarget,
+            );
+          }}
+        >
+          Focus the Pacific coast
         </button>
-        <p className="observation-note">Opens recent observed scans; radar time differs from the forecast.</p>
+        {!guided && (
+          <button type="button" onClick={onRadar}>
+            View current Pacific radar
+          </button>
+        )}
       </div>
     );
   if (data.sky)

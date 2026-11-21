@@ -15,6 +15,8 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
+import type { CameraState } from "../../globe/controls";
+import { rainCoast } from "../observations/RainbeltControls";
 
 interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
@@ -72,6 +74,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   } | null>(null);
   const origin = useRef<BrowseOrigin | null>(null);
   const [route, setRoute] = useState<{ id: string; step: number } | null>(null);
+  const waterStops = useRef(new Map<number, { visit: Visit; pose: CameraState }>());
   const { observations: deck, tonight, sun, floatDive } = props.views;
   const active =
     deck.entry ??
@@ -127,6 +130,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     keepScene = false,
     fresh = false,
     nightfall?: SkyPosition,
+    pose?: CameraState,
   ) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
@@ -139,7 +143,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
     const openReplay = () =>
-      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
+      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined), pose);
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
@@ -316,8 +320,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           const first = journeys.find((journey) => journey.id === id)?.steps[0];
           if (!first || unavailable(first.id)) return;
           reportAnalytics({ name: "journey_started", journey: id });
+          waterStops.current.clear();
           // Explore's synchronous handoff briefly has no active story; record the route afterward.
-          navigate(first.id, `journey-${id}`);
+          navigate(first.id, `journey-${id}`, undefined, false, id === "water-in-motion");
           setRoute({ id, step: 0 });
         },
         tour() {
@@ -327,7 +332,27 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         step(index) {
           const next = journeys.find((journey) => journey.id === route?.id)?.steps[index];
           if (!route || !next || unavailable(next.id)) return;
-          navigate(next.id, `journey-${route.id}`);
+          const trigger = `journey-${route.id}`;
+          if (route.id === "water-in-motion") {
+            const pose = props.explorer.read();
+            const visit = memory.current();
+            if (visit) waterStops.current.set(route.step, { visit, pose });
+            const stopped = waterStops.current.get(index);
+            const pacific = pose.lon < -103 && pose.lon > -179 && pose.lat > 12 && pose.lat < 63;
+            navigate(
+              next.id,
+              trigger,
+              stopped?.visit ?? {
+                id: next.id,
+                seen: Date.now(),
+                position: { moment: { id: next.id, map: deck.map } },
+              },
+              false,
+              true,
+              undefined,
+              stopped?.pose ?? (next.id === "rain" ? (pacific ? pose : rainCoast) : undefined),
+            );
+          } else navigate(next.id, trigger);
           setRoute({ ...route, step: index });
         },
         finish(complete) {

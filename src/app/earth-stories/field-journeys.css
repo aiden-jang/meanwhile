@@ -41,7 +41,126 @@
   border: 1px solid var(--color-hairline);
 }
 
+.water-journey-steps {
+  display: grid;
+  gap: 8px;
+  padding-block: 10px 12px;
+  margin-block: 4px 8px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.water-journey-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.water-journey-progress h3,
+.water-journey-steps p {
+  margin: 0;
+}
+
+.water-journey-progress h3 {
+  font-size: 16px;
+}
+
+.water-journey-progress > span,
+.water-journey-steps small {
+  color: var(--color-dim);
+  font-size: 13px;
+}
+
+.water-journey-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-dim);
+  font-size: 12px;
+}
+
+.water-journey-sources li {
+  border-block-start: 1px solid var(--color-hairline);
+  padding-block-start: 5px;
+}
+
+.water-journey-sources [aria-current] {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+  font-weight: 550;
+}
+
+.water-journey-steps p {
+  font-size: var(--text-control);
+}
+
+.water-journey-steps .observatory-actions {
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.water-journey-steps .observatory-actions > :last-child {
+  background: var(--color-raised);
+  color: var(--color-ink);
+  font-weight: 550;
+}
+
+.river-world-reading {
+  position: absolute;
+  visibility: hidden;
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  max-width: max(100px, 34%);
+  padding: 5px 9px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  background: var(--color-deck);
+  color: var(--color-dim);
+  font-size: 11px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 9px));
+}
+
+.river-world-reading strong {
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.observation-chart[data-river] svg {
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.field-journey .story-dock .observation-transport {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+}
+
+.field-journey .observation-transport span {
+  grid-column: 1;
+}
+
+.field-journey .observation-transport .observatory-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.field-journey .observation-transport .observation-scrub {
+  grid-column: 1;
+}
+
 @media (max-width: 599px), (orientation: landscape) and (max-height: 480px) {
+  .observation-panel:has(.water-journey-steps) > .observation-heading + .observation-note {
+    display: none;
+  }
+
   .field-journey .stage-readout {
     inset-block: calc(var(--stage-inset) + 31px) auto;
     max-width: min(70%, 31ch);

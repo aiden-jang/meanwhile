@@ -43,7 +43,9 @@ test("Atmospheric River and River Pulse open distinct views from the catalogue a
   const gauges = page.getByRole("region", { name: "River Pulse", exact: true });
   await expect(gauges.getByRole("combobox", { name: "River", exact: true })).toBeVisible();
   await expect(gauges.getByRole("slider")).toBeVisible();
-  await expect(gauges.getByText("2,340 ft³/s", { exact: true })).toHaveCount(2);
+  await expect(
+    gauges.getByRole("group", { name: "River gauges" }).getByText("2,340 ft³/s", { exact: true }),
+  ).toHaveCount(2);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   await page.goto("/#v=observe&story=river");
   await expect(gauges.getByRole("slider")).toBeVisible();

@@ -11,6 +11,7 @@ const variables = [
   "Pressure_surface",
   "Precipitation_rate_surface",
 ];
+type TransportCell = { lon: number; lat: number; rate: number };
 
 export function columnTransport(
   pressure: readonly number[],
@@ -62,8 +63,11 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
   if (lons.length < 10 || lats.length < 10 || pressure.length < 10)
     throw new Error("Incomplete water-vapor forecast");
   const area = lons.length * lats.length;
+  let departure: TransportCell | undefined;
+  let arrival: (TransportCell & { at: number }) | undefined;
   const frames = times.map((at, index) => {
     const paths: ObservationPath[] = [];
+    let coastal: TransportCell | undefined;
     let maximum = 0,
       coastalRain: number | null = null;
     for (let row = 0; row < lats.length; row++)
@@ -93,6 +97,11 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
           coastalRain = Math.max(coastalRain ?? 0, rainfall);
         if (!transport || transport.magnitude < 80) continue;
         maximum = Math.max(maximum, transport.magnitude);
+        const rate = transport.magnitude;
+        if (index === 0 && lon <= -139 && lat >= 27 && lat <= 53 && rate > (departure?.rate ?? 0))
+          departure = { lon, lat, rate };
+        if (lon >= -132 && lon <= -121 && lat >= 32 && lat <= 50 && rate > (coastal?.rate ?? 0))
+          coastal = { lon, lat, rate };
         const scale = Math.min(0.006, 6 / transport.magnitude);
         paths.push({
           color: transport.magnitude >= 500 ? 0xf4ca8d : transport.magnitude >= 250 ? 0x8bdbcb : 0x527f9b,
@@ -103,13 +112,21 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
           })),
         });
       }
+    if (coastal && coastal.rate > (arrival?.rate ?? 0)) arrival = { ...coastal, at };
     return {
       at,
-      caption: `${archive ? "Recorded" : "Current"} GFS forecast · water-vapor transport`,
+      caption: `${archive ? "Archived" : "Current"} GFS forecast · Water-vapor transport`,
       paths,
       flow: true,
+      ...(coastal ? { marks: [{ ...coastal, size: 13, color: 0xf4ca8d }] } : {}),
       measurements: [
         { label: "Strongest sampled transport", value: `${Math.round(maximum)} kg m⁻¹ s⁻¹` },
+        {
+          label: "Highlighted coastal grid cell",
+          value: coastal
+            ? `${Math.round(coastal.rate)} kg m⁻¹ s⁻¹ · ${coastal.lat}° N, ${-coastal.lon}° W`
+            : "No transport above 80 kg m⁻¹ s⁻¹",
+        },
         {
           label: "Strongest coastal grid-cell rain",
           value: coastalRain === null ? "No forecast value" : `${coastalRain.toFixed(1)} mm/h · forecast`,
@@ -125,10 +142,17 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
   return {
     frames,
     timelineLabel: "Forecast valid time",
-    target: { lon: -143, lat: 38, zoom: 1.3 },
+    timelineCues: true,
+    playbackDuration: 11_000,
+    target: { lon: departure?.lon ?? -151, lat: departure?.lat ?? 36, zoom: 1.38 },
+    coastalTarget: { lon: arrival?.lon ?? -126, lat: arrival?.lat ?? 42, zoom: 1.88 },
+    mapTarget: { lon: -144, lat: 39, zoom: 1.55 },
     chapters: [
       { at: frames[0]!.at, label: "Pacific" },
-      { at: frames[Math.floor(frames.length / 2)]!.at, label: "Approaching the coast" },
+      {
+        at: arrival?.at ?? frames[Math.floor(frames.length / 2)]!.at,
+        label: arrival ? "Peak coastal transport" : "Mid-forecast",
+      },
       { at: frames.at(-1)!.at, label: "Forecast end" },
     ],
     legend: [

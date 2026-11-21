@@ -30,6 +30,10 @@ for (const [id, titles] of [
     await installFeeds(page, { presentation: "fresh", empty: true });
     await tides(page);
     await page.route("**/api/observations/river", (route) => route.abort());
+    if (id === "water-in-motion")
+      await page.route("https://gibs.earthdata.nasa.gov/wms/**", (route) =>
+        route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" }),
+      );
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await openStories(page, "all");
@@ -40,13 +44,39 @@ for (const [id, titles] of [
     const skyTime = page.getByRole("slider", { name: "City local time", exact: true });
     if (id === "above-earth") await skyTime.press("End");
     const savedTime = id === "above-earth" ? await skyTime.inputValue() : null;
+    const forecastTime = page.getByRole("slider", { name: "Forecast valid time", exact: true });
+    const rainTime = page.getByRole("slider", { name: "Satellite estimate time", exact: true });
+    if (id === "water-in-motion") {
+      await page
+        .getByRole("combobox", { name: "Forecast", exact: true })
+        .selectOption({ label: "9 November 2026 archive" });
+      await forecastTime.press("Home");
+      await forecastTime.press("ArrowRight");
+      await page.getByRole("button", { name: "Focus the Pacific coast", exact: true }).click();
+      await page.getByRole("button", { name: "Map", exact: true }).click();
+    }
+    const heldForecast = id === "water-in-motion" ? await forecastTime.getAttribute("aria-valuetext") : null;
     await journey.getByRole("button", { name: `Next: ${titles[1]}`, exact: true }).click();
     await expect(journey).toContainText("2 of 3");
     await expect(page.getByRole("heading", { name: titles[1], exact: true })).toBeVisible();
+    if (id === "water-in-motion") {
+      await expect(page.getByRole("group", { name: "Rainbelt on the map" })).toBeVisible();
+      await expect(journey.getByText("NASA satellite estimate", { exact: true })).toHaveAttribute(
+        "aria-current",
+        "step",
+      );
+      await rainTime.press("ArrowLeft");
+    }
+    const heldRain = id === "water-in-motion" ? await rainTime.getAttribute("aria-valuetext") : null;
     await journey.getByRole("button", { name: "Previous view", exact: true }).click();
     await expect(journey).toContainText("1 of 3");
     if (savedTime !== null) await expect(skyTime).toHaveValue(savedTime);
+    if (heldForecast) {
+      await expect(forecastTime).toHaveAttribute("aria-valuetext", heldForecast);
+      await expect(page.getByRole("group", { name: "Atmospheric River on the map" })).toBeVisible();
+    }
     await journey.getByRole("button", { name: `Next: ${titles[1]}`, exact: true }).click();
+    if (heldRain) await expect(rainTime).toHaveAttribute("aria-valuetext", heldRain);
     await journey.getByRole("button", { name: `Next: ${titles[2]}`, exact: true }).click();
     await expect(journey).toContainText("3 of 3");
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(

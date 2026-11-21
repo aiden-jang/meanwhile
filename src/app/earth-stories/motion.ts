@@ -3,7 +3,12 @@ import type { CameraState } from "../../globe/controls";
 import type { ReplayCamera } from "../observations/types";
 import { seafloorFlight, sectionPoint } from "./terrainSection";
 
-export function storyCamera(id: EarthStoryId, target: CameraState, progress: number): ReplayCamera {
+export function storyCamera(
+  id: EarthStoryId,
+  target: CameraState,
+  progress: number,
+  coastalTarget?: CameraState,
+): ReplayCamera {
   const p = Math.min(1, Math.max(0, progress));
   const settle = 1 - (1 - p) ** 3;
   const bank = Math.sin(p * Math.PI);
@@ -29,8 +34,14 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
       pitch: 0.08 * bank,
     };
   if (id === "aral") return { ...target, lon: target.lon + 0.35 * (1 - settle), bank: 0.025 * bank };
-  if (id === "atmospheric-river")
-    return { ...target, lon: -165 + 40 * settle, lat: 36 + 4 * bank, bank: -0.06 * bank, pitch: 0.08 * bank };
+  if (coastalTarget)
+    return {
+      lon: target.lon + (coastalTarget.lon - target.lon) * settle,
+      lat: target.lat + (coastalTarget.lat - target.lat) * settle + bank * 1.8,
+      zoom: target.zoom + (coastalTarget.zoom - target.zoom) * settle,
+      bank: -0.09 * bank,
+      pitch: 0.14 * bank,
+    };
   if (id === "spring")
     return {
       ...target,
