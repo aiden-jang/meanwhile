@@ -56,7 +56,8 @@ export function StoryPlayer({
 }): JSX.Element {
   const meta = earthStories[id];
   const { initial, remember } = useStorySession();
-  const fieldStory = id === "dust" || id === "fault" || id === "glacier";
+  const fault = id === "fault";
+  const fieldStory = id === "dust" || fault || id === "glacier";
   const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
@@ -291,6 +292,9 @@ export function StoryPlayer({
       refreshAnnotations({ lon: point.lon, lat: point.lat, zoom: data.target.zoom });
     }
   };
+  const readings = (
+    <StoryReadings {...{ data, frame, index, site, selected, chooseSite }} north={id === "north"} />
+  );
   return (
     <ReplayPanel
       {...panel}
@@ -343,6 +347,12 @@ export function StoryPlayer({
       {!orbitStory && <StorySideActions {...panel} {...{ id, data, onRadar, clock, skyMode, setSkyMode }} />}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       {shoreline.reading}
+      {fault && (
+        <>
+          <FaultComparison {...panel} data={data} selected={selected} at={frame.at} seek={clock.seek} />
+          {readings}
+        </>
+      )}
       <StoryTimeline
         startLabel={clock.cinematic && clock.position === 0 ? startLabel : undefined}
         data={data}
@@ -354,7 +364,7 @@ export function StoryPlayer({
         time={time}
         restored={initial?.at !== undefined}
         comparison={bloom.controls}
-        compareDates={id !== "fault"}
+        compareDates={!fault}
         label={
           data.timelineLabel ??
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
@@ -367,18 +377,7 @@ export function StoryPlayer({
       ) : (
         shoreline.controls
       )}
-      {id === "fault" && (
-        <FaultComparison {...panel} data={data} selected={selected} at={frame.at} seek={clock.seek} />
-      )}
-      <StoryReadings
-        data={data}
-        frame={frame}
-        index={index}
-        north={id === "north"}
-        site={site}
-        selected={selected}
-        chooseSite={chooseSite}
-      />
+      {!fault && readings}
       {failed && (
         <StoryRecovery
           reefRecent={id === "reef" && choice === "Recent observations"}
