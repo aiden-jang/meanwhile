@@ -110,7 +110,6 @@ export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExp
           className="journey-feature-cover"
           ref={cameraControl}
           disabled={!!unavailable || !places.length}
-          aria-label={`${previewLabel}: ${featured.title}`}
           aria-pressed={preview === "pinned"}
           onPointerEnter={(event) => {
             clearTimeout(timer.current);

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
@@ -14,10 +15,15 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
   await journeys.click();
 
   const shelf = page.getByRole("region", { name: "Guided journeys", exact: true });
-  const preview = shelf.getByRole("button", { name: "Preview route: Ice in Motion", exact: true });
+  const preview = shelf.getByRole("button", { name: "Ice in Motion Preview route", exact: true });
   const path = page.locator("[data-journey-route] path");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await expect(preview).toBeInViewport();
+  const labels = await new AxeBuilder({ page })
+    .include(".journey-shelf")
+    .withRules(["label-content-name-mismatch"])
+    .analyze();
+  expect(labels.violations).toEqual([]);
   await preview.click();
   await expect(preview).toHaveAttribute("aria-pressed", "true");
   await expect(path).toHaveAttribute("d", /L-?\d/);
