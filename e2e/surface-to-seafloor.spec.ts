@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, startJourney } from "./feeds";
 
 test("Surface to Seafloor returns to the exact readings on the same canvas", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -9,7 +9,7 @@ test("Surface to Seafloor returns to the exact readings on the same canvas", asy
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "all");
-  await page.locator("#journey-surface-to-seafloor").click();
+  await startJourney(page, "surface-to-seafloor");
   const journey = page.getByRole("region", { name: "Current journey", exact: true });
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const next = (title: string) => journey.getByRole("button", { name: `Next: ${title}`, exact: true });
@@ -56,6 +56,15 @@ test("Surface to Seafloor returns to the exact readings on the same canvas", asy
   await next("Seafloor Flight").click();
   await expect(section).toHaveValue(trenchSample);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+
+  await page.goto("/");
+  await openStories(page, "search");
+  await button("Continue Surface to Seafloor 3 of 3").click();
+  await expect(section).toHaveValue(trenchSample);
+  await previous.click();
+  await expect(sample).toHaveValue(floatSample);
+  await expect(button("Salinity")).toHaveAttribute("aria-pressed", "true");
+  await next("Seafloor Flight").click();
   await journey.getByRole("button", { name: "Finish journey", exact: true }).click();
   await expect(journey).toHaveCount(0);
   await expect(page.locator(".related-stories summary")).toBeFocused();

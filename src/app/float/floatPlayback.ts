@@ -20,6 +20,8 @@ export interface FloatCheckpoint {
   target: CameraState;
 }
 
+export type FloatRestore = Pick<FloatReading, "stage" | "field" | "inspecting"> & { depth: number };
+
 export type FloatDiveView = ReturnType<typeof createFloatPlayback>;
 
 export function createFloatPlayback(

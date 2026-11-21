@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, startJourney } from "./feeds";
 
 test("Through the Air restores the lidar cursor, smoke scan, and Tonga station on one canvas", async ({
   page,
@@ -10,7 +10,7 @@ test("Through the Air restores the lidar cursor, smoke scan, and Tonga station o
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "all");
-  await page.locator("#journey-through-the-air").click();
+  await startJourney(page, "through-the-air");
   const guide = page.getByRole("region", { name: "Current journey", exact: true });
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const previous = guide.getByRole("button", { name: "Previous view", exact: true });

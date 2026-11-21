@@ -191,7 +191,13 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
           }
         }}
         onClickCapture={(event) => {
-          if (event.target instanceof Element && event.target.closest("[data-story-preview]")) {
+          const control = event.target instanceof Element ? event.target : null;
+          if (control?.closest("[data-journey-control]")) {
+            touch.current = null;
+            dismiss();
+            return;
+          }
+          if (control?.closest("[data-story-preview]")) {
             touch.current = null;
             return;
           }

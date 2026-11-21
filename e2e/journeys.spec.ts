@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, selectScene } from "./feeds";
+import { installFeeds, openStories, startJourney, selectScene } from "./feeds";
 import { installOrbit } from "./fixtures/orbit";
 
 async function tides(page: Page) {
@@ -37,7 +37,7 @@ for (const [id, titles] of [
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await openStories(page, "all");
-    await page.locator(`#journey-${id}`).click();
+    await startJourney(page, id);
     const journey = page.getByRole("region", { name: "Current journey", exact: true });
     await expect(journey).toContainText("1 of 3");
     await expect(page.getByRole("heading", { name: titles[0], exact: true })).toBeVisible();

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, startJourney } from "./feeds";
 
 test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph on one canvas", async ({
   page,
@@ -8,14 +8,14 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   const selectedImage = Promise.withResolvers<void>();
-  await page.route(/\/ice-2012-06-18(?:-[\w-]+)?\.webp$/, async (route) => {
+  await page.route(/\/ice-2012-06-18(?:-[\w-]+)?\.webp(?:\?.*)?$/, async (route) => {
     await selectedImage.promise;
     await route.continue();
   });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "all");
-  await page.locator("#journey-ice-in-motion").click();
+  await startJourney(page, "ice-in-motion");
   const region = (name: string) => page.getByRole("region", { name, exact: true });
   const guide = region("Current journey");
   const ice = region("Ice Line");

@@ -508,9 +508,7 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
   if (expand !== "all") return;
-  const library = catalogue.getByRole("button", { name: "Guided journeys & archives", exact: true });
-  if ((await library.getAttribute("aria-expanded")) === "false") await library.click();
-  for (const label of ["Saved & recent", "Guided journeys", "Archives"]) {
+  for (const label of ["Saved & recent", "All journeys", "Archives"]) {
     const summary = catalogue.getByRole("button", { name: label, exact: true });
     if ((await summary.count()) && (await summary.getAttribute("aria-expanded")) === "false")
       await summary.click();
@@ -518,6 +516,16 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const today = catalogue.locator(".story-today");
   if ((await today.count()) && !(await today.evaluate((node) => (node as HTMLDetailsElement).open)))
     await today.locator("summary").click();
+}
+
+export async function startJourney(page: Page, id: string) {
+  const start = page.locator(`#journey-${id}`);
+  if (!(await start.isVisible())) {
+    const summary = page.getByRole("button", { name: "All journeys", exact: true });
+    if ((await summary.getAttribute("aria-expanded")) === "false") await summary.click();
+    await page.locator(`#select-journey-${id}`).click();
+  }
+  await start.click();
 }
 
 export async function revealStoryTools(page: Page) {

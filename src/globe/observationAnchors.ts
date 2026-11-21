@@ -1,8 +1,10 @@
 import type { Controls } from "./controls";
 import { positionEvidenceConnector } from "./evidenceConnector";
+import { positionJourneyPreview } from "./journeyPreview";
 
 export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: Controls, story = false) {
   const root = canvas.closest(".zones");
+  positionJourneyPreview(root, canvas, controls);
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
   const occupied: { x: number; y: number }[] = [];

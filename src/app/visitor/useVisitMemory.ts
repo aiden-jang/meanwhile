@@ -6,9 +6,16 @@ import { recordDeparture } from "./departingVisits";
 import { useVisitLibrary } from "./useVisitLibrary";
 
 // Capture before navigation disposes the player. See ARCHITECTURE.md#srcappvisitorusevisitmemoryts.
-export function useVisitMemory(props: ObservatoryProps, active: string | null, completed: boolean) {
+export function useVisitMemory(
+  props: ObservatoryProps,
+  active: string | null,
+  completed: boolean,
+  onCheckpoint?: () => void,
+) {
   const library = useVisitLibrary();
   const latest = useRef<() => Visit | null>(() => null);
+  const latestCheckpoint = useRef(onCheckpoint);
+  latestCheckpoint.current = onCheckpoint;
   const opened = useRef({ id: active, at: Date.now() });
   if (opened.current.id !== active) opened.current = { id: active, at: Date.now() };
   const read = () => {
@@ -41,6 +48,7 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null, c
     const save = () => {
       const value = latest.current();
       if (value) visit(value);
+      latestCheckpoint.current?.();
     };
     checkpoint.current = save;
     const hidden = () => {
@@ -49,6 +57,7 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null, c
     const departing = () => {
       const value = latest.current();
       if (value) recordDeparture(value);
+      latestCheckpoint.current?.();
     };
     window.addEventListener("pagehide", departing);
     document.addEventListener("visibilitychange", hidden);

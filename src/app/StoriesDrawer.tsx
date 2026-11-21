@@ -49,10 +49,13 @@ export function StoriesDrawer({
   const key = scene ?? "all";
   const all = expanded === key;
   const featured = featuredStoryId(scene);
+  const journeyStops = scene ? undefined : navigation?.journeyProgress?.stops;
   const recent = all
     ? undefined
-    : navigation?.library.recent.find(({ id }) =>
-        searchStories.some((story) => story.id === id && inStoryTopic(story, scene)),
+    : navigation?.library.recent.find(
+        ({ id }) =>
+          !journeyStops?.some(([, stop]) => stop.visit.id === id) &&
+          searchStories.some((story) => story.id === id && inStoryTopic(story, scene)),
       );
   const entries = browseStories(scene, all).filter(({ id }) => id !== recent?.id);
   const featuredRow =
@@ -64,10 +67,6 @@ export function StoriesDrawer({
   const fullHeading = useRef<HTMLHeadingElement>(null);
   useReadingArrival(results, `${key}:${all}`, "fade");
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
-  const sections = [
-    ["journeys", "Guided journeys"],
-    ["archives", "Archives"],
-  ] as const;
   if (!visible) return null;
   return (
     <StoryPreview scope={`${key}:${deck.query}`}>
@@ -147,6 +146,14 @@ export function StoriesDrawer({
           {!deck.query.trim() && (
             <>
               {sceneEntry}
+              {!scene && (
+                <JourneyPicker
+                  expanded={browse.sections.includes("journeys")}
+                  onExpand={() => browse.fold("journeys", !browse.sections.includes("journeys"))}
+                >
+                  {children}
+                </JourneyPicker>
+              )}
               {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
                 <h3 className={all ? undefined : "sr-only"} ref={fullHeading} tabIndex={all ? -1 : undefined}>
@@ -215,62 +222,36 @@ export function StoriesDrawer({
               )}
               <button
                 type="button"
+                id="story-library-archives"
                 className="story-library-toggle"
-                aria-expanded={browse.sections.includes("library")}
-                aria-controls="story-library"
-                onClick={() => browse.fold("library", !browse.sections.includes("library"))}
+                aria-expanded={browse.sections.includes("archives")}
+                aria-controls="story-library-panel-archives"
+                onClick={() => browse.fold("archives", !browse.sections.includes("archives"))}
               >
-                Guided journeys &amp; archives
+                Archives
               </button>
-              <div id="story-library" className="story-library" hidden={!browse.sections.includes("library")}>
-                <div className="story-library-links" aria-label="Story library">
-                  {sections.map(([id, label]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      id={`story-library-${id}`}
-                      aria-expanded={browse.sections.includes(id)}
-                      aria-controls={`story-library-panel-${id}`}
-                      onClick={() => {
-                        browse.fold(id, !browse.sections.includes(id));
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
+              <section
+                id="story-library-panel-archives"
+                className="story-secondary"
+                aria-labelledby="story-library-archives"
+                hidden={!browse.sections.includes("archives")}
+              >
+                <p>Earthquake and eclipse archives</p>
+                <div className="story-archive-actions">
+                  <button type="button" onClick={() => onHistory("2011-03-11")}>
+                    Japan, 2011
+                  </button>
+                  <button type="button" onClick={() => onHistory("2013-05-24")}>
+                    Deep beneath Okhotsk
+                  </button>
+                  <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
+                    Total eclipse, 2024
+                  </button>
+                  <button type="button" onClick={onPickDate}>
+                    Pick a past date
+                  </button>
                 </div>
-                <section
-                  id="story-library-panel-journeys"
-                  className="story-secondary"
-                  aria-labelledby="story-library-journeys"
-                  hidden={!browse.sections.includes("journeys")}
-                >
-                  <JourneyPicker />
-                  {children}
-                </section>
-                <section
-                  id="story-library-panel-archives"
-                  className="story-secondary"
-                  aria-labelledby="story-library-archives"
-                  hidden={!browse.sections.includes("archives")}
-                >
-                  <p>Earthquake and eclipse archives</p>
-                  <div className="story-archive-actions">
-                    <button type="button" onClick={() => onHistory("2011-03-11")}>
-                      Japan, 2011
-                    </button>
-                    <button type="button" onClick={() => onHistory("2013-05-24")}>
-                      Deep beneath Okhotsk
-                    </button>
-                    <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                      Total eclipse, 2024
-                    </button>
-                    <button type="button" onClick={onPickDate}>
-                      Pick a past date
-                    </button>
-                  </div>
-                </section>
-              </div>
+              </section>
             </>
           )}
         </StorySearch>

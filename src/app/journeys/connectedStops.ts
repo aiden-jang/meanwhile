@@ -1,6 +1,6 @@
 import type { CameraState } from "../../globe/controls";
 import type { StoryPlace } from "../discovery/places";
-import type { FloatCheckpoint } from "../float/floatPlayback";
+import type { FloatCheckpoint, FloatRestore } from "../float/floatPlayback";
 import { rainCoast } from "../observations/RainbeltControls";
 import type { Visit } from "../visitor/library";
 
@@ -8,6 +8,7 @@ export interface JourneyArrival {
   map: boolean;
   pose?: CameraState | undefined;
   float?: FloatCheckpoint | undefined;
+  floatState?: FloatRestore | undefined;
   departure?: StoryPlace | undefined;
 }
 
@@ -31,6 +32,7 @@ export function connectedArrival(
       map: stopped?.arrival.map ?? map,
       pose: stopped?.arrival.pose ?? (next === "rain" ? (pacific ? pose : rainCoast) : undefined),
       float: stopped?.arrival.float,
+      floatState: stopped?.arrival.floatState,
       departure: float
         ? { lon: float.profile.lon, lat: float.profile.lat, label: "North Atlantic · Argo" }
         : undefined,
