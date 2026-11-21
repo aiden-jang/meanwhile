@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
+import { installOrbit } from "./fixtures/orbit";
 
 async function tides(page: Page) {
   await page.route("https://api.tidesandcurrents.noaa.gov/**", (route) => {
@@ -25,6 +26,7 @@ for (const [id, titles] of [
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: "reduce" });
+    if (id === "above-earth") await installOrbit(page);
     await installFeeds(page, { presentation: "fresh", empty: true });
     await tides(page);
     await page.route("**/api/observations/river", (route) => route.abort());

@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
+import { installOrbit } from "./fixtures/orbit";
 
 test("feed status names unavailable sources without increasing the background count", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -137,17 +138,8 @@ test("Tide Watch preserves its measured sample across projections and recovers w
 
 test("Orbital Pass shares the city and time between the horizon, globe and map", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.clock.setFixedTime(new Date("2026-11-06T16:00:00Z"));
+  await installOrbit(page);
   await installFeeds(page, { presentation: "fresh" });
-  await page.route("https://celestrak.org/NORAD/elements/gp.php?**", (route) =>
-    route.fulfill({
-      body: [
-        "ISS (ZARYA)",
-        "1 25544U 98067A   26309.85320381  .00006629  00000+0  12749-3 0  9998",
-        "2 25544  51.6327 319.0560 0007195 352.5747   7.5134 15.49194530593711",
-      ].join("\n"),
-    }),
-  );
   await page.goto("/");
   await selectScene(page, "After Dark");
   await openStories(page);
