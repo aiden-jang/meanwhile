@@ -17,6 +17,7 @@ export function StorySearch({
   filter,
   onSearchAll,
   results,
+  journeyControl,
   children,
 }: {
   filter?: ReactNode;
@@ -25,6 +26,7 @@ export function StorySearch({
   deck: Observatory["observations"];
   ready: boolean;
   results: RefObject<HTMLDivElement>;
+  journeyControl?: ReactNode;
   children: ReactNode;
 }): JSX.Element {
   const navigation = useStoryNavigation();
@@ -72,6 +74,7 @@ export function StorySearch({
               </button>
             )}
           </div>
+          {journeyControl}
           {filter && (
             <button
               type="button"

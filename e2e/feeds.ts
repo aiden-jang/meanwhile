@@ -519,6 +519,8 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
 }
 
 export async function startJourney(page: Page, id: string) {
+  const journeys = page.getByRole("button", { name: "Journeys", exact: true });
+  if ((await journeys.getAttribute("aria-expanded")) === "false") await journeys.click();
   const start = page.locator(`#journey-${id}`);
   if (!(await start.isVisible())) {
     const summary = page.getByRole("button", { name: "All journeys", exact: true });

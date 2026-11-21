@@ -1,5 +1,5 @@
 import { useReadingArrival } from "./useReadingArrival";
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { ContinueVisit } from "./visitor/ContinueVisit";
 import { VisitShelf } from "./visitor/VisitShelf";
@@ -49,6 +49,8 @@ export function StoriesDrawer({
   const key = scene ?? "all";
   const all = expanded === key;
   const featured = featuredStoryId(scene);
+  const [journeysOpen, setJourneysOpen] = useState<boolean>();
+  const showJourneys = !scene && !deck.query.trim() && (journeysOpen ?? !!navigation?.journeyProgress);
   const journeyStops = scene ? undefined : navigation?.journeyProgress?.stops;
   const recent = all
     ? undefined
@@ -122,7 +124,32 @@ export function StoriesDrawer({
           filter={filter}
           results={results}
           onSearchAll={() => browse.select(null)}
+          journeyControl={
+            <button
+              type="button"
+              id="journeys-toggle"
+              data-journey-control=""
+              className="story-journey-toggle"
+              aria-expanded={showJourneys}
+              aria-controls="journeys-panel"
+              onClick={() => {
+                if (scene) browse.select(null);
+                if (deck.query) deck.setQuery("");
+                setJourneysOpen(!showJourneys);
+              }}
+            >
+              Journeys
+            </button>
+          }
         >
+          <div id="journeys-panel" hidden={!showJourneys}>
+            {showJourneys && (
+              <JourneyPicker
+                expanded={browse.sections.includes("journeys")}
+                onExpand={() => browse.fold("journeys", !browse.sections.includes("journeys"))}
+              />
+            )}
+          </div>
           {deck.query.trim() && browse.sections.includes("visits") && (
             <button
               type="button"
@@ -146,12 +173,6 @@ export function StoriesDrawer({
           {!deck.query.trim() && (
             <>
               {sceneEntry}
-              {!scene && (
-                <JourneyPicker
-                  expanded={browse.sections.includes("journeys")}
-                  onExpand={() => browse.fold("journeys", !browse.sections.includes("journeys"))}
-                />
-              )}
               {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
                 <h3 className={all ? undefined : "sr-only"} ref={fullHeading} tabIndex={all ? -1 : undefined}>

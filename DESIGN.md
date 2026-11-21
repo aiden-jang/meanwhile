@@ -897,7 +897,7 @@ reading and kept cards arrive once. Reduced motion presents the same content imm
 
 ### Shared cinematic journeys
 
-Explore’s All topics view features one guided journey with its existing story artwork, ordered stops and a single Start or Continue action. Preview route frames numbered geographic anchors on the shared globe or map. Dashed lines connect the tour stops as a guide to the journey. Hover is temporary, while activating the preview keeps it open until dismissal. A local checkpoint retains the last journey, including earlier stops, camera, projection and readings for a return after reload.
+The Journeys control sits beside story search and opens a featured journey with its existing story artwork, ordered stops and a single Start or Continue action. Preview route frames numbered geographic anchors on the shared globe or map. Dashed lines connect the tour stops as a guide to the journey. Hover is temporary, while activating the preview keeps it open until dismissal. A local checkpoint reopens the shelf and retains the last journey, including earlier stops, camera, projection and readings for a return after reload.
 
 Recorded observations and Earth stories use one retained playback dock outside the reading scrollport.
 It sits over the world on desktop and short landscape layouts, and below the phone reading panel.

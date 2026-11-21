@@ -9,6 +9,9 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await openStories(page, "search");
+  const journeys = page.getByRole("button", { name: "Journeys", exact: true });
+  await expect(journeys).toBeInViewport({ ratio: 1 });
+  await journeys.click();
 
   const shelf = page.getByRole("region", { name: "Guided journeys", exact: true });
   const preview = shelf.getByRole("button", { name: "Preview route: Ice in Motion", exact: true });
