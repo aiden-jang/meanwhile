@@ -222,6 +222,7 @@ export function ExplorerSidebar({
           <button
             id="start-story-tour"
             type="button"
+            className="story-library-toggle"
             onClick={() => navigation?.tour()}
             disabled={!context.tour.available || !context.ready}
           >

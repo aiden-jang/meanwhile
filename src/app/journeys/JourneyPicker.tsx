@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StoryThumbnail } from "../StoryThumbnail";
 import { searchStories } from "../storyIndex";
@@ -14,15 +14,7 @@ const artwork: Record<string, string> = {
 };
 const titles = new Map(searchStories.map(({ id, title }) => [id, title]));
 
-export function JourneyPicker({
-  expanded,
-  onExpand,
-  children,
-}: {
-  expanded: boolean;
-  onExpand: () => void;
-  children?: ReactNode;
-}) {
+export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExpand: () => void }) {
   const navigation = useStoryNavigation();
   const progress = navigation?.journeyProgress;
   const [selected, select] = useState<string>();
@@ -185,7 +177,6 @@ export function JourneyPicker({
               {entry.title}
             </button>
           ))}
-          {children}
         </div>
       )}
       {stage &&

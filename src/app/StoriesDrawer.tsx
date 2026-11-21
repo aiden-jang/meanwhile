@@ -150,9 +150,7 @@ export function StoriesDrawer({
                 <JourneyPicker
                   expanded={browse.sections.includes("journeys")}
                   onExpand={() => browse.fold("journeys", !browse.sections.includes("journeys"))}
-                >
-                  {children}
-                </JourneyPicker>
+                />
               )}
               {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
@@ -220,16 +218,19 @@ export function StoriesDrawer({
                   {discoveries}
                 </details>
               )}
-              <button
-                type="button"
-                id="story-library-archives"
-                className="story-library-toggle"
-                aria-expanded={browse.sections.includes("archives")}
-                aria-controls="story-library-panel-archives"
-                onClick={() => browse.fold("archives", !browse.sections.includes("archives"))}
-              >
-                Archives
-              </button>
+              <div className="story-browse-footer">
+                <button
+                  type="button"
+                  id="story-library-archives"
+                  className="story-library-toggle"
+                  aria-expanded={browse.sections.includes("archives")}
+                  aria-controls="story-library-panel-archives"
+                  onClick={() => browse.fold("archives", !browse.sections.includes("archives"))}
+                >
+                  Archives
+                </button>
+                {children}
+              </div>
               <section
                 id="story-library-panel-archives"
                 className="story-secondary"
