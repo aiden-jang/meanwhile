@@ -124,17 +124,14 @@ export function StoryPlayer({
     },
     !clock.playing && index === duration,
   );
-  const viewFrame = useMemo(
-    () =>
-      data.terrain
-        ? {
-            ...frame,
-            ...(section.inspecting ? { paths: section.paths } : {}),
-            ...(section.marks.length ? { marks: section.marks } : {}),
-          }
-        : frame,
-    [data.terrain, frame, section.inspecting, section.paths, section.marks],
-  );
+  const viewFrame = useMemo(() => {
+    if (!data.terrain) return frame;
+    return {
+      ...frame,
+      ...(section.inspecting ? { paths: section.paths } : {}),
+      ...(section.marks.length ? { marks: section.marks } : {}),
+    };
+  }, [data.terrain, frame, section.inspecting, section.paths, section.marks]);
   const status =
     image.status !== "ready"
       ? image.status
@@ -188,7 +185,9 @@ export function StoryPlayer({
       ? 1
       : Math.min(1, (clock.position / duration) * 2.3)
     : 0;
+  const momentAt = id === "ice" ? current.at : frame.at;
   useLayoutEffect(() => {
+    if (momentAt !== frame.at) remember?.({ at: momentAt, map: panel.map });
     if (status === "loading" && (id !== "bloom" || !element)) return;
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
@@ -228,7 +227,7 @@ export function StoryPlayer({
           : storyCamera(id, target, motionProgress, data.coastalTarget),
     });
     remember?.({
-      at: frame.at,
+      at: momentAt,
       choice: displayedChoice,
       city: city.name,
       chapter:
@@ -243,6 +242,7 @@ export function StoryPlayer({
     });
   }, [
     frame,
+    momentAt,
     fieldFrame,
     bloom.comparing,
     bloom.divider,

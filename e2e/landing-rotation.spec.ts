@@ -217,7 +217,9 @@ for (const [width, height] of [
     expect(canvas.y).toBeGreaterThanOrEqual(0);
     expect(canvas.y + canvas.height).toBeLessThanOrEqual(height);
     if (width >= 900) {
-      await page.mouse.move(before.x, before.y);
+      const surface = page.locator("#globe-view canvas");
+      const bounds = (await surface.boundingBox())!;
+      await surface.hover({ position: { x: before.x - bounds.x, y: before.y - bounds.y } });
       await page.mouse.wheel(0, 1200);
     } else {
       await page.locator("#globe-view").focus();

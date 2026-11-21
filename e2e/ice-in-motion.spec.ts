@@ -7,6 +7,11 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
+  const selectedImage = Promise.withResolvers<void>();
+  await page.route(/\/ice-2012-06-18(?:-[\w-]+)?\.webp$/, async (route) => {
+    await selectedImage.promise;
+    await route.continue();
+  });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "all");
@@ -27,10 +32,11 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await ice.getByRole("button", { name: "Map", exact: true }).click();
   const chart = ice.locator(".observation-chart svg");
   await chart.click();
-  await expect(extent).not.toHaveValue("0");
-  const selectedDate = await extent.getAttribute("aria-valuetext");
+  await expect(extent).toHaveValue("90");
+  await expect(ice.getByText("Loading the selected observations…")).toBeVisible();
   await next("Glacier Flow").click();
   await expect(guide).toContainText("2 of 3");
+  selectedImage.resolve();
   await glacier.getByRole("button", { name: "Globe", exact: true }).click();
   await glacier.getByRole("button", { name: "Compare 2013 and 2024", exact: true }).click();
   await expect(divider).toBeEnabled();
@@ -56,7 +62,7 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await expect(location).toHaveValue(pin);
   await expect(glacier.getByRole("group", { name: "Glacier Flow on the globe" })).toBeVisible();
   await previous.click();
-  await expect(extent).toHaveAttribute("aria-valuetext", selectedDate!);
+  await expect(extent).toHaveAttribute("aria-valuetext", "18 Jun 2012, 12:00 UTC");
   await expect(ice.getByRole("group", { name: "Ice Line on the map" })).toBeVisible();
   await next("Glacier Flow").click();
   await expect(divider).toHaveValue(split);
