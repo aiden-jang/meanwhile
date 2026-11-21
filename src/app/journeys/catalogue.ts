@@ -60,6 +60,7 @@ export interface Journey {
   title: string;
   summary: string;
   ending: string;
+  guide?: readonly string[];
   steps: readonly JourneyStep[];
 }
 
@@ -90,6 +91,7 @@ export const journeys: readonly Journey[] = [
   {
     id: "water-in-motion",
     title: "Water in motion",
+    guide: ["NOAA forecast", "NASA satellite estimate", "USGS gauge reading"],
     summary: "Moisture in the air, rain from orbit, and water at a river gauge.",
     ending:
       "Forecast transport, satellite estimates, and gauge readings measure different parts of the water cycle. They are not one synchronized forecast.",
@@ -108,6 +110,30 @@ export const journeys: readonly Journey[] = [
         id: "river",
         prompt: "Pick a gauge and drag the chart to read its rise or fall.",
         context: "These are independent river measurements from the basin you choose.",
+      },
+    ],
+  },
+  {
+    id: "surface-to-seafloor",
+    title: "Surface to Seafloor",
+    summary: "Follow a drifting buoy, read the water below it, and descend to the Mariana Trench.",
+    guide: ["Surface track", "Water profile", "Seafloor terrain"],
+    ending: "A surface track, a water profile, and a depth grid answer different questions about the ocean.",
+    steps: [
+      {
+        id: "drifter",
+        prompt: "Play the buoy’s track or pick a fix to read how fast it moved.",
+        context: "NOAA drifter fixes. Float Dive opens a separate Argo profile in the North Atlantic.",
+      },
+      {
+        id: "float",
+        prompt: "Follow the rise, then scrub the float to compare depths.",
+        context: "Measurements at the float’s position. Next, cross to the Mariana Trench.",
+      },
+      {
+        id: "seafloor",
+        prompt: "Descend to the trench and drag the depth chart to read the terrain.",
+        context: "GEBCO grid depths along an authored route in the western Pacific.",
       },
     ],
   },

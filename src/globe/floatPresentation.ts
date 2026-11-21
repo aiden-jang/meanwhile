@@ -5,8 +5,6 @@ import { createFloatSurface } from "./floatSurface";
 import { createFloatDeparture } from "./floatDeparture";
 import { placeFloatReading } from "./floatPlacement";
 
-const ZOOM = 1.35;
-
 export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasElement) {
   const surface = createFloatSurface();
   let departure: ReturnType<typeof createFloatDeparture> | undefined;
@@ -19,6 +17,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
   let readyToPlay = false;
   let inspection = 0;
   let reveal = 0;
+  let folded = false;
 
   return {
     object: surface.object,
@@ -34,7 +33,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
       departure?.place();
     },
     set(view: FloatDiveView | null, returnToGlobe: boolean, earth = returnToGlobe) {
-      if (view || !earth) departure?.clear();
+      if ((view && view !== wanted) || (!view && !earth)) departure?.clear();
       if (view === wanted) {
         if (!view && restore !== returnToGlobe) {
           departure?.clear();
@@ -43,6 +42,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
         return;
       }
       wanted?.pause();
+      folded = false;
       restore = returnToGlobe;
       if (!view && earth && showing) {
         const destination = showing.takeDestination() ?? (returnToGlobe ? returnCamera : null);
@@ -66,6 +66,18 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
     },
     step(dt: number, reduced: boolean, elapsed = dt) {
       if (departure?.active) return departure.step(elapsed, reduced);
+      const complete = showing === wanted ? showing?.takeFold() : undefined;
+      if (complete && showing) {
+        departure ??= createFloatDeparture(controls, canvas, surface);
+        const opened = departure.begin(showing, reveal, controls.state(), complete);
+        reveal = 0;
+        returnCamera = null;
+        folded = true;
+        if (opened) return true;
+        surface.draw(0, 0, 0, reduced);
+        complete();
+      }
+      if (folded) return false;
       let returning = false;
       if (showing !== wanted || (!wanted && returnCamera)) {
         reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.55);
@@ -74,8 +86,8 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
           landed = 0;
           arrived = readyToPlay = false;
           if (showing) {
-            const { lon, lat } = showing.profile;
-            if (controls.guidance.following()) controls.flyTo(lon, lat, ZOOM);
+            const { lon, lat, zoom } = showing.target;
+            if (controls.guidance.following()) controls.flyTo(lon, lat, zoom);
           } else {
             if (restore && returnCamera) {
               controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
@@ -93,11 +105,11 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
       let rising = false;
       if (showing === wanted) {
         const camera = controls.state();
-        const { lon, lat } = showing.profile;
+        const { lon, lat, zoom } = showing.target;
         if (
           !arrived &&
           (!controls.guidance.following() ||
-            (spanDeg(camera.lon, camera.lat, lon, lat) < 0.55 && Math.abs(camera.zoom - ZOOM) < 0.025))
+            (spanDeg(camera.lon, camera.lat, lon, lat) < 0.55 && Math.abs(camera.zoom - zoom) < 0.025))
         )
           arrived = true;
         if (arrived) landed += dt;

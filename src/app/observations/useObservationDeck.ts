@@ -143,16 +143,21 @@ export function useObservationDeck(
     getMoment: current,
     query,
     setQuery,
-    open(next: StoryId, from: string, resume?: StoryMoment | null, pose?: CameraState) {
+    open(
+      next: StoryId,
+      from: string,
+      resume?: StoryMoment | null,
+      arrival?: { pose?: CameraState | undefined; departure?: StoryPlace | undefined },
+    ) {
       before();
       recipient.current = false;
       setRevision((value) => value + 1);
       if (resume === null) memory.current.delete(next);
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
-      journeyCamera.current = pose;
+      journeyCamera.current = arrival?.pose;
       runningCameraKey.current = undefined;
-      const fromPlace = published.current ? storyPlace(published.current) : undefined;
+      const fromPlace = arrival?.departure ?? (published.current ? storyPlace(published.current) : undefined);
       const destination = storyPlace(next);
       departure.current =
         fromPlace &&

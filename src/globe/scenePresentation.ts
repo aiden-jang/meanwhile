@@ -107,7 +107,7 @@ export function createScenePresentation(
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
-    const tracing = observations?.step(dt, reduced, emphasis.weather()) ?? false;
+    const tracing = observations?.step(dt, reduced, observationTarget ? 1 : emphasis.weather()) ?? false;
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const guided = controls.guidance.following();
@@ -200,7 +200,7 @@ export function createScenePresentation(
         } else if (weather) {
           controls.flyTo(weather.target.lon, weather.target.lat, weather.target.zoom);
         } else if (float) {
-          controls.flyTo(float.profile.lon, float.profile.lat, 1.35);
+          controls.flyTo(float.target.lon, float.target.lat, float.target.zoom);
         } else if (route) controls.setOverflight(route.focus);
         else if (mode === "planetarium") {
           if (skyCamera) controls.flyTo(skyCamera.lon, skyCamera.lat, skyCamera.zoom);

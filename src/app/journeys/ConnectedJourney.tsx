@@ -2,26 +2,24 @@ import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
 
-const water = journeys.find(({ id }) => id === "water-in-motion")!;
-const sources = ["NOAA forecast", "NASA satellite estimate", "USGS gauge reading"];
-
-export function WaterJourney() {
+export function ConnectedJourney() {
   const navigation = useStoryNavigation();
   const route = navigation?.route;
-  if (!navigation || route?.id !== water.id) return null;
-  const step = water.steps[route.step]!;
-  const next = water.steps[route.step + 1]?.id;
+  const journey = journeys.find(({ id }) => id === route?.id);
+  if (!navigation || !route || !journey?.guide) return null;
+  const step = journey.steps[route.step]!;
+  const next = journey.steps[route.step + 1]?.id;
   const nextTitle = searchStories.find(({ id }) => id === next)?.title;
   return (
-    <section className="water-journey-steps" aria-label="Current journey">
-      <div className="water-journey-progress">
-        <h3>{water.title}</h3>
+    <section className="connected-journey-steps" aria-label="Current journey">
+      <div className="connected-journey-progress">
+        <h3>{journey.title}</h3>
         <span>
-          {route.step + 1} of {water.steps.length}
+          {route.step + 1} of {journey.steps.length}
         </span>
       </div>
-      <ol className="water-journey-sources" aria-label="Data in this journey">
-        {sources.map((source, index) => (
+      <ol className="connected-journey-sources" aria-label="Data in this journey">
+        {journey.guide.map((source, index) => (
           <li key={source} aria-current={index === route.step ? "step" : undefined}>
             {source}
           </li>
@@ -30,14 +28,14 @@ export function WaterJourney() {
       <p>{step.prompt}</p>
       <div className="observatory-actions">
         {route.step > 0 && (
-          <button type="button" onClick={() => navigation.step(route.step - 1)}>
+          <button type="button" disabled={route.folding} onClick={() => navigation.step(route.step - 1)}>
             Previous view
           </button>
         )}
         {next ? (
           <button
             type="button"
-            disabled={!!navigation.unavailable(next)}
+            disabled={route.folding || !!navigation.unavailable(next)}
             onClick={() => navigation.step(route.step + 1)}
           >
             Next: {nextTitle}
@@ -57,6 +55,11 @@ export function WaterJourney() {
         )}
       </div>
       <small>{step.context}</small>
+      {route.folding && (
+        <span className="sr-only" role="status">
+          Returning to the waterline…
+        </span>
+      )}
     </section>
   );
 }

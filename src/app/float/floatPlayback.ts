@@ -1,5 +1,6 @@
 import type { CameraState } from "../../globe/controlsTypes";
 import type { ArgoProfile } from "../../sources/argo";
+import type { ProfileField } from "./profileGeometry";
 
 const ASCENT_SECONDS = 10.5;
 
@@ -8,19 +9,36 @@ export interface FloatReading {
   playing: boolean;
   inspecting: boolean;
   stage: "locate" | "rise" | "notice";
+  field: ProfileField;
+}
+
+export interface FloatCheckpoint {
+  profile: ArgoProfile;
+  source: "recent" | "recorded";
+  reading: FloatReading;
+  depth: number;
+  target: CameraState;
 }
 
 export type FloatDiveView = ReturnType<typeof createFloatPlayback>;
 
-export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, source: "recent" | "recorded") {
+export function createFloatPlayback(
+  profile: ArgoProfile,
+  autoplay: boolean,
+  source: "recent" | "recorded",
+  saved?: FloatCheckpoint,
+) {
   const listeners = new Set<() => void>();
   const samples = profile.samples;
   const deepest = samples[0]!.depth;
   const shallowest = samples.at(-1)!.depth;
   const span = deepest - shallowest;
-  let current: FloatReading = { index: 0, playing: autoplay, inspecting: false, stage: "rise" };
-  let depth = deepest;
+  let current: FloatReading = saved
+    ? { ...saved.reading, playing: false }
+    : { index: 0, playing: autoplay, inspecting: false, stage: "rise", field: "temperature" };
+  let depth = saved?.depth ?? samples[current.index]!.depth;
   let destination: CameraState | undefined;
+  let fold: (() => void) | undefined;
 
   function update(index: number, playing: boolean, changes: Partial<FloatReading> = {}) {
     const next = { ...current, index, playing, ...changes };
@@ -43,6 +61,10 @@ export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, sou
     kind: "float-dive" as const,
     profile,
     source,
+    target: saved?.target ?? { lon: profile.lon, lat: profile.lat, zoom: 1.35 },
+    checkpoint(target: CameraState): FloatCheckpoint {
+      return { profile, source, reading: current, depth, target };
+    },
     depth: () => depth,
     depart: (camera: CameraState) => {
       destination = camera;
@@ -52,6 +74,15 @@ export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, sou
       destination = undefined;
       return camera;
     },
+    foldToSurface(complete: () => void) {
+      update(current.index, false, { inspecting: false });
+      fold = complete;
+    },
+    takeFold() {
+      const complete = fold;
+      fold = undefined;
+      return complete;
+    },
     read: () => current,
     subscribe(listener: () => void) {
       listeners.add(listener);
@@ -60,6 +91,9 @@ export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, sou
       };
     },
     seek,
+    setField(field: ProfileField) {
+      update(current.index, current.playing, { field });
+    },
     inspect(inspecting: boolean) {
       update(current.index, inspecting ? false : current.playing, { inspecting });
     },

@@ -35,7 +35,7 @@ export function ObservationChart({
   tide?: ObservationFrame["tide"];
   station?: string | undefined;
   river?: boolean;
-  onSeek?: (at: number) => void;
+  onSeek?: ((at: number) => void) | undefined;
 }): JSX.Element | null {
   const chart = useMemo(() => {
     const points = series.flatMap(({ samples }) => samples);
@@ -77,7 +77,11 @@ export function ObservationChart({
     onSeek(chart.start + progress * (chart.end - chart.start));
   };
   return (
-    <div className="observation-chart" data-river={river || undefined}>
+    <div
+      className="observation-chart"
+      data-river={river || undefined}
+      data-scrubbable={!!onSeek || undefined}
+    >
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         aria-hidden="true"

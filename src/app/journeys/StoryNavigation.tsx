@@ -15,8 +15,9 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
-import type { CameraState } from "../../globe/controls";
-import { rainCoast } from "../observations/RainbeltControls";
+import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./connectedStops";
+
+type JourneyRoute = { id: string; step: number; folding?: boolean };
 
 interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
@@ -48,7 +49,7 @@ const Navigation = createContext<{
   browsingStories: boolean;
   completed: boolean;
   completion: (id: string, complete: boolean) => void;
-  route: { id: string; step: number } | null;
+  route: JourneyRoute | null;
   unavailable: (id: string) => string | null;
   open: (id: string, trigger?: string, keepScene?: boolean) => void;
   start: (id: string) => void;
@@ -73,8 +74,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     flat: boolean;
   } | null>(null);
   const origin = useRef<BrowseOrigin | null>(null);
-  const [route, setRoute] = useState<{ id: string; step: number } | null>(null);
-  const waterStops = useRef(new Map<number, { visit: Visit; pose: CameraState }>());
+  const [route, setRoute] = useState<JourneyRoute | null>(null);
+  const stops = useRef(new Map<number, ConnectedStop>());
+  const folding = useRef<(() => void) | undefined>();
   const { observations: deck, tonight, sun, floatDive } = props.views;
   const active =
     deck.entry ??
@@ -98,6 +100,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   useEffect(() => {
     if (route && active === null) setRoute(null);
     if (active === null) origin.current = null;
+    if (active !== "float") folding.current = undefined;
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "Story playback needs the globe." : id === "aurora" ? props.aurora.unavailable : null;
@@ -130,8 +133,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     keepScene = false,
     fresh = false,
     nightfall?: SkyPosition,
-    pose?: CameraState,
+    arrival?: JourneyArrival,
   ) {
+    folding.current = undefined;
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     panelReturn.cancel();
@@ -143,7 +147,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
     const openReplay = () =>
-      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined), pose);
+      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined), arrival);
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
@@ -167,11 +171,14 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
     } else if (id === "float") {
       const exploring = !props.views.observing && !resuming;
-      deck.setMap(exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false));
-      floatDive.open(saved?.position.float);
+      deck.setMap(
+        arrival?.map ?? (exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false)),
+      );
+      floatDive.open(saved?.position.float, arrival?.float);
     }
   }
   function returnToBrowse() {
+    folding.current = undefined;
     const saved = origin.current;
     if (!saved) {
       if (!active || deck.trigger?.startsWith("event-story-") || deck.trigger?.startsWith("archive-story-"))
@@ -208,6 +215,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     return true;
   }
   function showCatalogue(focusSearch = false, entry?: string) {
+    folding.current = undefined;
     panelReturn.cancel();
     previewOrigin.current = null;
     origin.current = null;
@@ -265,6 +273,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             : undefined),
         browse: showCatalogue,
         explore() {
+          folding.current = undefined;
           if (active !== null && origin.current?.route.origin.presentation === "explore" && returnToBrowse())
             return;
           panelReturn.cancel();
@@ -317,12 +326,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           navigate(id, trigger, undefined, keepScene);
         },
         start(id) {
-          const first = journeys.find((journey) => journey.id === id)?.steps[0];
+          const journey = journeys.find((entry) => entry.id === id);
+          const first = journey?.steps[0];
           if (!first || unavailable(first.id)) return;
           reportAnalytics({ name: "journey_started", journey: id });
-          waterStops.current.clear();
+          stops.current.clear();
           // Explore's synchronous handoff briefly has no active story; record the route afterward.
-          navigate(first.id, `journey-${id}`, undefined, false, id === "water-in-motion");
+          navigate(first.id, `journey-${id}`, undefined, false, !!journey?.guide);
           setRoute({ id, step: 0 });
         },
         tour() {
@@ -330,32 +340,44 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           props.tour.start();
         },
         step(index) {
-          const next = journeys.find((journey) => journey.id === route?.id)?.steps[index];
-          if (!route || !next || unavailable(next.id)) return;
+          const journey = journeys.find((entry) => entry.id === route?.id);
+          const next = journey?.steps[index];
+          if (!route || route.folding || !next || unavailable(next.id)) return;
           const trigger = `journey-${route.id}`;
-          if (route.id === "water-in-motion") {
-            const pose = props.explorer.read();
-            const visit = memory.current();
-            if (visit) waterStops.current.set(route.step, { visit, pose });
-            const stopped = waterStops.current.get(index);
-            const pacific = pose.lon < -103 && pose.lon > -179 && pose.lat > 12 && pose.lat < 63;
-            navigate(
-              next.id,
-              trigger,
-              stopped?.visit ?? {
-                id: next.id,
-                seen: Date.now(),
-                position: { moment: { id: next.id, map: deck.map } },
-              },
-              false,
-              true,
-              undefined,
-              stopped?.pose ?? (next.id === "rain" ? (pacific ? pose : rainCoast) : undefined),
-            );
-          } else navigate(next.id, trigger);
-          setRoute({ ...route, step: index });
+          const pose = props.explorer.read();
+          const float = floatDive.view;
+          const stop =
+            journey.guide &&
+            connectedArrival(stops.current, route.step, index, next.id, memory.current(), {
+              pose,
+              map: deck.map,
+              float: float?.checkpoint(pose),
+            });
+          const advance = () => {
+            navigate(next.id, trigger, stop?.visit, false, !!stop, undefined, stop?.arrival);
+            setRoute({ id: route.id, step: index });
+          };
+          if (
+            !float ||
+            !stop ||
+            float.read().stage === "locate" ||
+            matchMedia("(prefers-reduced-motion: reduce)").matches
+          ) {
+            advance();
+            return;
+          }
+          const complete = () => {
+            clearTimeout(deadline);
+            if (folding.current === complete) advance();
+          };
+          const deadline = window.setTimeout(complete, 1600);
+          folding.current = complete;
+          setRoute({ ...route, folding: true });
+          float.foldToSurface(complete);
+          refreshAnnotations();
         },
         finish(complete) {
+          folding.current = undefined;
           if (complete && route) reportAnalytics({ name: "journey_completed", journey: route.id });
           setRoute(null);
         },

@@ -918,6 +918,10 @@ and a failed satellite frame can be retried while the previous image and timesta
 The journey restores each stop’s camera, projection and reading. River Pulse frames the
 selected basin with a generalized Natural Earth river line. Both gauges can be picked and
 the chart can be scrubbed directly.
+Surface to Seafloor links a recorded NOAA drifter track, a measured Argo profile and a GEBCO
+depth section on the shared globe and map. The float’s waterline folds back into its location
+before the camera travels to the next site. Previous view restores the camera and projection
+along with the selected fix, float sample and chart field, or transect sample.
 The world label reports the selected observation and leaves gaps explicit.
 Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
 Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.

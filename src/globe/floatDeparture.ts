@@ -3,6 +3,7 @@ import type { CameraState, Controls } from "./controlsTypes";
 import type { createFloatSurface } from "./floatSurface";
 
 const RETURN_SECONDS = 1.48;
+const FOLD_SECONDS = 0.95;
 const smooth = (value: number) => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);
@@ -16,8 +17,14 @@ export function createFloatDeparture(
 ) {
   let pin: HTMLDivElement | undefined;
   let location: FloatDiveView["profile"] | undefined;
-  let flight: { from: CameraState; to: CameraState; ascent: number; reveal: number; elapsed: number } | null =
-    null;
+  let flight: {
+    from: CameraState;
+    to: CameraState;
+    ascent: number;
+    reveal: number;
+    elapsed: number;
+    complete: (() => void) | undefined;
+  } | null = null;
   const input = new AbortController();
 
   function place(opacity: number) {
@@ -38,11 +45,14 @@ export function createFloatDeparture(
     return { x, y: bottom };
   }
 
-  function finish() {
+  function finish(notify = true) {
+    const complete = flight?.complete;
     flight = null;
+    canvas.removeAttribute("data-waterline-folding");
     surface.departure(0);
     surface.draw(0, 0, 0, false);
     place(1);
+    if (notify) complete?.();
   }
 
   const interrupt = () => {
@@ -69,7 +79,7 @@ export function createFloatDeparture(
     get active() {
       return flight !== null;
     },
-    begin(view: FloatDiveView, reveal: number, to: CameraState) {
+    begin(view: FloatDiveView, reveal: number, to: CameraState, complete?: () => void) {
       location = view.profile;
       if (!pin) {
         pin = document.createElement("div");
@@ -87,7 +97,8 @@ export function createFloatDeparture(
       const from = controls.state();
       const first = location.samples[0]!.depth;
       const last = location.samples.at(-1)!.depth;
-      flight = { from, to, ascent: (first - view.depth()) / (first - last), reveal, elapsed: 0 };
+      flight = { from, to, ascent: (first - view.depth()) / (first - last), reveal, elapsed: 0, complete };
+      if (complete) canvas.setAttribute("data-waterline-folding", "");
       // Replace the destination spring that navigation started with the authored shot.
       controls.setView(from);
       return true;
@@ -95,7 +106,7 @@ export function createFloatDeparture(
     step(elapsed: number, reduced: boolean) {
       if (!flight) return false;
       flight.elapsed += elapsed;
-      const t = Math.min(1, flight.elapsed / RETURN_SECONDS);
+      const t = Math.min(1, flight.elapsed / (flight.complete ? FOLD_SECONDS : RETURN_SECONDS));
       const { from, to, ascent, reveal } = flight;
       if (t === 1 || reduced) {
         controls.setView(to);
@@ -117,12 +128,13 @@ export function createFloatDeparture(
       if (location && !flight) place(1);
     },
     clear() {
-      interrupt();
+      if (flight) finish(false);
       location = undefined;
       if (pin) pin.hidden = true;
     },
     dispose() {
       input.abort();
+      canvas.removeAttribute("data-waterline-folding");
       pin?.remove();
     },
   };

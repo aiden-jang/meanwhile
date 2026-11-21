@@ -8,6 +8,8 @@ import { useArgoProfiles } from "./useArgoProfiles";
 import { FloatTitle } from "./FloatChapter";
 import { FloatMeasurements } from "./FloatMeasurements";
 import { floatMoment } from "./floatMoment";
+import { ConnectedJourney } from "../journeys/ConnectedJourney";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 
 const date = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -36,6 +38,7 @@ export function FloatDivePanel({
   returnLabel?: string | undefined;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
+  const guided = useStoryNavigation()?.route?.id === "surface-to-seafloor";
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(() => {
     if (view?.read().inspecting) view.inspect(false);
@@ -47,14 +50,18 @@ export function FloatDivePanel({
   return (
     <>
       <div className="float-heading">
-        {view ? <FloatTitle view={view} /> : <h2>Float Dive</h2>}
+        {view && !guided ? <FloatTitle view={view} /> : <h2>Float Dive</h2>}
         <div className="observatory-actions float-actions">
           <button type="button" ref={back} onClick={onClose} aria-label={returnLabel}>
             {returnLabel}
           </button>
         </div>
       </div>
-      <p className="float-summary">The ocean has layers. This float measured them.</p>
+      {guided ? (
+        <ConnectedJourney />
+      ) : (
+        <p className="float-summary">The ocean has layers. This float measured them.</p>
+      )}
       {resume &&
         view &&
         !problem &&

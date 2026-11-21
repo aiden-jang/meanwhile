@@ -1,10 +1,26 @@
-import type { ObservationSource } from "../../app/observations/types";
+import type { GeoPoint, ObservationSource } from "../../app/observations/types";
 import { distanceKm } from "../../geo/sphere";
 import { HOUR } from "./common";
 import surface from "./drifter-surface.json";
 import tracks from "./drifter-tracks.json";
 
 const RECENT = "4401657";
+const GAP = 24 * HOUR;
+
+function trackOverview(points: readonly { lon: number; lat: number }[], origin: number) {
+  const longitude = points.map(({ lon }) => origin + ((((lon - origin) % 360) + 540) % 360) - 180);
+  const latitude = points.map(({ lat }) => lat);
+  const west = Math.min(...longitude),
+    east = Math.max(...longitude);
+  const south = Math.min(...latitude),
+    north = Math.max(...latitude);
+  const span = Math.max(east - west, 1.4 * (north - south));
+  return {
+    lon: (west + east) / 2,
+    lat: (south + north) / 2,
+    zoom: Math.min(2.8, Math.max(0.88, 140 / Math.max(26, span))),
+  };
+}
 
 function recordedSurface() {
   return surface.map(([stamp, lat, lon, temperature], index) => {
@@ -18,6 +34,16 @@ function recordedSurface() {
         : undefined;
     return { at, ...point, speed, temperature: Number(temperature) };
   });
+}
+
+function trackSections(track: readonly (GeoPoint & { at: number })[]) {
+  const sections: { start: number; points: GeoPoint[] }[] = [];
+  track.forEach((point, i) => {
+    const previous = track[i - 1];
+    if (!previous || point.at - previous.at > GAP) sections.push({ start: i, points: [] });
+    sections.at(-1)!.points.push(point);
+  });
+  return sections;
 }
 
 export const drifter: ObservationSource = {
@@ -39,12 +65,16 @@ export const drifter: ObservationSource = {
         }));
     const first = track[0];
     if (!first) throw new Error("Recorded track is empty");
+    const sections = trackSections(track);
+    const outline = sections.map(({ points }) => ({ points, color: 0x42657c }));
     const frames = track.map((point, index) => ({
       at: point.at,
       camera: { lon: point.lon, lat: point.lat, zoom: 2.2 },
       paths: [
-        { points: track, color: 0x42657c },
-        { points: track.slice(0, index + 1), color: 0x89dfdf },
+        ...outline,
+        ...sections
+          .filter(({ start }) => start < index)
+          .map(({ start, points }) => ({ points: points.slice(0, index - start + 1), color: 0x89dfdf })),
       ],
       marks: [{ ...point, size: 24, color: 0xd9ffff }],
       measurements: [
@@ -64,17 +94,19 @@ export const drifter: ObservationSource = {
     }));
     return {
       target: { lon: first.lon, lat: first.lat, zoom: 2.2 },
+      mapTarget: trackOverview(track, first.lon),
       frames,
       series: [
         {
           label: temperatureTrack ? "Sea-surface temperature" : "Surface speed",
           samples: track.map(({ at, speed, temperature }) => [at, temperature ?? speed ?? 0]),
+          gapAfter: GAP,
         },
       ],
       units: temperatureTrack ? "°C" : "m/s",
       note: temperatureTrack
         ? "Recorded NOAA surface drifter positions and temperature readings. Speed is calculated between consecutive fixes."
-        : "NOAA’s recorded looper trajectories use quality-controlled interpolated positions and velocities. The bright section shows the part of the track already played.",
+        : "NOAA’s quality-controlled positions and velocities. The bright track shows the fixes already played. Gaps longer than a day appear as breaks.",
     };
   },
 };

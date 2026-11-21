@@ -41,7 +41,7 @@
   border: 1px solid var(--color-hairline);
 }
 
-.water-journey-steps {
+.connected-journey-steps {
   display: grid;
   gap: 8px;
   padding-block: 10px 12px;
@@ -49,29 +49,29 @@
   border-block: 1px solid var(--color-hairline);
 }
 
-.water-journey-progress {
+.connected-journey-progress {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 10px;
 }
 
-.water-journey-progress h3,
-.water-journey-steps p {
+.connected-journey-progress h3,
+.connected-journey-steps p {
   margin: 0;
 }
 
-.water-journey-progress h3 {
+.connected-journey-progress h3 {
   font-size: 16px;
 }
 
-.water-journey-progress > span,
-.water-journey-steps small {
+.connected-journey-progress > span,
+.connected-journey-steps small {
   color: var(--color-dim);
   font-size: 13px;
 }
 
-.water-journey-sources {
+.connected-journey-sources {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
@@ -82,27 +82,27 @@
   font-size: 12px;
 }
 
-.water-journey-sources li {
+.connected-journey-sources li {
   border-block-start: 1px solid var(--color-hairline);
   padding-block-start: 5px;
 }
 
-.water-journey-sources [aria-current] {
+.connected-journey-sources [aria-current] {
   border-color: var(--color-ink);
   color: var(--color-ink);
   font-weight: 550;
 }
 
-.water-journey-steps p {
+.connected-journey-steps p {
   font-size: var(--text-control);
 }
 
-.water-journey-steps .observatory-actions {
+.connected-journey-steps .observatory-actions {
   flex-wrap: wrap;
   margin: 0;
 }
 
-.water-journey-steps .observatory-actions > :last-child {
+.connected-journey-steps .observatory-actions > :last-child {
   background: var(--color-raised);
   color: var(--color-ink);
   font-weight: 550;
@@ -132,9 +132,15 @@
   font-size: 13px;
 }
 
-.observation-chart[data-river] svg {
+.observation-chart[data-scrubbable] svg,
+.terrain-section svg {
   cursor: ew-resize;
   touch-action: pan-y;
+}
+
+.observatory-intro[data-float-dive]:has(.connected-journey-steps) .float-heading h2 {
+  max-width: none;
+  font-size: clamp(38px, 3.5vw, 54px);
 }
 
 .field-journey .story-dock .observation-transport {
@@ -157,7 +163,7 @@
 }
 
 @media (max-width: 599px), (orientation: landscape) and (max-height: 480px) {
-  .observation-panel:has(.water-journey-steps) > .observation-heading + .observation-note {
+  .observation-panel:has(.connected-journey-steps) > .observation-heading + .observation-note {
     display: none;
   }
 

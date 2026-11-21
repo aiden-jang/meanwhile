@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { StoryMoment } from "../observations/storyMoment";
 import type { VisitPosition } from "../visitor/library";
-import type { FloatDiveView } from "./floatPlayback";
+import { createFloatPlayback, type FloatCheckpoint, type FloatDiveView } from "./floatPlayback";
 import { floatNavigationMoment, readFloatMoment } from "./floatMoment";
 
 export function useFloatView(shared: StoryMoment | undefined, before: () => void) {
@@ -23,10 +23,10 @@ export function useFloatView(shared: StoryMoment | undefined, before: () => void
       view: view === "opening" ? null : view,
       entry: entry.current,
       update,
-      open(resume?: VisitPosition["float"]) {
+      open(resume?: VisitPosition["float"], saved?: FloatCheckpoint) {
         before();
-        entry.current = resume;
-        setView("opening");
+        entry.current = saved ? undefined : resume;
+        setView(saved ? createFloatPlayback(saved.profile, false, saved.source, saved) : "opening");
       },
       close() {
         before();

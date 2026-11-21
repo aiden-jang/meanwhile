@@ -48,7 +48,7 @@ export function ExperienceEnding({
       : null;
   const journey = journeys.find((entry) => entry.id === route?.id);
   const step = route && journey?.steps[route.step];
-  if (route?.id === "water-in-motion")
+  if (journey?.guide)
     return (
       <>
         {showFinding && <Finding id={active} completed={completed} autoReveal={false} />}

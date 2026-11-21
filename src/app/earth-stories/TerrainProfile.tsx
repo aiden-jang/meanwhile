@@ -1,4 +1,4 @@
-import { useMemo, type Ref } from "react";
+import { useMemo, type PointerEvent, type Ref } from "react";
 import { terrainSource, type sectionSamples } from "./terrainSection";
 
 const x = (index: number) => 38 + index * 2.94;
@@ -29,10 +29,28 @@ export function TerrainProfile({
     () => samples.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.meters)}`).join(" "),
     [samples],
   );
+  const scrub = (event: PointerEvent<SVGSVGElement>) => {
+    const matrix = event.currentTarget.getScreenCTM();
+    if (!matrix) return;
+    const position = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    select(Math.max(0, Math.min(samples.length - 1, Math.round((position.x - x(0)) / (x(1) - x(0))))));
+  };
   return (
     <figure ref={chart} className="terrain-section" data-flight-profile={flight || undefined}>
       <figcaption>{flight ? "Along the flight path" : "Along your section"} · GEBCO grid depths</figcaption>
-      <svg viewBox="0 0 340 150" role="img" aria-label={`Depth section across ${total} kilometres`}>
+      <svg
+        viewBox="0 0 340 150"
+        role="img"
+        aria-label={`Depth section across ${total} kilometres`}
+        onPointerDown={(event) => {
+          if (!event.isPrimary || event.button !== 0) return;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          scrub(event);
+        }}
+        onPointerMove={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) scrub(event);
+        }}
+      >
         <path d="M38 12V120H332" fill="none" stroke="currentColor" opacity=".5" />
         {[0, 5, 10].map((km) => (
           <text key={km} x="1" y={18 + km * 9}>

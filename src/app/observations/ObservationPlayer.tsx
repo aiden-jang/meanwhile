@@ -4,7 +4,7 @@ import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
 import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
 import { FrameComparison } from "./FrameComparison";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
 import type { ObservationFrame, ObservationSource, ObservationView } from "./types";
@@ -16,7 +16,8 @@ import { observationReadiness } from "./observationReadiness";
 import { useReportStorySource } from "./StorySourceStatus";
 import { StoryDock } from "./StoryDock";
 import { RainbeltControls } from "./RainbeltControls";
-
+import { DrifterTrack, useDrifterTrack } from "./DrifterTrack";
+import { refreshAnnotations } from "../../globe/annotationInput";
 import { useStorySession } from "./StorySession";
 
 const regionalArrival = () => {};
@@ -50,6 +51,15 @@ export function ObservationPlayer({
   const { data, state, reason, retry } = useObservationData(source, option);
   useReportStorySource(id, state, retry);
   const frames = data?.frames ?? EMPTY;
+  const seek = useCallback(
+    (at: number) => {
+      if (id === "drifter") refreshAnnotations({ camera: "hold" });
+      setPlaying(false);
+      setSelectedAt(nearest(frames, at, (value) => value.at)?.at ?? null);
+    },
+    [id, frames],
+  );
+  const drifter = useDrifterTrack(id === "drifter" ? frames : EMPTY, seek);
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);
   const index = frame ? frames.indexOf(frame) : 0;
@@ -97,11 +107,13 @@ export function ObservationPlayer({
       data && frame
         ? {
             kind: "observation",
-            target: (map ? data.mapTarget : undefined) ?? frame.camera ?? data.target,
+            target:
+              (map ? data.mapTarget : undefined) ?? (drifter ? data.target : (frame.camera ?? data.target)),
             frame: heldRain?.frame ?? shown ?? frame,
             image: heldRain?.image ?? element,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
             ...(id === "river" ? { pickMarks, cameraKey: option } : {}),
+            ...(drifter ? { pickMarks: drifter, cameraKey: option, arrive: regionalArrival } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
           }
@@ -132,6 +144,7 @@ export function ObservationPlayer({
     gauge,
     shown,
     pickMarks,
+    drifter,
     heldRain,
   ]);
 
@@ -196,6 +209,9 @@ export function ObservationPlayer({
         />
       )}
       {id === "rain" && <RainbeltControls pause={() => setPlaying(false)} />}
+      {drifter && data?.mapTarget && (
+        <DrifterTrack overview={data.mapTarget} fix={frame?.camera} pause={() => setPlaying(false)} />
+      )}
       {frame && data && (
         <>
           <StoryDock>
@@ -214,10 +230,7 @@ export function ObservationPlayer({
                   min={0}
                   max={frames.length - 1}
                   value={index}
-                  onChange={(event) => {
-                    setPlaying(false);
-                    setSelectedAt(frames[event.currentTarget.valueAsNumber]!.at);
-                  }}
+                  onChange={(event) => seek(frames[event.currentTarget.valueAsNumber]!.at)}
                 />
               )}
               {frames.length > 1 && (
@@ -266,13 +279,16 @@ export function ObservationPlayer({
                 selection={river}
                 current={state === "ready"}
                 pause={() => setPlaying(false)}
-                seek={(at) => {
-                  setPlaying(false);
-                  setSelectedAt(nearest(frames, at, (value) => value.at)?.at ?? null);
-                }}
+                seek={seek}
               />
             ) : (
-              <ObservationChart series={data.series} at={frame.at} units={data.units} tide={frame.tide} />
+              <ObservationChart
+                series={data.series}
+                at={frame.at}
+                units={data.units}
+                tide={frame.tide}
+                onSeek={drifter ? seek : undefined}
+              />
             ))}
           {id === "air" && (
             <ObservationInspection frame={frame} inspection={inspection} source={metadata.source} />
@@ -280,14 +296,7 @@ export function ObservationPlayer({
           {(id === "air" || id === "tide") && (
             <PlaceComparison source={source} option={option} data={data} frame={frame} tide={id === "tide"} />
           )}
-          <FrameComparison
-            frames={frames}
-            index={index}
-            select={(next) => {
-              setPlaying(false);
-              setSelectedAt(frames[next]!.at);
-            }}
-          />
+          <FrameComparison frames={frames} index={index} select={(next) => seek(frames[next]!.at)} />
           {id === "tide" && state === "ready" && frame.tide && (
             <MeasurementSound
               key={option}

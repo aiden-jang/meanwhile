@@ -2,7 +2,7 @@ import { StoryDeparture } from "./StoryDeparture";
 import { SharedStory } from "./SharedStory";
 import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
-import { WaterJourney } from "../journeys/WaterJourney";
+import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { RiverWorldReading } from "./RiverReading";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -64,7 +64,9 @@ export function ObservationDeck({
 
   return (
     <section
-      className={id === "rain" || id === "river" ? "replay-region field-journey" : "replay-region"}
+      className={
+        id === "rain" || id === "river" || id === "drifter" ? "replay-region field-journey" : "replay-region"
+      }
       aria-label={title}
     >
       <div
@@ -137,7 +139,7 @@ export function ObservationDeck({
             </div>
             <p className="observation-note observation-introduction">{meta.description}</p>
             <SharedStory />
-            <WaterJourney />
+            <ConnectedJourney />
             {loaded?.id === id ? (
               loaded.source ? (
                 <ObservationPlayer

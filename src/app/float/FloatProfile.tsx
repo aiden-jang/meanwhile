@@ -1,13 +1,12 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { FloatDiveView } from "./floatPlayback";
-import { PROFILE_CHART, profileGeometry, type ProfileField } from "./profileGeometry";
+import { PROFILE_CHART, profileGeometry } from "./profileGeometry";
 import { updateFloatTether } from "../../globe/floatPlacement";
 
 export function FloatProfile({ view }: { view: FloatDiveView }) {
-  const { index, inspecting } = useSyncExternalStore(view.subscribe, view.read);
+  const { index, inspecting, field } = useSyncExternalStore(view.subscribe, view.read);
   const { samples } = view.profile;
-  const [field, setField] = useState<ProfileField>("temperature");
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const close = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -78,7 +77,7 @@ export function FloatProfile({ view }: { view: FloatDiveView }) {
             type="button"
             key={measurement}
             aria-pressed={field === measurement}
-            onClick={() => setField(measurement)}
+            onClick={() => view.setField(measurement)}
           >
             {measurement === "temperature" ? "Temperature" : "Salinity"}
           </button>
