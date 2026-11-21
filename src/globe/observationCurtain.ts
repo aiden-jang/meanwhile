@@ -49,8 +49,10 @@ export function curtainGeometry(points: Curtain["points"], heightKm: number, exa
 const curtainProjection = `${MORPH_GLSL}
   uniform float opened;
   uniform bool down;
+  uniform float folded;
   vec4 projectSection(){
-    float rise=(length(position)-1.013)*opened;
+    float crease=smoothstep(uv.x*0.26,0.74+uv.x*0.26,folded);
+    float rise=(length(position)-1.013)*opened*(1.0-crease);
     vec3 foot=normalize(position)*1.013;
     vec3 direction=fmNormal(foot);
     if(down) direction=normalize(vec3(0.0,-1.0,0.0)+normalize(foot)*0.45);
@@ -82,10 +84,13 @@ export function createObservationCurtain(morph: { value: number }) {
     uniforms: {
       uMorph: morph,
       opened: { value: 0 },
+      folded: { value: 0 },
       down: { value: false },
       map: { value: null as Texture | null },
       focusAt: { value: -1 },
       focusLon: { value: 360 },
+      cursorAlong: { value: -1 },
+      cursorAltitude: { value: -1 },
     },
     vertexShader: `${curtainProjection}
       varying vec2 sampleAt;
@@ -93,11 +98,18 @@ export function createObservationCurtain(morph: { value: number }) {
         sampleAt=vec2(uv.x,down ? 1.0-uv.y : uv.y);
         gl_Position=projectSection();
       }`,
-    fragmentShader: `uniform sampler2D map; uniform float opened; uniform float focusAt; varying vec2 sampleAt;
+    fragmentShader: `uniform sampler2D map; uniform float opened; uniform float focusAt;
+      uniform float folded; uniform float cursorAlong; uniform float cursorAltitude; varying vec2 sampleAt;
       void main(){ gl_FragColor=texture2D(map,sampleAt);
       float band=1.0-smoothstep(0.002,0.009,abs(sampleAt.x-focusAt));
       gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(0.93,0.83,0.60),band*0.32);
-      gl_FragColor.a *= opened*0.94;
+      vec2 offset=abs(sampleAt-vec2(cursorAlong,cursorAltitude));
+      vec2 width=max(fwidth(sampleAt),vec2(0.001));
+      vec2 line=1.0-smoothstep(width,width*2.0,offset);
+      float reticle=max(line.x*(1.0-smoothstep(0.03,0.07,offset.y)),
+        line.y*(1.0-smoothstep(0.02,0.04,offset.x)));
+      gl_FragColor=mix(gl_FragColor,vec4(0.96,0.83,0.55,1.0),reticle);
+      gl_FragColor.a *= opened*0.94*(1.0-smoothstep(0.36,1.0,folded));
       #include <colorspace_fragment>
       }`,
     side: DoubleSide,
@@ -144,9 +156,17 @@ export function createObservationCurtain(morph: { value: number }) {
   object.renderOrder = 7;
   let prior: Curtain | undefined;
   let amount = 0;
+  let finish: (() => void) | undefined;
   return {
     object,
+    fold(complete: () => void) {
+      if (!prior || amount < 0.05 || finish) return false;
+      finish = complete;
+      return true;
+    },
     set(next: Curtain | undefined) {
+      material.uniforms.cursorAlong!.value = next?.cursor?.[0] ?? -1;
+      material.uniforms.cursorAltitude!.value = next?.cursor?.[1] ?? -1;
       const focus = next?.mooringFocus;
       material.uniforms.focusLon!.value = focus ?? 360;
       if (next && focus !== undefined) {
@@ -166,6 +186,8 @@ export function createObservationCurtain(morph: { value: number }) {
         prior = next;
         return;
       }
+      finish = undefined;
+      material.uniforms.folded!.value = 0;
       if (!next) {
         prior = next;
         return;
@@ -192,7 +214,21 @@ export function createObservationCurtain(morph: { value: number }) {
       material.uniforms.map!.value = null;
       object.geometry.dispose();
     },
-    step(dt: number, reduced: boolean) {
+    step(dt: number, reduced: boolean, elapsed = dt) {
+      if (finish) {
+        const progress = reduced ? 1 : Math.min(1, material.uniforms.folded!.value + elapsed / 0.85);
+        material.uniforms.folded!.value = progress;
+        if (progress === 1) {
+          const complete = finish;
+          finish = undefined;
+          amount = 0;
+          object.visible = false;
+          material.uniforms.map!.value?.dispose();
+          material.uniforms.map!.value = null;
+          complete();
+        }
+        return true;
+      }
       const goal = prior ? 1 : 0;
       if (!object.visible && !prior) return false;
       amount = reduced ? goal : Math.max(0, Math.min(1, amount + ((prior ? 1 : -1) * dt) / 0.8));

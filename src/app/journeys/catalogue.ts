@@ -138,6 +138,31 @@ export const journeys: readonly Journey[] = [
     ],
   },
   {
+    id: "through-the-air",
+    title: "Through the Air",
+    guide: ["Dust profile", "Smoke scans", "Air pressure"],
+    summary: "Follow Saharan dust, wildfire smoke and a pressure wave around the planet.",
+    ending:
+      "A lidar slice shows height, satellite scans show the plume from above, and a barometer records the passing pressure wave.",
+    steps: [
+      {
+        id: "dust",
+        prompt: "Open the lidar slice and drag across it to inspect the plume’s height.",
+        context: "Tropical Atlantic · June 2020 · NASA AIRS and CALIPSO.",
+      },
+      {
+        id: "smoke",
+        prompt: "Scrub the satellite scans and see where the smoke moves between observations.",
+        context: "Eastern Canada and the US · June 2023 · NOAA GOES-16.",
+      },
+      {
+        id: "tonga",
+        prompt: "Follow the pressure wave, then pick a station and scrub its recorded pulse.",
+        context: "Pacific Ocean · January 2022 · NOAA GOES-17 and ground pressure.",
+      },
+    ],
+  },
+  {
     id: "reading-the-coast",
     title: "Reading the coast",
     summary: "New land, a passing wave, and the daily rise and fall of water.",

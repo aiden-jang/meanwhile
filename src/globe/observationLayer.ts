@@ -343,6 +343,7 @@ export function createObservationLayer(morph: { value: number }) {
   return {
     object,
     set,
+    foldCurtain: curtain.fold,
     dispose() {
       set(null);
       curtain.dispose();
@@ -350,8 +351,8 @@ export function createObservationLayer(morph: { value: number }) {
       fault?.dispose();
       moon.dispose();
     },
-    step(dt: number, reduced: boolean, layerWeight = 1) {
-      const unfolding = curtain.step(dt, reduced);
+    step(dt: number, reduced: boolean, layerWeight = 1, elapsed = dt) {
+      const unfolding = curtain.step(dt, reduced, elapsed);
       const lifting = terrain.step(dt, reduced);
       if (!prior) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.15);

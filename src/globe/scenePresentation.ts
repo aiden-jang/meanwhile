@@ -107,7 +107,8 @@ export function createScenePresentation(
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
-    const tracing = observations?.step(dt, reduced, observationTarget ? 1 : emphasis.weather()) ?? false;
+    const tracing =
+      observations?.step(dt, reduced, observationTarget ? 1 : emphasis.weather(), elapsed) ?? false;
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const guided = controls.guidance.following();
@@ -256,6 +257,8 @@ export function createScenePresentation(
       spin.add(observations.object);
     }
     observations?.set(overlay);
+    canvas.toggleAttribute("data-observation-curtain", !!overlay?.curtain);
+    if (!overlay?.curtain) canvas.removeAttribute("data-curtain-folding");
     chase = observation?.shadow;
     if (chase && observation && !shadow) {
       shadow = createShadowChase(projection);
@@ -313,6 +316,14 @@ export function createScenePresentation(
   return {
     set,
     step,
+    foldCurtain(complete: () => void) {
+      const started = observations?.foldCurtain(() => {
+        canvas.removeAttribute("data-curtain-folding");
+        complete();
+      });
+      if (started) canvas.setAttribute("data-curtain-folding", "");
+      return !!started;
+    },
     acceptsLivePicks: () => liveFocus !== "catalogue",
     shadows: () => !!chase,
     orbitalMoon: () => orbitalMoon,

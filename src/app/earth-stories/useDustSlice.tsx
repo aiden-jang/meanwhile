@@ -4,6 +4,7 @@ import transect from "../../sources/earth-stories/dust-transect.json";
 import type { GeoPoint, ObservationView } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { DustSliceControls } from "./DustSliceControls";
+import { readLidarCursor } from "./DustProfile";
 import { nearestFrame } from "./nearestFrame";
 import { asset, date, point, type EarthStoryData } from "./types";
 import type { useStoryClock } from "./useStoryClock";
@@ -22,7 +23,8 @@ export function useDustSlice(
   map: boolean,
   clock: ReturnType<typeof useStoryClock>,
 ) {
-  const [open, setOpen] = useState(enabled && chapter === "slice");
+  const [cursor, setCursor] = useState(() => (enabled ? readLidarCursor(chapter) : null));
+  const [open, setOpen] = useState(enabled && (chapter === "slice" || !!cursor));
   const [arrived, setArrived] = useState(false);
   const ready = useCallback(() => setArrived(true), []);
   const image = useObservationImage(enabled ? asset(transect.image) : undefined, "lidar");
@@ -35,16 +37,22 @@ export function useDustSlice(
   const curtain = useMemo<ObservationView["curtain"]>(
     () =>
       visible && image.element
-        ? { points, heightKm: transect.height, exaggeration: transect.exaggeration, image: image.element }
+        ? {
+            points,
+            heightKm: transect.height,
+            exaggeration: transect.exaggeration,
+            image: image.element,
+            cursor: cursor ? [cursor[0] / 100, cursor[1] / 100] : undefined,
+          }
         : undefined,
-    [visible, image.element],
+    [visible, image.element, cursor],
   );
   return {
     target: open ? (map ? mapTarget : globeTarget) : undefined,
     track: available ? track : undefined,
     curtain,
     framing,
-    chapter: open ? "slice" : "",
+    chapter: open ? (cursor ? `slice:${cursor.join(":")}` : "slice") : "",
     forcedPause: open,
     control: enabled && (
       <DustSliceControls
@@ -52,6 +60,8 @@ export function useDustSlice(
         image={image.element?.src}
         failed={image.status === "failed"}
         retry={image.retry}
+        cursor={cursor}
+        select={setCursor}
         toggle={() => {
           clock.pause();
           setArrived(false);

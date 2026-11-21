@@ -1,15 +1,21 @@
+import { DustProfile, type LidarCursor } from "./DustProfile";
+
 export function DustSliceControls({
   open,
   image,
   failed,
   retry,
   toggle,
+  cursor,
+  select,
 }: {
   open: boolean;
   image: string | undefined;
   failed: boolean;
   retry: () => void;
   toggle: () => void;
+  cursor: LidarCursor | null;
+  select: (cursor: LidarCursor | null) => void;
 }) {
   return (
     <>
@@ -31,15 +37,7 @@ export function DustSliceControls({
             )}
             {!failed && !image && <span role="status">Loading the lidar profile…</span>}
           </div>
-          {image && (
-            <details className="lidar-profile">
-              <summary>Read the lidar profile</summary>
-              <img
-                src={image}
-                alt="CALIPSO laser backscatter from the surface to 15 km along the Caribbean track"
-              />
-            </details>
-          )}
+          {image && <DustProfile image={image} cursor={cursor} select={select} />}
         </>
       )}
     </>

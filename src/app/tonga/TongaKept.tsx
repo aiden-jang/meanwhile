@@ -1,4 +1,5 @@
 import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { ShareMoment } from "../observations/StorySession";
 import { savedVisitKey } from "../visitor/library";
 import { pressureShare } from "./pressureShare";
@@ -31,6 +32,7 @@ export function TongaKept({
           </span>
         </div>
         <h2>Kept from Tonga.</h2>
+        <ConnectedJourney compact />
         {!readings.length && <p>Keep a station reading to return to it here.</p>}
         <div className="tonga-kept-list">
           {readings.map(({ visit, station, minute, value }) => (
@@ -71,7 +73,7 @@ export function TongaKept({
           Keep another reading
         </button>
         <button type="button" onClick={onJourney}>
-          Back to journey
+          {navigation.route?.id === "through-the-air" ? "Back to wave playback" : "Back to journey"}
         </button>
       </div>
     </section>

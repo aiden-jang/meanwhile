@@ -147,6 +147,7 @@ export interface ObservationView {
     down?: boolean;
     moorings?: MooringSection | undefined;
     mooringFocus?: number | undefined;
+    cursor?: readonly [along: number, altitude: number] | undefined;
   };
   terrain?: { grid: ObservationTerrain; progress: number };
   fault?: { model: ObservationFault; seconds: number; amount: number };

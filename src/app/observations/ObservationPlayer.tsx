@@ -112,7 +112,7 @@ export function ObservationPlayer({
             frame: heldRain?.frame ?? shown ?? frame,
             image: heldRain?.image ?? element,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
-            ...(id === "river" ? { pickMarks, cameraKey: option } : {}),
+            ...(id === "river" || id === "smoke" ? { pickMarks, cameraKey: option } : {}),
             ...(drifter ? { pickMarks: drifter, cameraKey: option, arrive: regionalArrival } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),

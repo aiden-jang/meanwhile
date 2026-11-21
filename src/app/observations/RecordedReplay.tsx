@@ -70,6 +70,7 @@ export function ReplayPanel({
   evidence,
   horizon = false,
   projection,
+  journeyControls = true,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
   location: string;
@@ -89,6 +90,7 @@ export function ReplayPanel({
   evidence?: ReactNode;
   horizon?: boolean;
   projection?: ReactNode;
+  journeyControls?: boolean;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -138,7 +140,7 @@ export function ReplayPanel({
             </div>
             <p className="observation-note">{subtitle}</p>
             <SharedStory moment={sharedMoment} />
-            <ConnectedJourney />
+            {journeyControls && <ConnectedJourney />}
             {children}
             {sharing && <ShareMoment />}
             {ending && <ExperienceEnding showFinding={finding} showSave={save} />}

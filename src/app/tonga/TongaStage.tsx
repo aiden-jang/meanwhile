@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { TongaTimelineDock } from "./TongaTimelineDock";
 import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
@@ -16,6 +17,7 @@ import { TongaKept } from "./TongaKept";
 import { TongaWorld, type TongaPhase } from "./TongaWorld";
 import { pressureShare } from "./pressureShare";
 import { useTongaPlayback } from "./useTongaPlayback";
+import { TongaChapterTitle } from "./TongaChapterTitle";
 import {
   ANTIPODE,
   ERUPTION,
@@ -36,9 +38,11 @@ import {
 const playbackFocus = () => document.querySelector<HTMLElement>(".story-playback");
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
+  const guided = useStoryNavigation()?.route?.id === "through-the-air";
   const playback = useTongaPlayback(initial);
   const { assets, view, images, minute, ended, arrive, ready } = playback;
   const [phase, setPhase] = useState<TongaPhase>(() => {
+    if (initial?.tongaView) return initial.tongaView.phase;
     if (initial?.at === undefined) return "discover";
     const selected = stations.find(({ id }) => id === initial.choice);
     const at = (initial.at - Date.parse(timeIso(0))) / 60_000;
@@ -54,7 +58,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const scanOrigin = useRef<DOMRect | null>(null);
   const focus = useRef<"sample" | "playback" | "kept" | null>(null);
   const previous = useRef<ReturnType<typeof captureReplayFrame>>();
-  const [held, setHeld] = useState(false);
+  const [held, setHeld] = useState(initial?.tongaView?.held ?? false);
   const frameHeld = held && !view.playing;
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");
@@ -118,7 +122,10 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     onView({
       kind: "observation",
       ...geographic,
-      ...(phase !== "follow" || frameHeld ? { follow: undefined } : {}),
+      ...(phase !== "follow" || frameHeld || (initial?.tongaView && !view.playing)
+        ? { follow: undefined }
+        : {}),
+      ...(guided ? { cameraKey: phase } : {}),
       ...(frameHeld ? { holdGeography: true } : {}),
       image: null,
       target,
@@ -127,8 +134,25 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     remember?.({
       choice: station.id,
       chapter: ["inspect", "kept", "shared"].includes(phase) ? "pressure" : "journey",
+      ...(guided
+        ? { tongaView: { phase, held, elapsed: view.elapsed, anchor, station: view.station?.id } }
+        : {}),
     });
-  }, [minute, station, anchor, target, onView, arrive, remember, phase, frameHeld]);
+  }, [
+    minute,
+    station,
+    anchor,
+    target,
+    onView,
+    arrive,
+    remember,
+    phase,
+    held,
+    frameHeld,
+    guided,
+    initial,
+    view,
+  ]);
   useStoryCompletion(ended && !view.playing);
 
   const hasInfrared = images.infrared !== null,
@@ -206,6 +230,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       className="tonga-experience"
       sharing={false}
       ending={false}
+      journeyControls={!inspecting && phase !== "kept"}
       title="Tonga’s shockwave"
       location="Hunga Tonga–Hunga Haʻapai"
       subtitle="GOES-17 and ground pressure · 15 Jan 2022"
@@ -289,35 +314,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
     >
       <div className="tonga-narrative">
-        <h3>
-          {overview ? (
-            <>
-              {"Tonga’s "}
-              <br />
-              shockwave.
-            </>
-          ) : phase === "inspect" ? (
-            <>
-              A pulse,
-              <br />
-              recorded.
-            </>
-          ) : phase === "kept" ? (
-            <>
-              A moment
-              <br />
-              worth keeping.
-            </>
-          ) : phase === "shared" ? (
-            <>
-              A pulse,
-              <br />
-              across the Pacific.
-            </>
-          ) : (
-            title
-          )}
-        </h3>
+        <TongaChapterTitle phase={phase} title={title} />
         <p>
           {overview
             ? "An eruption sent a pressure wave across the Pacific. Follow it from satellite scans to the readings on the ground."

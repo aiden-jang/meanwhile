@@ -24,6 +24,7 @@ export const smoke: ObservationSource = {
     const city = smokeCities.find(({ id }) => id === option) ?? smokeCities[0];
     return {
       target: city,
+      lens: { globe: 1.45, map: 1.6 },
       frames: scans.map(([at], index) => ({
         at: Number(at),
         raster: { url: asset(`smoke-${index}`), bounds: SMOKE_BOUNDS, opacity: 0.95 },

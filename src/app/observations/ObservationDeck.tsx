@@ -65,7 +65,9 @@ export function ObservationDeck({
   return (
     <section
       className={
-        id === "rain" || id === "river" || id === "drifter" ? "replay-region field-journey" : "replay-region"
+        id === "rain" || id === "river" || id === "drifter" || id === "smoke"
+          ? "replay-region field-journey"
+          : "replay-region"
       }
       aria-label={title}
     >

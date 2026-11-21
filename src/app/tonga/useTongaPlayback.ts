@@ -45,20 +45,38 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
   }
 }
 
+export function warmTongaScans() {
+  for (const url of [infraredUrl, vaporUrl]) {
+    const image = new Image();
+    image.fetchPriority = "low";
+    image.src = url;
+  }
+}
+
+function openPlayback(initial: StoryMoment | undefined): TongaPlayback {
+  const saved = initial?.tongaView;
+  if (saved)
+    return {
+      elapsed: saved.elapsed,
+      playing: false,
+      ...(saved.anchor === undefined ? {} : { anchor: saved.anchor }),
+      ...(saved.station ? { station: stations.find((station) => station.id === saved.station)! } : {}),
+    };
+  return survey(
+    Math.max(
+      START,
+      Math.min(
+        END,
+        ((initial?.at ?? Date.parse(timeIso(ERUPTION))) - Date.parse("2022-01-15T00:00:00Z")) / 60_000,
+      ),
+    ),
+    stations.find((station) => station.id === initial?.choice),
+  );
+}
+
 export function useTongaPlayback(initial: StoryMoment | undefined) {
   const [assets, setAssets] = useState<"loading" | "ready" | "partial" | "error">("loading");
-  const [view, setView] = useState<TongaPlayback>(() =>
-    survey(
-      Math.max(
-        START,
-        Math.min(
-          END,
-          ((initial?.at ?? Date.parse(timeIso(ERUPTION))) - Date.parse("2022-01-15T00:00:00Z")) / 60_000,
-        ),
-      ),
-      stations.find((station) => station.id === initial?.choice),
-    ),
-  );
+  const [view, setView] = useState(() => openPlayback(initial));
   const clock = useRef(view);
   const images = useRef<Satellite>({ infrared: null, vapor: null });
   const [ready, setReady] = useState(false);

@@ -3,6 +3,7 @@ import { observations } from "./catalogue";
 import { replays } from "./replays";
 import { earthStories } from "../earth-stories/catalogue";
 import { readFloatMoment } from "../float/floatMoment";
+import type { TongaPhase } from "../tonga/TongaWorld";
 
 export interface StoryMoment {
   id: string;
@@ -12,6 +13,13 @@ export interface StoryMoment {
   chapter?: string;
   map: boolean;
   sky?: SkyPosition;
+  tongaView?: {
+    phase: TongaPhase;
+    held: boolean;
+    elapsed: number;
+    anchor?: number | undefined;
+    station?: string | undefined;
+  };
 }
 
 const ids = new Set([

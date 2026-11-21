@@ -193,6 +193,7 @@ export function StoryPlayer({
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
+      ...(id === "dust" ? { cameraKey: dust.chapter ? "lidar" : "surface" } : {}),
       frame: fieldFrame,
       target,
       image: displayedImage,
@@ -221,7 +222,6 @@ export function StoryPlayer({
         : dust.curtain
           ? { curtain: dust.curtain }
           : {}),
-
       follow:
         motionProgress === undefined
           ? undefined

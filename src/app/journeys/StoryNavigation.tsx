@@ -16,8 +16,9 @@ import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
 import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./connectedStops";
+import { foldDeparture } from "./foldDeparture";
 
-type JourneyRoute = { id: string; step: number; folding?: boolean };
+type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" };
 
 interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
@@ -100,7 +101,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   useEffect(() => {
     if (route && active === null) setRoute(null);
     if (active === null) origin.current = null;
-    if (active !== "float") folding.current = undefined;
+    if (active !== "float" && active !== "dust") folding.current = undefined;
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "Story playback needs the globe." : id === "aurora" ? props.aurora.unavailable : null;
@@ -357,24 +358,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             navigate(next.id, trigger, stop?.visit, false, !!stop, undefined, stop?.arrival);
             setRoute({ id: route.id, step: index });
           };
-          if (
-            !float ||
-            !stop ||
-            float.read().stage === "locate" ||
-            matchMedia("(prefers-reduced-motion: reduce)").matches
-          ) {
-            advance();
-            return;
-          }
-          const complete = () => {
-            clearTimeout(deadline);
-            if (folding.current === complete) advance();
-          };
-          const deadline = window.setTimeout(complete, 1600);
-          folding.current = complete;
-          setRoute({ ...route, folding: true });
-          float.foldToSurface(complete);
-          refreshAnnotations();
+          const transition =
+            stop && foldDeparture(float, active === "dust" && !!deck.view?.curtain, folding, advance);
+          if (transition) setRoute({ ...route, folding: transition });
+          else advance();
         },
         finish(complete) {
           folding.current = undefined;

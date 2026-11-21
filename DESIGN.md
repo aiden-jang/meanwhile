@@ -922,6 +922,10 @@ Surface to Seafloor links a recorded NOAA drifter track, a measured Argo profile
 depth section on the shared globe and map. The float’s waterline folds back into its location
 before the camera travels to the next site. Previous view restores the camera and projection
 along with the selected fix, float sample and chart field, or transect sample.
+Through the Air lifts the CALIPSO profile from its surveyed Atlantic ground track. The profile
+cursor links the inset to the raised slice. The slice folds back along its track before the
+camera flies to the archived smoke scans. Tonga closes the journey with a pressure trace at the
+chosen station. Each departure keeps its own camera, projection and observation selection.
 The world label reports the selected observation and leaves gaps explicit.
 Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
 Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.

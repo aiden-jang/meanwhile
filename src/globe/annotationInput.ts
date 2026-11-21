@@ -3,18 +3,34 @@ import type { Controls } from "./controls";
 
 type AnnotationInput =
   | { lon: number; lat: number; zoom?: number }
-  | { camera: "hold" | "resume" | "reset"; home?: { lon: number; lat: number; zoom: number } };
+  | { camera: "hold" | "resume" | "reset"; home?: { lon: number; lat: number; zoom: number } }
+  | { curtainFold: () => void };
 
-export function refreshAnnotations(point?: AnnotationInput) {
-  document
-    .querySelector("#globe-view canvas")
-    ?.dispatchEvent(new CustomEvent("scene-annotation", { detail: point }));
+function dispatchAnnotation(point?: AnnotationInput) {
+  return (
+    document
+      .querySelector("#globe-view canvas")
+      ?.dispatchEvent(new CustomEvent("scene-annotation", { detail: point, cancelable: true })) === false
+  );
 }
 
-export function attachAnnotations(canvas: HTMLCanvasElement, controls: Controls, wake: () => void) {
+export function refreshAnnotations(point?: AnnotationInput) {
+  dispatchAnnotation(point);
+}
+
+export const foldCurtainAnnotation = (complete: () => void) => dispatchAnnotation({ curtainFold: complete });
+
+export function attachAnnotations(
+  canvas: HTMLCanvasElement,
+  controls: Controls,
+  wake: () => void,
+  foldCurtain?: (complete: () => void) => boolean,
+) {
   const update = (event: Event) => {
     const point = (event as CustomEvent<AnnotationInput | undefined>).detail;
-    if (point && "camera" in point) {
+    if (point && "curtainFold" in point) {
+      if (foldCurtain?.(point.curtainFold)) event.preventDefault();
+    } else if (point && "camera" in point) {
       if (point.camera === "hold") controls.guidance.interrupt();
       else if (!controls.guidance.recenter() && point.camera === "reset") {
         const home = point.home ?? DEFAULT_CAMERA;

@@ -102,6 +102,7 @@ const FILL = 0.86;
 
 export interface Globe {
   resize: () => void;
+  foldCurtain: (complete: () => void) => boolean;
   render: (full?: boolean) => void;
   dispose: () => void;
   controls: Controls;
@@ -369,7 +370,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     events.setGlobeRadius(radiusPx);
     markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
-
   const cutaway = createCutaway();
   world.add(cutaway.object);
   for (const layer of [ocean, fill, grat, plateLines, plateEdge, coast, night, glint]) {
@@ -377,10 +377,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   }
   const regroup = createRegroup(events.object);
   catalogue.add(regroup.object);
-
   return {
     resize,
     controls,
+    foldCurtain: presentation.foldCurtain,
     setInspection: (run) => {
       inspection.set(run);
       sunMinute = -1;

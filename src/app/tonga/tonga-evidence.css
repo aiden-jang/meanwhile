@@ -163,6 +163,22 @@
   background: transparent;
   color: var(--pressure-ink);
 }
+.tonga-evidence .connected-journey-steps {
+  border-color: color-mix(in srgb, var(--pressure-ink) 24%, transparent);
+  margin-block: 12px;
+}
+.tonga-evidence .connected-journey-progress > span {
+  color: var(--pressure-dim);
+}
+.tonga-evidence .connected-journey-steps .observatory-actions > button {
+  color: var(--pressure-ink);
+  background: transparent;
+  flex: 1;
+}
+.tonga-evidence .connected-journey-steps .observatory-actions > :last-child {
+  color: var(--pressure-paper);
+  background: var(--pressure-ink);
+}
 .tonga-kept-list {
   display: grid;
   gap: 8px;
