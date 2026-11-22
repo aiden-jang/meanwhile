@@ -38,6 +38,104 @@
 .discovery-preview {
   z-index: 4;
 }
+.regional-stories,
+.preview-arrival {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.regional-stories > button,
+.preview-arrival > span {
+  position: absolute;
+  visibility: hidden;
+  transform: translate(-50%, -50%);
+  padding: 6px 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  background: var(--color-deck);
+  font-size: 12px;
+  color: var(--color-ink);
+}
+.regional-stories > button {
+  display: grid;
+  width: 150px;
+  min-height: 44px;
+  align-content: center;
+  gap: 2px;
+  text-align: start;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.regional-stories {
+  inset-inline-start: var(--explore-scene-bleed, 0px);
+}
+.zones:has([data-journey-route]) .regional-stories {
+  display: none;
+}
+.regional-stories > button span {
+  font-size: 10px;
+  color: var(--color-dim);
+}
+.regional-stories > button:is(:hover, :focus-visible) {
+  border-color: var(--color-dim);
+  background: var(--color-raised);
+}
+.preview-arrival {
+  grid-area: canvas;
+  inset: auto;
+  position: relative;
+  align-self: stretch;
+  z-index: 4;
+}
+.preview-arrival > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.preview-arrival i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--color-ink);
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .preview-arrival[data-arrived] {
+    animation: preview-arrival-release 1000ms ease-out both;
+  }
+}
+@keyframes preview-arrival-release {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.stories-radar {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+.stories-radar:hover {
+  background: var(--color-raised);
+}
+.stories-radar time {
+  color: var(--color-dim);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
+}
 .place-labels > span {
   position: absolute;
   visibility: hidden;

@@ -24,7 +24,7 @@ export type StoryNavigationValue = {
   dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;
   openNightfall: (position: SkyPosition, trigger: string) => void;
-  openRadar: (at: number | undefined, map: boolean) => void;
+  openRadar: (at: number | undefined, map: boolean, trigger?: string) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
   explore: () => void;
@@ -38,6 +38,7 @@ export type StoryNavigationValue = {
     keepProjection?: boolean,
   ) => void;
   previewMap: boolean;
+  previewOpen: boolean;
   previewCity: ObservatoryProps["views"]["skyCity"]["city"];
   browsingStories: boolean;
   completed: boolean;

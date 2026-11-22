@@ -9,11 +9,13 @@ export function TongaWorld({
   phase,
   station,
   signal,
+  reading,
   onInspect,
 }: {
   phase: TongaPhase;
   station: TongaStation;
   signal: TongaStation | undefined;
+  reading: boolean;
   onInspect: (station: TongaStation) => void;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
@@ -42,6 +44,8 @@ export function TongaWorld({
                 : undefined
             }
             data-station-signal={signal?.id === item.id ? "" : undefined}
+            data-station-reading={reading && item.id === station.id ? "" : undefined}
+            aria-current={reading && item.id === station.id ? "true" : undefined}
             data-compact-anchor=""
             data-projection-anchor={station.id === item.id || undefined}
             onClick={() => onInspect(item)}

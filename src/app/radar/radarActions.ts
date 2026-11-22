@@ -3,12 +3,12 @@ import type { usePresentation } from "../usePresentation";
 import type { useRadarPresentation } from "./useRadarPresentation";
 import type { useObservationDeck } from "../observations/useObservationDeck";
 import type { EarthScene, Presentation } from "../useObservatory";
-import { radarCamera, type RadarView } from "./radarCamera";
+import { currentRadarRegion, radarCamera, type RadarEntry, type RadarView } from "./radarCamera";
 
 interface RadarState {
   radarView: RadarView | null;
   radarOrigin: MutableRefObject<Presentation>;
-  radarEntry: MutableRefObject<{ region?: string; story?: boolean; at?: number }>;
+  radarEntry: MutableRefObject<RadarEntry>;
   setRadarView: ReturnType<typeof useRadarPresentation>["setView"];
   updateRadar: ReturnType<typeof useRadarPresentation>["update"];
 }
@@ -30,15 +30,21 @@ export function radarActions(
     view: radarView,
     fromExplore: radarView !== null && radarOrigin.current === "explore",
     entry: radarEntry.current,
-    open(region?: string, story = false, at?: number) {
+    open(region?: string, story = false, at?: number, pose?: RadarView["target"]) {
+      if (region === currentRadarRegion && !pose) region = "world";
       before();
       radarOrigin.current = presentation;
-      radarEntry.current = { ...(region ? { region } : {}), ...(at !== undefined ? { at } : {}), story };
+      radarEntry.current = {
+        ...(region ? { region } : {}),
+        ...(at !== undefined ? { at } : {}),
+        pose,
+        story,
+      };
       const open = () => {
         if (story) observations.close();
         setRadarView({
           kind: "radar",
-          target: radarCamera(region),
+          target: radarCamera(region, pose),
           region: region ?? "world",
           image: null,
           selectedAt: at,

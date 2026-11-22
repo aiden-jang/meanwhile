@@ -103,8 +103,11 @@
   }
 }
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
-  .zones:has([data-float-stage="locate"]) .observatory-sidebar {
-    padding-bottom: calc(119px + env(safe-area-inset-bottom));
+  .zones[data-float-stage="locate"] .float-transport {
+    display: none;
+  }
+  .zones[data-float-stage="locate"] .observatory-sidebar {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
   .float-discovery {
     gap: 10px;
@@ -139,6 +142,14 @@
   }
   .zones[data-float-stage="notice"][data-float-inspecting="false"] :is(.observatory-stage, .camera-recenter) {
     visibility: hidden;
+  }
+}
+@media (max-width: 599px) and (max-height: 650px) {
+  .observatory-intro[data-float-stage="locate"] .float-heading h2 {
+    font-size: clamp(34px, 10vw, 44px);
+  }
+  .observatory-intro[data-float-stage="locate"] .float-discovery {
+    gap: 8px;
   }
 }
 @media (max-height: 620px) and (min-width: 600px) {

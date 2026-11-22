@@ -964,6 +964,7 @@ export function App(): JSX.Element {
   const observatoryProps: ObservatoryProps = {
     explorer: {
       radarAt: mapLayers.radarAt,
+      radarFrameAt: mapLayers.radar?.at,
       ...explorerCamera(readCamera, flyTo, flat, setFlat),
       radarTime: (at) => mapLayers.selectTime("radar", at),
     },
@@ -1316,7 +1317,6 @@ export function App(): JSX.Element {
             className={railShown ? "explorer-resize absolute hidden xl:block" : "hidden"}
             style={{ left: "calc(var(--rail-w) - 18px)" }}
           />
-
           <section
             id="globe-view"
             tabIndex={-1}

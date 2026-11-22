@@ -16,6 +16,8 @@ import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
   globalRadarRegions,
+  globalRadarName,
+  currentRadarRegion,
   radarCamera,
   regionCamera,
   strongestRegion,
@@ -39,6 +41,7 @@ export function RadarStage({
   onView,
   initialRegion,
   initialAt,
+  initialPose,
   onSelect,
   global,
   layer = false,
@@ -49,6 +52,7 @@ export function RadarStage({
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
   initialAt?: number | undefined;
+  initialPose?: RadarView["target"] | undefined;
   onSelect?: (at: number | null) => void;
   global: boolean;
   layer?: boolean;
@@ -107,8 +111,8 @@ export function RadarStage({
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
   const target = useMemo(
-    () => (global ? radarCamera(regionId) : regionCamera(region)),
-    [region, regionId, global],
+    () => (global ? radarCamera(regionId, initialPose) : regionCamera(region)),
+    [region, regionId, global, initialPose],
   );
 
   const lightning = useRadarLightning(showLightning && shownImage ? shown?.at : undefined);
@@ -188,9 +192,7 @@ export function RadarStage({
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);
 
-  const place = global
-    ? (globalRadarRegions.find(({ id }) => id === regionId)?.name ?? "World")
-    : (region?.name ?? "National view");
+  const place = global ? globalRadarName(regionId) : (region?.name ?? "National view");
   const provider = global ? "RainViewer" : "NOAA";
   const delayed = latest !== undefined && checkedAt - latest.at > 20 * 60_000;
   const lastAvailable =
@@ -368,6 +370,7 @@ export function RadarStage({
             <label>
               <span className="sr-only">Radar region</span>
               <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
+                {global && initialPose && <option value={currentRadarRegion}>Current view</option>}
                 {!global && <option value="auto">Auto focus</option>}
                 {!global && <option value="national">United States</option>}
                 {(global ? globalRadarRegions : radarRegions).map(({ id, name }) => (

@@ -62,6 +62,7 @@ for (const width of [1440, 390]) {
     const preview = page.getByRole("button", { name: "Preview Vanishing Sea", exact: true });
     await expect(preview).toBeEnabled();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
+    const worldHeight = (await page.locator("#globe-view").boundingBox())!.height;
     await preview.click();
     await expect(preview).toHaveAttribute("aria-pressed", "true");
     await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
@@ -69,10 +70,16 @@ for (const width of [1440, 390]) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
       const previewSurface = (await page.locator(".discovery-preview").boundingBox())!;
       expect(previewSurface.x).toBeGreaterThanOrEqual(rail.x + rail.width);
-    }
+    } else
+      await expect
+        .poll(async () => (await page.locator("#globe-view").boundingBox())!.height)
+        .toBeGreaterThan(worldHeight);
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
     await expect(preview).toHaveAttribute("aria-pressed", "false");
     await expect.poll(() => camera(page)).toEqual(before);
+    await expect
+      .poll(async () => (await page.locator("#globe-view").boundingBox())!.height)
+      .toBe(worldHeight);
     await expect(preview).toBeFocused();
     if (width === 1440) {
       await preview.click();
@@ -98,6 +105,37 @@ for (const width of [1440, 390]) {
     expect(layout).toEqual({ sameCanvas: true, fitsPanel: true });
   });
 }
+
+test("the story map offers real places and holds their marker while the story loads @dev", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(/\/aral-.*\.json$/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto("/#v=explore&catalogue=all&p=map&at=59.5,45,2.5");
+  const inView = page.getByRole("group", { name: "Stories in this view", exact: true });
+  const marker = inView.getByRole("button", { name: "Locate Vanishing Sea · Aral Sea", exact: true });
+  await expect(marker).toBeInViewport();
+  await marker.click();
+  try {
+    const preview = page.getByRole("group", { name: "Story location preview", exact: true });
+    await preview.getByRole("button", { name: "Open story", exact: true }).click();
+    const arrival = page.locator(".preview-arrival");
+    await expect(arrival.getByText("Aral Sea", { exact: true })).toBeVisible();
+    await expect(arrival).not.toHaveAttribute("data-arrived", "true");
+    await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.getByRole("slider", { name: "Archive year", exact: true })).toBeVisible();
+  await expect(page.locator(".preview-arrival")).toHaveCount(0);
+});
 
 test("returning visits are one action away and preserve their saved moment and focus @dev", async ({
   page,

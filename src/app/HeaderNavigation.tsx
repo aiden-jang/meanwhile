@@ -19,6 +19,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
+  const findOverlay = exploring || navigation.active !== null;
   const saved = opened || !!navigation.restoredCollection;
   const close = () => {
     document.querySelector<HTMLDialogElement>("#saved-observations")?.close();
@@ -60,14 +61,15 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         ref={findTrigger}
         id="open-find-in-story"
         aria-label="Find a story"
-        aria-expanded={navigation.active ? find : undefined}
+        aria-expanded={findOverlay ? find : undefined}
+        aria-haspopup={findOverlay ? "dialog" : undefined}
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
-          if (navigation.active) {
+          if (findOverlay) {
             document
               .querySelector<HTMLButtonElement>(
-                ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing]",
+                ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing], #radar-layer-controls:not([hidden]) .story-playback:not([data-playback-start])",
               )
               ?.click();
             setFind(true);

@@ -7,6 +7,7 @@ import type { EarthScene } from "../useObservatory";
 import { RecordedReplay, type ReplayProps } from "./RecordedReplay";
 import { isReplay } from "./replays";
 import { StorySession } from "./StorySession";
+import { PreviewArrival } from "./PreviewArrival";
 import { searchStories } from "../storyIndex";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
@@ -83,6 +84,7 @@ export function ObservationDeckShell({
             : "Back to Observatory");
   return (
     <StorySession.Provider key={`${entry}:${deck.revision}`} value={deck.session}>
+      {deck.preview && <PreviewArrival place={deck.preview} ready={!!deck.view} />}
       <Suspense
         fallback={
           <div className="observatory-sidebar replay-sidebar">

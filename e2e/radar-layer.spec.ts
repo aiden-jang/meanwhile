@@ -265,6 +265,8 @@ for (const width of [1440, 390]) {
     await page.evaluate(() => (document.documentElement.dataset["holdRadarImages"] = "true"));
     await layers.getByRole("button", { name: /Follow a radar region/ }).click();
     const guided = page.getByRole("region", { name: "Storm Radar", exact: true });
+    await expect(guided.getByRole("combobox", { name: "Radar region", exact: true })).toHaveValue("current");
+    await expect.poll(() => camera(page)).toEqual(mapCamera);
     await expect(guided.locator(".radar-clock time")).toHaveAttribute(
       "datetime",
       new Date(times[1]!).toISOString(),
@@ -291,6 +293,9 @@ for (const width of [1440, 390]) {
       "aria-pressed",
       "true",
     );
+    const region = guided.getByRole("combobox", { name: "Radar region", exact: true });
+    await region.selectOption("world");
+    await expect.poll(async () => (await camera(page))?.lon).toBe(0);
     await guided.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toBeFocused();
     await expect.poll(() => camera(page)).toEqual(mapCamera);

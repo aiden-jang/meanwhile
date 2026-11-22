@@ -28,12 +28,14 @@ export function StoriesDrawer({
   discoveries,
   filter,
   sceneEntry,
+  nearbyFeed,
   browse,
 }: {
   children: ReactNode;
   discoveries?: ReactNode;
   filter?: ReactNode;
   sceneEntry?: ReactNode;
+  nearbyFeed?: ReactNode;
   browse: Pick<Observatory["browser"], "expanded" | "sections" | "expand" | "fold" | "select">;
   visible?: boolean;
   scene: EarthScene | null;
@@ -71,7 +73,7 @@ export function StoriesDrawer({
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
   if (!visible) return null;
   return (
-    <StoryPreview scope={`${key}:${deck.query}`}>
+    <StoryPreview scope={`${key}:${deck.query}`} region={deck.query.trim() ? undefined : scene}>
       <div
         ref={container}
         id="stories-panel"
@@ -173,6 +175,7 @@ export function StoriesDrawer({
           {!deck.query.trim() && (
             <>
               {sceneEntry}
+              {!showJourneys && nearbyFeed}
               {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
                 <h3 className={all ? undefined : "sr-only"} ref={fullHeading} tabIndex={all ? -1 : undefined}>

@@ -9,6 +9,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   if (!anchors?.length) return;
   const occupied: { x: number; y: number }[] = [];
   let places = 0;
+  let locators = 0;
   const insets = story
     ? Array.from(
         root!.querySelectorAll(
@@ -34,7 +35,12 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     : anchors;
   for (const anchor of ordered) {
     const place = anchor.hasAttribute("data-place-label");
-    if ((place && (story || places >= 5)) || zoom < Number(anchor.dataset["minZoom"] ?? 0)) {
+    const locator = anchor.hasAttribute("data-story-locator");
+    if (
+      (place && (story || places >= 5)) ||
+      (locator && locators >= 3) ||
+      zoom < Number(anchor.dataset["minZoom"] ?? 0)
+    ) {
       anchor.style.visibility = "hidden";
       continue;
     }
@@ -42,7 +48,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const parent = anchor.parentElement ? parents.get(anchor.parentElement) : undefined;
     const x = (point?.x ?? 0) - (parent?.left ?? 0);
     const y = (point?.y ?? 0) - (parent?.top ?? 0);
-    const inset = Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
+    const inset = locator ? 82 : Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
     const visible =
       point &&
@@ -58,10 +64,11 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       x < parent.width - inset &&
       y > blockInset &&
       y < parent.height - blockInset &&
-      !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (place ? 100 : 44));
+      !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (locator ? 152 : place ? 100 : 44));
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
       if (place) places++;
+      if (locator) locators++;
       occupied.push({ x, y });
       anchor.style.left = `${x}px`;
       anchor.style.top = `${y}px`;

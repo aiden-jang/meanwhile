@@ -22,6 +22,15 @@ export interface RadarView {
   canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;
 }
 
+export interface RadarEntry {
+  region?: string;
+  story?: boolean;
+  at?: number;
+  pose?: RadarCamera | undefined;
+}
+
+export const currentRadarRegion = "current";
+
 export interface RadarReveal {
   target: RadarCamera;
   finish: () => void;
@@ -55,10 +64,17 @@ export const globalRadarRegions = [
 ] as const;
 
 export const isGlobalRadar = (region?: string) =>
-  region === undefined || globalRadarRegions.some(({ id }) => id === region);
+  region === undefined || region === currentRadarRegion || globalRadarRegions.some(({ id }) => id === region);
 
-export function radarCamera(region?: string): RadarCamera {
+export function globalRadarName(region?: string) {
+  return region === currentRadarRegion
+    ? "Current view"
+    : (globalRadarRegions.find(({ id }) => id === region)?.name ?? "World");
+}
+
+export function radarCamera(region?: string, pose?: RadarCamera): RadarCamera {
   return (
+    (region === currentRadarRegion ? (pose ?? globalRadarRegions[0]) : undefined) ??
     globalRadarRegions.find(({ id }) => id === (region ?? "world")) ??
     regionCamera(radarRegions.find(({ id }) => id === region))
   );
@@ -103,9 +119,16 @@ export function strongestRegion(image: ImageBitmap): RadarRegion | undefined {
   return best;
 }
 
-export function radarLink(story: StoryMoment) {
-  const region = [...radarRegions, ...globalRadarRegions].find(({ id }) => id === story.choice)?.id;
-  return { ...(region ? { region } : {}), ...(story.at !== undefined ? { at: story.at } : {}) };
+export function radarLink(story: StoryMoment, pose?: RadarCamera): RadarEntry {
+  const region =
+    story.choice === currentRadarRegion && pose
+      ? currentRadarRegion
+      : [...radarRegions, ...globalRadarRegions].find(({ id }) => id === story.choice)?.id;
+  return {
+    ...(region ? { region } : {}),
+    ...(region === currentRadarRegion ? { pose } : {}),
+    ...(story.at !== undefined ? { at: story.at } : {}),
+  };
 }
 
 export function radarMoment(view: RadarView, map: boolean): StoryMoment {

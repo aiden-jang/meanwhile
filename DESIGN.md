@@ -425,8 +425,9 @@ The compact two-line wordmark returns to the invitation. The globe stage carries
 and scene-specific reference where space allows. Phone and short-height layouts prioritize the
 reachable controls and source disclosure.
 
-The landing’s Browse stories and the header’s Find action open Explore’s single Stories catalogue.
-Older catalogue links also resolve there. Its Earth, Below the Surface and After Dark diagrams filter
+The landing’s Browse stories opens Explore’s Stories catalogue. The header’s Find action opens the catalogue
+from the landing and searches over the current layer, pinned event or story elsewhere. Dismissing Find restores
+header focus and the underlying view. Older catalogue links also resolve to Explore. Its Earth, Below the Surface and After Dark diagrams filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
 The cinematic Earth, depth and sky views open through a scene action shown within the corresponding
 category. Those scene views provide a Browse stories action into the same catalogue.
@@ -461,7 +462,10 @@ relationship without implying shared dates or causation between independent reco
 
 Featured experiences precede a short selection. Saved visits have a direct disclosure; a relevant
 Continue action precedes the feature. Story discovery supports focus, hover and touch-hold regional
-previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery and
+previews with an explicit Locate action. Stories in the current viewport use a place name and story title
+over the globe or map. The preview temporarily expands the phone’s world and carries its location marker
+into the story while its observations load. A recent radar scan can open directly from this view with the
+same framing and scan time. Timeline milestones use the dataset's actual imagery and
 time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
 with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
 Closing an experience returns focus to its entry point and restores the drawer's scroll position.

@@ -16,7 +16,7 @@ import { skyReference, useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
-import { radarLink, radarMoment } from "./radar/radarCamera";
+import { radarLink, radarMoment, type RadarEntry } from "./radar/radarCamera";
 import { useRadarPresentation } from "./radar/useRadarPresentation";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
@@ -25,7 +25,6 @@ import { useFloatView } from "./float/useFloatView";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
-
 export function useObservatory(shared: Partial<Permalink>) {
   const story = shared.story;
   const checkpoint = useRef<() => void>(() => {});
@@ -58,7 +57,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     setView: setRadarView,
     update: updateRadar,
     opening: radarOpening,
-  } = useRadarPresentation(story);
+  } = useRadarPresentation(story, linkedPose(shared));
   const observations = useObservationDeck(
     story && !["float", "radar", "aurora", "sun"].includes(story.id) && !isSkyStory(story.id)
       ? story
@@ -68,9 +67,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     story ? linkedPose(shared) : undefined,
   );
   const closeObservations = observations.close;
-  const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>(
-    story?.id === "radar" ? radarLink(story) : {},
-  );
+  const radarEntry = useRef<RadarEntry>(story?.id === "radar" ? radarLink(story, linkedPose(shared)) : {});
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);
   const clearViews = useCallback(() => {
@@ -259,7 +256,10 @@ export function useObservatory(shared: Partial<Permalink>) {
         restorePresentation(saved.origin.presentation, () => {
           radarOrigin.current = saved.origin.radar;
           radarEntry.current = saved.radar
-            ? { ...saved.origin.entry, ...radarLink(radarMoment(saved.radar, saved.deck.map)) }
+            ? {
+                ...saved.origin.entry,
+                ...radarLink(radarMoment(saved.radar, saved.deck.map), saved.radar.target),
+              }
             : saved.origin.entry;
           storyFromExplore.current = saved.origin.story;
           sharedView.current = saved.origin.shared;

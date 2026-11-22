@@ -10,6 +10,8 @@ import {
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { createPortal } from "react-dom";
 import { storyPlace, storyPlaceId, type StoryPlace } from "./places";
+import { RegionalStories } from "./RegionalStories";
+import type { EarthScene } from "../useObservatory";
 import "./preview-connector.css";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import "./discovery.css";
@@ -53,7 +55,15 @@ export function StoryPreviewButton({
   );
 }
 
-export function StoryPreview({ children, scope }: { children: ReactNode; scope: string }) {
+export function StoryPreview({
+  children,
+  scope,
+  region,
+}: {
+  children: ReactNode;
+  scope: string;
+  region?: EarthScene | null | undefined;
+}) {
   const navigation = useStoryNavigation();
   const latest = useRef(navigation);
   latest.current = navigation;
@@ -78,6 +88,13 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     latest.current?.preview(undefined, !!browsing);
   }, [scope, browsing]);
   useLayoutEffect(() => refreshAnnotations(), [place]);
+  const scroll = useRef<{ rail: HTMLElement; top: number }>();
+  useLayoutEffect(() => {
+    if (pinned) return;
+    const held = scroll.current;
+    scroll.current = undefined;
+    if (held && browsing) held.rail.scrollTop = held.top;
+  }, [pinned, browsing]);
   useLayoutEffect(() => {
     if (!pinned || !handoffFocus.current) return;
     handoffFocus.current = false;
@@ -88,15 +105,21 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     setPlace(null);
     navigation?.preview();
     if (restoreFocus && trigger.current?.isConnected) {
-      restoringFocus.current = true;
-      trigger.current.focus({ preventScroll: true });
-      restoringFocus.current = false;
+      const button = trigger.current;
+      requestAnimationFrame(() => {
+        restoringFocus.current = true;
+        button.focus({ preventScroll: true });
+        restoringFocus.current = false;
+      });
     }
   };
   const locate = (region: StoryPlace, button?: HTMLElement) => {
+    const rail = document.getElementById("chrome-rail");
+    if (rail && !pinned) scroll.current = { rail, top: rail.scrollTop };
     if (button) {
       trigger.current = button;
-      button.focus({ preventScroll: true });
+      if (button.hasAttribute("data-story-locator")) handoffFocus.current = true;
+      else button.focus({ preventScroll: true });
     } else handoffFocus.current = true;
     setPinned(true);
     setPlace(region);
@@ -215,6 +238,9 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
         }}
       >
         {children}
+        {region !== undefined && browsing && (
+          <RegionalStories topic={region} locate={locate} hidden={pinned} />
+        )}
         {place &&
           stage &&
           createPortal(

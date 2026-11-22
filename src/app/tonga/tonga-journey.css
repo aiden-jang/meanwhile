@@ -264,9 +264,15 @@
 .tonga-signal .tonga-chart svg {
   height: clamp(28px, 7dvh, 56px);
 }
-[data-station-signal] .tonga-station-point {
+:is([data-station-signal], [data-station-reading]) .tonga-station-point {
   background: #b0e8f6;
   box-shadow: 0 0 0 5px #b0e8f642;
+}
+.tonga-clock-reading {
+  display: block;
+  color: var(--color-dim);
+  font: 10px/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 @media (max-width: 599px) {
   .tonga-signal {

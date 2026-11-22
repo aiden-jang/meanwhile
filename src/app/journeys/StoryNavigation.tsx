@@ -15,9 +15,10 @@ import {
 } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
+import { storyPlace, type StoryPlace } from "../discovery/places";
 import { featuredStoryId, storyButtonId } from "../storyBrowse";
 import type { StoryId } from "../observations/useObservationDeck";
-import { isGlobalRadar } from "../radar/radarCamera";
+import { currentRadarRegion, isGlobalRadar } from "../radar/radarCamera";
 import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
@@ -32,6 +33,7 @@ export const useStoryNavigation = () => useContext(Navigation);
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
   const panelReturn = usePanelReturn();
   const [restoredCollection, setRestoredCollection] = useState<CollectionPosition | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
   const reportCompletion = useCallback((id: string, complete: boolean) => {
     setCompletion((previous) =>
@@ -42,6 +44,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
     flat: boolean;
     journey: boolean;
+    place?: StoryPlace | undefined;
   } | null>(null);
   const origin = useRef<BrowseOrigin | null>(null);
   const { observations: deck, tonight, sun, floatDive } = props.views;
@@ -139,18 +142,27 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     props.views.checkpoint.current();
     rememberOrigin(trigger);
     setRestoredCollection(null);
+    const previewed = previewOrigin.current?.place;
+    const destination = storyPlace(id);
+    const preview =
+      previewed && previewed.lon === destination?.lon && previewed.lat === destination.lat
+        ? previewed
+        : undefined;
     previewOrigin.current = null;
+    setPreviewOpen(false);
     reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
+    const radarPose =
+      id === "radar" && !props.views.observing && !resuming ? props.explorer.read() : undefined;
     const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
     const openReplay = () =>
       deck.open(
         id as StoryId,
         trigger,
         saved?.position.moment ?? (fresh ? null : undefined),
-        map === undefined ? arrival : { ...arrival, map },
+        map === undefined ? arrival : { ...arrival, map, preview },
       );
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
@@ -181,9 +193,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             else if (id === "radar") {
               const exploring = !props.views.observing && !resuming;
               props.radar.open(
-                exploring ? "world" : saved?.position.radar?.region,
+                exploring ? currentRadarRegion : saved?.position.radar?.region,
                 false,
                 exploring ? props.explorer.radarAt : saved?.position.radar?.at,
+                radarPose ?? saved?.position.radar?.pose,
               );
               deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
             } else if (id === "float") {
@@ -240,6 +253,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   function showCatalogue(focusSearch = false, entry?: string) {
     panelReturn.cancel();
     previewOrigin.current = null;
+    setPreviewOpen(false);
     origin.current = null;
     journey.leave();
     const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
@@ -279,6 +293,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           ? props.views.browser.open
           : props.views.browser.pane === "stories",
         previewMap: props.explorer.flat,
+        previewOpen,
         previewCity: props.views.skyCity.city,
         preview(place, restore = true, keepProjection = false) {
           if (place) {
@@ -287,10 +302,18 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
               flat: props.explorer.flat,
               journey: keepProjection,
             };
+            if (!keepProjection) {
+              previewOrigin.current.place =
+                "label" in place && typeof place.label === "string"
+                  ? { ...place, label: place.label }
+                  : undefined;
+              setPreviewOpen(true);
+            }
             refreshAnnotations(place);
           } else if (previewOrigin.current?.journey === keepProjection) {
             const saved = previewOrigin.current;
             previewOrigin.current = null;
+            if (!keepProjection) setPreviewOpen(false);
             if (restore)
               props.explorer.restore(saved.camera, keepProjection ? props.explorer.flat : saved.flat);
           }
@@ -306,6 +329,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             return;
           panelReturn.cancel();
           previewOrigin.current = null;
+          setPreviewOpen(false);
           origin.current = null;
           journey.leave();
           const pane = props.views.browser.pane;
@@ -314,11 +338,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           props.views.browser.show(pane);
           props.onExplore(true);
         },
-        openRadar(at, map) {
-          rememberOrigin("open-explorer-radar");
+        openRadar(at, map, trigger = "open-explorer-radar") {
+          rememberOrigin(trigger);
+          const pose = props.explorer.read();
           journey.leave();
           props.views.navigation.prepareStory("live", false, () => {
-            props.radar.open("world", false, at);
+            props.radar.open(currentRadarRegion, false, at, pose);
             deck.setMap(map);
           });
         },

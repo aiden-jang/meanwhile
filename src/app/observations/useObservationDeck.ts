@@ -32,6 +32,7 @@ export function useObservationDeck(
   const runningCameraKey = useRef<string>();
   const published = useRef<StoryId | null>(null);
   const departure = useRef<StoryPlace>();
+  const preview = useRef<StoryPlace>();
   const setMap = useCallback((next: boolean) => {
     queuedProjection.current = undefined;
     setProjection(next);
@@ -101,6 +102,7 @@ export function useObservationDeck(
     pending.current = false;
     published.current = null;
     departure.current = undefined;
+    preview.current = undefined;
     journeyCamera.current = undefined;
     active.current = null;
     setView(null);
@@ -112,11 +114,13 @@ export function useObservationDeck(
   return {
     entry,
     revision,
+    preview: preview.current,
     capture: (camera?: CameraState) => ({ ...snapshot, camera }),
     restore(saved: typeof snapshot & { camera?: CameraState | undefined }) {
       recipient.current = saved.recipient;
       pending.current = false;
       departure.current = undefined;
+      preview.current = undefined;
       journeyCamera.current = saved.entry ? saved.camera : undefined;
       published.current = null;
       if (saved.entry && saved.moment) memory.current.set(saved.entry, saved.moment);
@@ -162,6 +166,7 @@ export function useObservationDeck(
       pending.current = true;
       journeyCamera.current = arrival?.pose;
       runningCameraKey.current = undefined;
+      preview.current = arrival?.preview;
       const fromPlace = arrival?.departure ?? (published.current ? storyPlace(published.current) : undefined);
       const destination = storyPlace(next);
       departure.current =

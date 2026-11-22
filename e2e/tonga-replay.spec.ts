@@ -139,6 +139,15 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   const signal = replay.getByRole("group", { name: "San Francisco recorded pressure pulse" });
   await expect(signal.locator("time")).toHaveAttribute("datetime", "2022-01-15T12:03:00Z");
   await expect(signal.getByRole("img")).toHaveAccessibleName(/1022\.76 hPa/);
+  const pressure = replay.getByRole("slider", { name: "Station pressure time", exact: true });
+  await pressure.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", "12:04 UTC");
+  await expect(replay.locator(".tonga-clock-reading")).toContainText("San Francisco");
+  await expect(
+    replay.locator('[data-station-reading][aria-label="Inspect San Francisco pressure"]'),
+  ).toHaveCount(1);
+  await pressure.press("ArrowLeft");
+  await expect(slider).toHaveAttribute("aria-valuetext", "12:03 UTC");
   await replay.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("group", { name: "Tonga’s shockwave on the map" })).toContainText(
     "Estimated atmospheric wave",

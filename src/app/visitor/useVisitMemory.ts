@@ -4,6 +4,7 @@ import type { Visit, VisitPosition } from "./library";
 import { skyPosition } from "../tonight/skyMoment";
 import { recordDeparture } from "./departingVisits";
 import { useVisitLibrary } from "./useVisitLibrary";
+import { currentRadarRegion } from "../radar/radarCamera";
 
 // Capture before navigation disposes the player. See ARCHITECTURE.md#srcappvisitorusevisitmemoryts.
 export function useVisitMemory(
@@ -38,6 +39,7 @@ export function useVisitMemory(
         map: observations.map,
         ...(props.radar.view.region ? { region: props.radar.view.region } : {}),
         ...(props.radar.view.selectedAt !== undefined ? { at: props.radar.view.selectedAt } : {}),
+        ...(props.radar.view.region === currentRadarRegion ? { pose: props.explorer.read() } : {}),
       };
     return { id: active, seen: opened.current.at, position, ...(completed ? { completed: true } : {}) };
   };

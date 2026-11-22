@@ -7,6 +7,7 @@ import type { EarthScene, useObservatory } from "./useObservatory";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
+    radarFrameAt: number | undefined;
     flat: boolean;
     read: () => CameraState;
     restore: (camera: CameraState, flat?: boolean) => void;

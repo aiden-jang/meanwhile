@@ -1,6 +1,26 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openLayer } from "./feeds";
 
+test("Float Dive’s opening action receives the first tap on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=float");
+  const begin = page.getByRole("button", { name: "Follow the rise", exact: true });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await expect(begin).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("group", { name: "Float Dive playback" })).toBeHidden();
+  expect(
+    await begin.evaluate((button) => {
+      const { x, y, width, height } = button.getBoundingClientRect();
+      return button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+    }),
+  ).toBe(true);
+  await begin.tap();
+  await expect(page.getByRole("slider", { name: "Ascent depth" })).toBeInViewport();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
+
 test("phone story loading, retry and return work when feeds are unavailable", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", dead: true });
   let release!: () => void;

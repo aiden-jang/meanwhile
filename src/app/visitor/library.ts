@@ -3,6 +3,8 @@ import { searchStories } from "../storyIndex";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "../observations/storyMoment";
 import { riverGauge } from "../observations/riverGauges";
 import type { WindSample } from "../../sources/spaceWeather";
+import type { CameraState } from "../../globe/controlsTypes";
+import { LAT_LIMIT, ZOOM_MAX, ZOOM_MIN } from "../../globe/framing";
 
 export interface VisitPosition {
   moment?: StoryMoment;
@@ -10,7 +12,7 @@ export interface VisitPosition {
   river?: { gauge: string; at: number; value: number };
   sky?: SkyPosition;
   float?: { profile: string; index: number; map?: boolean };
-  radar?: { region?: string; at?: number; map: boolean };
+  radar?: { region?: string; at?: number; map: boolean; pose?: CameraState };
 }
 export interface Visit {
   id: string;
@@ -118,6 +120,14 @@ export function readVisit(value: unknown): Visit | null {
       if (typeof radar.region === "string" && /^[a-z-]{1,30}$/.test(radar.region))
         position.radar.region = radar.region;
       if (time(radar.at)) position.radar.at = radar.at;
+      const pose = radar.pose;
+      if (
+        pose &&
+        finite(pose.lon, -180, 180) &&
+        finite(pose.lat, -LAT_LIMIT, LAT_LIMIT) &&
+        finite(pose.zoom, ZOOM_MIN, ZOOM_MAX)
+      )
+        position.radar.pose = { lon: pose.lon, lat: pose.lat, zoom: pose.zoom };
     }
   }
   const visit: Visit = {

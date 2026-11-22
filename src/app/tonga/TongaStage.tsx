@@ -34,7 +34,6 @@ import {
   timeLabel,
   vapor,
 } from "./tongaTimeline";
-
 const playbackFocus = () => document.querySelector<HTMLElement>(".story-playback");
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
@@ -152,7 +151,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     view,
   ]);
   useStoryCompletion(ended && !view.playing);
-
   const hasInfrared = images.infrared !== null,
     hasVapor = images.vapor !== null;
   const { vaporMix, orbitMix } = layersAt(minute, hasInfrared, hasVapor, anchor !== undefined);
@@ -206,9 +204,10 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     focus.current = "kept";
     setPhase("kept");
   }
-  const atPressurePeak = pressureAt(station, minute) === null;
+  const hasPressureReading = pressureAt(station, minute) !== null;
   const overview = phase === "discover";
   const inspecting = phase === "inspect" || phase === "shared";
+  const showReading = hasPressureReading && (inspecting || (phase === "follow" && !!view.station));
   const scanTime = <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>;
   const frameScan = phase === "follow" && orbitMix < 1 && hasImage && !isOrbit;
   const image = (
@@ -270,6 +269,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             phase={phase}
             station={station}
             signal={signal}
+            reading={showReading}
             onInspect={(selected) =>
               inspect(pressureAt(selected, minute) === null ? selected.peak : Math.floor(minute), selected)
             }
@@ -372,15 +372,19 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 ))}
               </select>
             </label>
-            <PressureChart station={station} minute={minute} />
+            <PressureChart
+              station={station}
+              minute={minute}
+              onSeek={(next) => playback.inspect(next, station, !!view.station)}
+            />
             <button
               type="button"
               className="tonga-inspect"
-              onClick={() => inspect(atPressurePeak ? station.peak : Math.floor(minute))}
+              onClick={() => inspect(hasPressureReading ? Math.floor(minute) : station.peak)}
             >
-              {atPressurePeak
-                ? `Inspect the pressure peak · ${timeLabel(station.peak)} UTC`
-                : `Inspect ${station.name}’s record`}
+              {hasPressureReading
+                ? `Inspect ${station.name}’s record`
+                : `Inspect the pressure peak · ${timeLabel(station.peak)} UTC`}
             </button>
             <KeepPressure station={station} minute={minute} map={panel.map} onKept={kept} />
           </div>
@@ -388,7 +392,9 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
           {ended && !view.playing && <ExperienceEnding showSave={false} />}
         </div>
       )}
-      {phase === "follow" && <TongaTimelineDock playback={playback} station={station} />}
+      {phase === "follow" && (
+        <TongaTimelineDock playback={playback} station={station} showReading={showReading} />
+      )}
     </ReplayPanel>
   );
 }

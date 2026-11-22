@@ -1,6 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
 import { RADAR_SERVICE } from "../../sources/radar";
-import { isGlobalRadar, type RadarView } from "./radarCamera";
+import { isGlobalRadar, type RadarEntry, type RadarView } from "./radarCamera";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { StoryProjection } from "../observations/StoryProjection";
 import "./radar.css";
@@ -63,7 +63,7 @@ export function StormRadar({
 }: {
   fromExplore: boolean;
   returnLabel?: string | undefined;
-  entry: { region?: string; story?: boolean; at?: number };
+  entry: RadarEntry;
   onClose: () => void;
   onView: (view: RadarView) => void;
 }): JSX.Element {
@@ -110,6 +110,7 @@ export function StormRadar({
           onView={onView}
           initialRegion={global === isGlobalRadar(entry.region) ? entry.region : undefined}
           initialAt={global === isGlobalRadar(entry.region) ? entry.at : undefined}
+          initialPose={global ? entry.pose : undefined}
         />
       </Suspense>
       {global && (

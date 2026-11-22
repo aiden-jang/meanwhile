@@ -7,7 +7,7 @@ import { layerTime, storyObservationTime } from "../layerTime";
 import tonga from "../tonga/tonga.json";
 import { skyCities } from "../tonight/cities";
 import { skyBodies } from "../../geo/tonight";
-import { globalRadarRegions, radarRegions, isGlobalRadar } from "../radar/radarCamera";
+import { globalRadarName, radarRegions, isGlobalRadar } from "../radar/radarCamera";
 
 export interface VisitEvidence {
   title: string;
@@ -146,7 +146,9 @@ export function visitEvidence(visit: Visit): VisitEvidence {
     return {
       ...base,
       kind: "Saved scan time",
-      place: [...globalRadarRegions, ...radarRegions].find(({ id }) => id === radar.region)?.name ?? "World",
+      place: global
+        ? globalRadarName(radar.region)
+        : (radarRegions.find(({ id }) => id === radar.region)?.name ?? "United States"),
       time: radar.at === undefined ? "Latest available on reopening" : layerTime(radar.at),
       reading: "Storm Radar",
       detail:

@@ -10,6 +10,7 @@ export interface JourneyArrival {
   float?: FloatCheckpoint | undefined;
   floatState?: FloatRestore | undefined;
   departure?: StoryPlace | undefined;
+  preview?: StoryPlace | undefined;
 }
 
 export type ConnectedStop = { visit: Visit; arrival: JourneyArrival };
