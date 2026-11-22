@@ -88,7 +88,7 @@ test("One night above Earth restores the short-phone sky and lunar survey before
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await installOrbit(page);
+  const orbitRequests = await installOrbit(page, true);
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
@@ -159,6 +159,7 @@ test("One night above Earth restores the short-phone sky and lunar survey before
   await expect(pass.getByRole("heading", { name: "One horizon, two visits" })).toBeFocused();
   await pass.getByRole("button", { name: "Finish journey", exact: true }).click();
   await expect(guide).toHaveCount(0);
+  expect(orbitRequests).toEqual({ primary: 1, mirror: 1 });
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });

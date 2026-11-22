@@ -313,7 +313,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Archived hazards | NASA EONET |
 | Float Dive | [Argo profile data](https://doi.org/10.17882/42182) via the [Marine Institute’s North Atlantic subset](https://erddap.marine.ie/erddap/info/argoFloats/) |
 | Storm Radar | [RainViewer international radar network](https://www.rainviewer.com/) ([API terms](https://www.rainviewer.com/api.html), [limits](https://www.rainviewer.com/api/transition-faq.html)) · [NOAA MRMS US detail](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
-| Orbital Pass | [CelesTrak ISS orbital elements](https://celestrak.org/NORAD/elements/) and SGP4 predictions |
+| Orbital Pass | [CelesTrak ISS orbital elements](https://celestrak.org/NORAD/elements/) with [Where the ISS at?](https://wheretheiss.at/) as a fallback, and SGP4 predictions |
 | Tide Watch and River Pulse | [NOAA water levels and tide predictions](https://api.tidesandcurrents.noaa.gov/api/dev) and [USGS continuous streamflow](https://api.waterdata.usgs.gov/) |
 | Seafloor Flight | [GEBCO 2026 elevation and source-type grid](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid), resampled regional cutaway with labelled exaggeration; not for navigation |
 | Close Encounter / Earth’s Shadow | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) apparent positions and [NASA’s March 2025 lunar eclipse](https://eclipse.gsfc.nasa.gov/LEplot/LEplot2001/LE2025Mar14T.pdf); eclipse red tint is illustrative |

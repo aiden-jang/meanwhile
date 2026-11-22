@@ -8,6 +8,36 @@ import { subsolarPoint, sunElevation } from "../../geo/sun";
 import { HOUR, MINUTE, request } from "./common";
 
 const ORBIT = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE";
+const ORBIT_MIRROR = "https://api.wheretheiss.at/v1/satellites/25544/tles?format=text";
+const REFRESH_MS = 3 * HOUR;
+let cached: Awaited<ReturnType<typeof readElements>> | undefined;
+let primaryRetryAt = 0;
+
+async function readElements(url: string, signal: AbortSignal, now: number) {
+  const tle = (await (await request(url, signal)).text()).split(/\r?\n/);
+  signal.throwIfAborted();
+  const first = tle.find((line) => line.startsWith("1 25544"));
+  const second = tle.find((line) => line.startsWith("2 25544"));
+  if (!first || !second) throw new ObservationDataError("The source returned no usable ISS orbital data.");
+  const epoch =
+    Date.UTC(2000 + Number(first.slice(18, 20)), 0, 1) + (Number(first.slice(20, 32)) - 1) * 24 * HOUR;
+  if (!Number.isFinite(epoch) || Math.abs(now - epoch) > 7 * 24 * HOUR)
+    throw new ObservationDataError("The ISS orbital data is too old to predict a pass.");
+  return { first, second, epoch, fetched: now, source: url === ORBIT ? "CelesTrak" : "Where the ISS at?" };
+}
+
+async function loadElements(signal: AbortSignal, now: number) {
+  if (cached && now - cached.fetched < REFRESH_MS) return cached;
+  if (now >= primaryRetryAt) {
+    try {
+      return (cached = await readElements(ORBIT, AbortSignal.any([signal, AbortSignal.timeout(6000)]), now));
+    } catch {
+      signal.throwIfAborted();
+      primaryRetryAt = now + REFRESH_MS;
+    }
+  }
+  return (cached = await readElements(ORBIT_MIRROR, signal, now));
+}
 
 function position(satellite: SatRec, at: number) {
   const date = new Date(at);
@@ -26,18 +56,11 @@ function position(satellite: SatRec, at: number) {
 
 export const orbit: ObservationSource = {
   options: skyCities.map(({ name }) => ({ id: name, label: name })),
-  refreshMs: 3 * HOUR,
+  refreshMs: REFRESH_MS,
   async load(option, signal) {
     const city = skyCities.find(({ name }) => name === option) ?? skyCities[0]!;
-    const tle = (await (await request(ORBIT, signal)).text()).split(/\r?\n/);
-    const first = tle.find((line) => line.startsWith("1 25544"));
-    const second = tle.find((line) => line.startsWith("2 25544"));
-    if (!first || !second) throw new ObservationDataError("CelesTrak returned no usable ISS orbital data.");
-    const epoch =
-      Date.UTC(2000 + Number(first.slice(18, 20)), 0, 1) + (Number(first.slice(20, 32)) - 1) * 24 * HOUR;
     const now = Math.floor(Date.now() / MINUTE) * MINUTE;
-    if (!Number.isFinite(epoch) || Math.abs(now - epoch) > 7 * 24 * HOUR)
-      throw new ObservationDataError("The ISS orbital data is too old to predict a pass.");
+    const { first, second, epoch, source } = await loadElements(signal, now);
     const sat = twoline2satrec(first, second);
     let pass: number | undefined;
     let appearance: number | undefined;
@@ -117,7 +140,7 @@ export const orbit: ObservationSource = {
               },
             ]
           : [],
-      note: `Calculated from ISS elements dated ${new Date(epoch).toISOString().slice(0, 10)}. ${pass === undefined ? "No visible pass found in the next 48 hours." : "Predicted visibility assumes clear skies and a level horizon."}`,
+      note: `Calculated from ISS elements dated ${new Date(epoch).toISOString().slice(0, 10)} (${source}). ${pass === undefined ? "No visible pass found in the next 48 hours." : "Predicted visibility assumes clear skies and a level horizon."}`,
     };
   },
 };

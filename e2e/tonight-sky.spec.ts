@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories, revealStoryTools, selectScene } from "./feeds";
+import { blockOrbit } from "./fixtures/orbit";
 
 test("Tonight’s Sky follows the selected city and time on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
   await installFeeds(page, { presentation: "fresh" });
-  await page.route("https://celestrak.org/NORAD/elements/gp.php?**", (route) => route.abort());
+  await blockOrbit(page);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {

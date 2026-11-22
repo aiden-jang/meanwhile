@@ -20,22 +20,11 @@ import { TimelineCues } from "./TimelineCues";
 import { useObservationData } from "./useObservationData";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { NightPassFinding } from "../journeys/NightPassFinding";
-import { orbitTime, nearestOrbitFrame as nearest } from "./orbitReadings";
+import { orbitTime, nearestOrbitFrame as nearest, passTime } from "./orbitReadings";
 import { useSkyReturn } from "./useSkyReturn";
 import type { ObservationData, ObservationView } from "./types";
 
 const meta = observations.orbit;
-const passClock = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "UTC",
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hourCycle: "h23",
-});
-const passTime = (at: number) => `${passClock.format(at)} UTC`;
-
 export function OrbitalPass({ city, ...panel }: ReplayProps & { city: SkyCityPreference }) {
   const source = useObservationData(orbit, city.name);
   const { initial } = useStorySession();
@@ -62,7 +51,9 @@ export function OrbitalPass({ city, ...panel }: ReplayProps & { city: SkyCityPre
         <StoryLoading>Calculating the ISS track for {city.name}…</StoryLoading>
       ) : (
         <div className="observation-note" role="status">
-          <p>{source.reason ?? (source.state === "empty" ? meta.empty : "CelesTrak is unavailable.")}</p>
+          <p>
+            {source.reason ?? (source.state === "empty" ? meta.empty : "ISS orbital data is unavailable.")}
+          </p>
           <button type="button" onClick={source.retry}>
             Retry source
           </button>
@@ -85,7 +76,11 @@ function OrbitSource({ note }: { note?: string }) {
     <>
       {note && <p>{note}</p>}
       <a href={meta.url} target="_blank" rel="noreferrer">
-        CelesTrak · ISS orbital elements
+        CelesTrak
+      </a>
+      {" · "}
+      <a href="https://wheretheiss.at/" target="_blank" rel="noreferrer">
+        Where the ISS at?
       </a>
       <p>Estimated in 30-second steps. Visibility requires a sunlit ISS above 10° and the Sun below −6°.</p>
     </>
@@ -314,7 +309,7 @@ function PassPlayer({
       )}
       {source.state === "failed" && (
         <p className="observation-note" role="status">
-          Couldn’t refresh CelesTrak. Showing the last calculation.{" "}
+          Couldn’t refresh the ISS orbit. Showing the last calculation.{" "}
           <button type="button" onClick={source.retry}>
             Retry source
           </button>

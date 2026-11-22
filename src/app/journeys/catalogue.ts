@@ -85,7 +85,7 @@ export const journeys: readonly Journey[] = [
       {
         id: "orbit",
         prompt: "Switch to Local sky and compare the predicted ISS path with your horizon.",
-        context: "A current CelesTrak orbit prediction. Visibility depends on sunlight and your location.",
+        context: "A current ISS orbit prediction. Visibility depends on sunlight and your location.",
       },
     ],
   },
