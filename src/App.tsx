@@ -594,7 +594,7 @@ export function App(): JSX.Element {
         ...onGlobe,
         farSide: mapLayers.suspended ? null : farSide,
         motion: motionOn && !mapLayers.suspended && !observatory.observing ? motionData : [],
-        here,
+        here: mapLayers.suspended ? null : here,
       }),
     [onGlobe, farSide, motionOn, motionData, here, observatory.observing, mapLayers.suspended],
   );
@@ -772,7 +772,7 @@ export function App(): JSX.Element {
   }, [storyTitle, observatory.observing, headline, replay, snapshot.coveredSince, snapshot.archive]);
   // `headline`, not the raw total, so the number on the image is the number that was on screen.
   stillCounts.current = {
-    quakes: observatory.observing || mapLayers.enabled.earthquakes ? headline : 0,
+    quakes: mapLayers.visible.earthquakes ? headline : 0,
     cyclones: onGlobe.cyclones.length,
     fires: fireSummary.count,
     firesCapped: fireSummary.count >= FEED_CAP,

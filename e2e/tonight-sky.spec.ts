@@ -69,6 +69,16 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(horizon).toContainText("Tokyo · Local horizon");
   await horizon.getByRole("button", { name: "Look east" }).click();
   await expect(horizon).toContainText("Facing E · 90°");
+  const compass = horizon.getByRole("group", { name: "Look around the local sky" });
+  await compass.press("ArrowRight");
+  await expect(compass).toContainText("Facing E · 96°");
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.36, box.y + box.height * 0.48);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.64, box.y + box.height * 0.48, { steps: 4 });
+  await page.mouse.up();
+  await expect(compass).not.toContainText("Facing E · 96°");
+  await horizon.getByRole("button", { name: "Look east" }).click();
   const time = sky.locator("time");
   await slider.press("Home");
   const sunset = await time.getAttribute("datetime");

@@ -270,7 +270,8 @@ export function useObservatory(shared: Partial<Permalink>) {
       (!radarView || (!!radarView.image && radarView.at === radarView.selectedAt)) &&
       (!observations.entry ||
         (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
-    localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
+    localReadings:
+      !!auroraRun || sunActive || radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
     getMoment: () =>
       sky.moment(observations.map) ?? getFloatMoment(observations.map) ?? observations.getMoment(),

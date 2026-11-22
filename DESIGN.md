@@ -568,7 +568,8 @@ the reveal at its displayed position. Reduced motion uses the final sky composit
 The sky catalogue keeps its displayed-time orientation throughout; no stars move to decorate the shot.
 
 Tonight’s Sky approaches the selected city in the shared globe, then lowers and widens the lens
-as the Earth limb gives way to a level horizon. The local compass holds its direction while time
+as the Earth limb gives way to a level horizon. Drag or use the compass arrow keys to turn and tilt
+the local view. The local compass holds its direction while time
 changes. Twilight follows the Sun’s elevation and direction, and the Moon and planets follow the
 displayed instant. The Earth reference map marks the selected city. Moonfall leaves the chosen sky
 through the lunar approach, exposes mapped rover stops and returns to the same sky minute and
@@ -578,6 +579,8 @@ Aurora overflight leaves the planetarium for a dark forecast oval. The camera lo
 curved horizon, banks as the veil traces outward from the forecast focus, then settles over the pole.
 The globe lighting, oval and readout use the same NOAA forecast instant. The elevated veil illustrates
 the footprint at a display height. Steering ends the shot, and reduced motion shows the finished polar view.
+The overflight temporarily hides background layers. Tonight’s Sky opens at the local horizon from
+the oval and returns to the same forecast, camera and projection.
 
 Below the Surface approaches the selected region and lowers the camera toward the rim. The well opens
 after the camera settles, then the reference guides trace downward. Steering can interrupt the shot,

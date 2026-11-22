@@ -1,4 +1,5 @@
 import type { GlobeProps } from "../globe/GlobeProps";
+import type { AuroraRun } from "../sources/auroraRoute";
 
 const clear: Partial<GlobeProps> = {
   depthSink: false,
@@ -17,8 +18,10 @@ export function observatoryBackdrop(view: {
   browsingStories: boolean;
   depthFocus: GlobeProps["cutaway"];
   floatDive: { active: boolean };
+  aurora: { run: AuroraRun | null };
+  sun: { active: boolean };
 }): Partial<GlobeProps> {
-  return view.floatDive.active
-    ? { ...clear, aurora: null }
-    : storyBackdrop(view.browsingStories, view.depthFocus);
+  if (view.aurora.run) return clear;
+  if (view.floatDive.active || view.sun.active) return { ...clear, aurora: null };
+  return storyBackdrop(view.browsingStories, view.depthFocus);
 }

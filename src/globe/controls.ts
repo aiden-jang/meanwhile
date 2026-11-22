@@ -258,7 +258,7 @@ export function createControls(
     });
 
   const step = (dt: number): boolean => {
-    if (holdOverflight) return false;
+    if (holdOverflight) return horizon.step(dt, reduced.matches);
     const framingMoving = stepFraming(dt);
     const rigMoving = rig.step(dt, cameraRigTarget(target, { lon, lat, zoom }), reduced.matches || morph > 0);
     if (target) {
@@ -378,7 +378,7 @@ export function createControls(
       target = null;
       vLon = vLat = vZoom = 0;
     },
-    auroraSweep: aurora.sweep,
+    auroraSweep: () => (holdOverflight ? 1 : aurora.sweep()),
     setDive: (on) => {
       dive.set(on);
       stepFraming(0);

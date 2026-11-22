@@ -30,6 +30,7 @@ import { StoryBoundary } from "./StoryBoundary";
 import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
 import { nightfallPosition } from "./tonight/nightfall";
+import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
@@ -101,7 +102,7 @@ function ObservatoryContent({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation },
+  views,
   radar,
   feedNote,
   onScene,
@@ -109,6 +110,8 @@ function ObservatoryContent({
   onExplore,
   tour,
 }: ObservatoryProps): JSX.Element {
+  const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
+  const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
   const closeView = (fallback: () => void) => () => {
     if (!navigationContext?.returnToBrowse()) fallback();
@@ -133,7 +136,7 @@ function ObservatoryContent({
       solar={solar}
       onSunWatch={ovalReturn.open}
       onCloseSun={sun.close}
-      onTonight={() => tonight.open()}
+      onTonight={fromAfterDark.open}
       city={skyCity}
     />
   );
@@ -267,16 +270,19 @@ function ObservatoryContent({
                   initialPosition={tonight.entry.position}
                   nightfall={tonight.entry.nightfall}
                   orbit={tonight.orbit}
-                  returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
-                  onClose={closeView(() => {
-                    const id =
-                      tonight.entry.mode === "meteors"
-                        ? "open-meteor-nights"
-                        : tonight.entry.mode === "moonfall"
-                          ? "open-featured-moonfall"
-                          : "open-tonight-sky";
-                    observations.returnTo(id, tonight.close);
-                  })}
+                  returnLabel={fromAfterDark.label ?? navigationContext?.returnLabel ?? "Back to After Dark"}
+                  onClose={
+                    fromAfterDark.close ??
+                    closeView(() => {
+                      const id =
+                        tonight.entry.mode === "meteors"
+                          ? "open-meteor-nights"
+                          : tonight.entry.mode === "moonfall"
+                            ? "open-featured-moonfall"
+                            : "open-tonight-sky";
+                      observations.returnTo(id, tonight.close);
+                    })
+                  }
                 />
               </Suspense>
             ) : (

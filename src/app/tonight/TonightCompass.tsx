@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { StoryProjection } from "../observations/StoryProjection";
 import { bearingLabel, type TonightView } from "../../geo/tonight";
+import { manualSkyLook, useSkyLook } from "./useSkyLook";
+import type { TonightPresentation } from "../../globe/scenePresentation";
 
 const bearings = [
   { short: "N", name: "north", azimuth: 0 },
@@ -16,7 +18,7 @@ export function TonightCompass({
   orbit,
   onOrbit,
 }: {
-  view: TonightView | null;
+  view: TonightPresentation | null;
   onView: (view: TonightView) => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
   orbit: boolean;
@@ -26,6 +28,8 @@ export function TonightCompass({
   const menu = useId();
   const toggle = useRef<HTMLButtonElement>(null);
   const fromEarth = projection.map || orbit;
+  const local = !!view && !fromEarth && !view.lunarDeparture;
+  const handleLookKey = useSkyLook(view, onView, local);
   const compass = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!directions) return;
@@ -132,8 +136,15 @@ export function TonightCompass({
             toggle.current?.focus({ preventScroll: true });
           }}
         >
-          <span>
+          <span
+            tabIndex={local ? 0 : undefined}
+            role="group"
+            aria-label="Look around the local sky"
+            aria-description="Use the arrow keys to turn and tilt the view."
+            onKeyDown={handleLookKey}
+          >
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°
+            <small className="tonight-drag-hint">Drag to look around</small>
             {target && (
               <small className="tonight-target-bearing">
                 {target.name}
@@ -169,11 +180,7 @@ export function TonightCompass({
                 aria-label={`Look ${name}`}
                 aria-pressed={view.look.azimuth === azimuth && view.look.altitude === 16}
                 onClick={() => {
-                  onView({
-                    ...view,
-                    look: { azimuth, altitude: 16 },
-                    nightTrail: view.nightTrail && { ...view.nightTrail, following: false },
-                  });
+                  onView(manualSkyLook(view, { azimuth, altitude: 16 }));
                   if (toggle.current?.getClientRects().length) {
                     setDirections(false);
                     toggle.current.focus({ preventScroll: true });

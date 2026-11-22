@@ -269,8 +269,10 @@
   background: var(--color-raised);
 }
 
-.frame[data-presentation="observe"] .zones:has([data-tonight]) .zone-canvas canvas {
-  cursor: default;
+.tonight-drag-hint {
+  display: block;
+  color: var(--color-dim);
+  font-size: 11px;
 }
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {

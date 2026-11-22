@@ -73,7 +73,7 @@ export function TonightSky({
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
   const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(null);
-  const [observing, setObserving] = useState(Boolean(initialPosition) && !nightfall);
+  const [started, setObserving] = useState(Boolean(initialPosition) && !nightfall);
   const [arrivalCity, setArrivalCity] = useState(() =>
     nightfall ? skyCities.find(({ name }) => name === initialPosition?.city) : undefined,
   );
@@ -125,6 +125,7 @@ export function TonightSky({
     };
   }, [city, night.start, night.end, initial]);
   const current = view?.city.name === city.name ? view : opening;
+  const observing = started || current.look !== opening.look;
   const [departure, setDeparture] = useState(() =>
     view?.lunarDeparture
       ? { ...view.lunarDeparture, aim: view }
