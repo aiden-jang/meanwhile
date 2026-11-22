@@ -313,7 +313,7 @@ export function StoryPlayer({
   return (
     <ReplayPanel
       {...panel}
-      horizon={!!localSky}
+      horizon={orbitStory && !!localSky}
       projection={sky.projection}
       focusOnEntry={false}
       title={meta.title}

@@ -29,3 +29,9 @@ export function captureHistoryPanel(): HistoryPanel {
     query: document.querySelector<HTMLInputElement>("#story-search-input")?.value ?? "",
   };
 }
+
+export function rememberHistoryQuery(query: string) {
+  const panel = readHistoryPanel();
+  if (!panel || panel.query === query || !document.getElementById("story-search-input")) return;
+  history.replaceState({ ...history.state, observatoryPanel: { ...panel, query } }, "");
+}

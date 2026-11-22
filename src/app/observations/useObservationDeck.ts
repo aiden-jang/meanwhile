@@ -1,4 +1,4 @@
-import { readHistoryPanel } from "../historyPanel";
+import { readHistoryPanel, rememberHistoryQuery } from "../historyPanel";
 import { spanDeg } from "../../geo/sphere";
 import { storyPlace, type StoryPlace } from "../discovery/places";
 import { useCallback, useRef, useState } from "react";
@@ -149,7 +149,10 @@ export function useObservationDeck(
     session,
     getMoment: current,
     query,
-    setQuery,
+    setQuery(next: string) {
+      rememberHistoryQuery(next);
+      setQuery(next);
+    },
     open(next: StoryId, from: string, resume?: StoryMoment | null, arrival?: JourneyArrival) {
       before();
       recipient.current = false;

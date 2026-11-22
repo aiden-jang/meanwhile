@@ -81,6 +81,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   const open = page.getByRole("button", { name: "Float Dive", exact: true });
   await expect(open).toBeEnabled();
   expect(requests).toBe(0);
+  const trigger = await open.getAttribute("id");
   await open.click();
   const dive = page.getByRole("region", { name: "Float Dive" });
   await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
@@ -126,7 +127,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#continue-story-float")).toBeFocused();
+  await expect(page.locator(`#${trigger}`)).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });

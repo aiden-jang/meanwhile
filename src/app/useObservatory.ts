@@ -268,7 +268,7 @@ export function useObservatory(shared: Partial<Permalink>) {
           setTourStop(null);
           setRun(saved.run);
           requestAurora(saved.auroraRequest);
-          skyCity.select(saved.skyCity);
+          skyCity.restore(saved.sky.view || saved.deck.entry ? saved.skyCity : undefined);
           setSunWatch(saved.sunWatch);
           sky.restore(saved.sky);
           let float: FloatDiveView | "opening" | null = null;

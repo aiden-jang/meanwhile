@@ -15,6 +15,7 @@ export function StoryBoundary({
   return (
     <StoryFallback
       resetKey={resetKey}
+      allowReload={!navigation?.hasReturnOrigin}
       story={searchStories.find(({ id }) => id === navigation?.active)}
       closeLabel={navigation?.returnLabel ?? "Back to home"}
       onClose={() => {
@@ -52,6 +53,7 @@ class StoryFallback extends Component<
     onClose: () => void;
     closeLabel: string;
     resetKey: string;
+    allowReload: boolean;
     story: { id: string; title: string } | undefined;
   },
   { failed: boolean }
@@ -64,7 +66,7 @@ class StoryFallback extends Component<
   }
 
   componentDidCatch(error: Error) {
-    if (this.props.story) recoverStoryDownload(error, this.props.story.id);
+    if (this.props.story && this.props.allowReload) recoverStoryDownload(error, this.props.story.id);
   }
 
   componentDidUpdate(previous: Readonly<StoryFallback["props"]>) {

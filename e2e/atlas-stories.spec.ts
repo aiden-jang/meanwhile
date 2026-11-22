@@ -275,7 +275,14 @@ for (const [id, title] of [
     );
     await panel.getByRole("button", { name: "Play", exact: true }).click();
     await expect(time).not.toHaveAttribute("datetime", at!);
-    await page.locator("#globe-view canvas").click({ position: { x: 60, y: 100 } });
+    const world = await page.locator("#globe-view canvas").boundingBox();
+    const pointer = { x: world!.x + world!.width * 0.72, y: world!.y + world!.height * 0.4 };
+    await page.mouse.click(pointer.x, pointer.y);
+    await expect(panel.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await page.mouse.move(pointer.x, pointer.y);
+    await page.mouse.down();
+    await page.mouse.move(pointer.x + 40, pointer.y + 12, { steps: 4 });
+    await page.mouse.up();
     await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Map", exact: true }).click();
     const mapTime = await time.getAttribute("datetime");
