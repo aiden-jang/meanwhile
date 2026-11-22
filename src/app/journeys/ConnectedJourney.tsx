@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
-import { revealReading } from "../observations/revealReading";
 import { warmJourneyStop } from "./warmJourneyStop";
 
 export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
@@ -11,19 +10,10 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
   const journey = journeys.find(({ id }) => id === route?.id);
   const next = route && journey?.steps[route.step + 1]?.id;
   useEffect(() => {
-    warmJourneyStop(next ?? undefined);
-  }, [next]);
-  if (!navigation || !route || !journey) return null;
+    if (route?.id !== "ice-in-motion") warmJourneyStop(next ?? undefined);
+  }, [next, route?.id]);
+  if (!navigation || !route || !journey || route.id === "ice-in-motion") return null;
   const step = journey.steps[route.step]!;
-  const action =
-    step.id === "ice"
-      ? { selector: ".observation-chart[data-scrubbable]", label: "Inspect extent chart" }
-      : step.id === "glacier"
-        ? {
-            selector: ".terrain-comparison > .observatory-actions > button",
-            label: "Compare velocity maps",
-          }
-        : null;
   const nextTitle = searchStories.find(({ id }) => id === next)?.title;
   const reading = !next ? navigation.current()?.position.moment : undefined;
   return (
@@ -50,20 +40,6 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
             </ol>
           )}
           <p>{step.prompt}</p>
-          {action && (
-            <button
-              type="button"
-              className="journey-inspect"
-              onClick={() => {
-                const target = document.querySelector<HTMLElement>(action.selector);
-                if (target instanceof HTMLButtonElement && target.getAttribute("aria-pressed") !== "true")
-                  target.click();
-                revealReading(target);
-              }}
-            >
-              {action.label}
-            </button>
-          )}
         </>
       )}
       <div className="observatory-actions">

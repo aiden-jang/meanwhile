@@ -31,7 +31,7 @@ export interface Controls {
   /** The whole camera in three numbers. This is exactly what a permalink has to carry. */
   state: () => CameraState;
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md Components / Camera, scene and story motion. */
-  flyTo: (lon: number, lat: number, zoom?: number) => void;
+  flyTo: (lon: number, lat: number, zoom?: number, crossing?: boolean) => void;
   guidance: CameraGuidance;
   setReplayAngle: (bank: number, pitch: number) => void;
   setView: (pose: CameraState) => void;

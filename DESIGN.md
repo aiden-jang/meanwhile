@@ -935,10 +935,13 @@ Through the Air lifts the CALIPSO profile from its surveyed Atlantic ground trac
 cursor links the inset to the raised slice. The slice folds back along its track before the
 camera flies to the archived smoke scans. Tonga closes the journey with a pressure trace at the
 chosen station. Each departure keeps its own camera, projection and observation selection.
-Ice in Motion moves from a scrubbable Arctic extent chart to a fixed glacier comparison, then
-across the equator into the iceberg record. The breakup replay widens the camera as first
-recorded fragment positions light up and their tracks draw out. Each path retains gaps in the
-record. Returning restores the chart date, comparison cell and divider, or iceberg and frame.
+Ice in Motion keeps the chapter rail and Previous view outside the scrolling reading panel.
+The Arctic extent chart leads to Glacier Flow. The velocity field folds into Greenland before
+the shared world pulls back, crosses the equator, and arrives at the separate South Georgia record.
+Reduced motion moves directly between the same locations. The breakup replay grows distinct
+fragment tracks from their first recorded fixes, with gaps left open. The journey finding follows
+the breakup and keeps those tracks visible. Returning restores projection, camera, the Arctic date,
+the glacier year and trace or its comparison cell and divider, or the selected fragment and date.
 The world label reports the selected observation and leaves gaps explicit.
 Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
 Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.

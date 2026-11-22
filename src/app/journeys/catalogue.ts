@@ -177,7 +177,7 @@ export const journeys: readonly Journey[] = [
       },
       {
         id: "glacier",
-        prompt: "Pin a point on Jakobshavn and slide between its two velocity maps.",
+        prompt: "Follow Jakobshavn’s ice toward the fjord. Compare years at the same point along the trace.",
         context: "West Greenland · 2013 and 2024 annual velocity · NASA ITS_LIVE.",
       },
       {

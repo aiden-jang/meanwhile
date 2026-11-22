@@ -67,6 +67,7 @@ export function createScenePresentation(
   let oval: AuroraRun["route"] | null = null;
   let radar: ReturnType<typeof createRadarSurface> | undefined;
   let observationTarget: ObservationView["target"] | undefined;
+  let observationCrossing: string | undefined;
   let radarTarget: RadarView["target"] | undefined;
   let returnCamera: ReturnType<Controls["state"]> | undefined;
 
@@ -282,8 +283,12 @@ export function createScenePresentation(
         guided &&
         (holdingGeography || target !== observationTarget) &&
         observation.sky?.sunCover === undefined
-      )
-        controls.flyTo(target.lon, target.lat, target.zoom);
+      ) {
+        const crossing = observation.crossing === true && observationCrossing !== observation.cameraKey;
+        if (crossing) observationCrossing = observation.cameraKey;
+        controls.flyTo(target.lon, target.lat, target.zoom, crossing);
+      }
+      if (!observation.crossing && observation.arrive) observationCrossing = undefined;
     } else if (returnCamera) {
       if (
         mode === "dayline" ||

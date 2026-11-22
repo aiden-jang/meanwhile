@@ -62,3 +62,36 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
   await expect(extent).toHaveAttribute("aria-valuetext", "18 Jun 2012, 12:00 UTC");
   await expect(ice.getByRole("group", { name: "Ice Line on the map" })).toBeVisible();
 });
+
+test("Ice in Motion keeps the pager reachable and reveals the finding after the breakup", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=glacier&journey=ice-in-motion&stop=1&p=map");
+  const guide = page.getByRole("region", { name: "Current journey", exact: true });
+  const glacier = page.getByRole("region", { name: "Glacier Flow", exact: true });
+  const next = guide.getByRole("button", { name: "Next: Iceberg Drift", exact: true });
+  const year = glacier.getByRole("combobox", { name: "Annual velocity", exact: true });
+  const trace = glacier.getByRole("slider", { name: "Trace progress", exact: true });
+  await year.selectOption("2013");
+  await expect(glacier.locator(".glacier-field figcaption")).toHaveText("2013 annual velocity field");
+  await glacier.getByRole("button", { name: "Flowing seaward", exact: true }).click();
+  await expect(trace).toHaveValue("24");
+  await expect(next).toBeInViewport({ ratio: 1 });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await next.click();
+  const iceberg = page.getByRole("region", { name: "Iceberg Drift", exact: true });
+  const breakup = guide.getByRole("button", { name: "Watch the breakup", exact: true });
+  await expect(breakup).toBeInViewport({ ratio: 1 });
+  await expect(iceberg.getByRole("button", { name: "Finish journey", exact: true })).toHaveCount(0);
+  await breakup.click();
+  await guide.getByRole("button", { name: "See the finding", exact: true }).click();
+  await expect(iceberg.getByRole("heading", { name: "Three ways ice moves" })).toBeFocused();
+  await guide.getByRole("button", { name: "Previous view", exact: true }).click();
+  await expect(year).toHaveValue("2013");
+  await expect(trace).toHaveValue("24");
+  await expect(glacier.getByRole("group", { name: "Glacier Flow on the map" })).toBeVisible();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

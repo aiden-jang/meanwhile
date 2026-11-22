@@ -5,6 +5,7 @@ import { SunWatch, SunLoading, TonightSky, TonightCompass, FloatDive } from "./O
 import { useOvalReturn } from "./sun/useSunVisit";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryIdentity } from "./journeys/StoryIdentity";
+import { IceJourneyLayout } from "./journeys/IceJourney";
 import { ConnectedJourney } from "./journeys/ConnectedJourney";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { useObservatoryEscape } from "./useObservatoryEscape";
@@ -97,16 +98,18 @@ function ObservatoryContent({
   });
   if (observations.entry)
     return (
-      <ObservationDeckShell
-        deck={observations}
-        entry={observations.entry}
-        scene={scene}
-        city={skyCity}
-        readCamera={explorer.read}
-        restoreCamera={explorer.restore}
-        onClose={closeStory}
-        onRadar={() => radar.open("pacific", true)}
-      />
+      <IceJourneyLayout>
+        <ObservationDeckShell
+          deck={observations}
+          entry={observations.entry}
+          scene={scene}
+          city={skyCity}
+          readCamera={explorer.read}
+          restoreCamera={explorer.restore}
+          onClose={closeStory}
+          onRadar={() => radar.open("pacific", true)}
+        />
+      </IceJourneyLayout>
     );
   return (
     <section

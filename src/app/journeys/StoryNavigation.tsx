@@ -84,6 +84,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     browseMap: props.explorer.flat,
     float: floatDive.view,
     curtain: active === "dust" && !!deck.view?.curtain,
+    foldGlacier: deck.foldGlacier,
     unavailable,
     open: (id, trigger, visit, fresh, arrival) =>
       navigate(id, trigger, visit, false, fresh, undefined, arrival),

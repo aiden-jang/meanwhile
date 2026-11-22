@@ -2,6 +2,8 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CameraState } from "../../globe/controlsTypes";
 import { iceberg } from "../../sources/observations/iceberg";
 import { useStoryClock } from "../earth-stories/useStoryClock";
+import { IceJourneyEnding } from "../journeys/IceJourney";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -17,6 +19,7 @@ import { refreshAnnotations } from "../../globe/annotationInput";
 
 export function IcebergDrift({ onView, ...panel }: ReplayProps) {
   const { initial, remember } = useStorySession();
+  const guided = useStoryNavigation()?.route?.id === "ice-in-motion";
   const [choice, setChoice] = useState(() => tracks.find(({ id }) => id === initial?.choice)?.id ?? "A");
   const [opening, setOpening] = useState(() => initial?.at === undefined || initial?.chapter === "approach");
   const [photo, setPhoto] = useState(() => initial?.chapter === "photo");
@@ -139,7 +142,7 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     setShot(panel.map || reduced ? { ...data.target } : driftCamera(FIRST_FRAGMENT));
     refreshAnnotations({ camera: "resume" });
-    clock.playFrom(reduced ? BREAKUP : FIRST_FRAGMENT, BREAKUP_END);
+    clock.playFrom(reduced && guided ? BREAKUP_END : reduced ? BREAKUP : FIRST_FRAGMENT, BREAKUP_END);
   }
 
   function togglePhoto() {
@@ -168,6 +171,7 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
       location="Scotia Sea · South Georgia"
       subtitle="Follow A-68A toward South Georgia, then see where the fragments were recorded."
       className="iceberg-journey"
+      finding={!guided}
       status={showingPhoto ? null : caption}
       at={
         !showingPhoto && frame ? (
@@ -206,13 +210,17 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
       )}
       {frame && data && (
         <>
-          <div className="observatory-actions">
-            <button type="button" onClick={playBreakup} disabled={revealing}>
-              Watch the breakup
-            </button>
-          </div>
+          {!guided && (
+            <div className="observatory-actions">
+              <button type="button" onClick={playBreakup} disabled={revealing}>
+                Watch the breakup
+              </button>
+            </div>
+          )}
           <div className="archive-scene-caption iceberg-reading" ref={readingPanel} data-evidence-body="">
-            <h3 data-evidence-point={linked || undefined}>{reading?.label}</h3>
+            <h3 tabIndex={-1} data-evidence-point={linked || undefined}>
+              {reading?.label}
+            </h3>
             <p>{reading?.value}</p>
             <label className="observation-picker">
               <span>Iceberg</span>
@@ -307,6 +315,14 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
             </>
           )}
         </>
+      )}
+      {guided && (
+        <IceJourneyEnding
+          ready={state === "ready"}
+          playing={revealing}
+          canRead={!opening && index >= FIRST_FRAGMENT && !revealing}
+          replay={playBreakup}
+        />
       )}
     </ReplayPanel>
   );

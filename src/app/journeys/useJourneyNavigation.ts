@@ -9,7 +9,7 @@ import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./con
 import { foldDeparture } from "./foldDeparture";
 import { journeyProgressKey, packJourneyProgress, readJourneyProgress } from "./journeyProgress";
 
-type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" };
+type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" | "glacier" };
 
 interface JourneyInputs {
   linked?: { id: string; step: number } | undefined;
@@ -20,6 +20,7 @@ interface JourneyInputs {
   browseMap: boolean;
   float: FloatDiveView | null;
   curtain: boolean;
+  foldGlacier: () => boolean;
   unavailable: (id: string) => string | null;
   open: (id: string, trigger: string, visit?: Visit, fresh?: boolean, arrival?: JourneyArrival) => void;
 }
@@ -44,8 +45,8 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
   const visible = route && activeRoute?.steps[route.step]?.id === inputs.active ? route : null;
   useEffect(() => {
     if (route && inputs.active === null) setRoute(null);
-    if (inputs.active !== "float" && inputs.active !== "dust") folding.current = undefined;
-  }, [inputs.active, route]);
+    if (!visible?.folding) folding.current = undefined;
+  }, [inputs.active, route, visible?.folding]);
 
   function progressFor(id: string) {
     return records.get(id) ?? (journeyProgress?.id === id ? journeyProgress : null);
@@ -129,12 +130,15 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     },
     step(index: number) {
       const next = activeRoute?.steps[index];
-      if (!route || route.folding || !next || inputs.unavailable(next.id)) return;
+      if (!route || route.folding || index === route.step || !next || inputs.unavailable(next.id)) return;
       const revisit = stops.current.has(index);
       const here = capture();
       const stop = connectedArrival(stops.current, route.step, index, next.id, inputs.current(), here);
       const connected = !!activeRoute?.guide || revisit;
+      const crossing = route.id === "ice-in-motion" && next.id === "iceberg";
+      if (crossing) stop.arrival.crossing = true;
       const advance = () => {
+        folding.current = undefined;
         stops.current.set(index, stop);
         inputs.open(
           next.id,
@@ -146,6 +150,20 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
         setRoute({ id: route.id, step: index });
         persist(route.id, index);
       };
+      if (
+        crossing &&
+        inputs.active === "glacier" &&
+        !matchMedia("(prefers-reduced-motion: reduce)").matches &&
+        inputs.foldGlacier()
+      ) {
+        const finish = () => {
+          if (folding.current === finish) advance();
+        };
+        folding.current = finish;
+        setRoute({ ...route, folding: "glacier" });
+        window.setTimeout(finish, 380);
+        return;
+      }
       const transition = foldDeparture(inputs.float, inputs.curtain, folding, advance);
       if (transition) setRoute({ ...route, folding: transition });
       else advance();

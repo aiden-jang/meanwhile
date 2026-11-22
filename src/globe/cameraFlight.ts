@@ -9,9 +9,17 @@ export interface CameraPose {
 export interface CameraTarget extends CameraPose {
   arc?: { span: number; pull: number; fromZoom: number };
   intro?: { elapsed: number; from: CameraPose };
+  crossing?: { elapsed: number; from: CameraPose };
 }
 const INTRO_SECONDS = 2.2;
 const clamp = (n: number): number => Math.max(0, Math.min(1, n));
+
+export function cameraDestination(from: CameraPose, to: CameraPose, crossing: boolean): CameraTarget {
+  const span = spanDeg(from.lon, from.lat, to.lon, to.lat);
+  if (crossing && span >= 24) return { ...to, crossing: { elapsed: 0, from } };
+  const pull = 0.45 * clamp((span - 25) / (110 - 25));
+  return pull > 0 ? { ...to, arc: { span, pull, fromZoom: from.zoom } } : to;
+}
 
 export function entranceFrom(to: CameraPose): CameraPose {
   return {
@@ -31,6 +39,34 @@ export function entrancePose(to: CameraTarget, dt: number): CameraPose {
     lat: intro.from.lat + (to.lat - intro.from.lat) * ease,
     zoom: intro.from.zoom + (to.zoom - intro.from.zoom) * ease,
   };
+}
+
+const CROSSING_SECONDS = 1.9;
+
+export function crossingPose(to: CameraTarget, dt: number): CameraPose {
+  const crossing = to.crossing!;
+  crossing.elapsed = Math.min(CROSSING_SECONDS, crossing.elapsed + dt);
+  const t = crossing.elapsed / CROSSING_SECONDS;
+  if (t >= 1) return { lon: to.lon, lat: to.lat, zoom: to.zoom };
+  const smooth = (n: number) => n * n * (3 - 2 * n);
+  const along = smooth(clamp((t - 0.14) / 0.72));
+  const from = crossing.from;
+  let turn = to.lon - from.lon;
+  turn -= Math.round(turn / 360) * 360;
+  const overview = Math.min(0.85, from.zoom, to.zoom);
+  const zoom =
+    t < 0.38
+      ? from.zoom + (overview - from.zoom) * smooth(t / 0.38)
+      : overview + (to.zoom - overview) * smooth(clamp((t - 0.59) / 0.41));
+  return {
+    lon: from.lon + turn * along,
+    lat: from.lat + (to.lat - from.lat) * along,
+    zoom,
+  };
+}
+
+export function crossingDone(to: CameraTarget): boolean {
+  return !!to.crossing && to.crossing.elapsed >= CROSSING_SECONDS;
 }
 
 export function cameraRigTarget(to: CameraTarget | null, at: CameraPose): { bank: number; lift: number } {

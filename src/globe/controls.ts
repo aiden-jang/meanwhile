@@ -16,6 +16,9 @@ import { createCameraRig } from "./cameraRig";
 import {
   advanceCameraSpring,
   cameraRigTarget,
+  cameraDestination,
+  crossingPose,
+  crossingDone,
   entranceFrom,
   entrancePose,
   entranceDone,
@@ -24,16 +27,10 @@ import {
 import { LAT_LIMIT } from "./framing";
 import { createOrbitDistance } from "./orbitDistance";
 import type { PerspectiveCamera } from "three";
-import { DEG, spanDeg, toVec3 } from "../geo/sphere";
+import { DEG, toVec3 } from "../geo/sphere";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
    to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
-
-// A long flight pulls back in the middle; short nudges keep their distance.
-const ARC_MIN_DEG = 25;
-const ARC_FULL_DEG = 110;
-/** Extra distance at the top of the arc, as a fraction of the flight's own magnification. */
-const ARC_PULLBACK = 0.45;
 
 /** Flick decay. A third of a second of coasting reads as weight; longer reads as ice. */
 const MOMENTUM_TAU = 0.32;
@@ -272,6 +269,9 @@ export function createControls(
       if (target.intro) {
         ({ lon, lat, zoom } = entrancePose(target, dt));
         if (entranceDone(target)) target = null;
+      } else if (target.crossing) {
+        ({ lon, lat, zoom } = crossingPose(target, dt));
+        if (crossingDone(target)) target = null;
       } else {
         Object.assign(flightPose, { lon, lat, zoom });
         Object.assign(flightVelocity, { lon: vLon, lat: vLat, zoom: vZoom });
@@ -297,7 +297,7 @@ export function createControls(
     return moving;
   };
 
-  function flyTo(toLon: number, toLat: number, toZoom = zoom): void {
+  function flyTo(toLon: number, toLat: number, toZoom = zoom, crossing = false): void {
     sky.resume();
     const clamped = { lon: toLon, lat: clampLat(toLat), zoom: clampZoom(toZoom) };
     if (reduced.matches || holdOverflight) {
@@ -308,10 +308,7 @@ export function createControls(
     vLon = 0;
     vLat = 0;
     vZoom = 0;
-    const span = spanDeg(lon, lat, clamped.lon, clamped.lat);
-    const reach = (span - ARC_MIN_DEG) / (ARC_FULL_DEG - ARC_MIN_DEG);
-    const pull = ARC_PULLBACK * Math.max(0, Math.min(1, reach));
-    target = pull > 0 ? { ...clamped, arc: { span, pull, fromZoom: zoom } } : clamped;
+    target = cameraDestination({ lon, lat, zoom }, clamped, crossing);
   }
 
   return {

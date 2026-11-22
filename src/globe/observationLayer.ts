@@ -228,19 +228,21 @@ export function createObservationLayer(morph: { value: number }) {
   const sweep = { value: 1 };
   const divider = { value: -1 };
   const feather = { value: 0 };
+  const fold = { value: 0 };
   const compileRaster = raster.material.onBeforeCompile;
   raster.material.onBeforeCompile = (shader, renderer) => {
     compileRaster(shader, renderer);
     shader.uniforms.sweep = sweep;
     shader.uniforms.surveyDivider = divider;
     shader.uniforms.observationFeather = feather;
+    shader.uniforms.observationFold = fold;
     const mapFragment = ShaderChunk.map_fragment.replace(
       "texture2D( map, vMapUv )",
       `texture2D( map, surveyDivider < 0.0 ? vMapUv :
         vec2(vMapUv.x, 0.5 * clamp(vMapUv.y, 0.001, 0.999) + 0.5 * (1.0 - step(surveyDivider, vMapUv.x))))`,
     );
     shader.fragmentShader =
-      `uniform float sweep;\nuniform float surveyDivider;\nuniform float observationFeather;\n${shader.fragmentShader}`.replace(
+      `uniform float sweep;\nuniform float surveyDivider;\nuniform float observationFeather;\nuniform float observationFold;\n${shader.fragmentShader}`.replace(
         "#include <map_fragment>",
         `${mapFragment}
        #ifdef USE_MAP
@@ -248,6 +250,11 @@ export function createObservationLayer(morph: { value: number }) {
        if (observationFeather > 0.0) {
          vec2 edgeUv = min(vMapUv, 1.0 - vMapUv);
          diffuseColor.a *= smoothstep(0.0, observationFeather, min(edgeUv.x, edgeUv.y));
+       }
+       if (observationFold > 0.0) {
+         vec2 centered = abs(2.0 * vMapUv - 1.0);
+         float edge = 1.1 * (1.0 - observationFold);
+         diffuseColor.a *= 1.0 - smoothstep(edge - 0.08, edge, max(centered.x, centered.y));
        }
        if (surveyDivider > 0.0 && surveyDivider < 1.0) {
          float edge = fwidth(vMapUv.x);
@@ -270,9 +277,11 @@ export function createObservationLayer(morph: { value: number }) {
   let prior: ObservationView | null = null;
   let reveal = 0;
   let travel = 0;
+  let departure = 0;
 
   function set(view: ObservationView | null) {
     if (view === prior) return;
+    if (!view?.departing) departure = 0;
     curtain.set(view?.curtain);
     terrain.set(view?.terrain);
     if (view?.fault && !fault) {
@@ -356,7 +365,10 @@ export function createObservationLayer(morph: { value: number }) {
       const lifting = terrain.step(dt, reduced);
       if (!prior) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.15);
-      const strength = reveal * reveal * (3 - 2 * reveal) * layerWeight;
+      if (prior.departing) departure = reduced ? 1 : Math.min(1, departure + elapsed / 0.32);
+      const fade = departure * departure * (3 - 2 * departure);
+      fold.value = fade;
+      const strength = reveal * reveal * (3 - 2 * reveal) * (1 - fade) * layerWeight;
       dot.material.uniforms.reveal!.value = strength;
       raster.material.opacity = strength * (prior.frame.raster?.opacity ?? 0.88);
       travel = Math.min(1, travel + dt / 1.05);
@@ -368,7 +380,9 @@ export function createObservationLayer(morph: { value: number }) {
       lineMaterial.uniforms.traceProgress!.value = reduced
         ? 1.1
         : (prior.traceProgress ?? (flowing ? travel * 1.03 : 1.1));
-      return reveal < 1 || !!flowing || !!sweeping || unfolding || lifting;
+      return (
+        (prior.departing && departure < 1) || reveal < 1 || !!flowing || !!sweeping || unfolding || lifting
+      );
     },
   };
 }

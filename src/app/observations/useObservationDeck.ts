@@ -29,6 +29,8 @@ export function useObservationDeck(
   const [map, setProjection] = useState(initialMap);
   const queuedProjection = useRef<boolean>();
   const journeyCamera = useRef(linkedCamera);
+  const crossing = useRef(false);
+  const folding = useRef(false);
   const runningCameraKey = useRef<string>();
   const published = useRef<StoryId | null>(null);
   const departure = useRef<StoryPlace>();
@@ -61,6 +63,8 @@ export function useObservationDeck(
         next
           ? {
               ...next,
+              ...(crossing.current ? { crossing: true } : {}),
+              ...(folding.current ? { departing: true } : {}),
               ...(pose ? { target: pose, holdGeography: false } : {}),
               cameraKey: [entry ?? "observation", next.cameraKey].filter(Boolean).join(":"),
             }
@@ -104,6 +108,7 @@ export function useObservationDeck(
     departure.current = undefined;
     preview.current = undefined;
     journeyCamera.current = undefined;
+    crossing.current = folding.current = false;
     active.current = null;
     setView(null);
     setEntry(null);
@@ -122,6 +127,7 @@ export function useObservationDeck(
       departure.current = undefined;
       preview.current = undefined;
       journeyCamera.current = saved.entry ? saved.camera : undefined;
+      crossing.current = folding.current = false;
       published.current = null;
       if (saved.entry && saved.moment) memory.current.set(saved.entry, saved.moment);
       runningCameraKey.current = undefined;
@@ -149,6 +155,12 @@ export function useObservationDeck(
     view,
     map,
     update,
+    foldGlacier() {
+      if (!view?.image || published.current !== "glacier") return false;
+      folding.current = true;
+      setView({ ...view, departing: true });
+      return true;
+    },
     setMap,
     session,
     getMoment: current,
@@ -165,6 +177,8 @@ export function useObservationDeck(
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
       journeyCamera.current = arrival?.pose;
+      crossing.current = arrival?.crossing === true;
+      folding.current = false;
       runningCameraKey.current = undefined;
       preview.current = arrival?.preview;
       const fromPlace = arrival?.departure ?? (published.current ? storyPlace(published.current) : undefined);

@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { PerspectiveCamera } from "three";
-import { entranceFrom, entrancePose, entranceDone, cameraRigTarget, type CameraTarget } from "./cameraFlight";
+import {
+  entranceFrom,
+  entrancePose,
+  entranceDone,
+  crossingDone,
+  crossingPose,
+  cameraRigTarget,
+  type CameraTarget,
+} from "./cameraFlight";
 import { createFlightTarget } from "./cameraTarget";
 import type { Controls } from "./controls";
 import { createCameraRig } from "./cameraRig";
@@ -79,6 +87,22 @@ describe("cinematic camera and light", () => {
       expect(entranceDone(target)).toBe(true);
       expect(at).toEqual(destination);
       expect(cameraRigTarget(target, at)).toEqual({ bank: 0, lift: 0 });
+    }
+  });
+  it("shows an overview during the Greenland-to-South Georgia crossing", () => {
+    const from = { lon: -49.55, lat: 69.15, zoom: 4 };
+    const destination = { lon: -40.5, lat: -56.4, zoom: 2.6 };
+    for (const dt of [1 / 120, 1 / 60, 0.2]) {
+      const target: CameraTarget = { ...destination, crossing: { elapsed: 0, from } };
+      let at = crossingPose(target, 0);
+      expect(at).toEqual(from);
+      let equatorZoom = Infinity;
+      while (!crossingDone(target)) {
+        at = crossingPose(target, dt);
+        if (Math.abs(at.lat) < 20) equatorZoom = Math.min(equatorZoom, at.zoom);
+      }
+      expect(equatorZoom).toBeLessThan(1);
+      expect(at).toEqual(destination);
     }
   });
   it("settles the lens after interruption and clears it immediately for reduced motion or a map", () => {
