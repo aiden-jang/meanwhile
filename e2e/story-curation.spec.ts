@@ -28,7 +28,7 @@ for (const width of [1440, 390]) {
     await expect(entry).toHaveAccessibleName("Float Dive");
     await expect(entry).toHaveAccessibleDescription(/Measured profile/);
     await entry.click();
-    await expect(page.locator(".float-transport")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Follow the rise", exact: true })).toBeInViewport();
     await expect(page.getByRole("complementary", { name: "About this shared view" })).toBeHidden();
     await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(entry).toBeHidden();
