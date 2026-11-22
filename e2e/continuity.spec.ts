@@ -40,7 +40,7 @@ test("browser Back and reload keep the current journey stop, date and map", asyn
   const guide = page.getByRole("region", { name: "Current journey" });
   const ice = page.getByRole("region", { name: "Ice Line", exact: true });
   await ice.getByRole("button", { name: "Map", exact: true }).click();
-  const time = ice.getByRole("slider", { name: "Observation time", exact: true });
+  const time = ice.locator("#earth-story-time");
   await time.press("End");
   await expect(time).toHaveValue((await time.getAttribute("max"))!);
   const date = await time.getAttribute("aria-valuetext");
