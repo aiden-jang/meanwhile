@@ -331,12 +331,6 @@
   padding-top: 0;
   border-top: 0;
 }
-.story-kind {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--color-faint);
-  font-size: 10px;
-}
 .story-browse-all {
   min-height: 44px;
   font-size: 16px;
@@ -513,11 +507,6 @@
   height: 62px;
   border-radius: 7px;
 }
-#explorer-stories .story-choice .story-kind {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-dim);
-}
 .story-browse-footer {
   display: flex;
   flex-wrap: wrap;
@@ -671,9 +660,6 @@
   #explorer-stories .story-choice > button {
     font-size: 15px;
   }
-  #explorer-stories .story-choice .story-kind {
-    font-size: 13px;
-  }
 }
 
 @media (max-width: 380px) {
@@ -758,26 +744,12 @@
   #explorer-stories .story-choice > button {
     font-size: 18px;
   }
-  #explorer-stories .story-choice .story-kind {
-    font-size: 14px;
-  }
   .story-browse-all {
     font-size: 19px;
   }
   .story-library-toggle {
     font-size: 16px;
   }
-}
-
-#explorer-stories
-  .stories-group[aria-label="Selected stories"]
-  .story-choice:not(:has(button:disabled))
-  .story-promise {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 
 @media (min-width: 900px) {

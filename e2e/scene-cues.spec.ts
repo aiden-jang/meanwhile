@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openLayer, openStories, waitForData } from "./feeds";
+import { installFeeds, openLayer, openStories, revealTopics, waitForData } from "./feeds";
 
 test("the day–night cue follows the world and clears when opening layers", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -63,6 +63,7 @@ test("featured artwork keeps the story’s subject at both crop ratios", async (
   const art = page.locator(".featured-story-art img");
   await expect(art).toHaveAttribute("data-art-ready", "");
   await expect(art).toHaveCSS("object-position", "49% 52%");
+  await revealTopics(page);
   await page.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(art).toHaveAttribute("data-story", "float");
   await expect(art).toHaveAttribute("data-art-ready", "");

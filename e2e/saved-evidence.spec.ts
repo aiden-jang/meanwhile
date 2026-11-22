@@ -104,7 +104,7 @@ test("two Float readings retain separate notes, focus and scroll after a phone r
   await page.goto(`/#v=observe&story=float&choice=${profile}&chapter=200`);
   const depth = page.getByRole("slider", { name: "Ascent depth" });
   const note = page.getByRole("textbox", { name: "A note for this observation" });
-  const keep = page.getByRole("button", { name: "Keep this observation", exact: true });
+  const keep = page.getByRole("button", { name: "Save reading", exact: true });
   await page.locator(".float-observation-note summary").click();
   await note.fill("Deep sample");
   await keep.click();

@@ -3,24 +3,28 @@ import type { EarthScene } from "./useObservatory";
 export const featuredStories = {
   live: {
     id: "float",
-    note: "Measured ocean profiles · Argo",
+    note: "North Atlantic · Argo profiles",
+    action: "Follow the float",
     reason: "Follow a measured profile toward the surface.",
   },
   depth: {
     id: "rupture",
-    note: "Recorded event · Japan, 2011",
+    note: "Tōhoku · 11 March 2011",
+    action: "Trace the rupture",
     reason: "See where Tōhoku’s fault moved, then compare the recorded waves.",
   },
   night: {
     id: "moonfall",
-    note: "Recorded journey · Apollo 17, 1972",
+    note: "Taurus–Littrow · December 1972",
+    action: "Follow the rover",
     reason: "Leave the night sky and follow the rover across Taurus–Littrow.",
   },
 } as const;
 
 export const catalogueFeature = {
   id: "tonga",
-  note: "GOES-17 and ground pressure",
+  note: "Pacific Ocean · 15 January 2022",
+  action: "Follow the wave",
   reason: "Track the wave across the Pacific.",
 } as const;
 

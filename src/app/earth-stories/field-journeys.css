@@ -226,3 +226,42 @@
     clip-path: inset(50%);
   }
 }
+
+.glacier-field {
+  margin: 12px 0 0;
+}
+.glacier-field img {
+  display: block;
+  width: 100%;
+  height: clamp(84px, 13dvh, 140px);
+  object-fit: contain;
+  background: var(--color-void);
+}
+.glacier-field figcaption,
+.story-milestones[data-glacier-trace] p {
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+.glacier-field figcaption {
+  margin-top: 5px;
+}
+.story-milestones[data-glacier-trace] {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.story-milestones[data-glacier-trace] button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--color-hairline);
+  border-radius: 0;
+  font-variant-numeric: tabular-nums;
+}
+.story-milestones[data-glacier-trace] button[aria-pressed="true"] {
+  box-shadow: inset 2px 0 var(--color-ink);
+  background: var(--color-raised);
+}

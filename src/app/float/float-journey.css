@@ -189,3 +189,52 @@
     transform: scale(1.65);
   }
 }
+
+@media (max-width: 599px) {
+  .zones[data-float-stage="rise"][data-float-inspecting="false"] .observatory-sidebar {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  .float-transport[data-inline] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 68px;
+    position: static;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .float-transport[data-inline] .float-playback-row {
+    display: contents;
+  }
+  .float-transport[data-inline] .float-chapters {
+    grid-area: 2 / 1;
+    gap: 12px;
+  }
+  .float-transport[data-inline] .float-track {
+    grid-area: 1 / 1;
+  }
+  .float-transport[data-inline] .story-playback {
+    grid-area: 1 / 2;
+  }
+  .float-transport[data-inline] .float-inspect-toggle {
+    grid-area: 2 / 2;
+    max-width: none;
+  }
+  .float-transport[data-inline] > small {
+    display: none;
+  }
+  .observatory-intro[data-float-stage="rise"] .float-reading {
+    align-items: start;
+    grid-template-columns: 1fr 1fr;
+  }
+  .observatory-intro[data-float-stage="rise"] .float-value {
+    display: grid;
+    gap: 2px;
+  }
+  .observatory-intro[data-float-stage="rise"] .float-measurements {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .observatory-intro[data-float-stage="rise"] .float-value strong {
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -15,11 +15,13 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
     <div className="featured-story" data-feature={selection.id}>
       <div className="featured-story-art">
         <StoryThumbnail id={story.id} featured />
+        <div className="featured-caption">
+          <strong>{story.title}</strong>
+          <small id={`${id}-source`}>{selection.note}</small>
+        </div>
       </div>
       <span>
-        <strong>{story.title}</strong>
-        <small id={`${id}-source`}>{selection.note}</small>
-        <span className="featured-reason" id={`${id}-note`}>
+        <span className={unavailable ? "featured-reason" : "sr-only"} id={`${id}-note`}>
           {unavailable ?? selection.reason}
         </span>
         <span className="featured-story-actions">
@@ -29,15 +31,15 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
             type="button"
             disabled={!navigation || !!unavailable}
             onClick={() => navigation?.open(story.id, id)}
-            aria-label={`Open story: ${story.title}`}
+            aria-label={`${selection.action}: ${story.title}`}
             aria-describedby={`${id}-source ${id}-note`}
           >
-            Open story
+            {selection.action}
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
               <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </button>
-          <StoryPreviewButton id={story.id} title={story.title} triggerId={id} />
+          <StoryPreviewButton id={story.id} title={story.title} triggerId={id} locateLabel />
         </span>
       </span>
     </div>

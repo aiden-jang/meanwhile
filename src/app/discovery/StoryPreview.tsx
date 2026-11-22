@@ -24,23 +24,27 @@ export function StoryPreviewButton({
   id,
   title,
   triggerId,
+  locateLabel = false,
 }: {
   id: string;
   title: string;
   triggerId: string;
+  locateLabel?: boolean;
 }) {
   const preview = useContext(Preview);
   const navigation = useStoryNavigation();
   const place = storyPlace(id);
   if (!place || !preview) return null;
   const active = preview.active === place;
+  const projection = navigation?.previewMap ? "map" : "globe";
+  const label = active ? `On ${projection}` : locateLabel ? `Locate on ${projection}` : "Preview";
   return (
     <button
       type="button"
       id={`preview-${triggerId}`}
       data-story-preview={id}
       className="story-preview-action"
-      aria-label={`Preview ${title}`}
+      aria-label={locateLabel ? `${label}: ${title}` : `Preview ${title}`}
       aria-pressed={active}
       title={active ? "Remove the location preview" : `Preview ${title}`}
       disabled={!!navigation?.unavailable(id)}
@@ -50,7 +54,7 @@ export function StoryPreviewButton({
         <path d="M12.5 6.5C12.5 10 8 13.5 8 13.5S3.5 10 3.5 6.5a4.5 4.5 0 1 1 9 0Z" />
         <circle cx="8" cy="6.5" r="1.4" />
       </svg>
-      <span>{active ? (navigation?.previewMap ? "On map" : "On globe") : "Preview"}</span>
+      <span>{label}</span>
     </button>
   );
 }

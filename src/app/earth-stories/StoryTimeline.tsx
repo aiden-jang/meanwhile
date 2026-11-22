@@ -145,8 +145,25 @@ export function StoryTimeline({
         </div>
         {comparison}
       </StoryDock>
-      <div className="story-milestones" role="group" aria-label="Story moments">
-        {milestones.map((chapter) => {
+      {data.glacier && frame.raster && (
+        <figure className="glacier-field">
+          <img
+            src={frame.raster.url}
+            alt="Annual ice velocity field near Jakobshavn, West Greenland"
+            width="320"
+            height="108"
+          />
+          <figcaption>{new Date(frame.at).getUTCFullYear()} annual velocity field</figcaption>
+        </figure>
+      )}
+      <div
+        data-glacier-trace={data.glacier ? "" : undefined}
+        className="story-milestones"
+        role="group"
+        aria-label="Story moments"
+      >
+        {data.glacier && <p>Illustrative trace</p>}
+        {milestones.map((chapter, chapterIndex) => {
           const at = nearest(chapter.at),
             item = data.frames[at]!;
           const image = item.photograph?.url ?? item.raster?.url;
@@ -156,12 +173,23 @@ export function StoryTimeline({
               key={chapter.label}
               disabled={busy}
               aria-label={chapter.label}
-              aria-pressed={index === at}
+              aria-pressed={
+                data.glacier
+                  ? index >= at &&
+                    (!milestones[chapterIndex + 1] || index < nearest(milestones[chapterIndex + 1]!.at))
+                  : index === at
+              }
               onClick={() => clock.seek(at)}
             >
-              {image && <img src={image} alt="" loading="lazy" decoding="async" width="160" height="72" />}
+              {image && !data.glacier && (
+                <img src={image} alt="" loading="lazy" decoding="async" width="160" height="72" />
+              )}
               <strong>{chapter.label}</strong>
-              <small>{chapter.timeLabel ?? item.timeLabel ?? layerTime(item.at)}</small>
+              <small>
+                {data.glacier
+                  ? `${Math.round((at / (data.frames.length - 1)) * 100)}%`
+                  : (chapter.timeLabel ?? item.timeLabel ?? layerTime(item.at))}
+              </small>
             </button>
           );
         })}

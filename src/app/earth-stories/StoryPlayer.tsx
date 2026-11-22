@@ -352,7 +352,6 @@ export function StoryPlayer({
       {section.chart}
       {moorings.controls}
       {dust.control}
-      {glacier.control}
       {!orbitStory && <StorySideActions {...panel} {...{ id, data, onRadar, clock, sky }} />}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       {shoreline.reading}
@@ -377,6 +376,7 @@ export function StoryPlayer({
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
         }
       />
+      {glacier.control}
       {comparingShoreline ? (
         <StoryFinding id={id} completed>
           {shoreline.controls}

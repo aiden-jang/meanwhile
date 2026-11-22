@@ -62,10 +62,17 @@ test("switching glacier years holds the trace at the same point", async ({ page 
   await open(page, "glacier");
   const panel = page.getByRole("region", { name: "Glacier Flow", exact: true });
   await panel.getByRole("button", { name: "Flowing seaward", exact: true }).click();
+  const chapters = panel.getByRole("group", { name: "Story moments" });
+  await expect(chapters.locator("img")).toHaveCount(0);
+  await expect(chapters.getByRole("button", { name: "Flowing seaward" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   const slider = panel.getByRole("slider");
   const value = await slider.inputValue();
   for (const year of ["2013", "2024"]) {
     await panel.getByRole("combobox", { name: "Annual velocity" }).selectOption(year);
+    await expect(panel.locator(".glacier-field figcaption")).toHaveText(year + " annual velocity field");
     await expect(
       panel.getByText(year + " mean velocity · 50% of illustrative trace", { exact: true }).first(),
     ).toBeVisible();

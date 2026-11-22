@@ -9,15 +9,17 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "search");
-  await expect(page.locator(".featured-story-link")).toHaveAccessibleName("Open story: Tonga’s shockwave");
+  await expect(page.locator(".featured-story-link")).toHaveAccessibleName(
+    "Follow the wave: Tonga’s shockwave",
+  );
   await page.locator(".story-today summary").click();
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
   );
   await selectScene(page, "After Dark");
   await openStories(page, "search");
-  await expect(page.locator(".featured-story-link")).toHaveAccessibleName("Open story: Moonfall");
-  await page.getByRole("button", { name: "Open story: Moonfall", exact: true }).click();
+  await expect(page.locator(".featured-story-link")).toHaveAccessibleName("Follow the rover: Moonfall");
+  await page.getByRole("button", { name: "Follow the rover: Moonfall", exact: true }).click();
   await expect(page.getByRole("group", { name: "Lunar view" })).toBeVisible();
   await page.getByRole("button", { name: home }).click();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);

@@ -24,8 +24,12 @@ export function FloatProfile({ view }: { view: FloatDiveView }) {
       }
       close.current?.focus({ preventScroll: true });
     } else {
-      if (document.activeElement === document.body && opener.current?.isConnected)
-        opener.current.focus({ preventScroll: true });
+      if (document.activeElement === document.body && opener.current) {
+        const target = opener.current.isConnected
+          ? opener.current
+          : document.querySelector<HTMLElement>(".float-inspect-toggle");
+        target?.focus({ preventScroll: true });
+      }
       opener.current = null;
     }
   }, [inspecting, portal]);

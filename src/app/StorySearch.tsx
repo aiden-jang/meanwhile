@@ -1,4 +1,5 @@
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
+import { useMedia } from "./useNarrow";
 import { StoryRow } from "./StoryRow";
 import type { useObservatory } from "./useObservatory";
 import { findStories } from "./storyIndex";
@@ -31,6 +32,9 @@ export function StorySearch({
 }): JSX.Element {
   const navigation = useStoryNavigation();
   const input = useRef<HTMLInputElement>(null);
+  const shortPhone = useMedia("(max-width: 599px) and (max-height: 740px)");
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const topicButton = useRef<HTMLButtonElement>(null);
   const matches = findStories(deck.query, scene);
   const otherMatches = scene && matches.length === 0 ? findStories(deck.query).length : 0;
   const scope = scene
@@ -79,19 +83,45 @@ export function StorySearch({
             <button
               type="button"
               className="story-topic-jump"
+              ref={topicButton}
+              aria-expanded={shortPhone ? topicsOpen : undefined}
+              aria-controls="story-topic-options"
               onClick={(event) => {
                 const tools = event.currentTarget.closest(".story-tools");
                 resetStoryResults(event.currentTarget);
-                tools
-                  ?.querySelector<HTMLButtonElement>('.story-category [aria-pressed="true"]')
-                  ?.focus({ preventScroll: true });
+                if (shortPhone) setTopicsOpen(!topicsOpen);
+                if (!shortPhone || !topicsOpen)
+                  requestAnimationFrame(() =>
+                    tools
+                      ?.querySelector<HTMLButtonElement>('.story-category [aria-pressed="true"]')
+                      ?.focus({ preventScroll: true }),
+                  );
               }}
             >
-              Topics
+              {shortPhone && scene ? scope : "Topics"}
+              {shortPhone && <span aria-hidden="true"> ⌄</span>}
             </button>
           )}
         </div>
-        {filter}
+        <div
+          id="story-topic-options"
+          hidden={shortPhone && !topicsOpen}
+          onClick={(event) => {
+            if (shortPhone && (event.target as Element).closest("button")) {
+              setTopicsOpen(false);
+              topicButton.current?.focus({ preventScroll: true });
+            }
+          }}
+          onKeyDown={(event) => {
+            if (shortPhone && event.key === "Escape") {
+              event.stopPropagation();
+              setTopicsOpen(false);
+              topicButton.current?.focus({ preventScroll: true });
+            }
+          }}
+        >
+          {filter}
+        </div>
       </div>
       <div className="story-results" ref={results}>
         {deck.query.trim() && (

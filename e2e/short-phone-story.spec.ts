@@ -7,6 +7,20 @@ test("a short phone shows the full featured-story action on arrival", async ({ p
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  const topics = page.locator(".story-topic-jump");
+  await expect(topics).toHaveAttribute("aria-expanded", "false");
+  await topics.click();
+  await page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name: "After Dark" })
+    .click();
+  await expect(topics).toContainText("After Dark");
+  await expect(topics).toBeFocused();
+  await topics.click();
+  await page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name: "All topics" })
+    .click();
   const action = page.locator("#explorer-stories .featured-story-link");
   await expect(action).toBeInViewport({ ratio: 1 });
   const button = (await action.boundingBox())!;

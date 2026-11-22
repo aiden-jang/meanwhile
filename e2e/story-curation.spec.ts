@@ -23,7 +23,9 @@ for (const width of [1440, 390]) {
     );
     await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(1);
     await expect(page.locator("#observatory-intro")).toHaveCount(0);
-    await expect(page.locator("#open-featured-tonga")).toHaveAccessibleName("Open story: Tonga’s shockwave");
+    await expect(page.locator("#open-featured-tonga")).toHaveAccessibleName(
+      "Follow the wave: Tonga’s shockwave",
+    );
     const entry = page.locator("#open-story-float");
     await expect(entry).toHaveAccessibleName("Float Dive");
     await expect(entry).toHaveAccessibleDescription(/Measured profile/);

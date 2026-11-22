@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, revealTopics } from "./feeds";
 
 for (const [id, query, back] of [
   ["sky", "Tonight’s Sky", "Back to stories"],
@@ -19,6 +19,7 @@ for (const [id, query, back] of [
     await page.route("https://opengeo.ncep.noaa.gov/**", (route) => route.abort());
     await page.goto("/");
     await openStories(page, "search");
+    await revealTopics(page);
     if (["sky", "meteors", "moonfall", "sun"].includes(id))
       await page
         .getByRole("group", { name: "Story categories" })

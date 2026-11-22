@@ -1,3 +1,4 @@
+import { useMedia } from "../useNarrow";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
@@ -28,6 +29,8 @@ export function FloatMeasurements({
   onClose: () => void;
 }) {
   const { index, playing, inspecting, stage } = useSyncExternalStore(view.subscribe, view.read);
+  const phone = useMedia("(max-width: 599px)");
+  const inlineTransport = phone && stage === "rise" && !inspecting;
   const focusPlayback = useRef(false);
   const transport = useRef<HTMLElement>(null);
   const { samples } = view.profile;
@@ -42,7 +45,7 @@ export function FloatMeasurements({
   useLayoutEffect(() => {
     const element = transport.current;
     const zones = element?.closest<HTMLElement>(".zones");
-    if (!element || !zones) return;
+    if (!element || !zones || inlineTransport) return;
     const measure = () => {
       const bottom = parseFloat(getComputedStyle(element).bottom) || 0;
       zones.style.setProperty("--float-dock-clearance", `${element.offsetHeight + bottom + 16}px`);
@@ -54,7 +57,7 @@ export function FloatMeasurements({
       resize.disconnect();
       zones.style.removeProperty("--float-dock-clearance");
     };
-  }, []);
+  }, [inlineTransport]);
   useLayoutEffect(() => {
     const intro = document.getElementById("observatory-intro");
     const zones = intro?.closest<HTMLElement>(".zones");
@@ -90,6 +93,69 @@ export function FloatMeasurements({
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   }, [stage, view]);
+  const playback = (
+    <section
+      ref={transport}
+      className="float-transport"
+      data-inline={inlineTransport || undefined}
+      role="group"
+      aria-label="Float Dive playback"
+    >
+      <div className="float-chapters" role="group" aria-label="Float Dive chapters">
+        <button type="button" aria-pressed={stage === "locate"} onClick={view.locate}>
+          Locate
+        </button>
+        <button type="button" aria-pressed={stage === "rise"} onClick={view.rise}>
+          Rise
+        </button>
+        <button type="button" aria-pressed={stage === "notice"} onClick={view.notice}>
+          Notice
+        </button>
+      </div>
+      <div className="float-playback-row">
+        <div className="float-track" data-inspecting={inspecting || undefined}>
+          <div className="float-edges">
+            <span>{meters.format(samples[0]!.depth)} m</span>
+            <span>{meters.format(samples.at(-1)!.depth)} m</span>
+          </div>
+          {inspecting ? (
+            <p className="float-inspection-position">
+              {meters.format(sample.depth)} m · inspect the profile above
+            </p>
+          ) : (
+            <TimelineTrack
+              max={samples.length - 1}
+              current={index}
+              kept={kept}
+              valueLabel={`${meters.format(sample.depth)} m`}
+            >
+              <input
+                type="range"
+                className="scrub-slider float-scrub"
+                min={0}
+                max={samples.length - 1}
+                value={index}
+                onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
+                aria-label="Ascent depth"
+                aria-valuetext={`${meters.format(sample.depth)} m`}
+              />
+            </TimelineTrack>
+          )}
+        </div>
+        <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
+        <button
+          type="button"
+          className="float-inspect-toggle"
+          aria-expanded={inspecting}
+          aria-controls={inspecting ? "float-measured-profile" : undefined}
+          onClick={() => view.inspect(!inspecting)}
+        >
+          {inspecting ? "Close profile" : "View measured profile"}
+        </button>
+      </div>
+      <small>Illustrated section · measured samples · depth estimated from pressure</small>
+    </section>
+  );
   return (
     <>
       <FloatChapter
@@ -118,64 +184,7 @@ export function FloatMeasurements({
           </div>
         </div>
       </div>
-      {createPortal(
-        <section ref={transport} className="float-transport" role="group" aria-label="Float Dive playback">
-          <div className="float-chapters" role="group" aria-label="Float Dive chapters">
-            <button type="button" aria-pressed={stage === "locate"} onClick={view.locate}>
-              Locate
-            </button>
-            <button type="button" aria-pressed={stage === "rise"} onClick={view.rise}>
-              Rise
-            </button>
-            <button type="button" aria-pressed={stage === "notice"} onClick={view.notice}>
-              Notice
-            </button>
-          </div>
-          <div className="float-playback-row">
-            <div className="float-track" data-inspecting={inspecting || undefined}>
-              <div className="float-edges">
-                <span>{meters.format(samples[0]!.depth)} m</span>
-                <span>{meters.format(samples.at(-1)!.depth)} m</span>
-              </div>
-              {inspecting ? (
-                <p className="float-inspection-position">
-                  {meters.format(sample.depth)} m · inspect the profile above
-                </p>
-              ) : (
-                <TimelineTrack
-                  max={samples.length - 1}
-                  current={index}
-                  kept={kept}
-                  valueLabel={`${meters.format(sample.depth)} m`}
-                >
-                  <input
-                    type="range"
-                    className="scrub-slider float-scrub"
-                    min={0}
-                    max={samples.length - 1}
-                    value={index}
-                    onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
-                    aria-label="Ascent depth"
-                    aria-valuetext={`${meters.format(sample.depth)} m`}
-                  />
-                </TimelineTrack>
-              )}
-            </div>
-            <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
-            <button
-              type="button"
-              className="float-inspect-toggle"
-              aria-expanded={inspecting}
-              aria-controls={inspecting ? "float-measured-profile" : undefined}
-              onClick={() => view.inspect(!inspecting)}
-            >
-              {inspecting ? "Close profile" : "View measured profile"}
-            </button>
-          </div>
-          <small>Illustrated section · measured samples · depth estimated from pressure</small>
-        </section>,
-        document.querySelector(".zones")!,
-      )}
+      {inlineTransport ? playback : createPortal(playback, document.querySelector(".zones")!)}
       <FloatProfile view={view} />
       <p className="sr-only" role="status">
         {stage === "notice" ? `Ascent complete. ${takeaway.finding.heading} ${takeaway.finding.reading}` : ""}

@@ -68,7 +68,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
               : "Kept"
             : sample
               ? `Keep the ${Math.round(sample.depth).toLocaleString()} m reading`
-              : "Keep this observation"}
+              : "Save reading"}
         </button>
         {sample && (
           <small>

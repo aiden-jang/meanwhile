@@ -271,7 +271,7 @@ for (const width of [1440, 812, 390]) {
     await expect(allStories).toHaveAttribute("aria-pressed", "true");
     await afterDark.click();
     await expect(afterDark).toHaveAttribute("aria-pressed", "true");
-    await expect(stories.getByRole("button", { name: /^(Open story: )?Moonfall$/ })).toBeVisible();
+    await expect(stories.getByRole("button", { name: /^(Follow the rover: )?Moonfall$/ })).toBeVisible();
     await allStories.click();
     await expect(stories.getByRole("button", { name: "Float Dive", exact: true })).toBeVisible();
     await afterDark.click();
@@ -330,7 +330,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await search.fill("");
     await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Measured profile Rise through an Argo temperature and salinity profile.",
+      "Measured profile Rise with an Argo float through temperature and salinity layers.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveAccessibleDescription(
       "Recent observations Scrub recent radar from around the world on the globe.",

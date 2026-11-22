@@ -29,7 +29,7 @@ export function StoryRow({
         {story.title}
       </button>
       <small id={`${buttonId}-note`}>
-        <span className="story-kind">{storyKind(story.id)}</span>
+        <span className="sr-only">{storyKind(story.id)}</span>
         <span className="story-promise">{unavailable ?? story.summary}</span>
       </small>
       <div className="story-row-preview">

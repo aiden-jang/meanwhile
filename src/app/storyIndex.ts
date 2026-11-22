@@ -117,7 +117,7 @@ export const searchStories: readonly SearchStory[] = [
   {
     id: "float",
     title: "Float Dive",
-    summary: "Rise through an Argo temperature and salinity profile.",
+    summary: "Rise with an Argo float through temperature and salinity layers.",
     scene: "live",
     topics: ["depth"],
     keywords: "ocean water underwater diving submarine temperature depth",

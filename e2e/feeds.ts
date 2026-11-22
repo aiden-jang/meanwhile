@@ -476,10 +476,16 @@ export async function waitForData(page: Page): Promise<number> {
   return held;
 }
 
+export async function revealTopics(page: Page) {
+  const toggle = page.locator('.story-topic-jump[aria-expanded="false"]');
+  if (await toggle.isVisible()) await toggle.click();
+}
+
 type SceneName = "Earth" | "Below the Surface" | "After Dark";
 
 export async function revealSceneEntry(page: Page, name: SceneName) {
   await openStories(page, "search");
+  await revealTopics(page);
   const category = page
     .getByRole("group", { name: "Story categories" })
     .getByRole("button", { name, exact: true });
