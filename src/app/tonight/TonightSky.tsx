@@ -78,7 +78,10 @@ export function TonightSky({
     nightfall ? skyCities.find(({ name }) => name === initialPosition?.city) : undefined,
   );
   const city = arrivalCity ?? preference.city;
-  const initial = initialPosition?.city === city.name ? initialPosition : undefined;
+  const initial = useMemo(() => {
+    if (mode === "sky" && returnSky?.city.name === city.name) return skyPosition(returnSky, false, false);
+    return initialPosition?.city === city.name ? initialPosition : undefined;
+  }, [mode, returnSky, city.name, initialPosition]);
   const entries = useStoryNavigation()?.library.saved;
   const night = useMemo(() => {
     const at = initial?.at ?? openedAt;
@@ -151,7 +154,6 @@ export function TonightSky({
     onView({ ...current, look: aimAt(body), targetName: body.name, nightTrail: { points, following: true } });
   }
   const sky = skyLight(city, at, night);
-
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useLayoutEffect(() => {
     if (!departure && mode === "sky" && view?.city.name !== city.name) {
