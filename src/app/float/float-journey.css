@@ -205,19 +205,31 @@
   .float-transport[data-inline] .float-playback-row {
     display: contents;
   }
-  .float-transport[data-inline] .float-chapters {
-    grid-area: 2 / 1;
-    gap: 12px;
-  }
   .float-transport[data-inline] .float-track {
     grid-area: 1 / 1;
   }
   .float-transport[data-inline] .story-playback {
     grid-area: 1 / 2;
   }
-  .float-transport[data-inline] .float-inspect-toggle {
-    grid-area: 2 / 2;
-    max-width: none;
+  .float-observation [data-reading-actions] {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    border-block-start: 1px solid var(--color-hairline);
+  }
+  .float-observation [data-reading-actions] button {
+    background: transparent;
+    color: var(--color-ink);
+    padding-inline: 0;
+  }
+  .float-observation [data-reading-actions] .float-inspect-toggle {
+    justify-self: end;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .float-observation:has([data-reading-actions]) {
+    padding-top: 0;
+    border-top: 0;
   }
   .float-transport[data-inline] > small {
     display: none;

@@ -328,6 +328,9 @@
   text-underline-offset: 4px;
 }
 @media (max-width: 599px) and (max-height: 740px) {
+  #explorer-stories .stories-drawer[data-full] .story-search-line:has(.story-journey-toggle) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
   #explorer-stories .story-search-line .story-topic-jump {
     display: block;
     order: -1;

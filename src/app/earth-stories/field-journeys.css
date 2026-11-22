@@ -234,7 +234,8 @@
   display: block;
   width: 100%;
   height: clamp(84px, 13dvh, 140px);
-  object-fit: contain;
+  object-fit: cover;
+  object-position: 50% 48%;
   background: var(--color-void);
 }
 .glacier-field figcaption,

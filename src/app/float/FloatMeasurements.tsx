@@ -93,6 +93,30 @@ export function FloatMeasurements({
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   }, [stage, view]);
+  const chapters = (
+    <div className="float-chapters" role="group" aria-label="Float Dive chapters">
+      <button type="button" aria-pressed={stage === "locate"} onClick={view.locate}>
+        Locate
+      </button>
+      <button type="button" aria-pressed={stage === "rise"} onClick={view.rise}>
+        Rise
+      </button>
+      <button type="button" aria-pressed={stage === "notice"} onClick={view.notice}>
+        Notice
+      </button>
+    </div>
+  );
+  const profileButton = (
+    <button
+      type="button"
+      className="float-inspect-toggle"
+      aria-expanded={inspecting}
+      aria-controls={inspecting ? "float-measured-profile" : undefined}
+      onClick={() => view.inspect(!inspecting)}
+    >
+      {inspecting ? "Close profile" : "View measured profile"}
+    </button>
+  );
   const playback = (
     <section
       ref={transport}
@@ -101,17 +125,7 @@ export function FloatMeasurements({
       role="group"
       aria-label="Float Dive playback"
     >
-      <div className="float-chapters" role="group" aria-label="Float Dive chapters">
-        <button type="button" aria-pressed={stage === "locate"} onClick={view.locate}>
-          Locate
-        </button>
-        <button type="button" aria-pressed={stage === "rise"} onClick={view.rise}>
-          Rise
-        </button>
-        <button type="button" aria-pressed={stage === "notice"} onClick={view.notice}>
-          Notice
-        </button>
-      </div>
+      {!inlineTransport && chapters}
       <div className="float-playback-row">
         <div className="float-track" data-inspecting={inspecting || undefined}>
           <div className="float-edges">
@@ -143,15 +157,7 @@ export function FloatMeasurements({
           )}
         </div>
         <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
-        <button
-          type="button"
-          className="float-inspect-toggle"
-          aria-expanded={inspecting}
-          aria-controls={inspecting ? "float-measured-profile" : undefined}
-          onClick={() => view.inspect(!inspecting)}
-        >
-          {inspecting ? "Close profile" : "View measured profile"}
-        </button>
+        {!inlineTransport && profileButton}
       </div>
       <small>Illustrated section · measured samples · depth estimated from pressure</small>
     </section>
@@ -191,9 +197,14 @@ export function FloatMeasurements({
       </p>
       <FloatFinding view={view} finding={takeaway.finding} onClose={onClose} notice={stage === "notice"}>
         <div hidden={stage === "locate"}>
-          <FloatObservation view={view} sampleIndex={findingIndex} />
+          <FloatObservation
+            view={view}
+            sampleIndex={findingIndex}
+            profileButton={inlineTransport ? profileButton : undefined}
+          />
         </div>
       </FloatFinding>
+      {inlineTransport && chapters}
       {sound && (
         <MeasurementSound
           key={view.profile.id}

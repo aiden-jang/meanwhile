@@ -1,9 +1,10 @@
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { KeepMark } from "../visitor/KeepMark";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { FloatDiveView } from "./floatPlayback";
 
-function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleIndex?: number | undefined }) {
+type Props = { view: FloatDiveView; sampleIndex?: number | undefined; profileButton?: ReactNode };
+function ObservationEditor({ view, sampleIndex, profileButton }: Props) {
   const navigation = useStoryNavigation();
   const profile = `${view.source}/${view.profile.id}`;
   const index = sampleIndex ?? view.read().index;
@@ -22,7 +23,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
 
   return (
     <section className="float-observation" aria-label="Keep an observation">
-      <div>
+      <div data-reading-actions={profileButton ? "" : undefined}>
         <button
           type="button"
           aria-disabled={Boolean(kept && !changed)}
@@ -70,6 +71,7 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
               ? `Keep the ${Math.round(sample.depth).toLocaleString()} m reading`
               : "Save reading"}
         </button>
+        {profileButton}
         {sample && (
           <small>
             {Math.round(sample.depth).toLocaleString()} m · {sample.temperature.toFixed(2)} °C ·{" "}
@@ -103,14 +105,6 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
   );
 }
 
-export function FloatObservation({
-  view,
-  sampleIndex,
-}: {
-  view: FloatDiveView;
-  sampleIndex?: number | undefined;
-}) {
-  return (
-    <ObservationEditor key={`${view.source}/${view.profile.id}`} view={view} sampleIndex={sampleIndex} />
-  );
+export function FloatObservation(props: Props) {
+  return <ObservationEditor key={`${props.view.source}/${props.view.profile.id}`} {...props} />;
 }
