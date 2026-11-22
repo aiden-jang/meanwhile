@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, startJourney } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 for (const [id, title] of [
   ["aurora", "Aurora Overflight"],
@@ -34,13 +34,15 @@ for (const [id, title] of [
 test("browser Back and reload keep the current journey stop, date and map", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
-  await page.goto("/");
-  await openStories(page, "all");
-  await startJourney(page, "ice-in-motion");
+  await page.goto("/#v=observe&story=ice&journey=ice-in-motion&stop=0");
   const guide = page.getByRole("region", { name: "Current journey" });
+  await expect(guide).toContainText("1 of 3");
   const ice = page.getByRole("region", { name: "Ice Line", exact: true });
-  await ice.getByRole("button", { name: "Map", exact: true }).click();
   const time = ice.locator("#earth-story-time");
+  await expect(time).toBeVisible();
+  const map = ice.getByRole("button", { name: "Map", exact: true });
+  await map.click();
+  await expect(map).toHaveAttribute("aria-pressed", "true");
   await time.press("End");
   await expect(time).toHaveValue((await time.getAttribute("max"))!);
   await expect(ice.locator(".story-time")).toHaveAttribute("data-compact-ending", "true");
@@ -51,7 +53,7 @@ test("browser Back and reload keep the current journey stop, date and map", asyn
   await page.goBack();
   await expect(guide).toContainText("1 of 3");
   await expect(time).toHaveAttribute("aria-valuetext", date!);
-  await expect(ice.getByRole("button", { name: "Map", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(map).toHaveAttribute("aria-pressed", "true");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   await page.goForward();
   await expect(guide).toContainText("2 of 3");
@@ -60,6 +62,7 @@ test("browser Back and reload keep the current journey stop, date and map", asyn
   await expect(guide).toContainText("2 of 3");
   await guide.getByRole("button", { name: "Previous view" }).click();
   await expect(time).toHaveAttribute("aria-valuetext", date!);
+  await expect(map).toHaveAttribute("aria-pressed", "true");
 });
 
 test("dismissing Find restores the story without changing the sky time", async ({ page }) => {
