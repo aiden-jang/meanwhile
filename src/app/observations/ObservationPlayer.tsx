@@ -1,5 +1,6 @@
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { PlaybackButton } from "../PlaybackButton";
+import { ObservationTransport } from "./ObservationTransport";
+import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
 import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
@@ -14,7 +15,6 @@ import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 import { observationReadiness } from "./observationReadiness";
 import { useReportStorySource } from "./StorySourceStatus";
-import { StoryDock } from "./StoryDock";
 import { RainbeltControls } from "./RainbeltControls";
 import { DrifterTrack, useDrifterTrack } from "./DrifterTrack";
 import { refreshAnnotations } from "../../globe/annotationInput";
@@ -30,12 +30,16 @@ export function ObservationPlayer({
   map,
   update,
   picker,
+  showingForecast = false,
+  onArrival,
 }: {
   id: ObservationId;
   source: ObservationSource;
   map: boolean;
-  update: (view: ObservationView | null) => void;
+  update: (view: ObservationView | null, release?: boolean) => void;
   picker?: { value: string; select: (value: string) => void };
+  showingForecast?: boolean;
+  onArrival?: (() => void) | undefined;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
   const [localOption, setOption] = useState(
@@ -48,7 +52,8 @@ export function ObservationPlayer({
   const option = picker?.value ?? localOption;
   const [selectedAt, setSelectedAt] = useState<number | null>(initial?.at ?? null);
   const [playing, setPlaying] = useState(false);
-  const { data, state, reason, retry } = useObservationData(source, option);
+  const restoreAt = id === "rain" || id === "river" ? (selectedAt ?? undefined) : undefined;
+  const { data, state, reason, retry } = useObservationData(source, option, restoreAt);
   useReportStorySource(id, state, retry);
   const frames = data?.frames ?? EMPTY;
   const seek = useCallback(
@@ -101,7 +106,10 @@ export function ObservationPlayer({
   );
 
   useLayoutEffect(() => {
-    if (preparing) return;
+    if (preparing) {
+      if (id === "rain" && frame) remember?.({ at: frame.at });
+      return;
+    }
     if (canHold && (!data || !frame) && state === "loading") return;
     update(
       data && frame
@@ -115,15 +123,17 @@ export function ObservationPlayer({
             ...(id === "river" || id === "smoke" ? { pickMarks, cameraKey: option } : {}),
             ...(drifter ? { pickMarks: drifter, cameraKey: option, arrive: regionalArrival } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
-            ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
+            ...(data.lens ? { lens: data.lens, arrive: onArrival ?? regionalArrival } : {}),
           }
         : null,
+      id === "rain" && !frame && (state === "empty" || state === "failed"),
     );
     if (readiness === "ready" && frame) presented.current = { frame, image: element };
     else if (!heldRain) presented.current = undefined;
     if (frame)
       remember?.({
         choice: option,
+        ...(id === "rain" ? { at: frame.at } : {}),
         chapter: gauge ? `gauge:${gauge.id}` : "",
       });
   }, [
@@ -146,6 +156,7 @@ export function ObservationPlayer({
     pickMarks,
     drifter,
     heldRain,
+    onArrival,
   ]);
 
   useEffect(() => {
@@ -173,6 +184,14 @@ export function ObservationPlayer({
 
   return (
     <>
+      {id === "rain" && (
+        <WaterSourceRecord
+          id="rain"
+          at={readiness === "ready" ? frame?.at : heldFrame?.at}
+          requestedAt={frame?.at}
+          forecastVisible={showingForecast}
+        />
+      )}
       {initial?.at !== undefined && frame && frame.at !== initial.at && selectedAt === initial.at && (
         <p className="observation-note" role="status">
           The linked time is outside the available observations. Showing the nearest available moment.
@@ -214,39 +233,15 @@ export function ObservationPlayer({
       )}
       {frame && data && (
         <>
-          <StoryDock>
-            <div className="observation-transport">
-              <span>
-                {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
-                {" · "}
-                {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
-              </span>
-              {frames.length > 1 && (
-                <input
-                  className="scrub-slider observation-scrub"
-                  aria-label={metadata.time}
-                  aria-valuetext={time}
-                  type="range"
-                  min={0}
-                  max={frames.length - 1}
-                  value={index}
-                  onChange={(event) => seek(frames[event.currentTarget.valueAsNumber]!.at)}
-                />
-              )}
-              {frames.length > 1 && (
-                <div className="observatory-actions">
-                  <PlaybackButton
-                    playing={playing}
-                    ended={index === frames.length - 1}
-                    onClick={() => {
-                      if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
-                      setPlaying(!playing);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </StoryDock>
+          <ObservationTransport
+            {...{ frame, frames, index, time, playing, seek }}
+            label={id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
+            sliderLabel={metadata.time}
+            toggle={() => {
+              if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
+              setPlaying(!playing);
+            }}
+          />
           {frame.measurements?.length ? (
             <dl className="observation-values">
               {frame.measurements.map(({ label, value }) => (

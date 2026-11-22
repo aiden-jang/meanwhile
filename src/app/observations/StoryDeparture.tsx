@@ -5,7 +5,7 @@ import { StorySession } from "./StorySession";
 export function StoryDeparture() {
   const session = useContext(StorySession);
   const place = session?.departure;
-  const destination = session?.id ? storyPlace(session.id) : undefined;
+  const destination = session?.destination ?? (session?.id ? storyPlace(session.id) : undefined);
   const [visible, setVisible] = useState(true);
   if (!place || !visible) return null;
   return (

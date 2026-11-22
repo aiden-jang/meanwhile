@@ -1,7 +1,8 @@
 import { StoryLoading } from "../StoryLoading";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
-import { useStorySession } from "../observations/StorySession";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { StorySession, useStorySession } from "../observations/StorySession";
 import type { SkyCityPreference } from "../tonight/SkyCityPicker";
 import { earthStories, type EarthStoryId } from "./catalogue";
 import { loadEarthStory } from "./load";
@@ -16,6 +17,9 @@ type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar:
 export function EarthStory(props: Props): JSX.Element {
   const { id, city } = props;
   const { initial } = useStorySession();
+  const guidedWater = useStoryNavigation()?.route?.id === "water-in-motion";
+  const session = useContext(StorySession);
+  const cache = id === "atmospheric-river" && guidedWater ? session?.forecastRuns : undefined;
   const [choice, setChoice] = useState(() => storyChoice(id, initial?.choice));
   const [loaded, setLoaded] = useState<{ data: EarthStoryData; key: string; choice: string } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -29,10 +33,13 @@ export function EarthStory(props: Props): JSX.Element {
   useEffect(() => {
     let active = true;
     setFailed(false);
-    void loadEarthStory(id, choice, city.city)
+    const saved = cache?.get(choice);
+    const request = saved ? Promise.resolve(saved) : loadEarthStory(id, choice, city.city);
+    void request
       .then((data) => {
         if (!data.frames.length) throw new Error("No archive observations");
         if (active) {
+          cache?.set(choice, data);
           restoreFocus.current = captureStoryFocus();
           setLoaded({ data, key, choice });
         }
@@ -43,7 +50,7 @@ export function EarthStory(props: Props): JSX.Element {
     return () => {
       active = false;
     };
-  }, [id, choice, city.city, key, retry]);
+  }, [id, choice, city.city, key, retry, cache]);
   const reefRecent = id === "reef" && choice === "Recent observations";
   if (!loaded)
     return (

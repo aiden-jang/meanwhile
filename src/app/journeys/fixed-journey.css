@@ -1,0 +1,316 @@
+.frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.replay-sidebar) {
+  --journey-rail-height: 56px;
+  --journey-pager-height: 58px;
+  --journey-footer-height: 48px;
+  padding-top: calc(var(--head-h) + var(--journey-rail-height));
+  padding-bottom: var(--journey-pager-height);
+}
+
+.zones:has(.fixed-journey) .fixed-journey {
+  display: contents;
+}
+
+.fixed-journey-rail,
+.fixed-journey-pager {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 5;
+  background: var(--color-deck);
+}
+
+.fixed-journey-rail {
+  inset-block-start: var(--head-h);
+  display: grid;
+  grid-template-columns: var(--observatory-width) minmax(0, 1fr);
+  height: var(--journey-rail-height);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.fixed-journey-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-inline: clamp(16px, 3.2vw, 56px);
+  border-inline-end: 1px solid var(--color-hairline);
+}
+
+.fixed-journey-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.fixed-journey-title > span,
+.fixed-journey-pager > p {
+  color: var(--color-dim);
+  font-size: 12px;
+}
+
+.fixed-journey-rail ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding-inline: clamp(12px, 2vw, 30px);
+  list-style: none;
+}
+
+.fixed-journey-rail li {
+  min-width: 0;
+}
+
+.fixed-journey-rail button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 3px 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-dim);
+  text-align: start;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.fixed-journey-rail button span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fixed-journey-rail [aria-current="step"] {
+  border-color: var(--journey-accent, var(--color-ink));
+  color: var(--color-ink);
+}
+
+.fixed-journey-rail [aria-current="step"] span {
+  background-color: var(--color-ink);
+  color: var(--color-void);
+}
+
+.fixed-journey-pager {
+  inset-block-end: var(--journey-footer-height);
+  height: var(--journey-pager-height);
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-inline: clamp(16px, 3.2vw, 56px);
+  border-block: 1px solid var(--color-hairline);
+}
+
+.fixed-journey-pager > p {
+  grid-column: 2;
+  margin: 0;
+  text-align: center;
+}
+
+.fixed-journey-pager button {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.fixed-journey-previous {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.fixed-journey-pager :is(.fixed-journey-next, .fixed-journey-finale) {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.fixed-journey-pager .fixed-journey-next {
+  background: var(--color-ink);
+  color: var(--color-void);
+}
+
+.fixed-journey :is(.fixed-journey-rail, .fixed-journey-pager) button:focus-visible {
+  outline-offset: -3px;
+}
+
+.fixed-journey button:hover:not([aria-disabled="true"], .fixed-journey-next) {
+  background: var(--color-raised);
+}
+
+.fixed-journey button[aria-disabled="true"]:not([aria-current]) {
+  opacity: 0.65;
+}
+
+@media (max-width: 899px) {
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.replay-sidebar) {
+    --journey-rail-height: 75px;
+    --journey-footer-height: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  .fixed-journey-rail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 30px 1fr;
+  }
+
+  .fixed-journey-title {
+    border-inline-end: 0;
+  }
+
+  .fixed-journey-rail button {
+    justify-content: center;
+    gap: 4px;
+    padding-inline: 2px;
+    font-size: 11px;
+  }
+
+  .fixed-journey-rail button span {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  .fixed-journey-pager {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fixed-journey-pager > p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .fixed-journey-pager :is(.fixed-journey-next, .fixed-journey-finale) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 599px) {
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.replay-sidebar) {
+    grid-template-rows: clamp(118px, 27dvh, 280px) minmax(0, 1fr);
+  }
+
+  .zones:has(.fixed-journey) .story-dock:has(> .story-time):not(:has(.ending-timeline-toggle)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 2px 10px;
+  }
+
+  .zones:has(.fixed-journey) .story-dock .story-time {
+    grid-column: 1;
+  }
+
+  .zones:has(.fixed-journey) .story-dock .story-time > label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .zones:has(.fixed-journey) .story-dock:has(> .story-time) > .observatory-actions {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 700px) {
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.replay-sidebar) {
+    --journey-rail-height: 68px;
+    grid-template-rows: clamp(100px, 20dvh, 140px) minmax(0, 1fr);
+  }
+
+  .fixed-journey-rail {
+    grid-template-rows: 24px 1fr;
+  }
+
+  .zones:has(.fixed-journey) .story-dock:has(> .story-time) button {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 900px), (min-width: 600px) and (max-height: 620px) {
+  .zones:has(.fixed-journey) .story-dock-host {
+    inset-block-end: calc(var(--journey-pager-height) + var(--journey-footer-height) + 12px);
+  }
+}
+
+.fixed-journey[data-water-step="0"] {
+  --journey-accent: #f1c785;
+}
+
+.fixed-journey[data-water-step="1"] {
+  --journey-accent: #9bd7e2;
+}
+
+.fixed-journey[data-water-step="2"] {
+  --journey-accent: #a5dddb;
+}
+
+.fixed-journey[data-water-step] .fixed-journey-rail button span {
+  width: 8px;
+  height: 8px;
+  color: var(--journey-accent);
+}
+
+.fixed-journey[data-water-step] .fixed-journey-rail [aria-current="step"] span {
+  border-color: var(--journey-accent);
+  background: var(--journey-accent);
+}
+
+.water-source-record {
+  display: grid;
+  gap: 3px;
+  margin-block: 6px 12px;
+  padding: 9px 0 9px 11px;
+  border-inline-start: 1px solid #9bd7e2;
+}
+
+.water-source-record small,
+.water-source-record time,
+.water-source-record p {
+  font-size: var(--text-caption);
+  color: var(--color-dim);
+}
+
+.water-source-record time {
+  font-variant-numeric: tabular-nums;
+}
+
+.water-source-previous {
+  display: grid;
+  gap: 3px;
+  padding-block: 8px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.water-source-record[data-source="atmospheric-river"] {
+  border-color: #f1c785;
+}
+
+.water-source-record[data-source="river"] {
+  border-color: #a5dddb;
+}
+
+@media (max-width: 599px) {
+  .zones:has(.fixed-journey[data-water-step]) .observation-panel > .observation-introduction {
+    margin-block: 0 6px;
+  }
+}
+
+@media (min-width: 900px) and (min-height: 550px) {
+  .zones:has(.fixed-journey[data-water-step]) .camera-recenter {
+    top: 96px;
+    right: clamp(16px, 2.3vw, 34px);
+  }
+}

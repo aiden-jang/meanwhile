@@ -1,3 +1,4 @@
+import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { PlaybackButton } from "../PlaybackButton";
@@ -71,6 +72,13 @@ export function StoryTimeline({
       ];
   return (
     <>
+      {navigation?.active === "atmospheric-river" && (
+        <WaterSourceRecord
+          id="atmospheric-river"
+          at={frame.at}
+          run={frame.measurements?.find(({ label }) => label === "Model run")?.value}
+        />
+      )}
       {showRestore && (
         <p className="observation-note">
           Opened at a saved moment. Choose {index === data.frames.length - 1 ? "Replay" : "Restart"} to begin

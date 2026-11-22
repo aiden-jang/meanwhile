@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CameraState } from "../../globe/controlsTypes";
 import { iceberg } from "../../sources/observations/iceberg";
 import { useStoryClock } from "../earth-stories/useStoryClock";
-import { IceJourneyEnding } from "../journeys/IceJourney";
+import { FixedJourneyEnding } from "../journeys/FixedJourney";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
@@ -317,12 +317,20 @@ export function IcebergDrift({ onView, ...panel }: ReplayProps) {
         </>
       )}
       {guided && (
-        <IceJourneyEnding
+        <FixedJourneyEnding
+          journey="ice-in-motion"
+          title="Three ways ice moves"
+          finishFocus=".iceberg-reading h3"
           ready={state === "ready"}
           playing={revealing}
           canRead={!opening && index >= FIRST_FRAGMENT && !revealing}
           replay={playBreakup}
-        />
+        >
+          <p>
+            Sea ice retreats seasonally. Land ice flows toward the coast. Once afloat, pieces of an iceberg
+            can take separate paths.
+          </p>
+        </FixedJourneyEnding>
       )}
     </ReplayPanel>
   );

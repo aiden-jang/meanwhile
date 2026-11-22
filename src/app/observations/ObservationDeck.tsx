@@ -2,9 +2,12 @@ import { StoryDeparture } from "./StoryDeparture";
 import { SharedStory } from "./SharedStory";
 import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
+import { FixedJourneyEnding } from "../journeys/FixedJourney";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { RiverWorldReading } from "./RiverReading";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { observations, type ObservationId } from "./catalogue";
 import { loadSource } from "./load";
@@ -35,10 +38,15 @@ export function ObservationDeck({
   const back = useRef<HTMLButtonElement>(null);
   const [loaded, setLoaded] = useState<{ id: ObservationId; source: ObservationSource | null } | null>(null);
   const [revision, retry] = useState(0);
+  const [landed, setLanded] = useState(false);
+  const arrive = useCallback(() => setLanded(true), []);
   const [buoy, setBuoy] = useState<string>(
     swellBuoys.find((b) => b.id === initial?.choice)?.id ?? swellBuoys[0].id,
   );
   const id = deck.entry;
+  const water = useStoryNavigation()?.route?.id === "water-in-motion";
+  const showingForecast =
+    water && id === "rain" && deck.shownSource === "atmospheric-river" && !!deck.view?.frame.paths?.length;
   const meta = observations[id];
   const title = meta.title;
   const photograph = deck.view?.frame.photograph;
@@ -46,6 +54,11 @@ export function ObservationDeck({
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), [id]);
   useObservatoryEscape(onClose);
+  const { update } = deck;
+  const openFailed = loaded?.id === id && !loaded.source;
+  useLayoutEffect(() => {
+    if (showingForecast && openFailed) update(null, true);
+  }, [showingForecast, openFailed, update]);
 
   useEffect(() => {
     let active = true;
@@ -91,16 +104,18 @@ export function ObservationDeck({
         </div>
         <div className="stage-ident">
           <span className="stage-rule" aria-hidden="true" />
-          <span>{meta.source}</span>
+          <span>{showingForecast ? "NOAA GFS forecast · opening Rainbelt" : meta.source}</span>
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
-        {id === "river" && <RiverWorldReading frame={deck.view?.frame} />}
+        {id === "river" && (!water || landed) && <RiverWorldReading frame={deck.view?.frame} />}
         <div className="stage-readout">
-          {id === "rain"
-            ? "Satellite estimate · Precipitation rate"
-            : id === "river"
-              ? "Gauge readings · Discharge"
-              : `${id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · ${meta.group}`}
+          {showingForecast
+            ? "Forecast still on the map · water-vapor transport"
+            : id === "rain"
+              ? "Satellite estimate · Precipitation rate"
+              : id === "river"
+                ? "Gauge readings · Discharge"
+                : `${id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · ${meta.group}`}
         </div>
         {id !== "epic" && (
           <StoryProjection map={deck.map} onMap={deck.setMap}>
@@ -140,7 +155,10 @@ export function ObservationDeck({
               </div>
             </div>
             <p className="observation-note observation-introduction">{meta.description}</p>
-            {id !== "river" && <SharedStory />}
+            {id === "rain" && loaded?.id !== id && (
+              <WaterSourceRecord id="rain" forecastVisible={showingForecast} />
+            )}
+            {id !== "river" && !water && <SharedStory />}
             <ConnectedJourney />
             {loaded?.id === id ? (
               loaded.source ? (
@@ -150,6 +168,8 @@ export function ObservationDeck({
                   source={loaded.source}
                   map={deck.map}
                   update={deck.update}
+                  showingForecast={showingForecast}
+                  onArrival={id === "river" && water ? arrive : undefined}
                   {...(picker ? { picker } : {})}
                 />
               ) : (
@@ -165,7 +185,21 @@ export function ObservationDeck({
             ) : (
               <StoryLoading>Opening {title}…</StoryLoading>
             )}
-            {id === "river" && <SharedStory />}
+            {id === "river" && water && (
+              <FixedJourneyEnding
+                journey="water-in-motion"
+                canRead
+                ready
+                title="Three ways to see water move"
+                finishFocus=".related-stories summary"
+              >
+                <p>
+                  Forecasts model moisture in the air. Satellites estimate rain. River gauges measure how much
+                  water flows past a specific point.
+                </p>
+              </FixedJourneyEnding>
+            )}
+            {id === "river" && !water && <SharedStory />}
             <ShareMoment />
             <ExperienceEnding />
           </div>

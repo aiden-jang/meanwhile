@@ -11,7 +11,9 @@ type Result = {
   lastCheck?: number | undefined;
 };
 
-export function useObservationData(source: ObservationSource, option: string) {
+export function useObservationData(source: ObservationSource, option: string, restoreAt?: number) {
+  const restoreTime = useRef(restoreAt);
+  restoreTime.current = restoreAt;
   const cache = useRef(new Map<string, ObservationData>());
   const checked = useRef(new Map<string, number>());
   const [revision, retry] = useState(0);
@@ -23,7 +25,7 @@ export function useObservationData(source: ObservationSource, option: string) {
       const timer = window.setTimeout(() => deadline.abort(), OBSERVATION_TIMEOUT_MS);
       const attempt = AbortSignal.any([signal, deadline.signal]);
       try {
-        const data = await source.load(option, attempt);
+        const data = await source.load(option, attempt, restoreTime.current);
         attempt.throwIfAborted();
         if (data.frames.length) cache.current.set(option, data);
         checked.current.set(option, Date.now());

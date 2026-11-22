@@ -175,5 +175,5 @@ export interface ObservationOption {
 export interface ObservationSource {
   options?: readonly ObservationOption[];
   refreshMs?: number;
-  load: (option: string, signal: AbortSignal) => Promise<ObservationData>;
+  load: (option: string, signal: AbortSignal, restoreAt?: number) => Promise<ObservationData>;
 }

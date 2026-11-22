@@ -2,6 +2,8 @@ import { readHistoryPanel, rememberHistoryQuery } from "../historyPanel";
 import { spanDeg } from "../../geo/sphere";
 import { storyPlace, type StoryPlace } from "../discovery/places";
 import { useCallback, useRef, useState } from "react";
+import { riverBasins } from "./riverGauges";
+import type { EarthStoryData } from "../earth-stories/types";
 import type { EarthStoryId } from "../earth-stories/catalogue";
 import type { StoryMoment } from "./storyMoment";
 import type { ObservationId } from "./catalogue";
@@ -21,6 +23,7 @@ export function useObservationDeck(
 ) {
   const checkpoint = useRef(before);
   checkpoint.current = before;
+  const forecastRuns = useRef(new Map<string, EarthStoryData>());
   const memory = useRef(new Map<string, StoryMoment>(shared ? [[shared.id, shared]] : []));
   const recipient = useRef(Boolean(shared));
   const [entry, setEntry] = useState<StoryId | null>((shared?.id as StoryId) ?? null);
@@ -34,6 +37,7 @@ export function useObservationDeck(
   const runningCameraKey = useRef<string>();
   const published = useRef<StoryId | null>(null);
   const departure = useRef<StoryPlace>();
+  const destination = useRef<StoryPlace>();
   const preview = useRef<StoryPlace>();
   const setMap = useCallback((next: boolean) => {
     queuedProjection.current = undefined;
@@ -47,15 +51,15 @@ export function useObservationDeck(
   const projection = useRef(map);
   projection.current = map;
   const update = useCallback(
-    (next: ObservationView | null) => {
+    (next: ObservationView | null, release = false) => {
       if (active.current !== entry) return;
       const map = queuedProjection.current ?? projection.current;
-      if (next) {
+      if (next || release) {
         pending.current = false;
-        published.current = entry;
-        if (next.follow || (runningCameraKey.current && runningCameraKey.current !== next.cameraKey))
+        published.current = next ? entry : null;
+        if (next?.follow || (runningCameraKey.current && runningCameraKey.current !== next?.cameraKey))
           journeyCamera.current = undefined;
-        runningCameraKey.current = next.cameraKey;
+        runningCameraKey.current = next?.cameraKey;
         if (queuedProjection.current !== undefined) setMap(map);
       }
       const pose = journeyCamera.current;
@@ -92,7 +96,9 @@ export function useObservationDeck(
   }, [entry]);
   const session = {
     shared: recipient.current,
+    forecastRuns: forecastRuns.current,
     departure: departure.current,
+    destination: destination.current,
     initial: entry ? memory.current.get(entry) : undefined,
     id: entry,
     remember,
@@ -105,7 +111,7 @@ export function useObservationDeck(
     if (id) memory.current.set(id, { ...memory.current.get(id), id, map: projection.current });
     pending.current = false;
     published.current = null;
-    departure.current = undefined;
+    departure.current = destination.current = undefined;
     preview.current = undefined;
     journeyCamera.current = undefined;
     crossing.current = folding.current = false;
@@ -124,7 +130,7 @@ export function useObservationDeck(
     restore(saved: typeof snapshot & { camera?: CameraState | undefined }) {
       recipient.current = saved.recipient;
       pending.current = false;
-      departure.current = undefined;
+      departure.current = destination.current = undefined;
       preview.current = undefined;
       journeyCamera.current = saved.entry ? saved.camera : undefined;
       crossing.current = folding.current = false;
@@ -153,6 +159,7 @@ export function useObservationDeck(
       });
     },
     view,
+    shownSource: published.current,
     map,
     update,
     foldGlacier() {
@@ -173,7 +180,10 @@ export function useObservationDeck(
       before();
       recipient.current = false;
       setRevision((value) => value + 1);
-      if (resume === null) memory.current.delete(next);
+      if (resume === null) {
+        memory.current.delete(next);
+        if (next === "atmospheric-river") forecastRuns.current.clear();
+      }
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
       journeyCamera.current = arrival?.pose;
@@ -182,28 +192,34 @@ export function useObservationDeck(
       runningCameraKey.current = undefined;
       preview.current = arrival?.preview;
       const fromPlace = arrival?.departure ?? (published.current ? storyPlace(published.current) : undefined);
-      const destination = storyPlace(next);
+      const basin =
+        next === "river"
+          ? (riverBasins.find(({ id }) => id === resume?.choice) ?? riverBasins[0])
+          : undefined;
+      const place = basin ? basin.anchor : storyPlace(next);
+      destination.current = place;
+      const retain = arrival?.keepForecast && published.current === "atmospheric-river";
       departure.current =
-        fromPlace &&
-        destination &&
-        spanDeg(fromPlace.lon, fromPlace.lat, destination.lon, destination.lat) >= 24
+        fromPlace && place && spanDeg(fromPlace.lon, fromPlace.lat, place.lon, place.lat) >= 24
           ? fromPlace
           : undefined;
       active.current = next;
       setTrigger(from);
       setView((previous) =>
-        previous
-          ? {
-              kind: "observation",
-              ...(previous.cameraKey ? { cameraKey: previous.cameraKey } : {}),
-              holdGeography: true,
-              target: previous.target,
-              frame: { at: previous.frame.at },
-              image: null,
-              capture: false,
-              ...(previous.lens ? { lens: previous.lens } : {}),
-            }
-          : null,
+        previous && retain
+          ? { ...previous, follow: undefined, holdGeography: true, capture: false }
+          : previous
+            ? {
+                kind: "observation",
+                ...(previous.cameraKey ? { cameraKey: previous.cameraKey } : {}),
+                holdGeography: true,
+                target: previous.target,
+                frame: { at: previous.frame.at },
+                image: null,
+                capture: false,
+                ...(previous.lens ? { lens: previous.lens } : {}),
+              }
+            : null,
       );
       const nextMap = arrival?.map ?? memory.current.get(next)?.map ?? projection.current;
       if (view) queuedProjection.current = nextMap;

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
+import { hasFixedJourney } from "./FixedJourney";
 import { warmJourneyStop } from "./warmJourneyStop";
 
 export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
@@ -10,9 +11,9 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
   const journey = journeys.find(({ id }) => id === route?.id);
   const next = route && journey?.steps[route.step + 1]?.id;
   useEffect(() => {
-    if (route?.id !== "ice-in-motion") warmJourneyStop(next ?? undefined);
+    if (!hasFixedJourney(route?.id)) warmJourneyStop(next ?? undefined);
   }, [next, route?.id]);
-  if (!navigation || !route || !journey || route.id === "ice-in-motion") return null;
+  if (!navigation || !route || !journey || hasFixedJourney(route.id)) return null;
   const step = journey.steps[route.step]!;
   const nextTitle = searchStories.find(({ id }) => id === next)?.title;
   const reading = !next ? navigation.current()?.position.moment : undefined;

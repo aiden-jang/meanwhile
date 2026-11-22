@@ -2,6 +2,7 @@ export const riverBasins = [
   {
     id: "hudson",
     label: "Hudson River · New York",
+    anchor: { lon: -73.66, lat: 43.01, zoom: 2.8, label: "Hudson River, New York" },
     stations: [
       { id: "01327750", label: "Fort Edward" },
       { id: "01358000", label: "Green Island" },
@@ -10,6 +11,7 @@ export const riverBasins = [
   {
     id: "potomac",
     label: "Potomac River · Mid-Atlantic",
+    anchor: { lon: -77.89, lat: 39.3, zoom: 2.8, label: "Potomac River" },
     stations: [
       { id: "01613000", label: "Hancock" },
       { id: "01646500", label: "Little Falls" },
@@ -18,6 +20,7 @@ export const riverBasins = [
   {
     id: "colorado",
     label: "Colorado River · Grand Canyon",
+    anchor: { lon: -111.94, lat: 36.4, zoom: 2.8, label: "Colorado River, Grand Canyon" },
     stations: [
       { id: "09380000", label: "Lees Ferry" },
       { id: "09402500", label: "Grand Canyon" },

@@ -135,8 +135,13 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       const here = capture();
       const stop = connectedArrival(stops.current, route.step, index, next.id, inputs.current(), here);
       const connected = !!activeRoute?.guide || revisit;
-      const crossing = route.id === "ice-in-motion" && next.id === "iceberg";
-      if (crossing) stop.arrival.crossing = true;
+      const iceCrossing = route.id === "ice-in-motion" && next.id === "iceberg";
+      if (iceCrossing || (route.id === "water-in-motion" && next.id === "river"))
+        stop.arrival.crossing = true;
+      if (route.id === "water-in-motion" && inputs.active === "atmospheric-river" && next.id === "rain") {
+        stop.arrival.keepForecast = !revisit || stop.arrival.map === here.map;
+        if (!revisit) stop.arrival.pose = here.pose;
+      }
       const advance = () => {
         folding.current = undefined;
         stops.current.set(index, stop);
@@ -151,7 +156,7 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
         persist(route.id, index);
       };
       if (
-        crossing &&
+        iceCrossing &&
         inputs.active === "glacier" &&
         !matchMedia("(prefers-reduced-motion: reduce)").matches &&
         inputs.foldGlacier()

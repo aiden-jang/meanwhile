@@ -94,7 +94,8 @@ export function ReplayPanel({
   projection?: ReactNode;
   journeyControls?: boolean;
 }): JSX.Element {
-  const active = useStoryNavigation()?.active;
+  const navigation = useStoryNavigation();
+  const active = navigation?.active;
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     if (focusOnEntry) back.current?.focus({ preventScroll: true });
@@ -143,7 +144,7 @@ export function ReplayPanel({
               </div>
             </div>
             <p className="observation-note">{subtitle}</p>
-            <SharedStory moment={sharedMoment} />
+            {navigation?.route?.id !== "water-in-motion" && <SharedStory moment={sharedMoment} />}
             {journeyControls && <ConnectedJourney />}
             {children}
             {sharing && <ShareMoment />}

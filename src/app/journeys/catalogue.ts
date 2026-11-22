@@ -90,7 +90,7 @@ export const journeys: readonly Journey[] = [
   },
   {
     id: "water-in-motion",
-    title: "Water in motion",
+    title: "Water in Motion",
     guide: ["NOAA forecast", "NASA satellite estimate", "USGS gauge reading"],
     summary: "Moisture in the air, rain from orbit, and water at a river gauge.",
     ending:

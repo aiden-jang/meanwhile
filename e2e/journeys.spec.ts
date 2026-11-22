@@ -30,10 +30,12 @@ for (const [id, titles] of [
     await installFeeds(page, { presentation: "fresh", empty: true });
     await tides(page);
     await page.route("**/api/observations/river", (route) => route.abort());
+    const satellite = Promise.withResolvers<void>();
     if (id === "water-in-motion")
-      await page.route("https://gibs.earthdata.nasa.gov/wms/**", (route) =>
-        route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" }),
-      );
+      await page.route("https://gibs.earthdata.nasa.gov/wms/**", async (route) => {
+        await satellite.promise;
+        await route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" });
+      });
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await openStories(page, "all");
@@ -55,16 +57,24 @@ for (const [id, titles] of [
       await page.getByRole("button", { name: "Focus the Pacific coast", exact: true }).click();
       await page.getByRole("button", { name: "Map", exact: true }).click();
     }
+    const toSecond = id === "water-in-motion" ? "Open Rainbelt" : `Next: ${titles[1]}`;
+    const toThird = id === "water-in-motion" ? "Go to the Hudson" : `Next: ${titles[2]}`;
     const heldForecast = id === "water-in-motion" ? await forecastTime.getAttribute("aria-valuetext") : null;
-    await journey.getByRole("button", { name: `Next: ${titles[1]}`, exact: true }).click();
+    await journey.getByRole("button", { name: toSecond, exact: true }).click();
     await expect(journey).toContainText("2 of 3");
     await expect(page.getByRole("heading", { name: titles[1], exact: true })).toBeVisible();
     if (id === "water-in-motion") {
       await expect(page.getByRole("group", { name: "Rainbelt on the map" })).toBeVisible();
-      await expect(journey.getByText("NASA satellite estimate", { exact: true })).toHaveAttribute(
+      await expect(journey.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute(
         "aria-current",
         "step",
       );
+      const record = page.getByRole("region", { name: "Source and time", exact: true });
+      await expect(record).toContainText("On screen while Rainbelt loads");
+      await expect(record).toContainText(heldForecast!);
+      satellite.resolve();
+      await expect(record).toContainText("Previous view");
+      await expect(record.locator("time")).toHaveCount(2);
       await rainTime.press("ArrowLeft");
     }
     const heldRain = id === "water-in-motion" ? await rainTime.getAttribute("aria-valuetext") : null;
@@ -75,14 +85,18 @@ for (const [id, titles] of [
       await expect(forecastTime).toHaveAttribute("aria-valuetext", heldForecast);
       await expect(page.getByRole("group", { name: "Atmospheric River on the map" })).toBeVisible();
     }
-    await journey.getByRole("button", { name: `Next: ${titles[1]}`, exact: true }).click();
+    await journey.getByRole("button", { name: toSecond, exact: true }).click();
     if (heldRain) await expect(rainTime).toHaveAttribute("aria-valuetext", heldRain);
-    await journey.getByRole("button", { name: `Next: ${titles[2]}`, exact: true }).click();
+    if (id === "water-in-motion")
+      await expect(journey.getByRole("button", { name: toThird, exact: true })).toBeInViewport({ ratio: 1 });
+    await journey.getByRole("button", { name: toThird, exact: true }).click();
     await expect(journey).toContainText("3 of 3");
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );
-    await journey.getByRole("button", { name: "Finish journey", exact: true }).click();
+    if (id === "water-in-motion")
+      await journey.getByRole("button", { name: "See the finding", exact: true }).click();
+    await page.getByRole("button", { name: "Finish journey", exact: true }).click();
     await expect(journey).toHaveCount(0);
     await expect(page.locator(".related-stories summary")).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);

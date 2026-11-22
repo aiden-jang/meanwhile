@@ -921,12 +921,14 @@ CALIPSO profile into that geography. Fault Offset draws each mapped rupture in s
 holds the selected survey site while the radar sweep replaces shaded terrain. Glacier Flow
 holds one camera and a pinned sample across its two annual velocity mosaics. Its slider divides
 the registered maps, and the selected year still controls the illustrative traces.
-Water in Motion carries the Pacific framing from the GFS moisture-transport flight into
-NASA satellite precipitation estimates. A coastal grid cell highlights the current forecast,
-and a failed satellite frame can be retried while the previous image and timestamp stay visible.
-The journey restores each stop’s camera, projection and reading. River Pulse frames the
-selected basin with a generalized Natural Earth river line. Both gauges can be picked and
-the chart can be scrubbed directly.
+Water in Motion holds the Pacific camera while the forecast gives way to Rainbelt.
+The source record distinguishes the forecast valid time and run from the satellite estimate time.
+While the first estimate loads, the retained forecast keeps its own label. A failed later
+satellite frame keeps the last good frame and its timestamp. The fixed journey rail names the
+move to the Hudson as a separate river record. The same globe or map pulls back for the crossing.
+River Pulse keeps the selected gauge, chart cursor, map reading and Keep action together.
+The finding stays inline with the chart. Previous view restores the previous frame, projection
+and camera, as well as the selected basin and gauge when revisiting a river stop.
 Surface to Seafloor links a recorded NOAA drifter track, a measured Argo profile and a GEBCO
 depth section on the shared globe and map. The float’s waterline folds back into its location
 before the camera travels to the next site. Previous view restores the camera and projection

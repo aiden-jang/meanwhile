@@ -134,9 +134,10 @@ async function gauge(
 export const river: ObservationSource = {
   options: riverBasins,
   refreshMs: 15 * MINUTE,
-  async load(option, signal): Promise<ObservationData> {
+  async load(option, signal, restoreAt): Promise<ObservationData> {
     const basin = riverBasins.find(({ id }) => id === option) ?? riverBasins[0];
-    const end = Date.now();
+    const now = Date.now();
+    const end = restoreAt !== undefined && restoreAt < now - 24 * HOUR ? restoreAt + 12 * HOUR : now;
     const results = await Promise.allSettled(
       basin.stations.map((station) => gauge(station, end - 24 * HOUR, end, signal)),
     );

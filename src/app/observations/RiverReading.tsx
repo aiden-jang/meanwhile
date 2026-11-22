@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useEffect, useState } from "react";
+import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import { ObservationChart } from "./ObservationChart";
@@ -95,6 +96,7 @@ export function RiverReading({
   const kept = navigation?.library.saved.some((visit) => savedVisitKey(visit) === key);
   return (
     <>
+      <WaterSourceRecord id="river" at={at} />
       <div className="river-gauges" role="group" aria-label="River gauges">
         {gauges.map(({ id, label, value, available }, index) => (
           <button

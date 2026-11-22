@@ -7,6 +7,7 @@ import type { Visit } from "../visitor/library";
 export interface JourneyArrival {
   map: boolean;
   crossing?: boolean | undefined;
+  keepForecast?: boolean | undefined;
   pose?: CameraState | undefined;
   float?: FloatCheckpoint | undefined;
   floatState?: FloatRestore | undefined;

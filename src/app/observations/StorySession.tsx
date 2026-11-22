@@ -1,12 +1,15 @@
 import { createContext, useContext, useRef, useState } from "react";
 import type { StoryMoment } from "./storyMoment";
+import type { EarthStoryData } from "../earth-stories/types";
 import type { StoryPlace } from "../discovery/places";
 import { storyShare } from "./storyShare";
 
 export interface StorySessionValue {
   shared?: boolean;
+  forecastRuns?: Map<string, EarthStoryData>;
   id?: string | null;
   departure?: StoryPlace | undefined;
+  destination?: StoryPlace | undefined;
   initial: StoryMoment | undefined;
   remember: (part: Partial<StoryMoment>) => void;
   current: () => StoryMoment | undefined;

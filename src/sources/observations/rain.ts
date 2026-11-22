@@ -22,12 +22,17 @@ function frameUrl(at: number) {
 
 export const rain: ObservationSource = {
   refreshMs: 30 * MINUTE,
-  async load() {
-    const latest = Math.floor((Date.now() - 8 * HOUR) / (30 * MINUTE)) * 30 * MINUTE;
+  async load(_option, _signal, restoreAt) {
+    const cadence = 30 * MINUTE;
+    const latest = Math.floor((Date.now() - 8 * HOUR) / cadence) * cadence;
+    const end =
+      restoreAt !== undefined && restoreAt % cadence === 0 && restoreAt < latest - 24 * HOUR
+        ? restoreAt + 12 * HOUR
+        : latest;
     return {
       target: { lon: -150, lat: 6, zoom: 0.9 },
       frames: Array.from({ length: 49 }, (_, index) => {
-        const at = latest - (48 - index) * 30 * MINUTE;
+        const at = end - (48 - index) * cadence;
         return {
           at,
           raster: { url: frameUrl(at) },
