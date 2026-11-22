@@ -28,15 +28,21 @@ test("header Find searches all topics while the catalogue search respects the ch
   await field.fill("Float Dive");
   await expect(page.getByText(/No matches in After Dark/)).toBeVisible();
   await page.getByRole("button", { name: "Find a story", exact: true }).click();
-  await expect(field).toBeFocused();
-  await expect(topics.getByRole("button", { name: "All topics" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("#search-story-float")).toBeVisible();
-  await field.fill("tonight's sky");
-  await expect(page.locator("#search-story-sky")).toBeVisible();
-  await field.fill("hurricanes");
-  await expect(page.locator("#search-story-katrina")).toBeVisible();
-  await field.fill("Gulf of Mexico");
-  await expect(page.locator("#search-story-katrina")).toBeVisible();
+  const find = page.getByRole("dialog", { name: "Find a story", exact: true });
+  const everywhere = find.getByRole("searchbox", { name: "Search all stories", exact: true });
+  await expect(everywhere).toBeFocused();
+  for (const [query, title] of [
+    ["Float Dive", "Float Dive"],
+    ["tonight's sky", "Tonight’s Sky"],
+    ["hurricanes", "Eye of the Storm"],
+    ["Gulf of Mexico", "Eye of the Storm"],
+  ] as const) {
+    await everywhere.fill(query);
+    await expect(find.getByRole("button", { name: title, exact: true })).toBeVisible();
+  }
+  await everywhere.press("Escape");
+  await expect(topics.getByRole("button", { name: "After Dark" })).toHaveAttribute("aria-pressed", "true");
+  await expect(field).toHaveValue("Float Dive");
   await topics.getByRole("button", { name: "Below the Surface" }).click();
   await field.fill("Float Dive");
   await expect(page.locator("#search-story-float")).toBeVisible();
