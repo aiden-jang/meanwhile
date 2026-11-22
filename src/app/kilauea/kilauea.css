@@ -71,6 +71,10 @@
     display: none;
   }
 
+  .zones:has(.coast-survey) [data-scale] {
+    bottom: 12px;
+  }
+
   .coast-survey .kilauea-coast-labels {
     inset-block: 12px auto;
     font-size: 11px;

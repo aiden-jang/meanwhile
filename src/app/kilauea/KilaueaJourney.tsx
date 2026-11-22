@@ -237,7 +237,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       inset={
         <>
           {footage && !panel.map && <KilaueaFootage />}
-          {comparing && split > 0 && split < 100 && (
+          {comparing && (!coast || arrived) && split > 0 && split < 100 && (
             <div className="kilauea-coast-labels" aria-hidden="true">
               <span>Before eruption</span>
               <span>Aug 9, 2018</span>
