@@ -47,8 +47,9 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await next("Iceberg Drift").click();
   await expect(guide).toContainText("3 of 3");
   const trackDate = iceberg.getByRole("slider", { name: "Track date", exact: true });
-  await iceberg.getByRole("button", { name: "Watch the breakup", exact: true }).click();
-  await expect(trackDate).toHaveAttribute("aria-valuetext", "Dec 23, 2020");
+  await guide.getByRole("button", { name: "Watch the breakup", exact: true }).click();
+  await expect(trackDate).toHaveAttribute("aria-valuetext", "Feb 4, 2021");
+  await expect(guide.getByRole("button", { name: "See the finding", exact: true })).toBeVisible();
   await iceberg.getByRole("button", { name: "Fragments", exact: true }).click();
   await fragment.selectOption("E");
   await expect(trackDate).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
