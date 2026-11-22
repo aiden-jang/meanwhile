@@ -22,10 +22,10 @@ export function useVisitMemory(
     if (!active) return null;
     const position: VisitPosition = {};
     const { observations, tonight, floatDive } = props.views;
-    const moment = observations.getMoment();
+    const moment = props.views.getMoment();
     if (moment?.id === active) position.moment = moment;
     const sky = tonight.view;
-    if (sky && !sky.radiantTrail) position.sky = skyPosition(sky, observations.map, tonight.orbit);
+    if (sky) position.sky = skyPosition(sky, observations.map, tonight.orbit);
     const float = floatDive.view;
     if (float)
       position.float = {

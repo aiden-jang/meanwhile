@@ -2,6 +2,8 @@ import { StoryDeparture } from "./StoryDeparture";
 import type { StoryMoment } from "./storyMoment";
 import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
+import { StoryIdentity } from "../journeys/StoryIdentity";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -92,6 +94,7 @@ export function ReplayPanel({
   projection?: ReactNode;
   journeyControls?: boolean;
 }): JSX.Element {
+  const active = useStoryNavigation()?.active;
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     if (focusOnEntry) back.current?.focus({ preventScroll: true });
@@ -129,6 +132,7 @@ export function ReplayPanel({
       <div className="observatory-sidebar replay-sidebar">
         <StoryDockProvider>
           <div id="observatory-intro" className="observatory-intro observation-panel" tabIndex={-1}>
+            <StoryIdentity id={active} heading={title} />
             <div className="observation-heading">
               <h2>{title}</h2>
               <div className="observatory-actions">

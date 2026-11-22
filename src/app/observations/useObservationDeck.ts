@@ -1,3 +1,4 @@
+import { readHistoryPanel } from "../historyPanel";
 import { spanDeg } from "../../geo/sphere";
 import { storyPlace, type StoryPlace } from "../discovery/places";
 import { useCallback, useRef, useState } from "react";
@@ -16,6 +17,7 @@ export function useObservationDeck(
   shared?: StoryMoment,
   before = () => {},
   initialMap = shared?.map ?? false,
+  linkedCamera?: CameraState,
 ) {
   const checkpoint = useRef(before);
   checkpoint.current = before;
@@ -26,7 +28,7 @@ export function useObservationDeck(
   const [view, setView] = useState<ObservationView | null>(null);
   const [map, setProjection] = useState(initialMap);
   const queuedProjection = useRef<boolean>();
-  const journeyCamera = useRef<CameraState>();
+  const journeyCamera = useRef(linkedCamera);
   const runningCameraKey = useRef<string>();
   const published = useRef<StoryId | null>(null);
   const departure = useRef<StoryPlace>();
@@ -34,7 +36,7 @@ export function useObservationDeck(
     queuedProjection.current = undefined;
     setProjection(next);
   }, []);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => readHistoryPanel()?.query ?? "");
   const [revision, setRevision] = useState(0);
   const pending = useRef(false);
   const active = useRef(entry);
@@ -87,6 +89,7 @@ export function useObservationDeck(
     shared: recipient.current,
     departure: departure.current,
     initial: entry ? memory.current.get(entry) : undefined,
+    id: entry,
     remember,
     current,
   };
@@ -105,18 +108,21 @@ export function useObservationDeck(
     setTrigger(null);
     setMap(false);
   }, [setMap]);
-  const snapshot = { entry, trigger, map, query, recipient: recipient.current };
+  const snapshot = { entry, trigger, map, query, recipient: recipient.current, moment: current() };
   return {
     entry,
     revision,
-    capture: () => snapshot,
-    restore(saved: typeof snapshot) {
+    capture: (camera?: CameraState) => ({ ...snapshot, camera }),
+    restore(saved: typeof snapshot & { camera?: CameraState | undefined }) {
       recipient.current = saved.recipient;
       pending.current = false;
       departure.current = undefined;
-      journeyCamera.current = undefined;
+      journeyCamera.current = saved.entry ? saved.camera : undefined;
       published.current = null;
+      if (saved.entry && saved.moment) memory.current.set(saved.entry, saved.moment);
+      runningCameraKey.current = undefined;
       active.current = saved.entry;
+      setRevision((value) => value + 1);
       setEntry(saved.entry);
       setTrigger(saved.trigger);
       setMap(saved.map);

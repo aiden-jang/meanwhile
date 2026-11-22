@@ -111,7 +111,8 @@ test("onward recommendations avoid the last story and preserve the original retu
   await expect(aral).toHaveCount(0);
   await water.locator(".related-stories summary").click();
   await expect(water.locator(".related-stories button strong")).toHaveText("River Pulse");
-  await water.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await water.getByRole("button", { name: "Back to Vanishing Sea", exact: true }).click();
+  await aral.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(search).toHaveValue("Aral");
   await expect(page.locator("#search-story-aral")).toBeFocused();
 });

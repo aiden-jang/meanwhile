@@ -26,6 +26,7 @@ export function ReplayInset({
   return (
     <canvas
       ref={canvas}
+      data-world-inset={opacity > 0.1 || undefined}
       className={`replay-inset${detail ? " replay-inset-detail" : ""}`}
       width={width}
       height={height}

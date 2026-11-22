@@ -381,3 +381,29 @@
     animation-duration: 1ms;
   }
 }
+
+.story-identity {
+  display: block;
+  margin-block-end: 0.4rem;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.journey-inspect {
+  min-height: 44px;
+  align-self: start;
+  padding-inline: 0.65rem;
+  border-radius: 0.35rem;
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+
+@media (min-width: 900px) and (min-height: 550px) {
+  .replay-stage .story-projection {
+    inset-block: var(--stage-inset) auto;
+  }
+
+  .replay-stage:has(.story-projection) .stage-ident {
+    max-width: calc(100% - 280px);
+  }
+}

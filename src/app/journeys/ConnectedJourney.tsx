@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
+import { revealReading } from "../observations/revealReading";
 import { warmJourneyStop } from "./warmJourneyStop";
 
 export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
@@ -12,9 +13,19 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
   useEffect(() => {
     warmJourneyStop(next ?? undefined);
   }, [next]);
-  if (!navigation || !route || !journey?.guide) return null;
+  if (!navigation || !route || !journey) return null;
   const step = journey.steps[route.step]!;
+  const action =
+    step.id === "ice"
+      ? { selector: ".observation-chart[data-scrubbable]", label: "Inspect extent chart" }
+      : step.id === "glacier"
+        ? {
+            selector: ".terrain-comparison > .observatory-actions > button",
+            label: "Compare velocity maps",
+          }
+        : null;
   const nextTitle = searchStories.find(({ id }) => id === next)?.title;
+  const reading = !next ? navigation.current()?.position.moment : undefined;
   return (
     <section
       className="connected-journey-steps"
@@ -29,14 +40,30 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <>
-          <ol className="connected-journey-sources" aria-label="Data in this journey">
-            {journey.guide.map((source, index) => (
-              <li key={source} aria-current={index === route.step ? "step" : undefined}>
-                {source}
-              </li>
-            ))}
-          </ol>
+          {journey.guide && (
+            <ol className="connected-journey-sources" aria-label="Data in this journey">
+              {journey.guide.map((source, index) => (
+                <li key={source} aria-current={index === route.step ? "step" : undefined}>
+                  {source}
+                </li>
+              ))}
+            </ol>
+          )}
           <p>{step.prompt}</p>
+          {action && (
+            <button
+              type="button"
+              className="journey-inspect"
+              onClick={() => {
+                const target = document.querySelector<HTMLElement>(action.selector);
+                if (target instanceof HTMLButtonElement && target.getAttribute("aria-pressed") !== "true")
+                  target.click();
+                revealReading(target);
+              }}
+            >
+              {action.label}
+            </button>
+          )}
         </>
       )}
       <div className="observatory-actions">
@@ -72,6 +99,17 @@ export function ConnectedJourney({ compact = false }: { compact?: boolean }) {
         )}
       </div>
       {!compact && <small>{step.context}</small>}
+      {!next && (
+        <div className="journey-context" role="status">
+          <p>{journey.ending}</p>
+          {reading?.at !== undefined && (
+            <small>
+              Last selected ·{" "}
+              {new Date(reading.at).toLocaleDateString(undefined, { dateStyle: "medium", timeZone: "UTC" })}
+            </small>
+          )}
+        </div>
+      )}
       {route.folding && (
         <span className="sr-only" role="status">
           {route.folding === "curtain" ? "Folding the lidar slice…" : "Returning to the waterline…"}

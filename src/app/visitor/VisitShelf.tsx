@@ -139,10 +139,14 @@ export function SaveVisit() {
         {navigation.library.saved.some((entry) => savedVisitKey(entry) === navigation.active)
           ? navigation.active === "river"
             ? "Update river bookmark"
-            : "Update saved view"
+            : navigation.active === "aurora"
+              ? "Update forecast bookmark"
+              : "Update saved view"
           : navigation.active === "river"
             ? "Bookmark river"
-            : "Save view"}
+            : navigation.active === "aurora"
+              ? "Bookmark forecast"
+              : "Save view"}
       </button>
       <span role="status" aria-label="Saved view status">
         {navigation.library.notice}

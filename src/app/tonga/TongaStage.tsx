@@ -134,9 +134,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     remember?.({
       choice: station.id,
       chapter: ["inspect", "kept", "shared"].includes(phase) ? "pressure" : "journey",
-      ...(guided
-        ? { tongaView: { phase, held, elapsed: view.elapsed, anchor, station: view.station?.id } }
-        : {}),
+      tongaView: { phase, held, elapsed: view.elapsed, anchor, station: view.station?.id },
     });
   }, [
     minute,

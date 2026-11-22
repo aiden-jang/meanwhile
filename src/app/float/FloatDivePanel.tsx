@@ -8,6 +8,7 @@ import { useArgoProfiles } from "./useArgoProfiles";
 import { FloatTitle } from "./FloatChapter";
 import { FloatMeasurements } from "./FloatMeasurements";
 import { floatMoment } from "./floatMoment";
+import { StoryIdentity } from "../journeys/StoryIdentity";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 
@@ -49,6 +50,7 @@ export function FloatDivePanel({
 
   return (
     <>
+      {view && !guided && <StoryIdentity id="float" heading="Below the blue." />}
       <div className="float-heading">
         {view && !guided ? <FloatTitle view={view} /> : <h2>Float Dive</h2>}
         <div className="observatory-actions float-actions">

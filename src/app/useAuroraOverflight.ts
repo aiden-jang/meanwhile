@@ -1,12 +1,19 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { Aurora } from "../sources/aurora";
 import { auroraRoutes, currentForecast, type AuroraRun, type Hemisphere } from "../sources/auroraRoute";
+import { useRestoreAurora } from "./useLinkedAurora";
+import type { StoryMoment } from "./observations/storyMoment";
 import type { LayerAnswer } from "./feedStatus";
 
 export function useAuroraOverflight(
   forecast: Aurora | null,
   answer: LayerAnswer,
-  active: { run: AuroraRun | null; setRun: (run: AuroraRun | null) => void },
+  active: {
+    request: StoryMoment | null;
+    setRequest: (moment: StoryMoment | null) => void;
+    run: AuroraRun | null;
+    setRun: (run: AuroraRun | null) => void;
+  },
   enabled: boolean,
   now: number,
 ) {
@@ -29,16 +36,24 @@ export function useAuroraOverflight(
               ? "No forecast aurora on Earth’s night side."
               : null;
 
+  const start = useCallback(
+    (hemisphere?: Hemisphere, held = false) => {
+      const route = routes.find((entry) => entry.hemisphere === hemisphere) ?? routes[0];
+      if (route && current) setRun({ forecast: current, route, ...(held ? { held: true } : {}) });
+    },
+    [current, routes, setRun],
+  );
+  useRestoreAurora(active.request, run, current?.forecastAt, start);
   return {
     run,
+    requested: !!active.request,
+    hold: active.setRequest,
+    newerForecast:
+      active.request?.at !== undefined && run !== null && run.forecast.forecastAt !== active.request.at,
     forecastAt: current?.forecastAt,
     unavailable,
     routes,
-    start(hemisphere?: Hemisphere) {
-      const route =
-        hemisphere === undefined ? routes[0] : routes.find((entry) => entry.hemisphere === hemisphere);
-      if (route && current) setRun({ forecast: current, route });
-    },
+    start,
     replay() {
       if (run) setRun({ forecast: run.forecast, route: { ...run.route } });
     },

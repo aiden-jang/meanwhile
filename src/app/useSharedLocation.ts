@@ -93,7 +93,11 @@ export function useSharedLocation({
     };
     write();
     const timer = window.setInterval(write, 1000);
-    return () => window.clearInterval(timer);
+    window.addEventListener("pagehide", write);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", write);
+    };
   }, [
     filters,
     selected,

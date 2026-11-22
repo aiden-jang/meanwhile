@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { FindInStory } from "./visitor/FindInStory";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { SavedBoundary, SavedPanel } from "./visitor/SavedBoundary";
 import "./header-navigation.css";
@@ -13,6 +14,8 @@ const SavedCollection = lazy(() => loadCollection().then((module) => ({ default:
 export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
   const [opened, setSaved] = useState(false);
+  const [find, setFind] = useState(false);
+  const findTrigger = useRef<HTMLButtonElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
@@ -54,11 +57,15 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
       <button
         type="button"
         className="header-navigation-action header-find"
+        ref={findTrigger}
+        id="open-find-in-story"
         aria-label="Find a story"
+        aria-expanded={navigation.active ? find : undefined}
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
-          navigation.browse(true);
+          if (navigation.active) setFind(true);
+          else navigation.browse(true);
         }}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -84,6 +91,20 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         </svg>
         <span>Saved</span>
       </button>
+      {find && (
+        <FindInStory
+          unavailable={navigation.unavailable}
+          onClose={() => {
+            setFind(false);
+            requestAnimationFrame(() => findTrigger.current?.focus({ preventScroll: true }));
+          }}
+          open={(id) => {
+            setFind(false);
+            if (id !== navigation.active) navigation.open(id, "open-find-in-story");
+            else findTrigger.current?.focus({ preventScroll: true });
+          }}
+        />
+      )}
       {saved && (
         <SavedPanel count={navigation.library.saved.length} onClose={close}>
           <SavedBoundary>

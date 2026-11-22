@@ -89,15 +89,15 @@ for (const [id, titles] of [
   });
 }
 
-test("related stories cross scenes and return to an available catalogue control", async ({ page }) => {
+test("related stories cross scenes and return to their previous story", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#v=observe&story=katrina");
   await page.getByText("Keep exploring", { exact: true }).click();
   await page.getByRole("button", { name: /^Lights Return/ }).click();
   await expect(page.getByRole("heading", { name: "Lights Return", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
-  await expect(page.locator("#continue-story-lights")).toBeFocused();
+  await page.getByRole("button", { name: "Back to Eye of the Storm", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Eye of the Storm", exact: true })).toBeVisible();
 });
 
 for (const view of ["Meteor Nights", "Moonfall"] as const) {
@@ -129,8 +129,9 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     await page.getByText("Keep exploring", { exact: true }).click();
     await expect(page.locator(".related-stories button strong")).not.toHaveText("Tonight’s Sky");
     await page.locator(".related-stories button").click();
-    await page.getByRole("button", { name: "Back to stories", exact: true }).click();
-    await page.locator("#search-story-sky").click();
+    await page.getByRole("button", { name: `Back to ${view}`, exact: true }).click();
+    if (view === "Meteor Nights") await page.getByRole("button", { name: "Sky view", exact: true }).click();
+    else await page.getByRole("button", { name: "Back to Tonight’s Sky", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sky view", exact: true })).toHaveAttribute(
       "aria-pressed",
@@ -138,7 +139,7 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     );
     await expect(city).toHaveValue("Seoul");
     await expect(time).toHaveValue(savedTime);
-    await expect(page.getByRole("button", { name: "Back to stories", exact: true })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Back to stories", exact: true })).toBeVisible();
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );

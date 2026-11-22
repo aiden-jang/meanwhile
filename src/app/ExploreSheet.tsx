@@ -8,11 +8,13 @@ export function ExploreSheet({
   onResize,
   panel,
   visible,
+  flat,
 }: {
   height: number;
   onResize: (height: number) => void;
   panel: string;
   visible: boolean;
+  flat: boolean;
 }) {
   const [viewport, setViewport] = useState({ height: window.innerHeight, footer: 0 });
   useLayoutEffect(() => {
@@ -55,7 +57,15 @@ export function ExploreSheet({
         className={visible ? "absolute inset-x-0 z-[2] md:hidden" : "hidden"}
         style={{ top: "calc(var(--sheet-position) - 6px)" }}
       />
-      {visible && <MobileNavigation canvasHeight={current} stops={stops} onResize={onResize} panel={panel} />}
+      {visible && (
+        <MobileNavigation
+          canvasHeight={current}
+          stops={stops}
+          onResize={onResize}
+          panel={panel}
+          flat={flat}
+        />
+      )}
     </>
   );
 }

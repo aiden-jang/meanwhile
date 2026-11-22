@@ -3,6 +3,7 @@ import type { Visit } from "./library";
 
 export function visitAction(visit: Visit): "Continue" | "Watch again" | "Open latest" {
   const kind = storyKind(visit.id);
+  if (visit.id === "float" && visit.position.float) return "Continue";
   if (visit.id === "epic" && visit.position.moment?.choice !== "latest")
     return visit.completed ? "Watch again" : "Continue";
   if (kind === "Recent observations" || kind === "Forecast" || ["sky", "meteors", "orbit"].includes(visit.id))

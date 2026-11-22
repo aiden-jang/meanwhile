@@ -116,7 +116,8 @@ for (const width of [1440, 390]) {
     await expect(panel.getByRole("slider")).toBeVisible();
     await panel.getByText("Keep exploring", { exact: true }).click();
     await panel.locator(".related-stories button").click();
-    await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+    await page.getByRole("button", { name: "Back to Vanishing Sea", exact: true }).click();
+    await panel.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(search).toHaveValue("Aral");
     await expect(trigger).toBeFocused();
     await expect(page.getByRole("button", { name: "Earth", exact: true })).toHaveAttribute(

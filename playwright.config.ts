@@ -44,7 +44,13 @@ export default defineConfig({
   },
   retries: 1,
   projects: webkit
-    ? [{ name: "webkit", testMatch: resilience, use: { ...devices["iPhone 13"], deviceScaleFactor: 1 } }]
+    ? [
+        {
+          name: "webkit",
+          testMatch: [resilience, "**/continuity.spec.ts"],
+          use: { ...devices["iPhone 13"], deviceScaleFactor: 1 },
+        },
+      ]
     : [
         { name: "release", grepInvert: /@dev/, testIgnore: resilience },
         { name: "development", grep: /@dev/, use: { baseURL: "http://localhost:31601" } },

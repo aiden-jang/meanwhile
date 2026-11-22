@@ -7,8 +7,7 @@ test("every story has a unique address across catalogues", () => {
   expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
   expect(findStories("River Pulse").map(({ id }) => id)).toEqual(["river"]);
   expect(findStories("Atmospheric River").map(({ id }) => id)).toEqual(["atmospheric-river"]);
-  for (const id of ["river", "atmospheric-river"])
-    expect(readStoryMoment(new URLSearchParams({ story: id }))?.id).toBe(id);
+  for (const id of ids) expect(readStoryMoment(new URLSearchParams({ story: id }))?.id).toBe(id);
 });
 
 test("story links preserve a subsecond sample, city, projection, selection and chapter", () => {
@@ -68,4 +67,19 @@ test("sky links round trip a night path and rover links reject invalid stops", (
   expect(readStoryMoment(params)?.sky?.lunar).toBeUndefined();
   params.set("look", ",16");
   expect(readStoryMoment(params)?.sky).toBeUndefined();
+});
+
+test("a journey link restores only a matching stop and preserves the Tonga pressure view", () => {
+  const params = new URLSearchParams();
+  const moment = {
+    id: "tonga",
+    map: true,
+    journey: { id: "through-the-air", step: 2 },
+    tongaView: { phase: "inspect" as const, held: true, elapsed: 5142.5, anchor: 601, station: "SFO" },
+  };
+  writeStoryMoment(params, moment);
+  expect(readStoryMoment(params)).toEqual(moment);
+  params.set("stop", "0");
+  params.set("pulse", "follow,1,Infinity,600,SFO");
+  expect(readStoryMoment(params)).toEqual({ id: "tonga", map: true });
 });

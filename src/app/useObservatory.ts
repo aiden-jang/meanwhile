@@ -1,7 +1,10 @@
+import { radarActions } from "./radar/radarActions";
+import type { CameraState } from "../globe/controlsTypes";
+import { appendJourney, auroraMoment, useLinkedAurora, useRouteExtension } from "./useLinkedAurora";
 import { useSunVisit } from "./sun/useSunVisit";
 import { useCallback, useRef, useState } from "react";
 import type { Permalink } from "./permalink";
-import { initialPresentation, initialScene } from "./observatoryState";
+import { initialPresentation, initialScene, linkedPose } from "./observatoryState";
 export { initialPresentation, earthSceneTarget } from "./observatoryState";
 import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
@@ -13,7 +16,7 @@ import { skyReference, useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
-import { radarCamera } from "./radar/radarCamera";
+import { radarLink, radarMoment } from "./radar/radarCamera";
 import { useRadarPresentation } from "./radar/useRadarPresentation";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
@@ -26,6 +29,7 @@ export type Presentation = "observe" | "explore";
 export function useObservatory(shared: Partial<Permalink>) {
   const story = shared.story;
   const checkpoint = useRef<() => void>(() => {});
+  const routeExtension = useRouteExtension();
   const loadingBackdrop = useRef<"dayline" | "planetarium">("dayline");
   const visitCheckpoint = useRef<() => void>(() => {});
   const before = useCallback(() => {
@@ -37,7 +41,8 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
-  const { visit: sunWatch, setVisit: setSunWatch, ...sun } = useSunVisit(before, setRun);
+  const { request: auroraRequest, set: requestAurora } = useLinkedAurora(story);
+  const { visit: sunWatch, setVisit: setSunWatch, ...sun } = useSunVisit(before, setRun, story);
   const skyCity = useSkyCity(shared.story?.city);
   const sky = useSkyView(skyCity.name, before, story);
   const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
@@ -47,32 +52,38 @@ export function useObservatory(shared: Partial<Permalink>) {
     setView: setFloatView,
     controls: floatDive,
     moment: getFloatMoment,
-  } = useFloatView(shared.story, before);
+  } = useFloatView(shared.story, before, linkedPose(shared));
   const {
     view: radarView,
     setView: setRadarView,
     update: updateRadar,
     opening: radarOpening,
-  } = useRadarPresentation();
+  } = useRadarPresentation(story);
   const observations = useObservationDeck(
-    story?.id === "float" || isSkyStory(story?.id) ? undefined : story,
+    story && !["float", "radar", "aurora", "sun"].includes(story.id) && !isSkyStory(story.id)
+      ? story
+      : undefined,
     before,
     story?.map,
+    story ? linkedPose(shared) : undefined,
   );
   const closeObservations = observations.close;
-  const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>({});
+  const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>(
+    story?.id === "radar" ? radarLink(story) : {},
+  );
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);
   const clearViews = useCallback(() => {
     setTourStop(null);
     setRun(null);
+    requestAurora(null);
     setSunWatch(null);
     setRadarView(null);
     setTonightView(null);
     setFloatView(null);
     closeObservations();
     storyFromExplore.current = false;
-  }, [closeObservations, setTonightView, setRadarView, setFloatView, setSunWatch]);
+  }, [closeObservations, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora]);
   const {
     presentation,
     changePresentation,
@@ -105,6 +116,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setFocus(at);
       setTourStop(null);
       setRun(null);
+      requestAurora(null);
       setSunWatch(null);
       setRadarView(null);
       setTonightView(null);
@@ -112,7 +124,11 @@ export function useObservatory(shared: Partial<Permalink>) {
       if (!keepDeck) closeObservations();
       open?.();
     },
-    [closeObservations, before, setTonightView, setRadarView, setFloatView, setSunWatch],
+    [closeObservations, before, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora],
+  );
+  const radar = radarActions(
+    { radarView, radarOrigin, radarEntry, setRadarView, updateRadar },
+    { presentation, before, changePresentation, setScene, observations },
   );
   const observing = presentation === "observe";
   const night = observing && scene === "night";
@@ -121,7 +137,6 @@ export function useObservatory(shared: Partial<Permalink>) {
   const localSky = tonight && tonightView !== "opening" ? tonightView : null;
   const auroraRun = night && !tonight ? run : null;
   const depth = observing && !observations.entry && (tourStop?.purpose === "depth" || scene === "depth");
-  const depthFocus = depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null;
   const origin = {
     presentation,
     radar: radarOrigin.current,
@@ -129,22 +144,25 @@ export function useObservatory(shared: Partial<Permalink>) {
     story: storyFromExplore.current,
     shared: sharedView.current,
   };
-  const capture = () => ({
+  const capture = (camera?: CameraState) => ({
     scene,
+    extension: routeExtension.current.capture(),
+    auroraRequest: auroraRequest,
+    skyCity: skyCity.name,
     focus,
     run: run && !run.held ? { ...run, held: true as const } : run,
-    sunWatch,
+    sunWatch: sunWatch ? { ...sunWatch, position: sun.moment(observations.map) } : null,
     browser,
     origin,
     sky: sky.capture(),
-    deck: observations.capture(),
+    deck: observations.capture(camera),
     float:
       floatView === "opening"
         ? { opening: true as const, entry: floatEntry.current }
         : floatView === null
           ? null
-          : { profile: floatView.profile, source: floatView.source, index: floatView.read().index },
-    radar: radarView ? { ...radarView, image: null } : null,
+          : floatView.checkpoint(camera ?? floatView.target),
+    radar: radarView ? { ...radarView, target: camera ?? radarView.target, image: null } : null,
   });
   return {
     observing,
@@ -162,6 +180,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         !tourStop &&
         !sunActive &&
         !auroraRun &&
+        !auroraRequest &&
         !tonight &&
         !floatView &&
         !radarView &&
@@ -207,6 +226,8 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     navigation: {
       requestExploreFocus,
+      extension: routeExtension,
+      linkedJourney: story?.journey,
       prepareStory: (next: EarthScene, keepDeck: boolean, open?: () => void) => {
         loadingBackdrop.current = night ? "planetarium" : "dayline";
         if (observing) chooseScene(next, null, keepDeck, open);
@@ -229,7 +250,7 @@ export function useObservatory(shared: Partial<Permalink>) {
                 ? "float"
                 : radarView
                   ? "radar"
-                  : auroraRun
+                  : auroraRun || auroraRequest
                     ? "aurora"
                     : ""),
       ].join(":"),
@@ -237,26 +258,30 @@ export function useObservatory(shared: Partial<Permalink>) {
       restore(saved: ReturnType<typeof capture>) {
         restorePresentation(saved.origin.presentation, () => {
           radarOrigin.current = saved.origin.radar;
-          radarEntry.current = saved.origin.entry;
+          radarEntry.current = saved.radar
+            ? { ...saved.origin.entry, ...radarLink(radarMoment(saved.radar, saved.deck.map)) }
+            : saved.origin.entry;
           storyFromExplore.current = saved.origin.story;
           sharedView.current = saved.origin.shared;
           setScene(saved.scene);
           setFocus(saved.focus);
           setTourStop(null);
           setRun(saved.run);
+          requestAurora(saved.auroraRequest);
+          skyCity.select(saved.skyCity);
           setSunWatch(saved.sunWatch);
           sky.restore(saved.sky);
           let float: FloatDiveView | "opening" | null = null;
           if (saved.float && "opening" in saved.float) float = "opening";
           else if (saved.float) {
-            float = createFloatPlayback(saved.float.profile, false, saved.float.source);
-            float.seek(saved.float.index);
+            float = createFloatPlayback(saved.float.profile, false, saved.float.source, saved.float);
           }
           floatEntry.current = saved.float && "opening" in saved.float ? saved.float.entry : undefined;
           setFloatView(float);
           setRadarView(saved.radar);
           setBrowser(saved.browser);
           observations.restore(saved.deck);
+          saved.extension?.();
         });
       },
     },
@@ -271,10 +296,24 @@ export function useObservatory(shared: Partial<Permalink>) {
       (!observations.entry ||
         (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
     localReadings:
-      !!auroraRun || sunActive || radarView !== null || tonight || floatView !== null || !!observations.entry,
+      !!auroraRun ||
+      !!auroraRequest ||
+      sunActive ||
+      radarView !== null ||
+      tonight ||
+      floatView !== null ||
+      !!observations.entry,
     observations,
     getMoment: () =>
-      sky.moment(observations.map) ?? getFloatMoment(observations.map) ?? observations.getMoment(),
+      appendJourney(
+        (sunActive ? sun.moment(observations.map) : null) ??
+          (radarView ? radarMoment(radarView, observations.map) : null) ??
+          sky.moment(observations.map) ??
+          getFloatMoment(observations.map) ??
+          observations.getMoment() ??
+          auroraMoment(auroraRun, auroraRequest),
+        routeExtension.current.journey(),
+      ),
     openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
       if (observing) observations.open(id, from);
       else
@@ -308,13 +347,16 @@ export function useObservatory(shared: Partial<Permalink>) {
     exploreScene,
     observeScene,
     depth,
-    depthFocus,
+    depthFocus: depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null,
     night,
     aurora: {
       run: auroraRun,
+      request: auroraRequest,
+      setRequest: requestAurora,
       setRun: (next: AuroraRun | null) => {
         before();
         setRun(next);
+        if (!next) requestAurora(null);
       },
     },
     sun: { ...sun, active: sunActive },
@@ -328,6 +370,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         before();
         sky.open(...args);
         setRun(null);
+        requestAurora(null);
         setSunWatch(null);
       },
       update: updateSky,
@@ -338,48 +381,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       },
     },
     floatDive,
-    radar: {
-      active: radarView !== null,
-      view: radarView,
-      fromExplore: radarView !== null && radarOrigin.current === "explore",
-      entry: radarEntry.current,
-      open(region?: string, story = false, at?: number) {
-        before();
-        radarOrigin.current = presentation;
-        radarEntry.current = { ...(region ? { region } : {}), ...(at !== undefined ? { at } : {}), story };
-        const open = () => {
-          if (story) observations.close();
-          setRadarView({
-            kind: "radar",
-            target: radarCamera(region),
-            region: region ?? "world",
-            image: null,
-            selectedAt: at,
-          });
-        };
-        if (observing) open();
-        else
-          changePresentation(
-            "observe",
-            true,
-            () => {
-              setScene("live");
-              open();
-            },
-            false,
-          );
-      },
-      close() {
-        before();
-        observations.setMap(false);
-        if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
-        else {
-          setRadarView(null);
-          if (radarEntry.current.story) observations.open("atmospheric-river", "observatory-scenes");
-        }
-      },
-      update: updateRadar,
-    },
+    radar,
     globe(guided: boolean): GlobePresentation {
       if (observations.entry) return observations.view ?? loadingBackdrop.current;
       if (floatView === "opening" || radarOpening) return loadingBackdrop.current;

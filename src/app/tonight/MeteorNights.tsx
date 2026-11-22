@@ -35,6 +35,7 @@ function skyFrame(
     bodies: [...skyBodies(city, at), radiant],
     targetName: radiant.name,
     radiantTrail,
+    shower: shower.day,
   };
 }
 
@@ -42,14 +43,21 @@ export function MeteorNights({
   city,
   view,
   initialLook,
+  initialPosition,
   onView,
 }: {
   city: SkyCity;
   view: TonightView | null;
   initialLook: SkyLook | undefined;
+  initialPosition?: import("./skyMoment").SkyPosition | undefined;
   onView: (view: TonightView) => void;
 }): JSX.Element {
-  const [shower, select] = useState(() => nextMeteor(Date.now()) ?? meteorCalendar[0]);
+  const [shower, select] = useState(
+    () =>
+      meteorCalendar.find(({ day }) => day === initialPosition?.shower) ??
+      nextMeteor(Date.now()) ??
+      meteorCalendar[0],
+  );
   const [following, setFollowing] = useState(false);
   const [playing, setPlaying] = useState(false);
   const range = useId();
@@ -61,7 +69,11 @@ export function MeteorNights({
       ),
     [city, shower, night],
   );
-  const preferred = night.suggested ?? Math.round((night.start + night.end) / 120_000) * MINUTE;
+  const restoredAt = initialPosition?.shower === shower.day ? initialPosition?.at : undefined;
+  const preferred =
+    restoredAt !== undefined && restoredAt >= night.start && restoredAt <= night.end
+      ? restoredAt
+      : (night.suggested ?? Math.round((night.start + night.end) / 120_000) * MINUTE);
   const at = view && view.at >= night.start && view.at <= night.end ? view.at : preferred;
   const radiant = radiantLook(city, shower, at);
   const clock = useMemo(

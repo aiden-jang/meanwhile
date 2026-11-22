@@ -1,20 +1,20 @@
+import type { ObservatoryProps } from "./observatoryProps";
+export type { ObservatoryProps } from "./observatoryProps";
 import { observatoryIntroduction, observatoryReadingLabel } from "./observatoryIntroduction";
 import { SunWatch, SunLoading, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { useOvalReturn } from "./sun/useSunVisit";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
-import type { CameraState } from "../globe/controls";
+import { StoryIdentity } from "./journeys/StoryIdentity";
+import { ConnectedJourney } from "./journeys/ConnectedJourney";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
-import { Suspense, useLayoutEffect, type RefObject, type ReactNode } from "react";
+import { useObservatoryEscape } from "./useObservatoryEscape";
+import { Suspense, useLayoutEffect } from "react";
 import { ObservatoryStage, ObservatoryScenePicker, SunCredits } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
-import type { DiscoveriesData } from "./visitor/Discoveries";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
-import type { useAuroraOverflight } from "./useAuroraOverflight";
-import type { EarthScene, useObservatory } from "./useObservatory";
-import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import "./experience.css";
 import "./sun/sun-watch.css";
@@ -31,61 +31,6 @@ import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
 import { nightfallPosition } from "./tonight/nightfall";
 import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
-export interface ObservatoryProps {
-  explorer: {
-    radarAt: number | undefined;
-    flat: boolean;
-    read: () => CameraState;
-    restore: (camera: CameraState, flat?: boolean) => void;
-    radarTime: (at: number | null) => void;
-  };
-  discoveries: DiscoveriesData;
-  scene: EarthScene;
-  at: number;
-  ready: boolean;
-  summary: string;
-  feedNote: string | null;
-  deepAvailable: boolean;
-  aurora: ReturnType<typeof useAuroraOverflight>;
-  views: Pick<
-    ReturnType<typeof useObservatory>,
-    | "observing"
-    | "observeScene"
-    | "landing"
-    | "sun"
-    | "tonight"
-    | "floatDive"
-    | "observations"
-    | "skyCity"
-    | "openAfterDarkArchive"
-    | "closeStory"
-    | "browser"
-    | "visitCheckpoint"
-    | "navigation"
-  >;
-  radar: ReturnType<typeof useObservatory>["radar"];
-  layerReadout: ReactNode;
-  onScene: (scene: EarthScene) => void;
-  onHome: () => void;
-  onExplore: (showPanel?: boolean) => void;
-  onPickDate: () => void;
-  tour: {
-    at: number | null;
-    stop: Stop | null;
-    length: number;
-    paused: boolean;
-    button: RefObject<HTMLButtonElement>;
-    controls: RefObject<HTMLElement>;
-    start: () => void;
-    stopTour: () => void;
-    next: () => void;
-    previous: () => void;
-    pause: () => void;
-    available: boolean;
-    inspect: (() => void) | null;
-  };
-  onHistory: (day: string) => void;
-}
 export function Observatory(props: ObservatoryProps): JSX.Element {
   return (
     <StoryBoundary resetKey={props.views.navigation.key} onHome={props.onHome}>
@@ -129,6 +74,7 @@ function ObservatoryContent({
   const closeAurora = closeView(() =>
     observations.returnTo("open-aurora-overflight", () => onScene("night")),
   );
+  useObservatoryEscape(closeAurora, !solar && (!!aurora.run || aurora.requested));
   const auroraControls = (
     <AuroraOverflightControls
       aurora={aurora}
@@ -145,7 +91,7 @@ function ObservatoryContent({
     stop: tour.stop,
     scene,
     solar,
-    aurora: !!aurora.run,
+    aurora: !!aurora.run || aurora.requested,
     deepAvailable,
     landing,
   });
@@ -239,6 +185,7 @@ function ObservatoryContent({
               </Suspense>
             ) : radar.active ? (
               <StormRadar
+                key={JSON.stringify(radar.entry)}
                 fromExplore={radar.fromExplore}
                 returnLabel={radar.entry.story ? undefined : navigationContext?.returnLabel}
                 entry={radar.entry}
@@ -267,6 +214,7 @@ function ObservatoryContent({
                   preference={skyCity}
                   projection={observations}
                   initialMode={tonight.entry.mode}
+                  returnSky={tonight.entry.returnSky}
                   initialPosition={tonight.entry.position}
                   nightfall={tonight.entry.nightfall}
                   orbit={tonight.orbit}
@@ -287,7 +235,7 @@ function ObservatoryContent({
               </Suspense>
             ) : (
               <>
-                {(solar || aurora.run) && (
+                {(solar || aurora.run || aurora.requested) && (
                   <button
                     type="button"
                     className="after-dark-return"
@@ -299,6 +247,7 @@ function ObservatoryContent({
                   </button>
                 )}
                 <div className="observatory-story" aria-live="polite" aria-atomic="true">
+                  <StoryIdentity id={navigationContext?.active} heading={title} />
                   <h2 key={title}>
                     {landing ? (
                       <>
@@ -330,7 +279,7 @@ function ObservatoryContent({
                   <ObservatoryTourControls tour={tour} onExplore={onExplore} />
                 ) : (
                   <>
-                    {!solar && !aurora.run && (
+                    {!solar && !aurora.run && !aurora.requested && (
                       <ObservatoryEntryActions
                         explore={() => {
                           browser.show("layers");
@@ -349,7 +298,7 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {!landing && !active && !solar && !aurora.run && (
+                {!landing && !active && !solar && !aurora.run && !aurora.requested && (
                   <ObservatoryScenePicker
                     scene={scene}
                     ready={ready}
@@ -371,6 +320,14 @@ function ObservatoryContent({
                     available.
                   </p>
                 )}
+                {aurora.requested && !aurora.run && (
+                  <p role="status">{aurora.unavailable ?? "Opening Aurora Overflight…"}</p>
+                )}
+                {aurora.newerForecast && !solar && (
+                  <p className="observation-note" role="status">
+                    The linked forecast is no longer available. Showing NOAA’s current forecast.
+                  </p>
+                )}
                 {(solar || aurora.run) && auroraControls}
                 {feedNote && !landing ? (
                   <p className="observatory-source-note" role="status">
@@ -379,13 +336,14 @@ function ObservatoryContent({
                 ) : null}
               </>
             )}
+            {tonight.active && <ConnectedJourney />}
             {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
           </section>
         </StoryDockProvider>
       </div>
       {solar && (
         <Suspense fallback={<SunLoading />}>
-          <SunWatch onClose={closeSun} sample={sun.sample} />
+          <SunWatch onClose={closeSun} sample={sun.sample} position={sun.position} remember={sun.remember} />
         </Suspense>
       )}
     </section>

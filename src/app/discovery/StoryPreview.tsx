@@ -48,7 +48,7 @@ export function StoryPreviewButton({
         <path d="M12.5 6.5C12.5 10 8 13.5 8 13.5S3.5 10 3.5 6.5a4.5 4.5 0 1 1 9 0Z" />
         <circle cx="8" cy="6.5" r="1.4" />
       </svg>
-      <span>{active ? "On globe" : "Preview"}</span>
+      <span>{active ? (navigation?.previewMap ? "On map" : "On globe") : "Preview"}</span>
     </button>
   );
 }

@@ -12,6 +12,7 @@ import { journeyProgressKey, packJourneyProgress, readJourneyProgress } from "./
 type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" };
 
 interface JourneyInputs {
+  linked?: { id: string; step: number } | undefined;
   active: string | null;
   current: () => Visit | null;
   camera: () => CameraState;
@@ -24,9 +25,20 @@ interface JourneyInputs {
 }
 
 export function useJourneyNavigation(inputs: JourneyInputs) {
-  const [route, setRoute] = useState<JourneyRoute | null>(null);
+  const [route, setRoute] = useState<JourneyRoute | null>(() => inputs.linked ?? null);
   const [journeyProgress, setProgress] = useState(() => readJourneyProgress(stored(journeyProgressKey)));
-  const stops = useRef(new Map<number, ConnectedStop>());
+  const [records] = useState(
+    () =>
+      new Map(
+        journeys.flatMap(({ id }) => {
+          const saved = readJourneyProgress(stored(`${journeyProgressKey}:${id}`));
+          return saved ? [[id, saved] as const] : [];
+        }),
+      ),
+  );
+  const [stops] = useState(() => ({
+    current: new Map<number, ConnectedStop>(inputs.linked ? progressFor(inputs.linked.id)?.stops : undefined),
+  }));
   const folding = useRef<(() => void) | undefined>();
   const activeRoute = journeys.find(({ id }) => id === route?.id);
   const visible = route && activeRoute?.steps[route.step]?.id === inputs.active ? route : null;
@@ -35,10 +47,19 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     if (inputs.active !== "float" && inputs.active !== "dust") folding.current = undefined;
   }, [inputs.active, route]);
 
+  function progressFor(id: string) {
+    return records.get(id) ?? (journeyProgress?.id === id ? journeyProgress : null);
+  }
+
   function persist(id: string, step: number) {
     if (!stops.current.has(step)) return;
-    store(journeyProgressKey, packJourneyProgress(id, step, stops.current));
-    setProgress({ id, step, stops: [...stops.current] });
+    const packed = packJourneyProgress(id, step, stops.current);
+    store(journeyProgressKey, packed);
+    store(`${journeyProgressKey}:${id}`, packed);
+    const progress = { id, step, stops: [...stops.current] };
+    records.delete(id);
+    records.set(id, progress);
+    setProgress(progress);
   }
 
   function capture() {
@@ -68,12 +89,13 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     const journey = journeys.find((entry) => entry.id === id);
     const next = journey?.steps[index];
     if (!journey || !next || inputs.unavailable(next.id)) return;
-    const saved = resume && journeyProgress?.id === id ? journeyProgress : null;
+    const saved = resume ? progressFor(id) : null;
     stops.current = new Map(saved?.stops);
     const stop = stops.current.get(index);
     const map = inputs.browseMap;
     if (!stop)
       stops.current.set(index, { visit: { id: next.id, seen: Date.now(), position: {} }, arrival: { map } });
+    setRoute({ id, step: index });
     inputs.open(
       next.id,
       trigger,
@@ -81,19 +103,29 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       !!journey.guide || resume,
       stop?.arrival ?? (journey.guide ? { map } : undefined),
     );
-    setRoute({ id, step: index });
     persist(id, index);
     if (!resume) reportAnalytics({ name: "journey_started", journey: id });
   }
 
   return {
     journeyProgress,
+    progressFor,
     route: visible,
+    capture() {
+      const saved = new Map(stops.current);
+      const position = route ? { id: route.id, step: route.step } : null;
+      return () => {
+        stops.current = new Map(saved);
+        folding.current = undefined;
+        setRoute(position);
+      };
+    },
     checkpoint,
     leave,
     start: (id: string, trigger = `journey-${id}`) => enter(id, 0, trigger, false),
     continueJourney(id: string, trigger: string) {
-      if (journeyProgress?.id === id) enter(id, journeyProgress.step, trigger, true);
+      const progress = progressFor(id);
+      if (progress) enter(id, progress.step, trigger, true);
     },
     step(index: number) {
       const next = activeRoute?.steps[index];
@@ -121,8 +153,18 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     finish(complete: boolean) {
       if (complete && route) {
         reportAnalytics({ name: "journey_completed", journey: route.id });
-        store(journeyProgressKey, "");
-        setProgress(null);
+        records.delete(route.id);
+        store(`${journeyProgressKey}:${route.id}`, "");
+        const previous = [...records.values()].sort(
+          (a, b) =>
+            (b.stops.find(([i]) => i === b.step)?.[1].visit.seen ?? 0) -
+            (a.stops.find(([i]) => i === a.step)?.[1].visit.seen ?? 0),
+        )[0];
+        store(
+          journeyProgressKey,
+          previous ? packJourneyProgress(previous.id, previous.step, new Map(previous.stops)) : "",
+        );
+        setProgress(previous ?? null);
       } else checkpoint();
       folding.current = undefined;
       setRoute(null);

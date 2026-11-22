@@ -66,7 +66,7 @@ for (const width of [1440, 390]) {
     await panel.getByRole("button", { name: "Return to your place", exact: true }).click();
     await expect(page.locator("#open-story-float")).toHaveCount(0);
     await expect(page.locator(".story-continue")).toBeFocused();
-    await expect(page.locator(".story-continue")).toContainText("Kept here · 62 m · 6.90 °C");
+    await expect(page.locator(".story-continue")).toContainText("Continue Float Dive");
     await page.locator(".story-continue").click();
     await expect(page.getByRole("slider", { name: "Ascent depth" })).toHaveValue("536");
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(

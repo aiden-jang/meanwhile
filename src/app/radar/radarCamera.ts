@@ -1,3 +1,4 @@
+import type { StoryMoment } from "../observations/storyMoment";
 import type { ObservationFrame } from "../observations/types";
 import { RADAR_BOUNDS } from "../../sources/radar";
 import type { RadarFeedHealth } from "./radarFeedHealth";
@@ -100,4 +101,18 @@ export function strongestRegion(image: ImageBitmap): RadarRegion | undefined {
     }
   }
   return best;
+}
+
+export function radarLink(story: StoryMoment) {
+  const region = [...radarRegions, ...globalRadarRegions].find(({ id }) => id === story.choice)?.id;
+  return { ...(region ? { region } : {}), ...(story.at !== undefined ? { at: story.at } : {}) };
+}
+
+export function radarMoment(view: RadarView, map: boolean): StoryMoment {
+  return {
+    id: "radar",
+    map,
+    ...(view.region ? { choice: view.region } : {}),
+    ...(view.selectedAt !== undefined ? { at: view.selectedAt } : {}),
+  };
 }

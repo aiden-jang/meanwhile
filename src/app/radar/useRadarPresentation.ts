@@ -1,8 +1,13 @@
 import { useCallback, useRef, useState } from "react";
-import type { RadarView } from "./radarCamera";
+import { radarCamera, radarLink, type RadarView } from "./radarCamera";
+import type { StoryMoment } from "../observations/storyMoment";
 
-export function useRadarPresentation() {
-  const [view, set] = useState<RadarView | null>(null);
+export function useRadarPresentation(story?: StoryMoment) {
+  const [view, set] = useState<RadarView | null>(() => {
+    if (story?.id !== "radar") return null;
+    const { region = "world", at } = radarLink(story);
+    return { kind: "radar", region, target: radarCamera(region), image: null, selectedAt: at };
+  });
   const ready = useRef(false);
   const setView = useCallback((next: RadarView | null) => {
     ready.current = !!next?.image;

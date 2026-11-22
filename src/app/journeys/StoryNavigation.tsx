@@ -1,9 +1,18 @@
+import type { BrowseOrigin, StoryNavigationValue } from "./storyNavigationTypes";
 import { usePanelReturn } from "../usePanelReturn";
 import { visitAction, restartVisit } from "../visitor/visitAction";
 import { refreshAnnotations } from "../../globe/annotationInput";
-import type { StoryPlace } from "../discovery/places";
 import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
 import { featuredStoryId, storyButtonId } from "../storyBrowse";
@@ -16,52 +25,7 @@ import { captureCollection, type CollectionPosition } from "../visitor/collectio
 import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 
-interface BrowseOrigin {
-  route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
-  camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
-  scroll: number;
-  scrollTarget: string;
-  collection?: CollectionPosition;
-  previous?: BrowseOrigin;
-  flat: boolean;
-  label: string;
-  trigger: string;
-}
-const Navigation = createContext<{
-  returnLabel: string | undefined;
-  hasReturnOrigin: boolean;
-  restoredCollection: CollectionPosition | null;
-  dismissRestoration: () => void;
-  openSkyAt: (city: string, trigger: string) => void;
-  openNightfall: (position: SkyPosition, trigger: string) => void;
-  openRadar: (at: number | undefined, map: boolean) => void;
-  returnToBrowse: () => boolean;
-  browse: (focusSearch?: boolean) => void;
-  explore: () => void;
-  active: string | null;
-  library: ReturnType<typeof useVisitMemory>["library"];
-  current: () => Visit | null;
-  resume: (visit: Visit, trigger?: string, smart?: boolean) => void;
-  preview: (
-    place?: Pick<StoryPlace, "lon" | "lat"> & { zoom?: number },
-    restore?: boolean,
-    keepProjection?: boolean,
-  ) => void;
-  previewMap: boolean;
-  previewCity: ObservatoryProps["views"]["skyCity"]["city"];
-  browsingStories: boolean;
-  completed: boolean;
-  completion: (id: string, complete: boolean) => void;
-  route: ReturnType<typeof useJourneyNavigation>["route"];
-  journeyProgress: ReturnType<typeof useJourneyNavigation>["journeyProgress"];
-  continueJourney: (id: string, trigger: string) => void;
-  unavailable: (id: string) => string | null;
-  open: (id: string, trigger?: string, keepScene?: boolean) => void;
-  start: (id: string, trigger?: string) => void;
-  tour: () => void;
-  step: (index: number) => void;
-  finish: (complete: boolean) => void;
-} | null>(null);
+const Navigation = createContext<StoryNavigationValue | null>(null);
 
 export const useStoryNavigation = () => useContext(Navigation);
 
@@ -95,7 +59,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
               : tonight.entry.mode
           : sun.active
             ? "sun"
-            : props.aurora.run
+            : props.aurora.run || props.aurora.requested
               ? "aurora"
               : null);
   useJourneyAnalytics(active);
@@ -110,6 +74,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     !props.ready ? "Story playback needs the globe." : id === "aurora" ? props.aurora.unavailable : null;
   const journey = useJourneyNavigation({
     active,
+    linked: props.views.navigation.linkedJourney,
     current: memory.current,
     camera: props.explorer.read,
     map: deck.map,
@@ -121,25 +86,41 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       navigate(id, trigger, visit, false, fresh, undefined, arrival),
   });
   checkpointJourney.current = journey.checkpoint;
+  useLayoutEffect(() => {
+    props.views.navigation.extension.current = {
+      capture() {
+        const source = origin.current;
+        const restoreJourney = journey.capture();
+        return () => {
+          origin.current = source;
+          restoreJourney();
+        };
+      },
+      journey: () => (journey.route ? { id: journey.route.id, step: journey.route.step } : undefined),
+    };
+  });
   function rememberOrigin(trigger: string) {
     const collection = captureCollection(trigger);
-    if (!collection && (active !== null || origin.current)) return;
+    const fromStory = trigger.startsWith("related-story-") || trigger === "open-find-in-story";
+    if (!collection && !fromStory && (active !== null || origin.current)) return;
     const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
     origin.current = {
-      route: props.views.navigation.capture(),
+      route: props.views.navigation.capture(props.explorer.read()),
       camera: previewOrigin.current?.camera ?? props.explorer.read(),
       scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
       scrollTarget,
       flat: previewOrigin.current?.flat ?? props.explorer.flat,
       ...(collection ? { collection } : {}),
-      ...(collection && origin.current ? { previous: origin.current } : {}),
+      ...(origin.current ? { previous: origin.current } : {}),
       label: collection
         ? "Back to Saved"
-        : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
-          ? "Back to stories"
-          : props.views.observing
-            ? "Back to home"
-            : "Back to layers",
+        : fromStory && active
+          ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
+          : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
+            ? "Back to stories"
+            : props.views.observing
+              ? "Back to home"
+              : "Back to layers",
       trigger,
     };
   }
@@ -155,6 +136,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     panelReturn.cancel();
+    props.views.checkpoint.current();
     rememberOrigin(trigger);
     setRestoredCollection(null);
     previewOrigin.current = null;
@@ -162,40 +144,58 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
+    const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
     const openReplay = () =>
-      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined), arrival);
+      deck.open(
+        id as StoryId,
+        trigger,
+        saved?.position.moment ?? (fresh ? null : undefined),
+        map === undefined ? arrival : { ...arrival, map },
+      );
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
-      standalone ? undefined : openReplay,
+      !standalone
+        ? openReplay
+        : () => {
+            deck.setTrigger(trigger);
+            if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
+            if (id === "sky" || id === "meteors" || id === "moonfall") {
+              if (id === "sky") deck.setMap(arrival?.map ?? !!saved?.position.sky?.map);
+              tonight.open(
+                id,
+                nightfall ??
+                  saved?.position.sky ??
+                  saved?.position.moment?.sky ??
+                  (fresh && id !== "moonfall" ? null : undefined),
+                !!nightfall,
+              );
+            } else if (id === "aurora") {
+              const moment = saved?.position.moment;
+              if (moment?.at !== undefined) props.aurora.hold(moment);
+              props.aurora.start(
+                moment?.choice === "south" ? -1 : moment?.choice === "north" ? 1 : undefined,
+                !!moment,
+              );
+            } else if (id === "sun") sun.open(saved?.position.solar, saved?.position.moment);
+            else if (id === "radar") {
+              const exploring = !props.views.observing && !resuming;
+              props.radar.open(
+                exploring ? "world" : saved?.position.radar?.region,
+                false,
+                exploring ? props.explorer.radarAt : saved?.position.radar?.at,
+              );
+              deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
+            } else if (id === "float") {
+              const exploring = !props.views.observing && !resuming;
+              deck.setMap(
+                arrival?.map ??
+                  (exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false)),
+              );
+              floatDive.open(saved?.position.float, arrival?.float, arrival?.floatState, arrival?.pose);
+            }
+          },
     );
-    if (!standalone) return;
-    deck.setTrigger(trigger);
-    if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
-    if (id === "sky" || id === "meteors" || id === "moonfall") {
-      if (id === "sky") deck.setMap(arrival?.map ?? !!saved?.position.sky?.map);
-      tonight.open(
-        id,
-        nightfall ?? saved?.position.sky ?? (fresh && id !== "moonfall" ? null : undefined),
-        !!nightfall,
-      );
-    } else if (id === "aurora") props.aurora.start();
-    else if (id === "sun") sun.open(saved?.position.solar);
-    else if (id === "radar") {
-      const exploring = !props.views.observing && !resuming;
-      props.radar.open(
-        exploring ? "world" : saved?.position.radar?.region,
-        false,
-        exploring ? props.explorer.radarAt : saved?.position.radar?.at,
-      );
-      deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
-    } else if (id === "float") {
-      const exploring = !props.views.observing && !resuming;
-      deck.setMap(
-        arrival?.map ?? (exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false)),
-      );
-      floatDive.open(saved?.position.float, arrival?.float, arrival?.floatState, arrival?.pose);
-    }
   }
   function returnToBrowse() {
     const saved = origin.current;
@@ -317,9 +317,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
           journey.leave();
-          props.views.navigation.prepareStory("live", false);
-          props.radar.open("world", false, at);
-          deck.setMap(map);
+          props.views.navigation.prepareStory("live", false, () => {
+            props.radar.open("world", false, at);
+            deck.setMap(map);
+          });
         },
         returnToBrowse,
         ...memory,

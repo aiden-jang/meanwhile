@@ -3,6 +3,8 @@ import { aimAt } from "../../geo/tonight";
 import { orbit } from "../../sources/observations/orbit";
 
 import { PlaybackButton } from "../PlaybackButton";
+import { useSkyLook } from "../tonight/useSkyLook";
+import type { SkyLook } from "../../geo/tonight";
 import { useJourneyGestures } from "../journeyCamera";
 import { useReportStorySource } from "./StorySourceStatus";
 import { SkyCityPicker, type SkyCityPreference } from "../tonight/SkyCityPicker";
@@ -125,6 +127,7 @@ function PassPlayer({
     () => frames.slice(appearance, disappearance).map((item) => item.localSky!.look),
     [frames, appearance, disappearance],
   );
+  const [manualAim, aimSky] = useState<SkyLook | undefined>(initial?.aim);
   const sky = useMemo((): ObservationView["sky"] => {
     if (!inSky || !frame.localSky) return undefined;
     const { city, look, visible } = frame.localSky;
@@ -134,12 +137,13 @@ function PassPlayer({
       kind: "tonight",
       city,
       at: frame.at,
-      look: aimAt(aim),
+      look: manualAim ?? aimAt(aim),
       targetName: "ISS",
       bodies: visible ? [{ ...look, name: "ISS", magnitude: -1, lit: null }] : [],
-      ...(trail.length ? { nightTrail: { points: trail, following: true } } : {}),
+      ...(trail.length ? { nightTrail: { points: trail, following: !manualAim } } : {}),
     };
-  }, [inSky, frame, trail, watching, pass, frames, appearance]);
+  }, [inSky, frame, trail, watching, pass, frames, appearance, manualAim]);
+  const lookKey = useSkyLook(sky ?? null, (view) => aimSky(view.look), inSky);
   const skyTarget = useMemo(() => ({ ...data.target, zoom: 1.35 }), [data.target]);
   const target = inSky ? skyTarget : ((panel.map ? data.mapTarget : undefined) ?? data.target);
   useLayoutEffect(() => {
@@ -152,14 +156,19 @@ function PassPlayer({
       arrive: inSky ? arriveSky : arrive,
       ...(watching && !inSky ? { follow: target } : {}),
     });
-    remember?.({ at: frame.at, city: city.name, chapter: inSky ? "horizon" : "" });
+    remember?.({
+      at: frame.at,
+      city: city.name,
+      chapter: inSky ? "horizon" : "",
+      aim: inSky ? sky?.look : undefined,
+    });
   }, [arrive, arriveSky, city.name, frame, inSky, onView, remember, sky, target, watching]);
 
   const pause = () => {
     clock.pause();
     setWatching(false);
   };
-  useJourneyGestures(pause, clock.resume, index < frames.length - 1);
+  useJourneyGestures(pause, clock.resume, index < frames.length - 1, !inSky);
 
   useLayoutEffect(() => {
     if (!watching) return;
@@ -261,6 +270,16 @@ function PassPlayer({
           >
             {inSky ? "Back to Earth" : "Local sky"}
           </button>
+          {inSky && (
+            <button
+              type="button"
+              onClick={() => aimSky(undefined)}
+              onKeyDown={lookKey}
+              aria-description="Drag the sky or use the arrow keys to look around."
+            >
+              Follow ISS
+            </button>
+          )}
         </StoryProjection>
       }
     >

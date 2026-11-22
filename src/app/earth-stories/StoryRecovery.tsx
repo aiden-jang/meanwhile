@@ -28,7 +28,10 @@ export function StoryRecovery({
     </div>
   );
 }
-export function StoryImageRecovery({ retry }: { retry: () => void }) {
+export function StoryImageRecovery({ assets }: { assets: { status: string; retry: () => void }[] }) {
+  const failed = assets.find(({ status }) => status === "failed");
+  if (!failed) return null;
+  const retry = failed.retry;
   return (
     <p role="status" className="observation-note">
       This satellite image could not load. The last available view stays visible.{" "}

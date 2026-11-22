@@ -6,13 +6,19 @@ import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { EarthScene, Presentation } from "./useObservatory";
 
+export function linkedPose({ lon, lat, zoom }: Partial<Permalink>) {
+  return lon !== undefined && lat !== undefined && zoom !== undefined ? { lon, lat, zoom } : undefined;
+}
+
 export function initialScene(shared: Partial<Permalink>): EarthScene {
   const id = shared.story?.id;
   if (id && isEarthStory(id)) return earthStories[id].scene;
   if (id === "rupture") return "depth";
-  return ["lights", "shadow", "orbit", "sky", "moonfall"].includes(id ?? "")
+  return ["lights", "shadow", "orbit", "sky", "moonfall", "meteors", "aurora", "sun"].includes(id ?? "")
     ? "night"
-    : (shared.scene ?? "live");
+    : id === "radar"
+      ? "live"
+      : (shared.scene ?? "live");
 }
 
 export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {

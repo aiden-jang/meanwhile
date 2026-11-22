@@ -24,10 +24,8 @@ import { SkyObjects } from "./SkyObjects";
 import { skyDirection, skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
 import { moonfallShare } from "../moonfall/moonfallShare";
-
 const MINUTE = 60_000;
 const Moonfall = lazy(() => import("../moonfall/Moonfall").then(({ Moonfall }) => ({ default: Moonfall })));
-
 function depart(view: TonightView, camera?: CameraState) {
   const moon = view.bodies[0]!;
   const origin: LunarDeparture = {
@@ -47,6 +45,7 @@ export function TonightSky({
   onClose,
   preference,
   initialMode,
+  returnSky,
   initialPosition,
   nightfall = false,
   orbit,
@@ -61,6 +60,7 @@ export function TonightSky({
   onClose: () => void;
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors" | "moonfall";
+  returnSky?: TonightView | null | undefined;
   initialPosition: SkyPosition | undefined;
   nightfall?: boolean | undefined;
   orbit: boolean;
@@ -72,7 +72,7 @@ export function TonightSky({
   const rangeId = useId();
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
-  const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(null);
+  const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(returnSky ?? null);
   const [started, setObserving] = useState(Boolean(initialPosition) && !nightfall);
   const [arrivalCity, setArrivalCity] = useState(() =>
     nightfall ? skyCities.find(({ name }) => name === initialPosition?.city) : undefined,
@@ -177,7 +177,6 @@ export function TonightSky({
     if (departure) document.getElementById("moonfall-back")?.focus({ preventScroll: true });
   }, [departure]);
   useObservatoryEscape(departure ? returnToSky : onClose);
-
   function approachMoon() {
     const flight = depart(current, projection.map ? readCamera() : undefined);
     setDeparture(flight);
@@ -208,7 +207,6 @@ export function TonightSky({
       </>
     );
   }
-
   return (
     <>
       <div className="tonight-heading">
@@ -293,6 +291,7 @@ export function TonightSky({
         <MeteorNights
           city={city}
           view={view}
+          initialPosition={initialMode === "meteors" ? initial : undefined}
           initialLook={meteorDeparture?.city.name === city.name ? meteorDeparture.look : initial?.look}
           onView={onView}
         />

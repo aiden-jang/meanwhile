@@ -1,4 +1,3 @@
-import { nearestFrame } from "./nearestFrame";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { EarthStoryId } from "./catalogue";
@@ -8,21 +7,15 @@ import type { useStoryClock } from "./useStoryClock";
 export function StorySideActions({
   id,
   data,
-  map,
-  onMap,
   onRadar,
   clock,
-  skyMode,
-  setSkyMode,
+  sky,
 }: {
   id: EarthStoryId;
   data: EarthStoryData;
-  map: boolean;
-  onMap: (map: boolean) => void;
   onRadar: () => void;
   clock: ReturnType<typeof useStoryClock>;
-  skyMode: boolean;
-  setSkyMode: (open: boolean) => void;
+  sky: ReturnType<typeof import("./CelestialView").useArchiveSky>;
 }) {
   const guided = useStoryNavigation()?.route?.id === "water-in-motion";
   if (id === "atmospheric-river")
@@ -52,21 +45,10 @@ export function StorySideActions({
   if (data.sky)
     return (
       <div className="observatory-actions">
-        <button
-          type="button"
-          aria-pressed={skyMode && !map}
-          onClick={() => {
-            clock.pause();
-            if (!skyMode && id === "comet") {
-              const visible = data.chapters.find((chapter) => chapter.label === "Above my horizon");
-              if (visible) clock.seek(nearestFrame(data, visible.at));
-            }
-            onMap(false);
-            setSkyMode(map || !skyMode);
-          }}
-        >
-          {skyMode && !map ? "Back to Earth" : "See from my city"}
+        <button type="button" ref={sky.action} aria-pressed={!!sky.localSky} onClick={sky.toggle}>
+          {sky.localSky ? "Back to Earth" : "See from my city"}
         </button>
+        {sky.lookControl}
       </div>
     );
   return null;

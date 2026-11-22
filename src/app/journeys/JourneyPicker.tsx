@@ -23,7 +23,7 @@ export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExp
   const latest = useRef(navigation);
   latest.current = navigation;
   const featured = journeys.find(({ id }) => id === (selected ?? progress?.id ?? featuredJourney))!;
-  const resume = progress?.id === featured.id ? progress : null;
+  const resume = navigation?.progressFor(featured.id);
   const opening = featured.steps[resume?.step ?? 0]!;
   const unavailable = navigation?.unavailable(opening.id);
   const journeyActive = !!navigation?.browsingStories && !navigation.active;

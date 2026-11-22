@@ -3,12 +3,13 @@ interface MobileNavigationProps {
   stops: readonly [number, number, number];
   onResize: (height: number) => void;
   panel: string;
+  flat: boolean;
 }
 
-export function MobileNavigation({ canvasHeight, stops, onResize, panel }: MobileNavigationProps) {
+export function MobileNavigation({ canvasHeight, stops, onResize, panel, flat }: MobileNavigationProps) {
   const [, half, collapsed] = stops;
   const open = (canvasHeight || half) < collapsed;
-  const label = open ? "More globe" : "More controls";
+  const label = open ? (flat ? "More map" : "More globe") : "More controls";
   return (
     <nav aria-label="Explore" className="mobile-navigation md:hidden">
       <button

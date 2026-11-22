@@ -370,9 +370,10 @@ export function App(): JSX.Element {
   useSceneHistory({
     route: {
       ...observatory.navigation,
-      capture: () => ({ view: observatory.navigation.capture(), day: loadedDay }),
+      capture: () => ({ view: observatory.navigation.capture(readCamera.current()), day: loadedDay, mapOn }),
       restore: (saved) => {
         stopTour();
+        setFlat(saved.mapOn);
         observatory.navigation.restore(saved.view);
         if (saved.day !== loadedDay || archiveBusy) {
           if (saved.day) void archiveState.loadArchive(saved.day);
@@ -409,8 +410,6 @@ export function App(): JSX.Element {
     lastWritten,
   });
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
-  /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
-  the sun every render for a change no eye could see. */
   const litAt = observatory.viewAt ?? view.at ?? (archived ? clockAt() : null);
   const eclipseKey = litAt ?? Math.floor(Date.now() / 60_000) * 60_000;
   const eclipse = useMemo(() => {
@@ -758,8 +757,7 @@ export function App(): JSX.Element {
   const driven = replay !== null || view.at !== null;
   const headline = useRolling(replay ? replay.revealed : (revealedNow ?? shown), !driven);
 
-  const storyId =
-    observatory.getMoment()?.id ?? (observatory.tonight.active ? observatory.tonight.entry.mode : undefined);
+  const storyId = observatory.getMoment()?.id;
   const storyTitle = searchStories.find(({ id }) => id === storyId)?.title;
   useEffect(() => {
     const base = "meanwhile.";
@@ -770,7 +768,6 @@ export function App(): JSX.Element {
         ? base
         : `(${headline.toLocaleString("en-GB")}) ${day}${base}`;
   }, [storyTitle, observatory.observing, headline, replay, snapshot.coveredSince, snapshot.archive]);
-  // `headline`, not the raw total, so the number on the image is the number that was on screen.
   stillCounts.current = {
     quakes: mapLayers.visible.earthquakes ? headline : 0,
     cyclones: onGlobe.cyclones.length,
@@ -1097,6 +1094,7 @@ export function App(): JSX.Element {
           {observatory.observing ? <Observatory {...observatoryProps} /> : null}
           {observatory.observing ? null : (
             <ExploreSheet
+              flat={flat}
               height={sheetCanvas}
               onResize={setSheetCanvas}
               visible={railShown && !markSubject && !(shownQuake && pinned)}

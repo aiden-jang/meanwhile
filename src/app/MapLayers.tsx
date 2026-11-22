@@ -1,3 +1,4 @@
+import { LayerStoryLink } from "./LayerStoryLink";
 import { CopyLink } from "./CopyLink";
 import { RADAR_REVEAL_TIMEOUT } from "./radar/radarCamera";
 import { rewindLink } from "./radar/rewindLink";
@@ -79,6 +80,8 @@ export function MapLayers({
   const navigation = useStoryNavigation();
   const rewindPoint = controls.radar ? controls.rewindPoint : undefined;
   const layer = rewindPoint ? null : controls.inspector;
+  const destination =
+    layer === "aurora" ? "aurora" : layer === "wind" ? "wind" : layer === "lightning" ? "lightning" : null;
   const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
   const reveal = controls.radar?.reveal;
   useEffect(() => {
@@ -361,6 +364,13 @@ export function MapLayers({
                 </div>
               ),
           )}
+        {destination && !archived && (
+          <LayerStoryLink
+            id={destination}
+            at={destination === "aurora" ? aurora?.forecastAt : controls.selectedTimes[destination]}
+            map={flat}
+          />
+        )}
         {layer && !archived && (
           <button
             type="button"

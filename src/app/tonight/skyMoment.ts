@@ -11,6 +11,7 @@ export interface SkyPosition {
   at: number;
   look: SkyLook;
   nightStart?: number;
+  shower?: string;
   target?: string;
   trail?: boolean;
   following?: boolean;
@@ -20,7 +21,8 @@ export interface SkyPosition {
   lunar?: MoonfallProgress;
 }
 
-export const isSkyStory = (id?: string): id is "sky" | "moonfall" => id === "sky" || id === "moonfall";
+export const isSkyStory = (id?: string): id is "sky" | "moonfall" | "meteors" =>
+  id === "sky" || id === "moonfall" || id === "meteors";
 
 const numberIn = (value: unknown, min: number, max: number): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
@@ -53,6 +55,9 @@ export function readSkyPosition(raw: SkyPosition | undefined): SkyPosition | und
     at: raw.at,
     look: { azimuth: raw.look.azimuth, altitude: raw.look.altitude },
     ...(validNight ? { nightStart } : {}),
+    ...(typeof raw.shower === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.shower)
+      ? { shower: raw.shower }
+      : {}),
     ...(validTarget
       ? { target, ...(raw.trail === true ? { trail: true, following: raw.following === true } : {}) }
       : {}),
@@ -89,6 +94,7 @@ export function readSkyMoment(params: URLSearchParams, moment: StoryMoment) {
     look: { azimuth: aim[0]!, altitude: aim[1]! },
     map: moment.map,
     orbit,
+    ...(moment.id === "meteors" && moment.choice ? { shower: moment.choice } : {}),
     ...(target
       ? { target, trail: params.get("trail") === "1", following: params.get("follow") === "1" }
       : {}),
@@ -130,6 +136,7 @@ export function skyPosition(view: TonightPresentation, map: boolean, orbit: bool
     city: sky.city.name,
     at: sky.at,
     look: sky.look,
+    ...(sky.shower ? { shower: sky.shower } : {}),
     ...(sky.nightStart !== undefined ? { nightStart: sky.nightStart } : {}),
     ...(sky.targetName ? { target: sky.targetName } : {}),
     ...(sky.nightTrail ? { trail: true, following: sky.nightTrail.following } : {}),
@@ -138,6 +145,13 @@ export function skyPosition(view: TonightPresentation, map: boolean, orbit: bool
   };
 }
 
-export function skyStoryMoment(id: "sky" | "moonfall", sky: SkyPosition): StoryMoment {
-  return { id, city: sky.city, at: sky.at, map: id === "sky" && !!sky.map, sky };
+export function skyStoryMoment(id: "sky" | "moonfall" | "meteors", sky: SkyPosition): StoryMoment {
+  return {
+    id,
+    ...(sky.shower ? { choice: sky.shower } : {}),
+    city: sky.city,
+    at: sky.at,
+    map: id === "sky" && !!sky.map,
+    sky,
+  };
 }

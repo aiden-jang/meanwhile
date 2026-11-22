@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
+import { captureHistoryPanel, readHistoryPanel } from "./historyPanel";
 import { usePanelReturn } from "./usePanelReturn";
 import { flushSync } from "react-dom";
 import type { CameraState } from "../globe/controls";
@@ -27,44 +28,45 @@ export function useSceneHistory<T>({
     key: route.key,
     snapshots: new Map<number, Snapshot<T>>(),
     restoring: false,
+    initialPanel: readHistoryPanel(),
   }));
   const latest = useRef(route);
   latest.current = route;
   useLayoutEffect(() => {
     const current = state;
-    checkpoint.current = () => {
+    const saveSnapshot = (write: boolean) => {
       panelReturn.cancel();
       if (current.restoring || latest.current.key !== current.key) return;
+      const panel = captureHistoryPanel();
       current.snapshots.set(current.id, {
         value: latest.current.capture(),
         camera: { ...readCamera.current() },
-        scroll:
-          document.getElementById(
-            document.querySelector('[data-presentation="explore"]') ? "chrome-rail" : "observatory-intro",
-          )?.scrollTop ?? 0,
-        scrollTarget: document.querySelector('[data-presentation="explore"]')
-          ? "chrome-rail"
-          : "observatory-intro",
-        focus: document.activeElement?.id ?? "",
+        ...panel,
       });
+      if (write) history.replaceState({ ...history.state, observatoryPanel: panel }, "");
     };
+    checkpoint.current = () => saveSnapshot(true);
+    const departing = () => saveSnapshot(true);
     history.replaceState({ ...history.state, observatory: { session: current.session, id: current.id } }, "");
     const back = (event: PopStateEvent) => {
       const target = event.state?.observatory;
       if (target?.session !== current.session) return;
       const saved = current.snapshots.get(target.id);
       if (!saved) return;
-      checkpoint.current();
+      saveSnapshot(false);
       current.id = target.id;
       current.restoring = true;
       lastWritten.current = location.hash;
       flushSync(() => latest.current.restore(saved.value));
+      current.restoring = false;
       flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
       panelReturn.restore({ scrollTarget: saved.scrollTarget, scroll: saved.scroll, focus: saved.focus });
     };
     window.addEventListener("popstate", back);
+    window.addEventListener("pagehide", departing);
     return () => {
       window.removeEventListener("popstate", back);
+      window.removeEventListener("pagehide", departing);
       checkpoint.current = () => {};
     };
   }, [checkpoint, readCamera, flyTo, lastWritten, state, panelReturn]);
@@ -76,12 +78,20 @@ export function useSceneHistory<T>({
         for (const id of current.snapshots.keys()) if (id > current.id) current.snapshots.delete(id);
         current.id = ++current.next;
         history.pushState(
-          { ...history.state, observatory: { session: current.session, id: current.id } },
+          {
+            ...history.state,
+            observatoryPanel: undefined,
+            observatory: { session: current.session, id: current.id },
+          },
           "",
         );
       }
     }
     current.restoring = false;
-    if (!current.snapshots.has(current.id)) checkpoint.current();
-  }, [route.key, checkpoint, state]);
+    if (!current.snapshots.has(current.id)) {
+      checkpoint.current();
+      if (current.initialPanel) panelReturn.restore(current.initialPanel);
+      current.initialPanel = undefined;
+    }
+  }, [route.key, checkpoint, state, panelReturn]);
 }

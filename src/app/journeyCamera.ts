@@ -16,10 +16,11 @@ export function useInterruptedJourney() {
   return { interrupted, resume: () => owner?.resume() };
 }
 
-export function useJourneyGestures(pause: () => void, resume: () => void, canResume: boolean) {
+export function useJourneyGestures(pause: () => void, resume: () => void, canResume: boolean, active = true) {
   const actions = useRef({ pause, resume });
   actions.current = { pause, resume };
   useEffect(() => {
+    if (!active) return;
     const control = {
       interrupted: false,
       resume() {
@@ -30,7 +31,7 @@ export function useJourneyGestures(pause: () => void, resume: () => void, canRes
     };
     owner = control;
     publish();
-    const canvas = document.querySelector("#globe-view canvas");
+    const canvas = document.querySelector<HTMLCanvasElement>("#globe-view canvas");
     const globe = document.getElementById("globe-view");
     const stop = () => {
       actions.current.pause();
@@ -43,11 +44,31 @@ export function useJourneyGestures(pause: () => void, resume: () => void, canRes
       if (active && active !== document.body && active !== globe) return;
       if (/^(Arrow(Left|Right|Up|Down)|[+\-_=])$/.test(event.key)) stop();
     };
-    canvas?.addEventListener("pointerdown", stop);
+    let press: { id: number; x: number; y: number } | undefined;
+    const down = (event: PointerEvent) => {
+      if (event.isPrimary && event.button === 0)
+        press = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    };
+    const move = (event: PointerEvent) => {
+      if (press?.id !== event.pointerId || Math.hypot(event.clientX - press.x, event.clientY - press.y) < 4)
+        return;
+      press = undefined;
+      stop();
+    };
+    const up = () => {
+      press = undefined;
+    };
+    canvas?.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
     canvas?.addEventListener("wheel", stop, { passive: true });
     window.addEventListener("keydown", key);
     return () => {
-      canvas?.removeEventListener("pointerdown", stop);
+      canvas?.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
       canvas?.removeEventListener("wheel", stop);
       window.removeEventListener("keydown", key);
       if (owner === control) {
@@ -55,5 +76,5 @@ export function useJourneyGestures(pause: () => void, resume: () => void, canRes
         publish();
       }
     };
-  }, [canResume]);
+  }, [active, canResume]);
 }

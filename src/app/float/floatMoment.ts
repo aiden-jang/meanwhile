@@ -28,5 +28,5 @@ export function floatNavigationMoment(
   // A fallback is readable, but must not replace the requested source in reload or Back history.
   if (entry && (view === "opening" || `${view.source}/${view.profile.id}` !== entry.profile))
     return { id: "float", choice: entry.profile, chapter: String(entry.index), map };
-  return view === "opening" ? undefined : floatMoment(view, map);
+  return view === "opening" ? { id: "float", map } : floatMoment(view, map);
 }

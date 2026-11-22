@@ -140,7 +140,7 @@ export function ObservationDeck({
               </div>
             </div>
             <p className="observation-note observation-introduction">{meta.description}</p>
-            <SharedStory />
+            {id !== "river" && <SharedStory />}
             <ConnectedJourney />
             {loaded?.id === id ? (
               loaded.source ? (
@@ -165,6 +165,7 @@ export function ObservationDeck({
             ) : (
               <StoryLoading>Opening {title}…</StoryLoading>
             )}
+            {id === "river" && <SharedStory />}
             <ShareMoment />
             <ExperienceEnding />
           </div>

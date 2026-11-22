@@ -10,11 +10,13 @@ import {
 import type { CameraState } from "../../globe/controlsTypes";
 import { floatNavigationMoment, readFloatMoment } from "./floatMoment";
 
-export function useFloatView(shared: StoryMoment | undefined, before: () => void) {
+export function useFloatView(shared: StoryMoment | undefined, before: () => void, pose?: CameraState) {
   const entry = useRef<VisitPosition["float"]>(readFloatMoment(shared));
-  const pending = useRef<{ state: FloatRestore; pose?: CameraState | undefined }>();
+  const pending = useRef<{ state?: FloatRestore | undefined; pose?: CameraState | undefined } | undefined>(
+    entry.current && pose ? { pose } : undefined,
+  );
   const [view, setView] = useState<FloatDiveView | "opening" | null>(() =>
-    entry.current ? "opening" : null,
+    shared?.id === "float" ? "opening" : null,
   );
   const update = useCallback((next: FloatDiveView | null, deliberate = false) => {
     if (deliberate) {
@@ -22,16 +24,12 @@ export function useFloatView(shared: StoryMoment | undefined, before: () => void
       pending.current = undefined;
     }
     if (next && pending.current && entry.current?.profile === `${next.source}/${next.profile.id}`) {
-      const {
-        state: { depth, ...reading },
-        pose,
-      } = pending.current;
+      const { state, pose } = pending.current;
       pending.current = undefined;
       const target = pose ?? next.target;
       next = createFloatPlayback(next.profile, false, next.source, {
         ...next.checkpoint(target),
-        depth,
-        reading: { ...next.read(), ...reading },
+        ...(state ? { depth: state.depth, reading: { ...next.read(), ...state } } : {}),
       });
     }
     setView((active) => (active === null ? null : next));

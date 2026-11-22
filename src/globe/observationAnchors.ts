@@ -9,6 +9,14 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   if (!anchors?.length) return;
   const occupied: { x: number; y: number }[] = [];
   let places = 0;
+  const insets = story
+    ? Array.from(
+        root!.querySelectorAll(
+          "[data-world-inset], .iceberg-journey .stage-ident, .iceberg-journey .stage-readout",
+        ),
+        (element) => element.getBoundingClientRect(),
+      ).filter(({ width, height }) => width > 0 && height > 0)
+    : [];
   const zoom = controls.state().zoom;
   const parents = new Map<Element, DOMRect>();
   const placeWidths = new Map<HTMLElement, number>();
@@ -39,6 +47,13 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const visible =
       point &&
       parent &&
+      !insets.some(
+        (rect) =>
+          point.x > rect.left - 22 &&
+          point.x < rect.right + 22 &&
+          point.y > rect.top - 22 &&
+          point.y < rect.bottom + 22,
+      ) &&
       x > inset &&
       x < parent.width - inset &&
       y > blockInset &&

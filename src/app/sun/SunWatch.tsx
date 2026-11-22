@@ -26,22 +26,39 @@ function paint(style: CSSStyleDeclaration | undefined, at: number) {
 export function SunWatch({
   onClose,
   sample,
+  position,
+  remember,
 }: {
   onClose: () => void;
   sample?: WindSample | undefined;
+  position?: import("../observations/storyMoment").StoryMoment | undefined;
+  remember: (moment: import("../observations/storyMoment").StoryMoment) => void;
 }): JSX.Element {
   const wind = useSpaceWeather(SOLAR_WIND_URL, solarWind);
   const xray = useSpaceWeather(XRAY_URL, xrayFlux);
   const navigation = useStoryNavigation();
   const [reduced, setReduced] = useState(() => matchMedia(MOTION).matches);
-  const [view, setView] = useState<Playback>({ at: FLIGHT_END, playing: false });
+  const [view, setView] = useState<Playback>(() => {
+    const at = Number(position?.chapter);
+    return { at: Number.isFinite(at) && at >= 0 && at <= FLIGHT_END ? at : FLIGHT_END, playing: false };
+  });
   const [inspecting, setInspecting] = useState<WindSample | null>(sample ?? null);
   const [image, setImage] = useState<"loading" | "ready" | "failed">("loading");
   const [finished, setFinished] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   const clock = useRef(view);
   const transportId = useId();
-  const selected = inspecting ?? wind.points.at(-1);
+  const linked = wind.points.find(({ at, source }) => at === position?.at && source === position.choice);
+  const selected = inspecting ?? linked ?? wind.points.at(-1);
+  useLayoutEffect(() => {
+    paint(stage.current?.style, clock.current.at);
+    remember({
+      id: "sun",
+      map: false,
+      chapter: String(Math.round(view.at)),
+      ...(selected ? { at: selected.at, choice: selected.source } : {}),
+    });
+  }, [view.at, selected, remember]);
   const kept = selected
     ? navigation?.library.saved.some(
         ({ position }) => position.solar?.at === selected.at && position.solar.source === selected.source,
@@ -153,6 +170,11 @@ export function SunWatch({
           </svg>
         </div>
         <p className="sun-flight-caption">{caption}</p>
+        {position?.at !== undefined && wind.points.length > 0 && !linked && !inspecting && (
+          <p className="observation-note" role="status">
+            The linked solar-wind reading has expired. Showing the latest available reading.
+          </p>
+        )}
       </div>
       <div className="sun-console">
         <div className="sun-transport">

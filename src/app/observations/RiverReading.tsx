@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import { ObservationChart } from "./ObservationChart";
@@ -11,8 +11,12 @@ export function useRiverGauge(frame: ObservationFrame | undefined, chapter: stri
   const [preview, setPreview] = useState<string>();
   const gauges = frame?.gauges;
   const gauge =
-    gauges?.find(({ id, available }) => id === selected && available) ??
+    gauges?.find(({ id }) => id === selected) ??
+    gauges?.find(({ value }) => value !== undefined) ??
     gauges?.find(({ available }) => available);
+  useEffect(() => {
+    if (!selected && gauge?.value !== undefined) select(gauge.id);
+  }, [gauge, selected]);
   const active =
     preview && gauges?.some(({ id, available }) => id === preview && available) ? preview : gauge?.id;
   const shown = useMemo(() => {

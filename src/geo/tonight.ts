@@ -15,6 +15,7 @@ export interface TonightView {
   targetName?: string | undefined;
   nightStart?: number;
   sunCover?: number;
+  shower?: string;
   radiantTrail?: readonly SkyLook[];
   nightTrail?: { points: readonly SkyLook[]; following: boolean } | undefined;
 }

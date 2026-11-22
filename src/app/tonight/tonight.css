@@ -561,3 +561,26 @@
     transform: translateY(-50%);
   }
 }
+
+@media (max-width: 599px) {
+  .tonight-city {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .tonight-city select,
+  .field-journey .observation-picker select {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 640px) {
+  .tonight-compass:not([data-open-compass]) :is(.tonight-drag-hint, .tonight-target-bearing) {
+    display: none;
+  }
+
+  .observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
+    inset-block-start: var(--stage-inset);
+    max-width: calc(100% - 218px);
+  }
+}

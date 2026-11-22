@@ -47,65 +47,13 @@ export function ExperienceEnding({
       ? navigation.route
       : null;
   const journey = journeys.find((entry) => entry.id === route?.id);
-  const step = route && journey?.steps[route.step];
-  if (journey?.guide)
+  if (journey)
     return (
       <>
         {showFinding && <Finding id={active} completed={completed} autoReveal={false} />}
         {showSave && <SaveVisit />}
       </>
     );
-  if (route && journey && step) {
-    const last = route.step === journey.steps.length - 1;
-    const next = journey.steps[route.step + 1];
-    const nextTitle = searchStories.find((entry) => entry.id === next?.id)?.title;
-    return (
-      <>
-        {showFinding && <Finding id={active} completed={completed} />}
-        {showSave && <SaveVisit />}
-        <section className="guided-journey" aria-label="Current journey">
-          <h3>
-            {journey.title}{" "}
-            <span>
-              {route.step + 1} of {journey.steps.length}
-            </span>
-          </h3>
-          <p>{step.prompt}</p>
-          <p className="journey-context">{step.context}</p>
-          {last && <p>{journey.ending}</p>}
-          <div className="observatory-actions">
-            {route.step > 0 && (
-              <button type="button" onClick={() => navigation.step(route.step - 1)}>
-                Previous view
-              </button>
-            )}
-            {next && (
-              <button
-                type="button"
-                disabled={!!navigation.unavailable(next.id)}
-                onClick={() => navigation.step(route.step + 1)}
-              >
-                Next: {nextTitle}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                navigation.finish(last);
-                requestAnimationFrame(() =>
-                  document.querySelector<HTMLElement>(".related-stories summary")?.focus(),
-                );
-              }}
-            >
-              {last ? "Finish journey" : "Leave journey"}
-            </button>
-          </div>
-          {next && navigation.unavailable(next.id) && <p role="status">{navigation.unavailable(next.id)}</p>}
-          <small>Continue when you’re ready. Each view keeps its own controls and time.</small>
-        </section>
-      </>
-    );
-  }
   const next = recommendStory(active, navigation.library.recent, navigation.unavailable);
   const story = searchStories.find((entry) => entry.id === next?.id);
   if (!next || !story)
@@ -129,7 +77,12 @@ export function ExperienceEnding({
       >
         <summary>{completed ? "Up next" : "Keep exploring"}</summary>
         <p>{next.reason}</p>
-        <button type="button" disabled={!!reason} onClick={() => navigation.open(story.id)}>
+        <button
+          type="button"
+          disabled={!!reason}
+          id={`related-story-${story.id}`}
+          onClick={() => navigation.open(story.id, `related-story-${story.id}`)}
+        >
           <strong>{story.title}</strong>
           <span>{reason ?? story.summary}</span>
         </button>

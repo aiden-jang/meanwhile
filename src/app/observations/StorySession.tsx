@@ -5,6 +5,7 @@ import { storyShare } from "./storyShare";
 
 export interface StorySessionValue {
   shared?: boolean;
+  id?: string | null;
   departure?: StoryPlace | undefined;
   initial: StoryMoment | undefined;
   remember: (part: Partial<StoryMoment>) => void;
