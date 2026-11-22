@@ -191,7 +191,12 @@ export function SunWatch({
             ))}
           </div>
           {!reduced && (
-            <button type="button" onClick={toggle} disabled={image === "loading"}>
+            <button
+              type="button"
+              onClick={toggle}
+              disabled={image === "loading"}
+              data-story-playing={view.playing || undefined}
+            >
               {view.playing
                 ? "Pause"
                 : view.at < FLIGHT_END

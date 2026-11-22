@@ -64,8 +64,14 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
-          if (navigation.active) setFind(true);
-          else navigation.browse(true);
+          if (navigation.active) {
+            document
+              .querySelector<HTMLButtonElement>(
+                ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing]",
+              )
+              ?.click();
+            setFind(true);
+          } else navigation.browse(true);
         }}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
