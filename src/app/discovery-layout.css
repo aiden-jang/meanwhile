@@ -327,6 +327,11 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+@media (max-width: 599px) {
+  #explorer-stories .featured-story[data-feature] .featured-story-art {
+    height: clamp(80px, 23cqh, 148px);
+  }
+}
 @media (max-width: 599px) and (max-height: 740px) {
   #explorer-stories .stories-drawer[data-full] .story-search-line:has(.story-journey-toggle) {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -338,9 +343,6 @@
     min-height: 44px;
     font-size: 12px;
     cursor: pointer;
-  }
-  #explorer-stories .featured-story[data-feature] .featured-story-art {
-    height: clamp(80px, 14dvh, 105px);
   }
   #explorer-stories .featured-story .featured-caption strong {
     font-size: 30px;
