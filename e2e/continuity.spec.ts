@@ -43,6 +43,7 @@ test("browser Back and reload keep the current journey stop, date and map", asyn
   const time = ice.locator("#earth-story-time");
   await time.press("End");
   await expect(time).toHaveValue((await time.getAttribute("max"))!);
+  await expect(ice.locator(".story-time")).toHaveAttribute("data-compact-ending", "true");
   const date = await time.getAttribute("aria-valuetext");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await guide.getByRole("button", { name: "Next: Glacier Flow" }).click();
