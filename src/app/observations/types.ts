@@ -66,6 +66,7 @@ export interface ObservationFrame {
   measurements?: readonly Measurement[];
   flow?: boolean;
   pathOpacity?: number;
+  modeledArrival?: GeoPoint & { at: number; sampleAt?: number };
   tide?: { observed: number; predicted?: number | undefined; min: number; max: number };
   camera?: CameraState;
   details?: { title: string; rows: readonly Measurement[] };

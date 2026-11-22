@@ -4,6 +4,7 @@ import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { FixedJourneyEnding } from "../journeys/FixedJourney";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { CoastWorldReading } from "../journeys/CoastWorldReading";
 import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { RiverWorldReading } from "./RiverReading";
@@ -44,7 +45,10 @@ export function ObservationDeck({
     swellBuoys.find((b) => b.id === initial?.choice)?.id ?? swellBuoys[0].id,
   );
   const id = deck.entry;
-  const water = useStoryNavigation()?.route?.id === "water-in-motion";
+  const journey = useStoryNavigation()?.route?.id;
+  const water = journey === "water-in-motion";
+  const coast = journey === "reading-the-coast" && (id === "tsunami" || id === "tide");
+  const wave = coast && id === "tsunami";
   const showingForecast =
     water && id === "rain" && deck.shownSource === "atmospheric-river" && !!deck.view?.frame.paths?.length;
   const meta = observations[id];
@@ -78,11 +82,12 @@ export function ObservationDeck({
   return (
     <section
       className={
-        id === "rain" || id === "river" || id === "drifter" || id === "smoke"
+        coast || id === "rain" || id === "river" || id === "drifter" || id === "smoke"
           ? "replay-region field-journey"
           : "replay-region"
       }
       aria-label={title}
+      data-coast-observation={coast ? id : undefined}
     >
       <div
         className="observatory-stage replay-stage"
@@ -96,6 +101,7 @@ export function ObservationDeck({
           </div>
         )}
         <StoryDeparture />
+        {wave && <CoastWorldReading frame={deck.view?.frame} />}
         <div className="stage-corners" aria-hidden="true">
           <span />
           <span />
@@ -104,18 +110,28 @@ export function ObservationDeck({
         </div>
         <div className="stage-ident">
           <span className="stage-rule" aria-hidden="true" />
-          <span>{showingForecast ? "NOAA GFS forecast · opening Rainbelt" : meta.source}</span>
+          <span>
+            {showingForecast
+              ? "NOAA GFS forecast · opening Rainbelt"
+              : wave
+                ? "2010 Chile tsunami"
+                : meta.source}
+          </span>
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
         {id === "river" && (!water || landed) && <RiverWorldReading frame={deck.view?.frame} />}
         <div className="stage-readout">
           {showingForecast
             ? "Forecast still on the map · water-vapor transport"
-            : id === "rain"
-              ? "Satellite estimate · Precipitation rate"
-              : id === "river"
-                ? "Gauge readings · Discharge"
-                : `${id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · ${meta.group}`}
+            : wave
+              ? "NOAA ETOPO model · First arrivals"
+              : coast
+                ? "Measured harbor levels"
+                : id === "rain"
+                  ? "Satellite estimate · Precipitation rate"
+                  : id === "river"
+                    ? "Gauge readings · Discharge"
+                    : `${id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : "Globe"} · ${meta.group}`}
         </div>
         {id !== "epic" && (
           <StoryProjection map={deck.map} onMap={deck.setMap}>
@@ -201,7 +217,7 @@ export function ObservationDeck({
             )}
             {id === "river" && !water && <SharedStory />}
             <ShareMoment />
-            <ExperienceEnding />
+            <ExperienceEnding showFinding={!coast} />
           </div>
         </StoryDockProvider>
       </div>

@@ -314,3 +314,116 @@
     right: clamp(16px, 2.3vw, 34px);
   }
 }
+
+.fixed-journey[data-coast-step="0"] {
+  --journey-accent: #efc388;
+}
+
+.fixed-journey[data-coast-step="1"] {
+  --journey-accent: #92d2e3;
+}
+
+.fixed-journey[data-coast-step="2"] {
+  --journey-accent: #9ddbd4;
+}
+
+.fixed-journey[data-coast-step] .fixed-journey-rail svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fixed-journey[data-coast-step] .fixed-journey-rail [aria-current="step"] svg {
+  color: var(--journey-accent);
+}
+
+.coast-wave-note {
+  margin-block: 12px 0;
+  color: #92d2e3;
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.coast-buoy-time {
+  margin-block: 4px 10px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+[data-coast-observation] .observation-values dd,
+[data-coast-observation] .observation-tide-difference {
+  font-variant-numeric: tabular-nums;
+}
+
+.coast-finding {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  list-style: none;
+}
+
+.coast-finding li {
+  border-block-start: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.story-finding .coast-finding button {
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  justify-items: start;
+  padding: 9px 0;
+  border: 0;
+  text-align: start;
+}
+
+.coast-finding button span {
+  font-size: var(--text-caption);
+}
+
+.recorded-anchors.coast-buoy-arrival span {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -50%);
+}
+
+.coast-buoy-arrival [data-arrival]::after {
+  position: absolute;
+  inset: 1px;
+  border: 1px solid #b9f4f1;
+  border-radius: 50%;
+  content: "";
+  animation: coast-buoy-signal 900ms ease-out both;
+}
+
+@keyframes coast-buoy-signal {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(2.7);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coast-buoy-arrival [data-arrival]::after {
+    animation: none;
+  }
+}
+
+@media (max-width: 599px) {
+  [data-coast-observation] .observation-transport-label {
+    display: none;
+  }
+
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.coast-survey) {
+    grid-template-rows: clamp(112px, 27dvh, 215px) minmax(0, 1fr);
+  }
+}

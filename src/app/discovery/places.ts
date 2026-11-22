@@ -1,3 +1,5 @@
+import { chileTsunami } from "../journeys/coastRoute";
+
 export interface StoryPlace {
   lon: number;
   lat: number;
@@ -10,6 +12,7 @@ export const storyPlaces: Record<string, StoryPlace> = {
   katrina: { lon: -89.6, lat: 29.3, label: "Gulf of Mexico · Louisiana" },
   tonga: { lon: -175.4, lat: -20.55, label: "Hunga Tonga" },
   megaflash: { lon: -96, lat: 33, label: "Southern United States" },
+  tsunami: chileTsunami,
   kilauea: { lon: -154.9, lat: 19.5, label: "Kīlauea · Kapoho Bay" },
   lights: { lon: -66.45, lat: 18.2, label: "Puerto Rico" },
   seafloor: { lon: 144.6, lat: 13.5, label: "Mariana Trench" },

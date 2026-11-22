@@ -2,6 +2,7 @@ import { readHistoryPanel, rememberHistoryQuery } from "../historyPanel";
 import { spanDeg } from "../../geo/sphere";
 import { storyPlace, type StoryPlace } from "../discovery/places";
 import { useCallback, useRef, useState } from "react";
+import { tidePorts } from "../journeys/coastRoute";
 import { riverBasins } from "./riverGauges";
 import type { EarthStoryData } from "../earth-stories/types";
 import type { EarthStoryId } from "../earth-stories/catalogue";
@@ -191,12 +192,19 @@ export function useObservationDeck(
       folding.current = false;
       runningCameraKey.current = undefined;
       preview.current = arrival?.preview;
-      const fromPlace = arrival?.departure ?? (published.current ? storyPlace(published.current) : undefined);
+      const buoy =
+        next === "tide" && published.current === "tsunami" ? view?.frame.modeledArrival : undefined;
+      const fromPlace =
+        arrival?.departure ??
+        (buoy ? { lon: buoy.lon, lat: buoy.lat, label: "Selected DART buoy" } : undefined) ??
+        (published.current ? storyPlace(published.current) : undefined);
       const basin =
         next === "river"
           ? (riverBasins.find(({ id }) => id === resume?.choice) ?? riverBasins[0])
           : undefined;
-      const place = basin ? basin.anchor : storyPlace(next);
+      const place =
+        basin?.anchor ??
+        (next === "tide" ? tidePorts.find(({ id }) => id === resume?.choice) : storyPlace(next));
       destination.current = place;
       const retain = arrival?.keepForecast && published.current === "atmospheric-river";
       departure.current =

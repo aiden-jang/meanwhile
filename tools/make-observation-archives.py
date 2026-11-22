@@ -82,7 +82,7 @@ def smoke_frame(job):
     return [int(at.timestamp() * 1000), selected]
 
 
-def travel_times():
+def travel_times(buoys):
     with netcdf_file(BytesIO(fetch(ETOPO)), "r", mmap=False) as file:
         lats = file.variables["latitude"].data.copy()
         lons = file.variables["longitude"].data[:-1].copy()
@@ -120,7 +120,13 @@ def travel_times():
         alpha = np.clip(head + wake, 0, 1)
         rgba = np.stack([33 + head * 75, 128 + head * 105, 166 + head * 86, alpha * 210], axis=2)
         frame = Image.fromarray(np.flipud(np.uint8(rgba))).resize((720, 360), Image.Resampling.BILINEAR)
+        for station in buoys:
+            x = round((station["lon"] + 180) * 719 / 360)
+            y = round((90 - station["lat"]) * 359 / 180)
+            if frame.getpixel((x, y))[3] > 0:
+                station.setdefault("firstModelHour", hour)
         frame.save(ASSETS / f"tsunami-{hour}.webp", quality=80)
+    return buoys
 
 
 def buoy(id, name, lat, lon, suffix):
@@ -198,7 +204,6 @@ def main():
     with ThreadPoolExecutor(max_workers=8) as pool:
         smoke_jobs = [pool.submit(smoke_frame, job) for job in enumerate(DAYS)]
         drifter_jobs = [pool.submit(drifter, id) for id in DRIFTERS]
-        model = pool.submit(travel_times)
         sites = pool.submit(air_sites)
         recent = pool.submit(recent_drifter)
         jet = pool.submit(jet_stream)
@@ -209,8 +214,7 @@ def main():
         ]]
         save("smoke-scans.json", [job.result() for job in smoke_jobs])
         save("drifter-tracks.json", [job.result() for job in drifter_jobs])
-        save("tsunami-readings.json", [job.result() for job in buoys])
-        model.result()
+        save("tsunami-readings.json", travel_times([job.result() for job in buoys]))
         sites.result()
         recent.result()
         jet.result()

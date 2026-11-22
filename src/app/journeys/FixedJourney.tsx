@@ -13,12 +13,21 @@ import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
 import { warmJourneyStop } from "./warmJourneyStop";
+import { goldenGate, tidePorts } from "./coastRoute";
 import { riverBasins } from "../observations/riverGauges";
 import "./fixed-journey.css";
 
-export function hasFixedJourney(id: string | undefined) {
-  return id === "ice-in-motion" || id === "water-in-motion";
+type FixedJourneyId = "ice-in-motion" | "water-in-motion" | "reading-the-coast";
+
+export function hasFixedJourney(id: string | undefined): id is FixedJourneyId {
+  return id === "ice-in-motion" || id === "water-in-motion" || id === "reading-the-coast";
 }
+
+const coastChapters = [
+  { label: "New land", path: "m2 13 7-7 2 2 5-5M5 14l4-4 2 2 5-5" },
+  { label: "Passing wave", path: "M1 9h2c2.5 0 2-4 4.5-4s2 8 4.5 8 2.5-4 4-4h1" },
+  { label: "Daily tide", path: "M2 7c4 0 3 5 7 5s3-5 7-5M2 11c4 0 3 5 7 5s3-5 7-5" },
+];
 
 const chapterTitles = new Map(searchStories.map(({ id, title }) => [id, title]));
 const waterLabels = ["Forecast", "Satellite", "River gauge"];
@@ -45,37 +54,55 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
   if (!journey || !navigation || !route) return null;
   const chapters = journey.steps;
   const water = route.id === "water-in-motion";
+  const coast = route.id === "reading-the-coast";
   const moving = !!route.folding;
   const previous = chapters[current - 1];
   const riverChoice = water
     ? navigation.progressFor(route.id)?.stops.find(([step]) => step === 2)?.[1].visit.position.moment?.choice
     : undefined;
   const river = riverBasins.find(({ id }) => id === riverChoice)?.label.split(" · ")[0];
-  const nextLabel = water
-    ? current === 0
-      ? "Open Rainbelt"
-      : river && riverChoice !== "hudson"
-        ? `Return to the ${river}`
-        : "Go to the Hudson"
-    : next
-      ? `Next: ${chapterTitles.get(next.id)}`
-      : undefined;
-  const context = water
-    ? ["Same Pacific coast", "A separate river gauge record", "Previous view restores your satellite frame"][
-        current
-      ]
-    : moving
-      ? "Leaving West Greenland…"
-      : [
-          "Next stop: West Greenland",
-          "Next stop: a separate iceberg record near South Georgia",
-          "Previous view restores your glacier reading",
-        ][current];
+  const harborChoice = coast
+    ? navigation.progressFor(route.id)?.stops.find(([step]) => step === 2)?.[1].visit.position.moment?.choice
+    : undefined;
+  const harbor = tidePorts.find(({ id }) => id === harborChoice);
+  const coastNext =
+    current === 0
+      ? "Open the Chile record"
+      : harbor && harbor.id !== goldenGate.id
+        ? "Return to harbor"
+        : "Go to San Francisco";
+  const nextLabel = coast
+    ? coastNext
+    : water
+      ? current === 0
+        ? "Open Rainbelt"
+        : river && riverChoice !== "hudson"
+          ? `Return to the ${river}`
+          : "Go to the Hudson"
+      : next
+        ? `Next: ${chapterTitles.get(next.id)}`
+        : undefined;
+  const context = coast
+    ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
+    : water
+      ? [
+          "Same Pacific coast",
+          "A separate river gauge record",
+          "Previous view restores your satellite frame",
+        ][current]
+      : moving
+        ? "Leaving West Greenland…"
+        : [
+            "Next stop: West Greenland",
+            "Next stop: a separate iceberg record near South Georgia",
+            "Previous view restores your glacier reading",
+          ][current];
   return (
     <section
       className="fixed-journey"
       aria-label="Current journey"
       data-water-step={water ? current : undefined}
+      data-coast-step={coast ? current : undefined}
     >
       <div className="fixed-journey-rail">
         <div className="fixed-journey-title">
@@ -95,8 +122,20 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
                   if (index !== current && !moving) navigation.step(index);
                 }}
               >
-                <span aria-hidden="true">{!water && index + 1}</span>
-                {water ? waterLabels[index] : chapterTitles.get(id)}
+                {coast ? (
+                  <svg
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden="true"
+                  >
+                    <path d={coastChapters[index]!.path} />
+                  </svg>
+                ) : (
+                  <span aria-hidden="true">{!water && index + 1}</span>
+                )}
+                {coast ? coastChapters[index]!.label : water ? waterLabels[index] : chapterTitles.get(id)}
               </button>
             </li>
           ))}
@@ -144,7 +183,7 @@ export function FixedJourneyEnding({
   children,
   finishFocus,
 }: {
-  journey: "ice-in-motion" | "water-in-motion";
+  journey: FixedJourneyId;
   canRead: boolean;
   ready: boolean;
   playing?: boolean;
@@ -160,10 +199,10 @@ export function FixedJourneyEnding({
   useLayoutEffect(() => {
     if (!shown) return;
     ending.current?.focus({ preventScroll: true });
-    revealReading(ending.current, journey === "water-in-motion" ? "start" : "nearest");
+    revealReading(ending.current, journey === "ice-in-motion" ? "nearest" : "start");
   }, [shown, journey]);
   if (navigation?.route?.id !== journey) return null;
-  const name = journey === "water-in-motion" ? "Water in Motion" : "Ice in Motion";
+  const name = journeys.find(({ id }) => id === journey)?.title;
   return (
     <>
       {target &&
@@ -181,7 +220,7 @@ export function FixedJourneyEnding({
               }
               if (shown) {
                 ending.current?.focus({ preventScroll: true });
-                revealReading(ending.current, journey === "water-in-motion" ? "start" : "nearest");
+                revealReading(ending.current, journey === "ice-in-motion" ? "nearest" : "start");
               } else setShown(true);
             }}
           >

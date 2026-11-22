@@ -27,7 +27,8 @@ export function ObservationTransport({
     <StoryDock>
       <div className="observation-transport">
         <span>
-          {label} · {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
+          <span className="observation-transport-label">{label} · </span>
+          {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
         </span>
         {frames.length > 1 && (
           <>

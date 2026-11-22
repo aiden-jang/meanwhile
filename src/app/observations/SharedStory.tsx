@@ -9,6 +9,8 @@ export function SharedStory({ moment }: { moment?: StoryMoment | undefined } = {
   const navigation = useStoryNavigation();
   const initial = useRef(moment ?? session?.initial).current;
   if (!initial || navigation?.hasReturnOrigin) return null;
+  if (navigation?.route?.id === "reading-the-coast" && (!session?.shared || initial.at === undefined))
+    return null;
   const positioned =
     initial.at !== undefined || (initial.id === "float" && initial.choice && initial.chapter);
   const heading = positioned ? "A moment shared with you" : "A story shared with you";

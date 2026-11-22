@@ -1,12 +1,16 @@
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
+import { ObservationSourceNotes } from "./ObservationSourceNotes";
 import { ObservationTransport } from "./ObservationTransport";
+import { CoastFinding } from "../journeys/CoastFinding";
+import { goldenGate } from "../journeys/coastRoute";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
 import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
 import { FrameComparison } from "./FrameComparison";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { nearest } from "../../sources/observations/common";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { HOUR, nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
 import type { ObservationFrame, ObservationSource, ObservationView } from "./types";
 import { RiverReading, useRiverGauge } from "./RiverReading";
@@ -42,17 +46,27 @@ export function ObservationPlayer({
   onArrival?: (() => void) | undefined;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
+  const coast = useStoryNavigation()?.route?.id === "reading-the-coast";
+  const wave = coast && id === "tsunami";
+  const tide = coast && id === "tide";
   const [localOption, setOption] = useState(
     initial?.choice &&
       (source.options?.some((p) => p.id === initial.choice) ||
         /^pin:-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/.test(initial.choice))
       ? initial.choice
-      : (source.options?.[0]?.id ?? ""),
+      : tide
+        ? goldenGate.id
+        : (source.options?.[0]?.id ?? ""),
   );
   const option = picker?.value ?? localOption;
   const [selectedAt, setSelectedAt] = useState<number | null>(initial?.at ?? null);
   const [playing, setPlaying] = useState(false);
-  const restoreAt = id === "rain" || id === "river" ? (selectedAt ?? undefined) : undefined;
+  const restoreAt =
+    id === "rain" || id === "river"
+      ? (selectedAt ?? undefined)
+      : id === "tide" && option === initial?.choice
+        ? (selectedAt ?? undefined)
+        : undefined;
   const { data, state, reason, retry } = useObservationData(source, option, restoreAt);
   useReportStorySource(id, state, retry);
   const frames = data?.frames ?? EMPTY;
@@ -68,6 +82,21 @@ export function ObservationPlayer({
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);
   const index = frame ? frames.indexOf(frame) : 0;
+  const buoyMarks = useMemo(() => {
+    if (!wave) return;
+    const points = frames[0]?.marks?.flatMap((mark) => (mark.id ? [{ ...mark, id: mark.id }] : []));
+    if (!points?.length) return;
+    return {
+      points,
+      select(index: number) {
+        const buoy = points[index];
+        if (buoy) {
+          setPlaying(false);
+          setOption(buoy.id);
+        }
+      },
+    };
+  }, [frames, wave]);
   const {
     element,
     status,
@@ -80,7 +109,7 @@ export function ObservationPlayer({
   const metadata = observations[id];
   const latest = frames.at(-1);
   const holding = state !== "ready" && latest !== undefined;
-  const canHold = id === "deep" || id === "swell";
+  const canHold = id === "deep" || id === "swell" || coast;
   const inspection = useObservationInspection(frame);
   const inspect = inspection.pick;
   const river = useRiverGauge(frame, initial?.chapter);
@@ -107,7 +136,7 @@ export function ObservationPlayer({
 
   useLayoutEffect(() => {
     if (preparing) {
-      if (id === "rain" && frame) remember?.({ at: frame.at });
+      if (frame && (id === "rain" || wave)) remember?.({ at: frame.at, choice: option });
       return;
     }
     if (canHold && (!data || !frame) && state === "loading") return;
@@ -116,17 +145,20 @@ export function ObservationPlayer({
         ? {
             kind: "observation",
             target:
-              (map ? data.mapTarget : undefined) ?? (drifter ? data.target : (frame.camera ?? data.target)),
+              (map ? data.mapTarget : undefined) ??
+              (drifter || wave ? data.target : (frame.camera ?? data.target)),
             frame: heldRain?.frame ?? shown ?? frame,
             image: heldRain?.image ?? element,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
             ...(id === "river" || id === "smoke" ? { pickMarks, cameraKey: option } : {}),
             ...(drifter ? { pickMarks: drifter, cameraKey: option, arrive: regionalArrival } : {}),
-            ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
+            ...(id === "tide" ? { cameraKey: option } : {}),
+            ...(buoyMarks ? { pickMarks: buoyMarks } : {}),
+            ...(!wave && !map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: onArrival ?? regionalArrival } : {}),
           }
         : null,
-      id === "rain" && !frame && (state === "empty" || state === "failed"),
+      (id === "rain" || tide) && !frame && (state === "empty" || state === "failed"),
     );
     if (readiness === "ready" && frame) presented.current = { frame, image: element };
     else if (!heldRain) presented.current = undefined;
@@ -157,6 +189,9 @@ export function ObservationPlayer({
     drifter,
     heldRain,
     onArrival,
+    wave,
+    tide,
+    buoyMarks,
   ]);
 
   useEffect(() => {
@@ -171,7 +206,7 @@ export function ObservationPlayer({
           if (next) setSelectedAt(next.at);
           else setPlaying(false);
         },
-        Math.max(120, Math.min(800, 18_000 / frames.length)),
+        Math.max(id === "tide" ? 60 : 120, Math.min(800, 18_000 / frames.length)),
       );
     }
     step();
@@ -180,7 +215,7 @@ export function ObservationPlayer({
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", step);
     };
-  }, [frames, index, playing, status]);
+  }, [frames, id, index, playing, status]);
 
   return (
     <>
@@ -203,9 +238,7 @@ export function ObservationPlayer({
           <select
             value={option}
             onChange={(event) => {
-              if (!canHold) {
-                setSelectedAt(null);
-              }
+              if (!canHold || tide) setSelectedAt(null);
               setPlaying(false);
               (picker?.select ?? setOption)(event.currentTarget.value);
             }}
@@ -242,6 +275,15 @@ export function ObservationPlayer({
               setPlaying(!playing);
             }}
           />
+          {wave && frame.modeledArrival && (
+            <p className="coast-wave-note">
+              {frame.at >= frame.modeledArrival.at
+                ? "Modeled front reached this buoy"
+                : "Modeled front reaches this buoy"}
+              {" · "}
+              {(frame.modeledArrival.at - frames[0]!.at) / HOUR} h
+            </p>
+          )}
           {frame.measurements?.length ? (
             <dl className="observation-values">
               {frame.measurements.map(({ label, value }) => (
@@ -252,6 +294,14 @@ export function ObservationPlayer({
               ))}
             </dl>
           ) : null}
+          {wave && frame.modeledArrival?.sampleAt !== undefined && (
+            <p className="coast-buoy-time">
+              Buoy sample ·{" "}
+              <time dateTime={new Date(frame.modeledArrival.sampleAt).toISOString()}>
+                {clock.format(frame.modeledArrival.sampleAt)} UTC
+              </time>
+            </p>
+          )}
           {frame.details && (
             <details className="observation-details">
               <summary>{frame.details.title}</summary>
@@ -282,7 +332,7 @@ export function ObservationPlayer({
                 at={frame.at}
                 units={data.units}
                 tide={frame.tide}
-                onSeek={drifter ? seek : undefined}
+                onSeek={drifter || wave || id === "tide" ? seek : undefined}
               />
             ))}
           {id === "air" && (
@@ -320,75 +370,25 @@ export function ObservationPlayer({
           ) : null}
         </>
       )}
-      {state === "loading" && (
-        <p className="observation-note" role="status">
-          Checking {metadata.source}…
-        </p>
+      <ObservationSourceNotes
+        id={id}
+        state={state}
+        reason={reason}
+        retry={retry}
+        latest={holding ? latest : undefined}
+        imageStatus={status}
+        retryImage={retryImage}
+        heldTime={heldTime}
+        heldFailure={!!heldRain}
+        heldPhoto={!!frame?.photograph && !!element}
+        note={data?.note}
+      />
+      {tide && (
+        <CoastFinding
+          harbor={source.options?.find(({ id }) => id === option)?.label ?? goldenGate.label}
+          frame={frame}
+        />
       )}
-      {state === "failed" && (
-        <div className="observation-note" role="status">
-          <p>{reason ?? `Couldn’t load ${metadata.title} data from ${metadata.source}.`}</p>
-          <div className="observatory-actions observation-chapters">
-            <button type="button" onClick={retry}>
-              Retry source
-            </button>
-          </div>
-        </div>
-      )}
-      {state === "empty" && (
-        <p className="observation-note" role="status">
-          {metadata.empty}
-        </p>
-      )}
-      {holding && (
-        <p className="observation-note" role="status">
-          Showing the last available readings ·{" "}
-          {latest.timeLabel ?? (
-            <time dateTime={new Date(latest.at).toISOString()}>{clock.format(latest.at)} UTC</time>
-          )}
-        </p>
-      )}
-      {status === "failed" && (
-        <div className="observation-note">
-          <p role="status">
-            No image could be loaded for this timestamp.
-            {heldRain
-              ? ` Still showing ${heldTime}.`
-              : frame?.photograph && element
-                ? " Showing the last loaded photograph."
-                : ""}
-          </p>
-          {id === "rain" && (
-            <button type="button" onClick={retryImage}>
-              Retry satellite frame
-            </button>
-          )}
-        </div>
-      )}
-      {status === "loading" && (
-        <p className="observation-note" role="status">
-          {heldTime !== null
-            ? `Loading this image… Still showing ${heldTime}.`
-            : frame?.photograph && element
-              ? "Loading this image… Showing the last loaded photograph."
-              : "Loading this image…"}
-        </p>
-      )}
-      {state === "loading" && heldTime !== null && status !== "loading" && (
-        <p className="observation-note" role="status">
-          Still showing {heldTime} while these readings load.
-        </p>
-      )}
-      {data && <p className="observation-note">{data.note}</p>}
-      <a
-        className="observation-source"
-        href={metadata.url}
-        target="_blank"
-        rel="noreferrer"
-        aria-describedby="external-link-hint"
-      >
-        {metadata.source}
-      </a>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import type { ObservationRaster } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { revealReading } from "../observations/revealReading";
 import { StoryDock } from "../observations/StoryDock";
 import { TimelineTrack } from "../observations/TimelineTrack";
 import { coastlineDivider, drawLavaComparison, drawLavaSurface } from "./drawLava";
@@ -34,6 +35,7 @@ const MOTION = "(prefers-reduced-motion: reduce)";
 export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
   const navigation = useStoryNavigation();
+  const coast = navigation?.route?.id === "reading-the-coast";
   const [index, setIndex] = useState(
     initial?.at === undefined
       ? 0
@@ -45,9 +47,11 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           0,
           Math.min(100, Number.isFinite(Number(initial.choice)) ? Number(initial.choice) : COAST_COMPARISON),
         )
-      : null,
+      : coast && initial?.at === undefined
+        ? COAST_COMPARISON
+        : null,
   );
-  const [invited, setInvited] = useState(!initial);
+  const [invited, setInvited] = useState(!coast && !initial);
   const [playing, setPlaying] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [footage, setFootage] = useState(false);
@@ -161,7 +165,10 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     setPlaying(false);
     setFootage(false);
     setSplit(COAST_COMPARISON);
-    requestAnimationFrame(() => timeline.current?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      timeline.current?.focus({ preventScroll: true });
+      if (coast) revealReading(timeline.current);
+    });
   }
 
   function follow() {
@@ -176,6 +183,24 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     if (invited) requestAnimationFrame(() => playButton.current?.focus({ preventScroll: true }));
   }
 
+  const scrubber = (
+    <input
+      id={id}
+      ref={timeline}
+      className="scrub-slider"
+      type="range"
+      min={0}
+      max={comparing ? 100 : LAST}
+      value={split ?? index}
+      aria-valuetext={time}
+      onInput={(event) => {
+        const next = event.currentTarget.valueAsNumber;
+        if (comparing) setSplit(next);
+        else inspect(next);
+      }}
+    />
+  );
+
   return (
     <ReplayPanel
       {...panel}
@@ -185,9 +210,9 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       }}
       finding={false}
       save={!comparing}
-      className="kilauea-journey"
+      className={coast && comparing ? "kilauea-journey coast-survey" : "kilauea-journey"}
       title="Kīlauea"
-      subtitle="Hawaiʻi Island · 2018"
+      subtitle={coast ? "Kapoho Bay, Hawaiʻi Island · 2018" : "Hawaiʻi Island · 2018"}
       location="Lower East Rift Zone"
       status={
         footage && !panel.map
@@ -239,14 +264,25 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
         className="kilauea-narrative"
         data-kilauea-phase={comparing ? "compare" : invited ? "intro" : "replay"}
       >
-        <h3>{title}</h3>
+        {!(coast && comparing) && <h3>{title}</h3>}
         <p className="observation-note">
           {comparing
-            ? "The dashed line marks Kapoho Bay’s former shore. Light amber shows the new land."
+            ? coast
+              ? "Slide between the registered USGS shorelines to see where lava made new land."
+              : "The dashed line marks Kapoho Bay’s former shore. Light amber shows the new land."
             : invited
               ? "Follow the lava from Fissure 8 to Kapoho Bay."
               : "Amber highlights the newly mapped lava. Darker orange shows earlier flows."}
         </p>
+        {coast && comparing && (
+          <div className="coast-survey-control">
+            <div>
+              <label htmlFor={id}>Shoreline divider</label>
+              <span>{split}%</span>
+            </div>
+            {scrubber}
+          </div>
+        )}
         <div className="observatory-actions kilauea-actions">
           {invited && (
             <button type="button" className="kilauea-follow" onClick={follow}>
@@ -307,67 +343,55 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           </p>
         )}
       </div>
-      <StoryDock label="Kīlauea playback" deferOnShortPhone={invited}>
-        <div className="survey-transport" data-comparing={comparing}>
-          <div className="story-dock-time">
-            <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
-            <span className="story-dock-readout">{comparing ? `${split}%` : time}</span>
-          </div>
-          <TimelineTrack
-            max={comparing ? 100 : LAST}
-            current={split ?? index}
-            landmark={
-              comparing
-                ? undefined
-                : {
-                    at: OCEAN_ENTRY,
-                    label: `Ocean entry · ${mapDate(snapshots[OCEAN_ENTRY]!.at)}`,
-                    select: () => inspect(OCEAN_ENTRY),
-                  }
-            }
-          >
-            <input
-              id={id}
-              ref={timeline}
-              className="scrub-slider"
-              type="range"
-              min={0}
+      {!(coast && comparing) && (
+        <StoryDock label="Kīlauea playback" deferOnShortPhone={invited}>
+          <div className="survey-transport" data-comparing={comparing}>
+            <div className="story-dock-time">
+              <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
+              <span className="story-dock-readout">{comparing ? `${split}%` : time}</span>
+            </div>
+            <TimelineTrack
               max={comparing ? 100 : LAST}
-              value={split ?? index}
-              aria-valuetext={time}
-              onInput={(event) => {
-                const next = event.currentTarget.valueAsNumber;
-                if (comparing) setSplit(next);
-                else inspect(next);
-              }}
-            />
-          </TimelineTrack>
-          <div className="story-dock-actions">
-            {!invited && (
-              <PlaybackButton
-                buttonRef={playButton}
-                playing={playing}
-                ended={comparing || index === LAST}
-                onClick={() => {
-                  if (matchMedia(MOTION).matches)
-                    inspect(comparing || index === LAST ? 0 : Math.min(LAST, index + 1));
-                  else follow();
-                }}
-              />
-            )}
-            {!comparing && (
-              <>
-                <button type="button" onClick={() => inspect(0)}>
-                  Fissure 8
-                </button>
-                <button type="button" onClick={() => inspect(OCEAN_ENTRY)}>
-                  Ocean entry
-                </button>
-              </>
-            )}
+              current={split ?? index}
+              landmark={
+                comparing
+                  ? undefined
+                  : {
+                      at: OCEAN_ENTRY,
+                      label: `Ocean entry · ${mapDate(snapshots[OCEAN_ENTRY]!.at)}`,
+                      select: () => inspect(OCEAN_ENTRY),
+                    }
+              }
+            >
+              {scrubber}
+            </TimelineTrack>
+            <div className="story-dock-actions">
+              {!invited && (
+                <PlaybackButton
+                  buttonRef={playButton}
+                  playing={playing}
+                  ended={comparing || index === LAST}
+                  onClick={() => {
+                    if (matchMedia(MOTION).matches)
+                      inspect(comparing || index === LAST ? 0 : Math.min(LAST, index + 1));
+                    else follow();
+                  }}
+                />
+              )}
+              {!comparing && (
+                <>
+                  <button type="button" onClick={() => inspect(0)}>
+                    Fissure 8
+                  </button>
+                  <button type="button" onClick={() => inspect(OCEAN_ENTRY)}>
+                    Ocean entry
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </StoryDock>
+        </StoryDock>
+      )}
     </ReplayPanel>
   );
 }

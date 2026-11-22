@@ -190,6 +190,7 @@ export const journeys: readonly Journey[] = [
   {
     id: "reading-the-coast",
     title: "Reading the coast",
+    guide: ["USGS shoreline survey", "NOAA model and buoy record", "NOAA harbor observations"],
     summary: "New land, a passing wave, and the daily rise and fall of water.",
     ending:
       "A coastline can change permanently or appear to move with the water. These three independent records reveal the difference.",

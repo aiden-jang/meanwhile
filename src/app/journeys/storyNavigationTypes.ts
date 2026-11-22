@@ -51,6 +51,6 @@ export type StoryNavigationValue = {
   open: (id: string, trigger?: string, keepScene?: boolean) => void;
   start: (id: string, trigger?: string) => void;
   tour: () => void;
-  step: (index: number) => void;
+  step: (index: number, selected?: Visit) => void;
   finish: (complete: boolean) => void;
 };

@@ -2,6 +2,7 @@ import { DEG, distanceKm, toVec3 } from "../../geo/sphere";
 import type { SkyCity } from "../../geo/tonight";
 import { storyPlace, type StoryPlace } from "../discovery/places";
 import { firstFloatProfile } from "../float/firstProfile";
+import { goldenGate } from "./coastRoute";
 import type { Journey } from "./catalogue";
 
 export const featuredJourney = "ice-in-motion";
@@ -12,8 +13,7 @@ const anchors: Record<string, StoryPlace> = {
   drifter: { lon: -87.064, lat: 28.872, label: "Gulf of Mexico" },
   float: { ...firstFloatProfile, label: "North Atlantic" },
   smoke: { lon: -76.6, lat: 47.1, label: "Eastern Canada" },
-  tsunami: { lon: -73.24, lat: -36.12, label: "Central Chile" },
-  tide: { lon: -74.0142, lat: 40.7006, label: "New York Harbor" },
+  tide: goldenGate,
 };
 
 export function previewPlaces(journey: Journey, city: SkyCity) {

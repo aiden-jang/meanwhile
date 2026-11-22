@@ -44,3 +44,35 @@
     bottom: calc(var(--stage-inset) + var(--story-dock-height, 0px) + 90px);
   }
 }
+
+.coast-survey-control {
+  padding-block: 9px 2px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.coast-survey-control > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.coast-survey-control input {
+  width: 100%;
+  min-height: 44px;
+  accent-color: #efc388;
+}
+
+@media (max-width: 899px) {
+  .coast-survey .stage-ident,
+  .coast-survey .stage-readout {
+    display: none;
+  }
+
+  .coast-survey .kilauea-coast-labels {
+    inset-block: 12px auto;
+    font-size: 11px;
+  }
+}

@@ -1,5 +1,6 @@
 import type { ObservationData, ObservationSource } from "../../app/observations/types";
 import { HOUR, MINUTE, request, utc } from "./common";
+import { tidePorts as ports } from "../../app/journeys/coastRoute";
 import { riverBasins, riverUnit } from "../../app/observations/riverGauges";
 import { spanDeg } from "../../geo/sphere";
 import riverReaches from "./river-reaches.json";
@@ -7,13 +8,7 @@ import riverReaches from "./river-reaches.json";
 const TIDE = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
 const RIVERS = "https://api.waterdata.usgs.gov/ogcapi/v0/collections";
 
-const ports = [
-  { id: "8518750", label: "New York · The Battery", lat: 40.7006, lon: -74.0142 },
-  { id: "9414290", label: "San Francisco · Golden Gate", lat: 37.8063, lon: -122.4659 },
-  { id: "1612340", label: "Honolulu Harbor", lat: 21.3067, lon: -157.867 },
-  { id: "8443970", label: "Boston Harbor", lat: 42.3548, lon: -71.0534 },
-  { id: "9447130", label: "Seattle", lat: 47.6026, lon: -122.3393 },
-] as const;
+const TIDE_RANGE = 30;
 
 function tides(input: unknown, key: "data" | "predictions") {
   const rows = (input as Record<string, unknown> | null)?.[key];
@@ -30,7 +25,7 @@ function tides(input: unknown, key: "data" | "predictions") {
 export const tide: ObservationSource = {
   options: ports,
   refreshMs: 6 * MINUTE,
-  async load(option, signal) {
+  async load(option, signal, restoreAt) {
     const port = ports.find(({ id }) => id === option) ?? ports[0];
     const params = new URLSearchParams({
       station: port.id,
@@ -38,9 +33,18 @@ export const tide: ObservationSource = {
       time_zone: "gmt",
       units: "metric",
       format: "json",
-      range: "30",
+      range: String(TIDE_RANGE),
       application: "everythingisfine",
     });
+    if (restoreAt !== undefined && restoreAt < Date.now() - 24 * HOUR) {
+      params.set(
+        "end_date",
+        utc(restoreAt + 6 * HOUR)
+          .slice(0, 16)
+          .replaceAll("-", "")
+          .replace("T", " "),
+      );
+    }
     const [actual, forecast] = await Promise.all([
       request(`${TIDE}?${params}&product=water_level`, signal).then((res) => res.json()),
       request(`${TIDE}?${params}&product=predictions&interval=6`, signal)
@@ -54,9 +58,8 @@ export const tide: ObservationSource = {
     const levels = [...measured, ...prediction].map(([, level]) => level);
     const min = Math.floor(Math.min(0, ...levels));
     const max = Math.ceil(Math.max(min + 1, ...levels));
-    const timeline = measured.filter((_, index) => index % 3 === 0 || index === measured.length - 1);
     const target = { lon: port.lon, lat: port.lat, zoom: 2.7 };
-    const frames = timeline.map(([at, level]) => {
+    const frames = measured.map(([at, level]) => {
       const predicted = predictionByTime.get(at);
       const surface = { ...port, lift: Math.max(0, level + 1) * 0.013 };
       return {
@@ -87,8 +90,8 @@ export const tide: ObservationSource = {
       initial: frames.length - 1,
       units: "m",
       series: [
-        { label: "Observed", samples: measured },
-        { label: "Predicted", samples: prediction },
+        { label: "Observed", samples: measured, gapAfter: 6 * MINUTE },
+        { label: "Predicted", samples: prediction, gapAfter: 6 * MINUTE },
       ],
       note: "NOAA six-minute observations relative to mean lower low water. The gauge exaggerates height. The dashed trace is the predicted astronomical tide.",
     };

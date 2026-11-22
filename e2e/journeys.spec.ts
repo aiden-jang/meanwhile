@@ -19,7 +19,6 @@ async function tides(page: Page) {
 for (const [id, titles] of [
   ["above-earth", ["Tonight’s Sky", "Moonfall", "Orbital Pass"]],
   ["water-in-motion", ["Atmospheric River", "Rainbelt", "River Pulse"]],
-  ["reading-the-coast", ["Kīlauea", "Tsunami Arrival", "Tide Watch"]],
 ] as const) {
   test(`${id} keeps one canvas across its guided views and finishes in free exploration`, async ({
     page,
@@ -102,6 +101,133 @@ for (const [id, titles] of [
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   });
 }
+
+test("Reading the coast keeps its comparison, model time and harbor on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await tides(page);
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await openStories(page, "all");
+  await startJourney(page, "reading-the-coast");
+  const journey = page.getByRole("region", { name: "Current journey" });
+  const projection = page.getByRole("group", { name: "Observation projection" });
+  const previous = journey.getByRole("button", { name: "Previous view", exact: true });
+  const toWave = journey.getByRole("button", { name: "Open the Chile record", exact: true });
+  await expect(toWave).toBeInViewport({ ratio: 1 });
+  await projection.getByRole("button", { name: "Map", exact: true }).click();
+  const divide = page.getByRole("slider", { name: "Shoreline divider", exact: true });
+  await divide.press("Home");
+  await divide.press("ArrowRight");
+  await page.getByRole("button", { name: "Keep this comparison", exact: true }).click();
+  await toWave.click();
+
+  const wave = page.getByRole("region", { name: "Tsunami Arrival", exact: true });
+  const model = wave.getByRole("slider", { name: "Replay time", exact: true });
+  await expect(wave.getByRole("group", { name: "Tsunami Arrival on the map" })).toBeVisible();
+  const waveChart = wave.locator(".observation-chart svg");
+  await waveChart.scrollIntoViewIfNeeded();
+  const trace = (await waveChart.boundingBox())!;
+  await waveChart.click({ position: { x: trace.width / 2, y: trace.height / 2 } });
+  await expect(model).toHaveValue("12");
+  const buoy = wave.getByRole("combobox", { name: "Measurement buoy" });
+  await buoy.selectOption("46407");
+  await expect(model).toHaveValue("12");
+  await expect(wave.getByText("0.002 m", { exact: true })).toBeVisible();
+  for (let index = 0; index < 4; index++) await model.press("ArrowRight");
+  await expect(wave.getByText("Modeled front reached this buoy · 16 h")).toBeVisible();
+  await expect(wave.locator(".coast-buoy-arrival [data-arrival]")).toHaveCount(1);
+  const toHarbor = journey.getByRole("button", { name: "Go to San Francisco", exact: true });
+  await expect(toHarbor).toBeInViewport({ ratio: 1 });
+  await toHarbor.click();
+
+  const tide = page.getByRole("region", { name: "Tide Watch", exact: true });
+  const harbor = tide.getByRole("combobox", { name: "Harbor" });
+  await expect(harbor).toHaveValue("9414290");
+  await harbor.selectOption("9447130");
+  const observation = tide.getByRole("slider", { name: "Observation time", exact: true });
+  const tideChart = tide.locator(".observation-chart svg");
+  await tideChart.scrollIntoViewIfNeeded();
+  const sample = await tideChart.evaluate((svg) => {
+    const point = new DOMPoint(44, 33).matrixTransform((svg as SVGSVGElement).getScreenCTM()!);
+    return { x: point.x, y: point.y };
+  });
+  await page.mouse.click(sample.x, sample.y);
+  await expect(observation).toHaveAttribute("aria-valuetext", /12:06 UTC/);
+  const finding = journey.getByRole("button", { name: "See the finding", exact: true });
+  await expect(finding).toBeInViewport({ ratio: 1 });
+  await finding.click();
+  const recap = tide.getByRole("region", { name: "Reading the coast finding" });
+  await expect(recap).toContainText("Kept comparison · 1%");
+  await expect(recap).toContainText("DART 46407");
+  await expect(recap).toContainText("Seattle");
+  await expect(recap).toContainText("12:06 UTC");
+
+  await previous.click();
+  await expect(buoy).toHaveValue("46407");
+  await expect(model).toHaveValue("16");
+  await expect(projection.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await previous.click();
+  await expect(divide).toHaveValue("1");
+  await expect(page.getByRole("button", { name: "Comparison kept" })).toBeVisible();
+  await expect(projection.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await toWave.click();
+  await journey.getByRole("button", { name: "Return to harbor", exact: true }).click();
+  await expect(harbor).toHaveValue("9447130");
+  await expect(observation).toHaveAttribute("aria-valuetext", /12:06 UTC/);
+  await finding.click();
+  await recap.getByRole("button", { name: "Finish journey", exact: true }).click();
+  await expect(journey).toHaveCount(0);
+  await expect(tide.locator(".related-stories summary")).toBeFocused();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
+test("Reading the coast restores a manually framed globe after viewing the wave on the map @dev", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=kilauea&journey=reading-the-coast&stop=0");
+
+  const camera = () =>
+    page.evaluate(() => {
+      const globe = (
+        window as unknown as {
+          __globe?: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+        }
+      ).__globe;
+      return globe && { ...globe.state(), projection: globe.morph() };
+    });
+  const divide = page.getByRole("slider", { name: "Shoreline divider", exact: true });
+  await expect(divide).toBeVisible();
+  await expect.poll(async () => (await camera())?.zoom).toBeCloseTo(2.4);
+  const start = await camera();
+  const world = page.locator("#globe-view");
+  await world.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("+");
+  await expect.poll(camera).not.toEqual(start);
+  const framed = await camera();
+
+  const journey = page.getByRole("region", { name: "Current journey" });
+  await journey.getByRole("button", { name: "Open the Chile record", exact: true }).click();
+  const wave = page.getByRole("region", { name: "Tsunami Arrival", exact: true });
+  await expect(wave.getByRole("slider", { name: "Replay time", exact: true })).toBeVisible();
+  await wave.getByRole("button", { name: "Map", exact: true }).click();
+  await expect.poll(async () => (await camera())?.projection).toBe(1);
+  await journey.getByRole("button", { name: "Previous view", exact: true }).click();
+  await expect(divide).toBeVisible();
+  await expect.poll(camera).toEqual(framed);
+});
 
 test("related stories cross scenes and return to their previous story", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });

@@ -105,7 +105,8 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   );
   await expect(slider).toHaveAttribute("aria-valuetext", time!);
   await expect(tide.getByText("0.20 m above prediction")).toBeVisible();
-  await slider.press("ArrowRight");
+  for (let index = 0; index < 3; index++) await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", /12:18 UTC/);
   await expect(tide.getByText("No matching prediction")).toBeVisible();
   await expect(bracket).toHaveCount(0);
   await tide.getByRole("button", { name: "Globe", exact: true }).click();

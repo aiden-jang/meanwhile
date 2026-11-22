@@ -5,6 +5,7 @@ import { store, stored } from "../stored";
 import type { FloatDiveView } from "../float/floatPlayback";
 import type { Visit } from "../visitor/library";
 import { journeys } from "./catalogue";
+import { goldenGate } from "./coastRoute";
 import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./connectedStops";
 import { foldDeparture } from "./foldDeparture";
 import { journeyProgressKey, packJourneyProgress, readJourneyProgress } from "./journeyProgress";
@@ -128,16 +129,20 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       const progress = progressFor(id);
       if (progress) enter(id, progress.step, trigger, true);
     },
-    step(index: number) {
+    step(index: number, selected?: Visit) {
       const next = activeRoute?.steps[index];
       if (!route || route.folding || index === route.step || !next || inputs.unavailable(next.id)) return;
       const revisit = stops.current.has(index);
       const here = capture();
       const stop = connectedArrival(stops.current, route.step, index, next.id, inputs.current(), here);
+      if (selected?.id === next.id) stop.visit = selected;
       const connected = !!activeRoute?.guide || revisit;
       const iceCrossing = route.id === "ice-in-motion" && next.id === "iceberg";
-      if (iceCrossing || (route.id === "water-in-motion" && next.id === "river"))
+      const coastCrossing = route.id === "reading-the-coast" && !revisit && index > route.step;
+      if (iceCrossing || coastCrossing || (route.id === "water-in-motion" && next.id === "river"))
         stop.arrival.crossing = true;
+      if (route.id === "reading-the-coast" && next.id === "tide" && !revisit)
+        stop.visit.position.moment = { id: "tide", map: stop.arrival.map, choice: goldenGate.id };
       if (route.id === "water-in-motion" && inputs.active === "atmospheric-river" && next.id === "rain") {
         stop.arrival.keepForecast = !revisit || stop.arrival.map === here.map;
         if (!revisit) stop.arrival.pose = here.pose;

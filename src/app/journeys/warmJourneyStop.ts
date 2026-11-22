@@ -32,6 +32,8 @@ export function warmJourneyStop(next: string | undefined) {
         }
       })
       .catch(() => {});
+  } else if (next === "tsunami" || next === "tide") {
+    void loadSource[next]().catch(() => {});
   } else if (next === "iceberg") {
     void import("../iceberg/IcebergDrift").catch(() => {});
   }

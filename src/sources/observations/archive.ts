@@ -1,7 +1,8 @@
 import type { ObservationSource } from "../../app/observations/types";
-import { HOUR, sampleAt } from "./common";
+import { HOUR, MINUTE } from "./common";
+import { chileTsunami } from "../../app/journeys/coastRoute";
+import { dartReading, tsunamiBuoys, tsunamiEpoch } from "./tsunamiRecord";
 import scans from "./smoke-scans.json";
-import buoys from "./tsunami-readings.json";
 
 const images = import.meta.glob<string>("./archive-assets/*.webp", {
   eager: true,
@@ -40,47 +41,49 @@ export const smoke: ObservationSource = {
   },
 };
 
-const EARTHQUAKE = Date.UTC(2010, 1, 27, 6, 34, 11);
-const EPICENTRE = { lon: -72.898, lat: -36.122, zoom: 2.4 };
+const EPICENTRE = { ...chileTsunami, zoom: 2.4 };
+const pacific = { lon: -109, lat: 1, zoom: 1.04 };
 
 export const tsunami: ObservationSource = {
-  options: buoys.map(({ id, name }) => ({ id, label: `DART ${id} · ${name}` })),
+  options: tsunamiBuoys,
   async load(option) {
-    const chosen = buoys.find(({ id }) => id === option) ?? buoys[0]!;
-    const series = chosen.values.map(
-      ([seconds, residual]) => [EARTHQUAKE + seconds! * 1000, residual!] as const,
-    );
+    const chosen = tsunamiBuoys.find(({ id }) => id === option) ?? tsunamiBuoys[0]!;
     return {
-      target: { lon: -117, lat: -12, zoom: 1.2 },
+      target: pacific,
       frames: Array.from({ length: 25 }, (_, hour) => {
-        const at = EARTHQUAKE + hour * HOUR;
-        const actual = sampleAt(series, at);
+        const at = tsunamiEpoch + hour * HOUR;
+        const actual = dartReading(chosen, at);
         return {
           at,
           ...(hour <= 1 ? { camera: EPICENTRE } : {}),
           raster: { url: asset(`tsunami-${hour}`) },
+          modeledArrival: {
+            at: chosen.arrivalAt,
+            lon: chosen.lon,
+            lat: chosen.lat,
+            ...(actual ? { sampleAt: actual[0] } : {}),
+          },
           marks: [
-            { lon: -72.898, lat: -36.122, size: 20, color: 0xffd09c },
-            ...buoys.map((point) => ({
-              ...point,
-              size: chosen.id === point.id ? 22 : 12,
-              color: chosen.id === point.id ? 0x9de8ec : 0x8a9bb4,
+            { ...chileTsunami, size: 20, color: 0xffd09c },
+            ...tsunamiBuoys.map(({ id, lon, lat }) => ({
+              id,
+              lon,
+              lat,
+              size: chosen.id === id ? (at === chosen.arrivalAt ? 30 : 21) : 12,
+              color: chosen.id === id ? (at >= chosen.arrivalAt ? 0xb9f4f1 : 0x79becf) : 0x8a9bb4,
             })),
           ],
           measurements: [
             { label: "Modeled arrival · time since the earthquake", value: `${hour} h` },
             {
               label: "Measured water-level change at buoy",
-              value:
-                actual && Math.abs(actual[0] - at) <= 900_000
-                  ? `${actual[1].toFixed(3)} m`
-                  : "No sample nearby",
+              value: actual ? `${actual[1].toFixed(3)} m` : "No sample nearby",
             },
           ],
         };
       }),
       units: "m",
-      series: [{ label: `DART ${chosen.id} · measured water-level change`, samples: series }],
+      series: [{ label: "Measured water-level change", samples: chosen.samples, gapAfter: 5 * MINUTE }],
       note: "Illustrative first-arrival model calculated from NOAA ETOPO bathymetry. The glowing front shows estimated travel time. The gauge plot uses separate NOAA DART observations after tide removal.",
     };
   },
