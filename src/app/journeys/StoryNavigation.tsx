@@ -23,6 +23,7 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
+import { openSkyStory } from "./openSkyStory";
 import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 
@@ -158,13 +159,16 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const radarPose =
       id === "radar" && !props.views.observing && !resuming ? props.explorer.read() : undefined;
     const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
-    const openReplay = () =>
+    const openReplay = () => {
+      if (id === "orbit" && saved?.position.moment?.city)
+        props.views.skyCity.select(saved.position.moment.city);
       deck.open(
         id as StoryId,
         trigger,
         saved?.position.moment ?? (fresh ? null : undefined),
         map === undefined ? arrival : { ...arrival, map, preview },
       );
+    };
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
@@ -172,16 +176,15 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         ? openReplay
         : () => {
             deck.setTrigger(trigger);
-            if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
             if (id === "sky" || id === "meteors" || id === "moonfall") {
-              if (id === "sky") deck.setMap(arrival?.map ?? !!saved?.position.sky?.map);
-              tonight.open(
+              openSkyStory(
+                props.views,
                 id,
-                nightfall ??
-                  saved?.position.sky ??
-                  saved?.position.moment?.sky ??
-                  (fresh && id !== "moonfall" ? null : undefined),
-                !!nightfall,
+                saved,
+                arrival,
+                nightfall,
+                fresh,
+                arrival?.skyDeparture ? tonight.view : null,
               );
             } else if (id === "aurora") {
               const moment = saved?.position.moment;
@@ -296,6 +299,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         previewMap: props.explorer.flat,
         previewOpen,
         previewCity: props.views.skyCity.city,
+        moonAboveHorizon: tonight.view ? (tonight.view.bodies[0]?.altitude ?? 0) > 0 : undefined,
         preview(place, restore = true, keepProjection = false) {
           if (place) {
             previewOrigin.current ??= {

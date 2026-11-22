@@ -16,91 +16,198 @@ async function tides(page: Page) {
   });
 }
 
-for (const [id, titles] of [
-  ["above-earth", ["Tonight’s Sky", "Moonfall", "Orbital Pass"]],
-  ["water-in-motion", ["Atmospheric River", "Rainbelt", "River Pulse"]],
-] as const) {
-  test(`${id} keeps one canvas across its guided views and finishes in free exploration`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    if (id === "above-earth") await installOrbit(page);
-    await installFeeds(page, { presentation: "fresh", empty: true });
-    await tides(page);
-    await page.route("**/api/observations/river", (route) => route.abort());
-    const satellite = Promise.withResolvers<void>();
-    if (id === "water-in-motion")
-      await page.route("https://gibs.earthdata.nasa.gov/wms/**", async (route) => {
-        await satellite.promise;
-        await route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" });
-      });
-    await page.goto("/");
-    const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await openStories(page, "all");
-    await startJourney(page, id);
-    const journey = page.getByRole("region", { name: "Current journey", exact: true });
-    await expect(journey).toContainText("1 of 3");
-    await expect(page.getByRole("heading", { name: titles[0], exact: true })).toBeVisible();
-    const skyTime = page.getByRole("slider", { name: "City local time", exact: true });
-    if (id === "above-earth") await skyTime.press("End");
-    const savedTime = id === "above-earth" ? await skyTime.inputValue() : null;
-    const forecastTime = page.getByRole("slider", { name: "Forecast valid time", exact: true });
-    const rainTime = page.getByRole("slider", { name: "Satellite estimate time", exact: true });
-    if (id === "water-in-motion") {
-      await page
-        .getByRole("combobox", { name: "Forecast", exact: true })
-        .selectOption({ label: "9 November 2026 archive" });
-      await forecastTime.press("Home");
-      await forecastTime.press("ArrowRight");
-      await page.getByRole("button", { name: "Focus the Pacific coast", exact: true }).click();
-      await page.getByRole("button", { name: "Map", exact: true }).click();
-    }
-    const toSecond = id === "water-in-motion" ? "Open Rainbelt" : `Next: ${titles[1]}`;
-    const toThird = id === "water-in-motion" ? "Go to the Hudson" : `Next: ${titles[2]}`;
-    const heldForecast = id === "water-in-motion" ? await forecastTime.getAttribute("aria-valuetext") : null;
-    await journey.getByRole("button", { name: toSecond, exact: true }).click();
-    await expect(journey).toContainText("2 of 3");
-    await expect(page.getByRole("heading", { name: titles[1], exact: true })).toBeVisible();
-    if (id === "water-in-motion") {
-      await expect(page.getByRole("group", { name: "Rainbelt on the map" })).toBeVisible();
-      await expect(journey.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute(
-        "aria-current",
-        "step",
-      );
-      const record = page.getByRole("region", { name: "Source and time", exact: true });
-      await expect(record).toContainText("On screen while Rainbelt loads");
-      await expect(record).toContainText(heldForecast!);
-      satellite.resolve();
-      await expect(record).toContainText("Previous view");
-      await expect(record.locator("time")).toHaveCount(2);
-      await rainTime.press("ArrowLeft");
-    }
-    const heldRain = id === "water-in-motion" ? await rainTime.getAttribute("aria-valuetext") : null;
-    await journey.getByRole("button", { name: "Previous view", exact: true }).click();
-    await expect(journey).toContainText("1 of 3");
-    if (savedTime !== null) await expect(skyTime).toHaveValue(savedTime);
-    if (heldForecast) {
-      await expect(forecastTime).toHaveAttribute("aria-valuetext", heldForecast);
-      await expect(page.getByRole("group", { name: "Atmospheric River on the map" })).toBeVisible();
-    }
-    await journey.getByRole("button", { name: toSecond, exact: true }).click();
-    if (heldRain) await expect(rainTime).toHaveAttribute("aria-valuetext", heldRain);
-    if (id === "water-in-motion")
-      await expect(journey.getByRole("button", { name: toThird, exact: true })).toBeInViewport({ ratio: 1 });
-    await journey.getByRole("button", { name: toThird, exact: true }).click();
-    await expect(journey).toContainText("3 of 3");
-    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
-      true,
-    );
-    if (id === "water-in-motion")
-      await journey.getByRole("button", { name: "See the finding", exact: true }).click();
-    await page.getByRole("button", { name: "Finish journey", exact: true }).click();
-    await expect(journey).toHaveCount(0);
-    await expect(page.locator(".related-stories summary")).toBeFocused();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+test("Water in Motion keeps one canvas across its guided views and finishes in free exploration", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await tides(page);
+  await page.route("**/api/observations/river", (route) => route.abort());
+  const satellite = Promise.withResolvers<void>();
+  await page.route("https://gibs.earthdata.nasa.gov/wms/**", async (route) => {
+    await satellite.promise;
+    await route.fulfill({ path: "src/assets/story-previews/rain.webp", contentType: "image/webp" });
   });
-}
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await openStories(page, "all");
+  await startJourney(page, "water-in-motion");
+  const journey = page.getByRole("region", { name: "Current journey", exact: true });
+  await expect(journey).toContainText("1 of 3");
+  await expect(page.getByRole("heading", { name: "Atmospheric River", exact: true })).toBeVisible();
+  const forecastTime = page.getByRole("slider", { name: "Forecast valid time", exact: true });
+  const rainTime = page.getByRole("slider", { name: "Satellite estimate time", exact: true });
+  await page
+    .getByRole("combobox", { name: "Forecast", exact: true })
+    .selectOption({ label: "9 November 2026 archive" });
+  await forecastTime.press("Home");
+  await forecastTime.press("ArrowRight");
+  await page.getByRole("button", { name: "Focus the Pacific coast", exact: true }).click();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  const toSecond = "Open Rainbelt";
+  const toThird = "Go to the Hudson";
+  const heldForecast = await forecastTime.getAttribute("aria-valuetext");
+  await journey.getByRole("button", { name: toSecond, exact: true }).click();
+  await expect(journey).toContainText("2 of 3");
+  await expect(page.getByRole("heading", { name: "Rainbelt", exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Rainbelt on the map" })).toBeVisible();
+  await expect(journey.getByRole("button", { name: "Satellite", exact: true })).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+  const record = page.getByRole("region", { name: "Source and time", exact: true });
+  await expect(record).toContainText("On screen while Rainbelt loads");
+  await expect(record).toContainText(heldForecast!);
+  satellite.resolve();
+  await expect(record).toContainText("Previous view");
+  await expect(record.locator("time")).toHaveCount(2);
+  await rainTime.press("ArrowLeft");
+  const heldRain = await rainTime.getAttribute("aria-valuetext");
+  await journey.getByRole("button", { name: "Previous view", exact: true }).click();
+  await expect(journey).toContainText("1 of 3");
+  if (heldForecast) {
+    await expect(forecastTime).toHaveAttribute("aria-valuetext", heldForecast);
+    await expect(page.getByRole("group", { name: "Atmospheric River on the map" })).toBeVisible();
+  }
+  await journey.getByRole("button", { name: toSecond, exact: true }).click();
+  if (heldRain) await expect(rainTime).toHaveAttribute("aria-valuetext", heldRain);
+  await expect(journey.getByRole("button", { name: toThird, exact: true })).toBeInViewport({ ratio: 1 });
+  await journey.getByRole("button", { name: toThird, exact: true }).click();
+  await expect(journey).toContainText("3 of 3");
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  await journey.getByRole("button", { name: "See the finding", exact: true }).click();
+  await page.getByRole("button", { name: "Finish journey", exact: true }).click();
+  await expect(journey).toHaveCount(0);
+  await expect(page.locator(".related-stories summary")).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
+test("One night above Earth restores the short-phone sky and lunar survey before and after the ISS pass", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installOrbit(page);
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await openStories(page, "all");
+  await startJourney(page, "above-earth");
+  const guide = page.getByRole("region", { name: "Current journey", exact: true });
+  const earthProjection = page.getByRole("group", { name: "Sky reference projection" });
+  const skyTime = page.getByRole("slider", { name: "City local time" });
+  await expect(skyTime).toBeInViewport({ ratio: 1 });
+  await expect(page.locator("#open-moonfall")).toHaveCount(0);
+  const city = page.getByRole("combobox", { name: "City", exact: true });
+  await city.selectOption("Tokyo");
+  await skyTime.press("End");
+  await skyTime.press("ArrowLeft");
+  const time = await skyTime.getAttribute("aria-valuetext");
+  await page.getByRole("button", { name: "Directions", exact: true }).click();
+  await page.getByRole("button", { name: "Look west", exact: true }).click();
+  await expect(page.getByText(/Facing W · 270°/)).toBeVisible();
+  await earthProjection.getByRole("button", { name: "Map", exact: true }).click();
+  const toMoon = guide.getByRole("button", { name: /^(Approach the Moon|Visit Apollo 17)$/ });
+  await expect(toMoon).toBeInViewport({ ratio: 1 });
+  await toMoon.click();
+
+  const back = guide.getByRole("button", { name: "Previous view", exact: true });
+  const lunar = page.getByRole("group", { name: "Lunar projection" });
+  await lunar.getByRole("button", { name: "Landing map", exact: true }).click();
+  await page.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
+  const station = page.getByRole("combobox", { name: "Geology stop" });
+  await station.selectOption({ label: "Shorty Crater" });
+  const rover = page.getByRole("slider", { name: "Mapped distance" });
+  const distance = await rover.getAttribute("aria-valuetext");
+  await expect(page.getByText(/Your Earth view.*Tokyo/)).toBeVisible();
+  const toOrbit = guide.getByRole("button", { name: "Back to Tokyo", exact: true });
+  await expect(toOrbit).toBeInViewport({ ratio: 1 });
+  await toOrbit.click();
+
+  const pass = page.getByRole("region", { name: "Orbital Pass", exact: true });
+  await expect(city).toHaveValue("Tokyo");
+  await expect(pass.getByText(/Next predicted pass/)).toContainText(/GMT\+9|JST/);
+  const watch = guide.getByRole("button", { name: "Watch the pass", exact: true });
+  await expect(watch).toBeInViewport({ ratio: 1 });
+  await watch.click();
+  await expect(pass.getByRole("group", { name: "Orbital Pass on the horizon" })).toBeVisible();
+  const timeOfPass = pass.getByRole("slider", { name: "Predicted pass time" });
+  await timeOfPass.press("ArrowRight");
+  const heldPass = await timeOfPass.getAttribute("aria-valuetext");
+  await back.click();
+  await expect(station).toHaveValue("2");
+  await expect(rover).toHaveAttribute("aria-valuetext", distance!);
+  await expect(lunar.getByRole("button", { name: "Landing map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await back.click();
+  await expect(earthProjection.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(skyTime).toHaveAttribute("aria-valuetext", time!);
+  await expect(city).toHaveValue("Tokyo");
+  await earthProjection.getByRole("button", { name: "Local sky", exact: true }).click();
+  await expect(page.getByText(/Facing W · 270°/)).toBeVisible();
+
+  await guide.getByRole("button", { name: "ISS pass", exact: true }).click();
+  await expect(pass.getByRole("group", { name: "Orbital Pass on the horizon" })).toBeVisible();
+  await expect(timeOfPass).toHaveAttribute("aria-valuetext", heldPass!);
+  await guide.getByRole("button", { name: "See the finding", exact: true }).click();
+  await expect(pass.getByRole("heading", { name: "One horizon, two visits" })).toBeFocused();
+  await pass.getByRole("button", { name: "Finish journey", exact: true }).click();
+  await expect(guide).toHaveCount(0);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
+test("One night above Earth returns to a manually framed sky reference map @dev", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=sky&journey=above-earth&stop=0&p=map");
+  const camera = () =>
+    page.evaluate(() => {
+      const globe = (
+        window as unknown as {
+          __globe?: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+        }
+      ).__globe;
+      return globe && { ...globe.state(), projection: globe.morph() };
+    });
+  await expect.poll(async () => (await camera())?.projection).toBe(1);
+  await expect.poll(async () => (await camera())?.zoom).toBeCloseTo(1.35);
+  const original = await camera();
+  await page.locator("#globe-view").focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("+");
+  await expect.poll(camera).not.toEqual(original);
+  const framed = await camera();
+  const guide = page.getByRole("region", { name: "Current journey", exact: true });
+  await guide.getByRole("button", { name: /^(Approach the Moon|Visit Apollo 17)$/ }).click();
+  await expect(page.getByRole("slider", { name: "Mapped distance" })).toBeVisible();
+  await guide.getByRole("button", { name: "Previous view", exact: true }).click();
+  await expect.poll(camera).toEqual(framed);
+});
+
+test("One night above Earth leaves the ground track available without a visible pass", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 664 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installOrbit(page);
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=orbit&journey=above-earth&stop=2&city=Troms%C3%B8");
+  const pass = page.getByRole("region", { name: "Orbital Pass", exact: true });
+  await expect(pass.getByRole("combobox", { name: "City" })).toHaveValue("Tromsø");
+  await expect(pass.getByText(/No visible pass found in the next 48 hours/).first()).toBeVisible();
+  await expect(pass.getByRole("group", { name: "Orbital Pass on the globe" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch the pass", exact: true })).toHaveCount(0);
+  const finding = page.getByRole("button", { name: "See the finding", exact: true });
+  await expect(finding).toBeInViewport({ ratio: 1 });
+  await finding.click();
+  await expect(pass.getByRole("heading", { name: "From the city sky to orbit" })).toBeFocused();
+});
 
 test("Reading the coast keeps its comparison, model time and harbor on a short phone", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });

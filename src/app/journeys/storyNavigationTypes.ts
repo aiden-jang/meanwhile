@@ -39,6 +39,7 @@ export type StoryNavigationValue = {
   ) => void;
   previewMap: boolean;
   previewOpen: boolean;
+  moonAboveHorizon?: boolean | undefined;
   previewCity: ObservatoryProps["views"]["skyCity"]["city"];
   browsingStories: boolean;
   completed: boolean;

@@ -111,7 +111,7 @@ function ObservatoryContent({
         />
       </FixedJourneyLayout>
     );
-  return (
+  const story = (
     <section
       className="replay-region"
       aria-labelledby={tonight.active ? "local-sky-title" : undefined}
@@ -351,4 +351,5 @@ function ObservatoryContent({
       )}
     </section>
   );
+  return tonight.active ? <FixedJourneyLayout>{story}</FixedJourneyLayout> : story;
 }

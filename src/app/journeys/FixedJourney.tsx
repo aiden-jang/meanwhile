@@ -17,16 +17,24 @@ import { goldenGate, tidePorts } from "./coastRoute";
 import { riverBasins } from "../observations/riverGauges";
 import "./fixed-journey.css";
 
-type FixedJourneyId = "ice-in-motion" | "water-in-motion" | "reading-the-coast";
+type FixedJourneyId = "ice-in-motion" | "water-in-motion" | "reading-the-coast" | "above-earth";
 
 export function hasFixedJourney(id: string | undefined): id is FixedJourneyId {
-  return id === "ice-in-motion" || id === "water-in-motion" || id === "reading-the-coast";
+  return (
+    id === "ice-in-motion" || id === "water-in-motion" || id === "reading-the-coast" || id === "above-earth"
+  );
 }
 
 const coastChapters = [
   { label: "New land", path: "m2 13 7-7 2 2 5-5M5 14l4-4 2 2 5-5" },
   { label: "Passing wave", path: "M1 9h2c2.5 0 2-4 4.5-4s2 8 4.5 8 2.5-4 4-4h1" },
   { label: "Daily tide", path: "M2 7c4 0 3 5 7 5s3-5 7-5M2 11c4 0 3 5 7 5s3-5 7-5" },
+];
+
+const skyChapters = [
+  { label: "City sky", path: "M2 14c4-4 10-4 14 0M9 2v5M6.5 4.5h5M4 7v3M2.5 8.5h3" },
+  { label: "Apollo 17", path: "M14.8 12.4A6.6 6.6 0 0 1 6.4 3.5 6.4 6.4 0 1 0 14.8 12.4Z" },
+  { label: "ISS pass", path: "M3 14C7 7 10 4 16 4m-3-1-1 4m-3-2 4 1" },
 ];
 
 const chapterTitles = new Map(searchStories.map(({ id, title }) => [id, title]));
@@ -55,6 +63,19 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
   const chapters = journey.steps;
   const water = route.id === "water-in-motion";
   const coast = route.id === "reading-the-coast";
+  const sky = route.id === "above-earth";
+  const illustrated = sky ? skyChapters : coast ? coastChapters : undefined;
+  const city = navigation.previewCity.name;
+  const passCity = sky
+    ? (navigation.progressFor(route.id)?.stops.find(([index]) => index === 2)?.[1].visit.position.moment
+        ?.city ?? city)
+    : city;
+  const skyNext =
+    current === 0
+      ? navigation.moonAboveHorizon === false
+        ? "Visit Apollo 17"
+        : "Approach the Moon"
+      : `Back to ${passCity}`;
   const moving = !!route.folding;
   const previous = chapters[current - 1];
   const riverChoice = water
@@ -71,38 +92,43 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
       : harbor && harbor.id !== goldenGate.id
         ? "Return to harbor"
         : "Go to San Francisco";
-  const nextLabel = coast
-    ? coastNext
-    : water
-      ? current === 0
-        ? "Open Rainbelt"
-        : river && riverChoice !== "hudson"
-          ? `Return to the ${river}`
-          : "Go to the Hudson"
-      : next
-        ? `Next: ${chapterTitles.get(next.id)}`
-        : undefined;
-  const context = coast
-    ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
-    : water
-      ? [
-          "Same Pacific coast",
-          "A separate river gauge record",
-          "Previous view restores your satellite frame",
-        ][current]
-      : moving
-        ? "Leaving West Greenland…"
-        : [
-            "Next stop: West Greenland",
-            "Next stop: a separate iceberg record near South Georgia",
-            "Previous view restores your glacier reading",
-          ][current];
+  const nextLabel = sky
+    ? skyNext
+    : coast
+      ? coastNext
+      : water
+        ? current === 0
+          ? "Open Rainbelt"
+          : river && riverChoice !== "hudson"
+            ? `Return to the ${river}`
+            : "Go to the Hudson"
+        : next
+          ? `Next: ${chapterTitles.get(next.id)}`
+          : undefined;
+  const context = sky
+    ? ["From your sky to the lunar surface", "Return to your city horizon", `${city} · Local time`][current]
+    : coast
+      ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
+      : water
+        ? [
+            "Same Pacific coast",
+            "A separate river gauge record",
+            "Previous view restores your satellite frame",
+          ][current]
+        : moving
+          ? "Leaving West Greenland…"
+          : [
+              "Next stop: West Greenland",
+              "Next stop: a separate iceberg record near South Georgia",
+              "Previous view restores your glacier reading",
+            ][current];
   return (
     <section
       className="fixed-journey"
       aria-label="Current journey"
       data-water-step={water ? current : undefined}
       data-coast-step={coast ? current : undefined}
+      data-sky-step={sky ? current : undefined}
     >
       <div className="fixed-journey-rail">
         <div className="fixed-journey-title">
@@ -122,7 +148,7 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
                   if (index !== current && !moving) navigation.step(index);
                 }}
               >
-                {coast ? (
+                {illustrated ? (
                   <svg
                     viewBox="0 0 18 18"
                     fill="none"
@@ -130,12 +156,12 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
                     strokeWidth="1.5"
                     aria-hidden="true"
                   >
-                    <path d={coastChapters[index]!.path} />
+                    <path d={illustrated[index]!.path} />
                   </svg>
                 ) : (
                   <span aria-hidden="true">{!water && index + 1}</span>
                 )}
-                {coast ? coastChapters[index]!.label : water ? waterLabels[index] : chapterTitles.get(id)}
+                {illustrated?.[index]?.label ?? (water ? waterLabels[index] : chapterTitles.get(id))}
               </button>
             </li>
           ))}
@@ -182,6 +208,8 @@ export function FixedJourneyEnding({
   title,
   children,
   finishFocus,
+  playLabel = "Watch the breakup",
+  playingLabel = "Watching the breakup…",
 }: {
   journey: FixedJourneyId;
   canRead: boolean;
@@ -191,6 +219,8 @@ export function FixedJourneyEnding({
   title: string;
   children: ReactNode;
   finishFocus: string;
+  playLabel?: string;
+  playingLabel?: string;
 }) {
   const navigation = useStoryNavigation();
   const target = useContext(EndingTarget);
@@ -224,7 +254,7 @@ export function FixedJourneyEnding({
               } else setShown(true);
             }}
           >
-            {canRead ? "See the finding" : playing ? "Watching the breakup…" : "Watch the breakup"}
+            {canRead ? "See the finding" : playing ? playingLabel : playLabel}
           </button>,
           target,
         )}

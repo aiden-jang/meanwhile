@@ -2,7 +2,7 @@ import type { CameraState } from "../../globe/controlsTypes";
 import { ShareMoment } from "../observations/StorySession";
 import { skyPosition, skyStoryMoment, type SkyPosition } from "./skyMoment";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
-import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   aimAt,
   localNight,
@@ -23,9 +23,8 @@ import { MeteorNights } from "./MeteorNights";
 import { SkyObjects } from "./SkyObjects";
 import { skyDirection, skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
-import { moonfallShare } from "../moonfall/moonfallShare";
+import { TonightMoonfall } from "./TonightMoonfall";
 const MINUTE = 60_000;
-const Moonfall = lazy(() => import("../moonfall/Moonfall").then(({ Moonfall }) => ({ default: Moonfall })));
 function depart(view: TonightView, camera?: CameraState) {
   const moon = view.bodies[0]!;
   const origin: LunarDeparture = {
@@ -82,7 +81,9 @@ export function TonightSky({
     if (mode === "sky" && returnSky?.city.name === city.name) return skyPosition(returnSky, false, false);
     return initialPosition?.city === city.name ? initialPosition : undefined;
   }, [mode, returnSky, city.name, initialPosition]);
-  const entries = useStoryNavigation()?.library.saved;
+  const navigation = useStoryNavigation();
+  const guided = navigation?.route?.id === "above-earth";
+  const entries = navigation?.library.saved;
   const night = useMemo(() => {
     const at = initial?.at ?? openedAt;
     const candidate = localNight(city, initial?.nightStart ?? at);
@@ -176,8 +177,10 @@ export function TonightSky({
     });
   };
   useLayoutEffect(() => {
-    if (departure) document.getElementById("moonfall-back")?.focus({ preventScroll: true });
-  }, [departure]);
+    if (!departure) return;
+    document.getElementById("moonfall-back")?.focus({ preventScroll: true });
+    if (guided) onView(departure.aim);
+  }, [departure, guided, onView]);
   useObservatoryEscape(departure ? returnToSky : onClose);
   function approachMoon() {
     const flight = depart(current, projection.map ? readCamera() : undefined);
@@ -185,30 +188,22 @@ export function TonightSky({
     onJourney(flight.aim);
   }
 
-  if (departure) {
+  if (departure)
     return (
-      <>
-        <div className="tonight-heading" data-moonfall-panel="">
-          <h2 id="local-sky-title">Moonfall</h2>
-          <div className="observatory-actions tonight-back">
-            <button type="button" id="moonfall-back" onClick={returnToSky}>
-              {initialMode === "moonfall" ? returnLabel : "Back to Tonight’s Sky"}
-            </button>
-          </div>
-        </div>
-        <Suspense fallback={<p role="status">Loading the lunar survey…</p>}>
-          <Moonfall sky={departure.aim} onView={onView} resume={initial?.lunar} />
-        </Suspense>
-        {view?.moonfall && (
-          <ShareMoment
-            current={() => skyStoryMoment("moonfall", skyPosition(view, false, false))}
-            share={moonfallShare}
-          />
-        )}
-        <ExperienceEnding id="moonfall" />
-      </>
+      <TonightMoonfall
+        aim={departure.aim}
+        resume={initial?.lunar}
+        view={view}
+        onView={onView}
+        label={initialMode === "moonfall" ? returnLabel : "Back to Tonight’s Sky"}
+        onReturn={returnToSky}
+        earthView={
+          guided
+            ? `${departure.previous.city.name} · ${format.local.format(departure.previous.at)}`
+            : undefined
+        }
+      />
     );
-  }
   return (
     <>
       <div className="tonight-heading">
@@ -219,7 +214,7 @@ export function TonightSky({
           </button>
         </div>
       </div>
-      {mode === "sky" && !observing && (
+      {mode === "sky" && !observing && !guided && (
         <section className="tonight-invitation" aria-label="Start observing">
           <h3>
             {arrivalCity
@@ -274,7 +269,7 @@ export function TonightSky({
           </div>
         </section>
       )}
-      {mode === "sky" && (
+      {mode === "sky" && !guided && (
         <div className="tonight-moonfall-entry">
           <button type="button" id="open-moonfall" onClick={approachMoon}>
             <strong>{current.bodies[0]!.altitude > 0 ? "Approach the Moon" : "Visit Apollo 17"}</strong>
@@ -299,7 +294,7 @@ export function TonightSky({
         />
       ) : (
         <>
-          <StoryDock label="Tonight’s Sky time" deferOnShortPhone={!observing}>
+          <StoryDock label="Tonight’s Sky time" deferOnShortPhone={!observing && !guided}>
             <div className="tonight-time">
               <div className="tonight-clock">
                 <label htmlFor={rangeId}>City local time</label>

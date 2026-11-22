@@ -8,6 +8,7 @@ export interface JourneyArrival {
   map: boolean;
   crossing?: boolean | undefined;
   keepForecast?: boolean | undefined;
+  skyDeparture?: boolean | undefined;
   pose?: CameraState | undefined;
   float?: FloatCheckpoint | undefined;
   floatState?: FloatRestore | undefined;

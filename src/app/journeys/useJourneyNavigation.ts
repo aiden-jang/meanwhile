@@ -134,7 +134,16 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       if (!route || route.folding || index === route.step || !next || inputs.unavailable(next.id)) return;
       const revisit = stops.current.has(index);
       const here = capture();
-      const stop = connectedArrival(stops.current, route.step, index, next.id, inputs.current(), here);
+      const visit = inputs.current();
+      const stop = connectedArrival(stops.current, route.step, index, next.id, visit, here);
+      if (route.id === "above-earth" && !revisit) {
+        const sky = stops.current.get(0)?.visit.position.sky ?? visit?.position.sky;
+        if (next.id === "moonfall" && sky && !sky.lunar) {
+          stop.visit.position.sky = sky;
+          stop.arrival.skyDeparture = inputs.active === "sky";
+          stop.arrival.map = false;
+        }
+      }
       if (selected?.id === next.id) stop.visit = selected;
       const connected = !!activeRoute?.guide || revisit;
       const iceCrossing = route.id === "ice-in-motion" && next.id === "iceberg";

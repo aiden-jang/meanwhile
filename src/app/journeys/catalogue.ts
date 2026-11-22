@@ -68,6 +68,7 @@ export const journeys: readonly Journey[] = [
   {
     id: "above-earth",
     title: "One night above Earth",
+    guide: ["Calculated city sky", "Apollo 17 rover route", "Predicted ISS pass"],
     summary: "Your sky, the lunar surface, and a satellite passing overhead.",
     ending: "The sky changes with your city and time. Return on another night to compare it.",
     steps: [

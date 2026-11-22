@@ -71,7 +71,12 @@ export function useSkyView(city: string, before: () => void, story?: StoryMoment
       setOrbit(saved.orbit);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
-    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null, nightfall = false) {
+    open(
+      mode: Entry["mode"] = "sky",
+      resume?: VisitPosition["sky"] | null,
+      nightfall = false,
+      origin?: TonightView | null,
+    ) {
       setOrbit(!!resume?.orbit);
       const previous = memory.current;
       setEntry((last) => ({
@@ -84,7 +89,7 @@ export function useSkyView(city: string, before: () => void, story?: StoryMoment
             ? skyPosition(previous, false, false)
             : undefined),
       }));
-      setView("opening");
+      setView(origin ?? "opening");
     },
   };
 }

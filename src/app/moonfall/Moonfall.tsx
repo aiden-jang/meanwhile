@@ -31,6 +31,7 @@ export function Moonfall({
         if (abort.signal.aborted) return;
         created = createMoonfall(survey, matchMedia(motion).matches);
         if (resume) {
+          created.skip();
           created.select(resume.eva);
           created.project(resume.mapped, true);
           if (resume.station !== null) created.stopAt(resume.station);

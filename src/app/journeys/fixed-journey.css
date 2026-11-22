@@ -327,7 +327,7 @@
   --journey-accent: #9ddbd4;
 }
 
-.fixed-journey[data-coast-step] .fixed-journey-rail svg {
+.fixed-journey:is([data-coast-step], [data-sky-step]) .fixed-journey-rail svg {
   width: 18px;
   height: 18px;
   flex: none;
@@ -335,7 +335,7 @@
   stroke-linejoin: round;
 }
 
-.fixed-journey[data-coast-step] .fixed-journey-rail [aria-current="step"] svg {
+.fixed-journey:is([data-coast-step], [data-sky-step]) .fixed-journey-rail [aria-current="step"] svg {
   color: var(--journey-accent);
 }
 
@@ -425,5 +425,78 @@
 
   .frame[data-presentation="observe"] .zones:has(.fixed-journey):has(.coast-survey) {
     grid-template-rows: clamp(112px, 27dvh, 215px) minmax(0, 1fr);
+  }
+}
+
+.fixed-journey[data-sky-step="0"] {
+  --journey-accent: #b9d8ee;
+}
+
+.fixed-journey[data-sky-step="1"] {
+  --journey-accent: #ead1a9;
+}
+
+.fixed-journey[data-sky-step="2"] {
+  --journey-accent: #a9e1d8;
+}
+
+.night-earth-view {
+  margin: 0;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.night-earth-view span {
+  display: block;
+  margin-block-end: 3px;
+  color: var(--color-ink);
+}
+
+@media (max-width: 599px) {
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey[data-sky-step]):has(.replay-sidebar) {
+    grid-template-rows: clamp(110px, 27dvh, 245px) minmax(0, 1fr);
+  }
+
+  .zones:has(.fixed-journey[data-sky-step]) .observatory-intro[data-tonight] {
+    gap: 8px;
+    padding-block-start: 12px;
+  }
+
+  .zones:has(.fixed-journey[data-sky-step]) .tonight-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .zones:has(.fixed-journey[data-sky-step]) .tonight-heading .tonight-back {
+    order: 0;
+  }
+
+  .zones:has(.fixed-journey[data-sky-step]) .tonight-heading h2 {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
+  .night-earth-view span {
+    display: inline;
+    margin-inline-end: 5px;
+  }
+
+  .fixed-journey[data-sky-step] .fixed-journey-rail svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (min-width: 900px) {
+  .zones:has(.fixed-journey[data-sky-step]):has(.story-dock)
+    .observatory-stage
+    :is(.tonight-compass, .moonfall-stage-readout) {
+    inset-block-end: calc(var(--story-dock-height, 0px) + var(--journey-footer-height) + 24px);
+  }
+
+  .zones:has(.fixed-journey[data-sky-step]) .orbital-pass .stage-ident {
+    inset-inline-end: calc(var(--stage-inset) + 340px);
+    justify-content: start;
   }
 }

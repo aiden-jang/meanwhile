@@ -12,16 +12,19 @@ import { StoryLoading } from "../StoryLoading";
 import { useStoryClock } from "../earth-stories/useStoryClock";
 import { ReplayPanel, type ReplayProps } from "./RecordedReplay";
 import { observations } from "./catalogue";
+import { noVisiblePass, orbitPassWindow, OrbitPassSchedule } from "./OrbitPassSchedule";
 import { StoryDock } from "./StoryDock";
 import { StoryProjection } from "./StoryProjection";
 import { useStorySession } from "./StorySession";
 import { TimelineCues } from "./TimelineCues";
 import { useObservationData } from "./useObservationData";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { NightPassFinding } from "../journeys/NightPassFinding";
+import { orbitTime, nearestOrbitFrame as nearest } from "./orbitReadings";
 import { useSkyReturn } from "./useSkyReturn";
 import type { ObservationData, ObservationView } from "./types";
 
 const meta = observations.orbit;
-const minute = 60_000;
 const passClock = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
   month: "short",
@@ -32,18 +35,16 @@ const passClock = new Intl.DateTimeFormat("en-GB", {
   hourCycle: "h23",
 });
 const passTime = (at: number) => `${passClock.format(at)} UTC`;
-const nearest = (data: ObservationData, at: number) =>
-  data.frames.reduce(
-    (best, frame, i) => (Math.abs(frame.at - at) < Math.abs(data.frames[best]!.at - at) ? i : best),
-    0,
-  );
 
 export function OrbitalPass({ city, ...panel }: ReplayProps & { city: SkyCityPreference }) {
   const source = useObservationData(orbit, city.name);
   const { initial } = useStorySession();
+  const guided = useStoryNavigation()?.route?.id === "above-earth";
   useReportStorySource("orbit", source.state, source.retry);
   if (source.data)
-    return <PassPlayer key={city.name} {...panel} city={city} data={source.data} source={source} />;
+    return (
+      <PassPlayer key={city.name} {...panel} city={city} data={source.data} source={source} guided={guided} />
+    );
 
   return (
     <ReplayPanel
@@ -68,6 +69,13 @@ export function OrbitalPass({ city, ...panel }: ReplayProps & { city: SkyCityPre
         </div>
       )}
       {initial?.at !== undefined && <p className="observation-note">Waiting for current orbital elements.</p>}
+      {guided && (
+        <NightPassFinding
+          city={city.name}
+          ready={source.state !== "loading"}
+          hasPass={source.state === "loading"}
+        />
+      )}
     </ReplayPanel>
   );
 }
@@ -88,17 +96,21 @@ function PassPlayer({
   data,
   city,
   source,
+  guided,
   onView,
   ...panel
 }: ReplayProps & {
   data: ObservationData;
   city: SkyCityPreference;
   source: ReturnType<typeof useObservationData>;
+  guided: boolean;
 }) {
   const { initial, remember } = useStorySession();
   const { onMap } = panel;
   const [horizon, setHorizon] = useState(initial?.chapter === "horizon" && !panel.map);
   const [watching, setWatching] = useState(false);
+  const [watched, setWatched] = useState(initial?.chapter === "horizon");
+  const timeOf = useMemo(() => (guided ? orbitTime(city.city.zone) : passTime), [city.city.zone, guided]);
   const [ready, setReady] = useState(false);
   const [skyReady, setSkyReady] = useState(false);
   const [start] = useState(() => (initial?.at !== undefined ? nearest(data, initial.at) : 0));
@@ -118,7 +130,7 @@ function PassPlayer({
   const clock = useStoryClock(frames.length, start, waiting, !!initial?.at, false, 22_000, pace);
   const index = Math.floor(clock.position);
   const frame = frames[index] ?? frames[0]!;
-  const time = passTime(frame.at);
+  const time = timeOf(frame.at);
   const arrive = useCallback(() => setReady(true), []);
   const arriveSky = useCallback(() => setSkyReady(true), []);
   const inSky = horizon && !panel.map;
@@ -198,6 +210,8 @@ function PassPlayer({
   };
   const watch = () => {
     if (!pass) return;
+    setWatched(true);
+    if (guided) aimSky(undefined);
     if (!inSky) skyReturn.capture(frame.at);
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (inSky || reduced) {
@@ -210,6 +224,7 @@ function PassPlayer({
       clock.playFrom(lead);
     }
   };
+  const summary = pass ? `Next predicted pass · ${orbitPassWindow(pass, timeOf)}` : noVisiblePass(city.name);
   const cues = pass
     ? [
         { index: appearance, label: "Appearance" },
@@ -234,7 +249,7 @@ function PassPlayer({
       horizon={inSky}
       title={meta.title}
       location={inSky ? `Local sky · ${city.name}` : city.name}
-      subtitle={meta.description}
+      subtitle={guided ? summary : meta.description}
       status={status}
       sources={<OrbitSource note={data.note} />}
       inset={
@@ -253,6 +268,7 @@ function PassPlayer({
         <StoryProjection
           map={panel.map}
           globeActive={!inSky && !panel.map}
+          showEarth={!guided || !inSky}
           onMap={(map) => (inSky ? toEarth(map) : onMap(map))}
         >
           <button
@@ -268,7 +284,7 @@ function PassPlayer({
               }
             }}
           >
-            {inSky ? "Back to Earth" : "Local sky"}
+            {inSky ? (guided ? "Ground track" : "Back to Earth") : "Local sky"}
           </button>
           {inSky && (
             <button
@@ -304,25 +320,14 @@ function PassPlayer({
           </button>
         </p>
       )}
-      {pass ? (
-        <>
-          <div className="observatory-actions">
-            <button
-              type="button"
-              className="iss-watch"
-              disabled={watching || source.state === "failed"}
-              onClick={watch}
-            >
-              Watch the next pass
-            </button>
-          </div>
-          <p className="observation-note">
-            Visible from {passTime(pass.appearance)} for about{" "}
-            {(pass.disappearance - pass.appearance) / minute} min.
-          </p>
-        </>
-      ) : (
-        <p className="observation-note">No visible pass found in the next 48 hours for {city.name}.</p>
+      {!guided && (
+        <OrbitPassSchedule
+          city={city.name}
+          pass={pass}
+          timeOf={timeOf}
+          disabled={watching || source.state === "failed"}
+          watch={watch}
+        />
       )}
       <StoryDock>
         <div className="story-time">
@@ -363,10 +368,20 @@ function PassPlayer({
               onClick={() => seek(cue.index)}
             >
               <strong>{cue.label}</strong>
-              <small>{passTime(frames[cue.index]!.at)}</small>
+              <small>{timeOf(frames[cue.index]!.at)}</small>
             </button>
           ))}
         </div>
+      )}
+      {guided && (
+        <NightPassFinding
+          city={city.name}
+          ready
+          hasPass={!!pass && source.state !== "failed"}
+          watched={watched}
+          watching={watching}
+          watch={watch}
+        />
       )}
       <dl className="observation-values">
         {frame.measurements?.map(({ label, value }) => (
