@@ -112,7 +112,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   });
   function rememberOrigin(trigger: string) {
     const collection = captureCollection(trigger);
-    const fromStory = trigger.startsWith("related-story-") || trigger === "open-find-in-story";
+    const fromStory = trigger.startsWith("related-story-") || trigger === "open-observatory-find";
     if (!collection && !fromStory && (active !== null || origin.current)) return;
     const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
     origin.current = {
@@ -260,11 +260,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     return true;
   }
   function showCatalogue(focusSearch = false, entry?: string) {
-    panelReturn.cancel();
-    previewOrigin.current = null;
-    setPreviewOpen(false);
-    origin.current = null;
-    journey.leave();
+    leaveStory();
     const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
     props.views.navigation.requestExploreFocus(focus);
     if (focusSearch) {
@@ -279,6 +275,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       focus,
       fallback: "explorer-stories-tab",
     });
+  }
+  function leaveStory() {
+    panelReturn.cancel();
+    previewOrigin.current = null;
+    setPreviewOpen(false);
+    origin.current = null;
+    journey.leave();
   }
   const toured = useRef(false);
   const restoreTour = useRef(returnToBrowse);
@@ -336,18 +339,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             : undefined),
         browse: showCatalogue,
         explore() {
-          if (props.views.depthFocus?.archiveReading)
-            return props.onDepthNearby(props.views.depthFocus.archiveReading);
-          if (active !== null && origin.current?.route.origin.presentation === "explore" && returnToBrowse())
-            return;
-          panelReturn.cancel();
-          previewOrigin.current = null;
-          setPreviewOpen(false);
-          origin.current = null;
-          journey.leave();
-          props.views.navigation.requestExploreFocus(`explorer-${props.views.browser.pane}-tab`);
-          props.views.browser.show(props.views.browser.pane);
-          props.onExplore(!props.views.landing);
+          props.explorePaths.resume();
+          leaveStory();
+        },
+        findTarget(target) {
+          props.explorePaths.find(target);
+          leaveStory();
         },
         openRadar(at, map, trigger = "open-explorer-radar") {
           rememberOrigin(trigger);

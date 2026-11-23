@@ -10,6 +10,7 @@ import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { usePlaceInspection } from "./app/discovery/usePlaceInspection";
 import { explorerEntrances, useExplorerHistory, useExplorerView } from "./app/useExplorerView";
+import { explorerReadings } from "./app/explorerReadings";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
@@ -366,7 +367,23 @@ export function App(): JSX.Element {
     () => (selected ? feed.store.get(selected)?.primary : null) ?? camera.current,
     setSinkOn,
   );
-  useExplorerHistory(explorerView, observatory, archiveState, () => stopTour(), globeCamera, lastWritten);
+  const place = usePlaceInspection(setRailOpen, shared.radarPlace);
+  const readings = explorerReadings(
+    mapLayers,
+    place,
+    [selected, setSelected],
+    [markId, setMarkId],
+    [sectionLine, setSectionLine],
+  );
+  useExplorerHistory(
+    explorerView,
+    observatory,
+    archiveState,
+    () => stopTour(),
+    globeCamera,
+    lastWritten,
+    readings,
+  );
   useSharedLocation({
     feed,
     filters,
@@ -459,21 +476,10 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  const entrances = explorerEntrances(
-    explorerView,
-    observatory,
-    globeCamera,
-    stopTour,
-    () => {
-      setSelected(null);
-      setMarkId(null);
-      setSectionLine(null);
-    },
-    () => {
-      if (archived || archiveBusy) backToLive();
-      setScrub(LIVE);
-    },
-  );
+  const entrances = explorerEntrances(explorerView, observatory, globeCamera, stopTour, readings, () => {
+    if (archived || archiveBusy) backToLive();
+    setScrub(LIVE);
+  });
   const closeReading = (kind: "quake" | "hazard" | "section") =>
     closeDetail(kind, () => {
       if (kind === "quake") setSelected(null);
@@ -786,7 +792,6 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const railShown = !observatory.observing && railOpen;
   useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
-  const place = usePlaceInspection(setRailOpen, shared.radarPlace);
   const placePin = explorerView.nearby?.record ?? place.point;
   const headShown = observatory.observing || headOpen || chromeFloats;
 
@@ -986,15 +991,8 @@ export function App(): JSX.Element {
     onScene: chooseEarthScene,
     onHome: returnHome,
     onExplore: entrances.open,
-    onDepthNearby: entrances.nearby,
-    onPickDate: () => {
-      entrances.open(true);
-      mapLayers.inspect("earthquakes");
-      observatory.browser.show("layers");
-      requestAnimationFrame(() =>
-        document.querySelector<HTMLElement>("#archive-day, #archive-return")?.focus(),
-      );
-    },
+    explorePaths: entrances,
+    onPickDate: entrances.pickDate,
     aurora: overflight,
     views: observatory,
     radar: observatory.radar,

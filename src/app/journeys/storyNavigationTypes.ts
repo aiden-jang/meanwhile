@@ -5,6 +5,7 @@ import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import type { CollectionPosition } from "../visitor/collectionReturn";
 import type { useJourneyNavigation } from "./useJourneyNavigation";
+import type { ExploreTarget } from "../visitor/observatorySearch";
 
 export interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
@@ -29,6 +30,7 @@ export type StoryNavigationValue = {
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
   explore: () => void;
+  findTarget: (target: ExploreTarget) => void;
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;

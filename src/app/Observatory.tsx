@@ -59,7 +59,7 @@ function ObservatoryContent({
   onScene,
   onHome,
   onExplore,
-  onDepthNearby,
+  explorePaths,
   tour,
 }: ObservatoryProps): JSX.Element {
   const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
@@ -119,7 +119,7 @@ function ObservatoryContent({
         select={views.selectDepth}
         onHome={onHome}
         projection={observations}
-        onNearby={() => onDepthNearby(depthRecord)}
+        onNearby={() => explorePaths.nearby(depthRecord)}
       />
     );
   if (observations.entry)

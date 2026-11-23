@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { FindInStory } from "./visitor/FindInStory";
+import { FindObservatory } from "./visitor/FindObservatory";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { SavedBoundary, SavedPanel } from "./visitor/SavedBoundary";
 import "./header-navigation.css";
@@ -11,16 +11,28 @@ const warmCollection = () => {
 };
 const SavedCollection = lazy(() => loadCollection().then((module) => ({ default: module.SavedCollection })));
 
+const playingSelector =
+  ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing], #radar-layer-controls:not([hidden]) .story-playback:not([data-playback-start])";
+
 export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
   const [opened, setSaved] = useState(false);
   const [find, setFind] = useState(false);
   const findTrigger = useRef<HTMLButtonElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const heldPlayback = useRef<HTMLButtonElement | undefined>();
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
-  const findOverlay = exploring || navigation.active !== null;
   const saved = opened || !!navigation.restoredCollection;
+  const closeFind = () => {
+    const playback = heldPlayback.current;
+    heldPlayback.current = undefined;
+    setFind(false);
+    requestAnimationFrame(() => {
+      if (playback?.isConnected && !playback.disabled && !playback.matches(playingSelector)) playback.click();
+      findTrigger.current?.focus({ preventScroll: true });
+    });
+  };
   const close = () => {
     document.querySelector<HTMLDialogElement>("#saved-observations")?.close();
     navigation.dismissRestoration();
@@ -33,8 +45,8 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         type="button"
         className="header-navigation-action header-explore"
         aria-label="Explore"
-        aria-current={exploring ? "location" : undefined}
-        aria-description="Explore the globe or return to your previous Explore view"
+        aria-current={exploring && !navigation.browsingStories ? "location" : undefined}
+        aria-description="Return to your last free-explore view"
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
@@ -59,21 +71,18 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         type="button"
         className="header-navigation-action header-find"
         ref={findTrigger}
-        id="open-find-in-story"
-        aria-label="Find a story"
-        aria-expanded={findOverlay ? find : undefined}
-        aria-haspopup={findOverlay ? "dialog" : undefined}
+        id="open-observatory-find"
+        aria-label="Find"
+        aria-expanded={find}
+        aria-haspopup="dialog"
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
-          if (findOverlay) {
-            document
-              .querySelector<HTMLButtonElement>(
-                ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing], #radar-layer-controls:not([hidden]) .story-playback:not([data-playback-start])",
-              )
-              ?.click();
-            setFind(true);
-          } else navigation.browse(true);
+          heldPlayback.current = Array.from(
+            document.querySelectorAll<HTMLButtonElement>(playingSelector),
+          ).find((button) => !button.disabled && !!button.getClientRects().length);
+          heldPlayback.current?.click();
+          setFind(true);
         }}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -100,16 +109,19 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         <span>Saved</span>
       </button>
       {find && (
-        <FindInStory
+        <FindObservatory
           unavailable={navigation.unavailable}
-          onClose={() => {
+          onClose={closeFind}
+          explore={(target) => {
+            heldPlayback.current = undefined;
             setFind(false);
-            requestAnimationFrame(() => findTrigger.current?.focus({ preventScroll: true }));
+            navigation.findTarget(target);
           }}
           open={(id) => {
+            if (id === navigation.active) return closeFind();
+            heldPlayback.current = undefined;
             setFind(false);
-            if (id !== navigation.active) navigation.open(id, "open-find-in-story");
-            else findTrigger.current?.focus({ preventScroll: true });
+            navigation.open(id, "open-observatory-find");
           }}
         />
       )}

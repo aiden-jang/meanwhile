@@ -72,15 +72,95 @@ test("dismissing Find restores the story without changing the sky time", async (
   const time = page.getByRole("slider", { name: "City local time", exact: true });
   await time.press("End");
   const selected = await time.inputValue();
-  const find = page.getByRole("button", { name: "Find a story", exact: true });
+  const find = page.getByRole("button", { name: "Find", exact: true });
   await find.click();
-  const search = page.getByRole("searchbox", { name: "Search all stories" });
+  const search = page.getByRole("searchbox", { name: "Search places, stories and layers" });
   await search.fill("Tonga");
   await expect(page.getByRole("dialog").getByRole("button", { name: /Tonga’s shockwave/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(search).toHaveCount(0);
   await expect(time).toHaveValue(selected);
   await expect(find).toBeFocused();
+});
+
+test("Find holds a playing story and resumes it when dismissed", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=tonga");
+  const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+  const follow = story.getByRole("button", { name: "Follow the wave", exact: true });
+  const play = story.getByRole("button", { name: "Play", exact: true });
+  const pause = story.getByRole("button", { name: "Pause", exact: true });
+  await follow.click();
+  await play.click();
+  await expect(pause).toBeVisible();
+  const find = page.getByRole("button", { name: "Find", exact: true });
+  await find.click();
+  const dialog = page.getByRole("dialog", { name: "Find", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(story.locator("button.story-playback")).toHaveAttribute("data-playback-start", "true");
+  await dialog.getByRole("button", { name: "Close Find", exact: true }).click();
+  await expect(pause).toBeVisible();
+  await expect(find).toBeFocused();
+});
+
+test("Find goes directly to places and layers, while Explore and Back restore their own views", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&at=-74,40,1");
+  const button = (name: string) => page.getByRole("button", { name, exact: true });
+  const find = button("Find");
+  const dialog = page.getByRole("dialog", { name: "Find", exact: true });
+  const search = dialog.getByRole("searchbox", { name: "Search places, stories and layers" });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const place = page.getByRole("heading", { name: "Around Tokyo", exact: true });
+  await find.click();
+  await expect(search).toBeFocused();
+  await search.fill("Tokyo");
+  await expect(
+    dialog.getByRole("region", { name: "Places", exact: true }).getByRole("button", {
+      name: "Tokyo",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await search.press("Enter");
+  await expect(place).toBeFocused();
+  await button("Map").click();
+  const camera = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
+  await expect.poll(camera).toBe("139.65,35.68,2.2");
+  const layerPreferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
+  await find.click();
+  await search.fill("Storm Radar");
+  await dialog
+    .getByRole("region", { name: "Layers", exact: true })
+    .getByRole("button", {
+      name: "Storm radar",
+      exact: true,
+    })
+    .click();
+  await expect(page.getByRole("heading", { name: "Storm radar", exact: true })).toBeFocused();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBe(layerPreferences);
+  await page.goBack();
+  await expect(place).toBeVisible();
+  await expect(find).toBeFocused();
+  await expect.poll(camera).toBe("139.65,35.68,2.2");
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  const catalogue = page.getByRole("searchbox", { name: "Find a story", exact: true });
+  await catalogue.fill("Tonga");
+  const result = page.locator("#search-story-tonga");
+  await result.click();
+  await button("Back to stories").click();
+  await expect(result).toBeFocused();
+  await expect(catalogue).toHaveValue("Tonga");
+  await result.click();
+  await button("Explore").click();
+  await expect(place).toBeVisible();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  await expect.poll(camera).toBe("139.65,35.68,2.2");
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
 test("Comet Return restores the flat map and archive time after a local sky visit", async ({ page }) => {

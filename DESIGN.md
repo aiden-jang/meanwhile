@@ -425,9 +425,13 @@ The compact two-line wordmark returns to the invitation. The globe stage carries
 and scene-specific reference where space allows. Phone and short-height layouts prioritize the
 reachable controls and source disclosure.
 
-The landing’s Browse stories opens Explore’s Stories catalogue. The header’s Find action opens the catalogue
-from the landing and searches over the current layer, pinned event or story elsewhere. Dismissing Find restores
-header focus and the underlying view. Older catalogue links also resolve to Explore. Its Earth, Below the Surface and After Dark diagrams filter
+The landing’s Browse stories opens Explore’s Stories catalogue. Find uses the same dialog across the
+landing, Explore and stories. It groups the existing featured cities, stories and layers. City results
+open nearby readings and layer results open their full inspectors. Dismissing Find restores header focus
+and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.
+Header Explore restores the last free-explore camera, projection and reading in this session. Contextual
+Back returns to the story, panel or reading that opened the current view.
+Older catalogue links also resolve to Explore. Its Earth, Below the Surface and After Dark diagrams filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
 The landing diagrams are direct entrances. Earth opens the live Layers panel with the current
 camera and layer preferences. Explore the globe gives the canvas the full space and keeps Layers

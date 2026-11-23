@@ -11,6 +11,7 @@ import { refreshAnnotations } from "../../globe/annotationInput";
 import { DeviceLocation } from "../location/DeviceLocation";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { geographicCoordinates } from "../../globe/orbitReadout";
+import type { ExplorePoint } from "./usePlaceInspection";
 
 type Coordinates = { lon: number; lat: number };
 
@@ -103,7 +104,7 @@ export function PlaceInspection({
   onRewind,
   ...props
 }: PlaceContextProps & {
-  point: Coordinates;
+  point: ExplorePoint;
   close: () => void;
   selectQuake: (id: string) => void;
   selectHazard: (id: string) => void;
@@ -117,7 +118,9 @@ export function PlaceInspection({
     <section className="place-context place-inspection" aria-labelledby="place-title">
       <header>
         <div>
-          <h2 id="place-title">Around this point</h2>
+          <h2 id="place-title" tabIndex={-1}>
+            {point.name ? `Around ${point.name}` : "Around this point"}
+          </h2>
           <p role="status" className="place-coordinates">
             {coordinates}
           </p>

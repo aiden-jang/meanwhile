@@ -8,7 +8,7 @@ export function useObservatoryEscape(onClose: () => void, enabled = true) {
       if (event.target instanceof Element && event.target.closest("[data-open-compass]")) return;
       if (
         document.querySelector(
-          "#saved-observations, #find-in-story, [data-feed-popover]:popover-open, [data-view-popover]:popover-open",
+          "#saved-observations, #observatory-find, [data-feed-popover]:popover-open, [data-view-popover]:popover-open",
         )
       )
         return;

@@ -25,7 +25,9 @@ export function captureHistoryPanel(): HistoryPanel {
   return {
     scrollTarget,
     scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
-    focus: document.activeElement?.id ?? "",
+    focus: document.activeElement?.closest("#observatory-find")
+      ? "open-observatory-find"
+      : (document.activeElement?.id ?? ""),
     query: document.querySelector<HTMLInputElement>("#story-search-input")?.value ?? "",
   };
 }

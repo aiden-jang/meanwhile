@@ -131,8 +131,9 @@ test("scenes preserve existing preferences and shared event links open the explo
   await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
-  await page.getByRole("button", { name: "Find a story", exact: true }).click();
-  await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Find", exact: true }).click();
+  await expect(page.getByRole("searchbox", { name: "Search places, stories and layers" })).toBeFocused();
+  await page.keyboard.press("Escape");
   await selectScene(page, "After Dark");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();

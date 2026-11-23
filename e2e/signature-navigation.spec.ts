@@ -36,10 +36,10 @@ for (const width of [320, 390, 1440]) {
     await expect(legal.getByRole("link", { name: "Privacy" })).toBeInViewport();
     await expect(legal.getByRole("link", { name: "Terms" })).toBeInViewport();
     await openLayer(page, "Earthquakes");
-    const find = page.getByRole("button", { name: "Find a story", exact: true });
+    const find = page.getByRole("button", { name: "Find", exact: true });
     await find.click();
-    const dialog = page.getByRole("dialog", { name: "Find a story", exact: true });
-    const search = dialog.getByRole("searchbox", { name: "Search all stories", exact: true });
+    const dialog = page.getByRole("dialog", { name: "Find", exact: true });
+    const search = dialog.getByRole("searchbox", { name: "Search places, stories and layers", exact: true });
     await expect(search).toBeFocused();
     await search.fill("Tonga");
     await expect(dialog.getByRole("button", { name: "Tonga’s shockwave", exact: true })).toBeVisible();
