@@ -239,7 +239,8 @@
 
   .float-profile-heading,
   .float-profile-inspect,
-  .float-profile > p {
+  .float-profile > p,
+  .float-profile-share {
     grid-column: 1 / -1;
   }
 

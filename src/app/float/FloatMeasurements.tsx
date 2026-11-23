@@ -198,7 +198,7 @@ export function FloatMeasurements({
         </div>
       </div>
       {inlineTransport ? playback : createPortal(playback, document.querySelector(".zones")!)}
-      <FloatProfile view={view} />
+      <FloatProfile view={view} map={map} />
       <p className="sr-only" role="status">
         {stage === "notice" ? `Ascent complete. ${takeaway.finding.heading} ${takeaway.finding.reading}` : ""}
       </p>

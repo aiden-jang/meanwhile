@@ -194,14 +194,13 @@ for (const width of [1440, 390])
     if (process.env["EIF_CAPTURE_UI"]) {
       await page.locator(".float-profile").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-profile-${width}.png` });
+      if (width === 1440) await dive.locator(".float-takeaway").scrollIntoViewIfNeeded();
+      if (width === 1440)
+        await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-ending-${width}.png` });
     }
-    await page.getByRole("button", { name: "Close measured profile", exact: true }).click();
-    if (process.env["EIF_CAPTURE_UI"]) {
-      await dive.locator(".float-takeaway").scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-ending-${width}.png` });
-    }
-    await dive.getByRole("button", { name: "Share this moment" }).click();
-    const link = await dive.getByRole("textbox", { name: "Story link" }).inputValue();
+    const share = width === 390 ? page.getByRole("region", { name: "Measured float profile" }) : dive;
+    await share.getByRole("button", { name: "Share this moment" }).click();
+    const link = await share.getByRole("textbox", { name: "Story link" }).inputValue();
     expect(new URLSearchParams(new URL(link).hash.slice(1)).get("story")).toBe("float");
     await page.goto(link);
     await expect(depth).toHaveAttribute("aria-valuetext", lastDepth!);

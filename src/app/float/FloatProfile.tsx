@@ -3,8 +3,12 @@ import { createPortal } from "react-dom";
 import type { FloatDiveView } from "./floatPlayback";
 import { PROFILE_CHART, profileGeometry } from "./profileGeometry";
 import { updateFloatTether } from "../../globe/floatPlacement";
+import { useMedia } from "../useNarrow";
+import { ShareMoment } from "../observations/StorySession";
+import { floatMoment } from "./floatMoment";
 
-export function FloatProfile({ view }: { view: FloatDiveView }) {
+export function FloatProfile({ view, map }: { view: FloatDiveView; map: boolean }) {
+  const compact = useMedia("(max-width: 599px), (max-height: 620px)");
   const { index, inspecting, field } = useSyncExternalStore(view.subscribe, view.read);
   const { samples } = view.profile;
   const [portal, setPortal] = useState<HTMLElement | null>(null);
@@ -153,6 +157,11 @@ export function FloatProfile({ view }: { view: FloatDiveView }) {
       <p id={`${id}-help`} className="float-profile-help">
         Drag the chart or move the slider. Each selection is a measured sample.
       </p>
+      {compact && (
+        <div className="float-profile-share">
+          <ShareMoment current={() => floatMoment(view, map)} />
+        </div>
+      )}
     </section>
   );
   return portal ? createPortal(content, portal) : content;
