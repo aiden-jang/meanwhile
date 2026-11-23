@@ -6,7 +6,7 @@ export function EarthquakeDiscovery({ context }: { context: ObservatoryProps }) 
   const navigation = useStoryNavigation();
   return (
     <div className="story-archive-actions">
-      <details className="context-fold">
+      <details className="layer-sources">
         <summary className="disclose text-dim">Archives</summary>
         <button type="button" onClick={() => context.onHistory("2011-03-11")}>
           Japan, 2011
