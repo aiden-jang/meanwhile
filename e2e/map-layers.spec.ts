@@ -127,10 +127,10 @@ test("a quiet landing opens the story catalogue and each scene remains available
     "true",
   );
   await scenes.getByRole("button", { name: "Earth", exact: true }).click();
-  await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
+  await page.getByRole("button", { name: "Iceberg Drift", exact: true }).click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
-  await expect(page.locator("#continue-story-radar")).toBeFocused();
+  await expect(page.locator("#continue-story-iceberg")).toBeFocused();
   await scenes.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
@@ -221,9 +221,9 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
     .getByRole("group", { name: "Story categories", exact: true })
     .getByRole("button", { name: "All topics", exact: true });
   await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
-  const radar = page.getByRole("button", { name: "Storm Radar", exact: true });
-  await radar.click();
+  const entry = page.getByRole("button", { name: "Iceberg Drift", exact: true });
+  await entry.click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
-  await expect(radar).toBeFocused();
+  await expect(entry).toBeFocused();
   await expect(allStories).toHaveAttribute("aria-pressed", "true");
 });

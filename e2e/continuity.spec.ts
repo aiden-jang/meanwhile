@@ -6,7 +6,6 @@ for (const [id, title] of [
   ["aurora", "Aurora Overflight"],
   ["sun", "Sun Watch"],
   ["meteors", "Meteor Nights"],
-  ["radar", "Storm Radar"],
 ] as const) {
   test(`${title} reopens after a refresh and a single Back returns to search`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -134,6 +133,7 @@ test("Find goes directly to places and layers, while Explore and Back restore th
   const layerPreferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
   await find.click();
   await search.fill("Storm Radar");
+  await expect(dialog.getByRole("button", { name: /^Storm radar$/i })).toHaveCount(1);
   await dialog
     .getByRole("region", { name: "Layers", exact: true })
     .getByRole("button", {
@@ -300,10 +300,10 @@ test("Earth waits for the globe before offering live radar", async ({ page }) =>
   }
   await expect(earth).toBeEnabled();
   await earth.click();
-  await expect(page.getByRole("heading", { name: "Storms in motion." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Storm radar" })).toBeVisible();
 });
 
-test("scene tabs scrub live radar and depth and restore each position on one globe", async ({ page }) => {
+test("Earth shares radar playback with Layers and scene tabs restore each position", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   const now = new Date("2026-11-24T09:30:00Z").getTime();
@@ -313,14 +313,15 @@ test("scene tabs scrub live radar and depth and restore each position on one glo
     localStorage.setItem("eif.mapLayers", JSON.stringify({ radar: false, earthquakes: false }));
   });
   const scans = [now - 1_200_000, now - 600_000, now];
-  await page.route("**/radar_base_reflectivity_time/ImageServer/query?**", (route) =>
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) =>
     route.fulfill({
       json: {
-        features: scans.map((at, index) => ({ attributes: { objectid: index + 1, idp_validtime: at } })),
+        host: "https://tilecache.rainviewer.com",
+        radar: { past: scans.map((at, i) => ({ time: at / 1000, path: `/v2/radar/continuity${i}` })) },
       },
     }),
   );
-  await page.route("**/radar_base_reflectivity_time/ImageServer/exportImage?**", (route) =>
+  await page.route("https://tilecache.rainviewer.com/**", (route) =>
     route.fulfill({
       contentType: "image/png",
       body: Buffer.from(
@@ -335,15 +336,19 @@ test("scene tabs scrub live radar and depth and restore each position on one glo
   const tab = (name: string) =>
     page.getByRole("group", { name: "Explore by subject" }).getByRole("button", { name, exact: true });
   await tab("Earth").click();
-  const radar = page.getByRole("region", { name: "Storm Radar" });
-  const scan = radar.getByRole("slider", { name: "Radar scan time" });
+  const radar = page.getByRole("region", { name: "Storm radar playback" });
+  const scan = page.getByRole("slider", { name: "Radar scan time" });
+  const openLayers = page.getByRole("button", { name: "Back to layers", exact: true });
+  await expect(page.getByRole("heading", { name: "Storm radar", exact: true })).toBeFocused();
   await expect(scan).toBeEnabled();
   await expect(scan).toBeInViewport({ ratio: 1 });
   await scan.press("Home");
   await expect(scan).toHaveValue("0");
-  await expect(radar.getByRole("button", { name: "Play" })).toHaveCount(0);
-  await radar.getByText("Data & coverage", { exact: true }).click();
-  await expect(radar.getByRole("link", { name: "NOAA MRMS" })).toBeVisible();
+  await expect(radar).toBeVisible();
+  await openLayers.click();
+  await page.getByRole("button", { name: "Storm radar details", exact: true }).click();
+  await expect(scan).toHaveValue("0");
+  await page.goBack();
   await tab("Below the Surface").click();
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
   await expect.poll(pose).toBe("-176,-18.3,1.95");
@@ -369,10 +374,10 @@ test("scene tabs scrub live radar and depth and restore each position on one glo
   await tab("Below the Surface").click();
   await expect(handle).toHaveAttribute("aria-valuetext", "900 km");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!).radar)).toBe(false);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!).radar)).toBe(true);
 });
 
-test("globe-first entry and nearby Fiji reports keep the same world and reading", async ({ page }) => {
+test("Explore opens Layers and nearby Fiji reports keep the same world and reading", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const now = Date.now();
   await installFeeds(page, {
@@ -395,14 +400,9 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const rail = page.locator("#chrome-rail");
   await button("Explore the globe").click();
-  await expect(rail).toBeHidden();
+  await expect(rail).toBeVisible();
+  await expect(button("Storm radar details")).toBeInViewport();
   const viewport = page.viewportSize()!;
-  if (viewport.width < 768)
-    await expect
-      .poll(async () => (await globe.boundingBox())?.height ?? 0)
-      .toBeGreaterThan(viewport.height * 0.7);
-  await expect(button("Layers")).toBeFocused();
-  await button("Layers").click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
   const fold = button("Hide Layers");
   await expect(fold).toHaveAttribute("aria-expanded", "true");
@@ -414,15 +414,6 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
   await expect(rail).toBeHidden();
   if (viewport.width < 768)
     await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
-  await home.click();
-  await entrances.getByRole("button", { name: "Earth", exact: true }).click();
-  await page.getByText("Data & coverage", { exact: true }).click();
-  await button("Explore live layers").click();
-  await expect(rail).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
   await home.click();
 
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();
@@ -438,6 +429,9 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
   const nearby = button("Explore nearby earthquakes");
   await nearby.click();
   await expect(page.getByRole("heading", { name: "Nearby earthquakes" })).toBeFocused();
+  await expect(
+    page.getByRole("tabpanel", { name: "Layers" }).getByRole("region", { name: "Map layers" }),
+  ).toBeVisible();
   await expect(globe).toHaveAttribute("aria-label", "Map");
   await expect.poll(pose).toBe("-176,-18.3,1.95");
   await expect(page.getByRole("region", { name: "Nearby earthquake reports" })).toContainText(
@@ -452,6 +446,11 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
   await expect.poll(pose).toBe("-176,-18.3,1.95");
   await button("Back to nearby earthquakes").click();
   await expect(report).toBeFocused();
+  await button("All layers").click();
+  await expect(button("Earthquakes details")).toBeFocused();
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  await page.goBack();
+  await expect(report).toBeVisible();
   await button("Globe").click();
   await expect(globe).toHaveAttribute("aria-label", "Globe");
   await button("Back to cutaway").click();

@@ -11,6 +11,7 @@ const date = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "
 export function CutawayReports({
   record,
   back,
+  allLayers,
   select,
   reading,
   onClose,
@@ -23,6 +24,7 @@ export function CutawayReports({
 }: PlaceContextProps & {
   record: DepthRecord;
   back: () => void;
+  allLayers: () => void;
   select: (key: string) => void;
   reading: ReactNode;
   onClose: () => void;
@@ -53,7 +55,7 @@ export function CutawayReports({
   }, [inspecting]);
   return (
     <section
-      className="map-layers cutaway-reports"
+      className="cutaway-reports"
       aria-label="Nearby earthquake reports"
       onKeyDown={(event) => {
         if (event.key !== "Escape" || document.querySelector(":popover-open")) return;
@@ -66,6 +68,9 @@ export function CutawayReports({
       <nav className="cutaway-report-nav" aria-label="Cutaway navigation">
         <button id="back-to-cutaway" className="layer-story-link" type="button" onClick={back}>
           Back to cutaway
+        </button>
+        <button className="layer-story-link" type="button" onClick={allLayers}>
+          All layers
         </button>
         {inspecting && (
           <button ref={returnToList} type="button" className="layer-story-link" onClick={onClose}>
@@ -80,10 +85,12 @@ export function CutawayReports({
         reading
       ) : (
         <>
-          <h2 id="cutaway-nearby-title" tabIndex={-1}>
-            Nearby earthquakes
-          </h2>
-          <p>Southwest Pacific · Within {radius.toLocaleString("en")} km of the selected epicentre</p>
+          <div className="layer-inspector-heading">
+            <h2 id="cutaway-nearby-title" tabIndex={-1}>
+              Nearby earthquakes
+            </h2>
+            <p>Southwest Pacific · Within {radius.toLocaleString("en")} km of the selected epicentre</p>
+          </div>
           <p>
             Available reports · Last {compactSpan(filters.windowMs)} · M{filters.minMagnitude.toFixed(1)}+
           </p>

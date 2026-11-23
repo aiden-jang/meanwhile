@@ -431,15 +431,16 @@ open nearby readings and layer results open their full inspectors. Dismissing Fi
 and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.
 Header Explore restores the last free-explore camera, projection and reading in this session. Contextual
 Back returns to the story, panel or reading that opened the current view.
-Older catalogue links also resolve to Explore. Its Earth, Below the Surface and After Dark diagrams filter
+Older catalogue links also resolve to Explore. Earth, Below the Surface and After Dark filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
-The landing diagrams open three interactive scenes on the shared canvas. Earth opens recent NOAA
-radar scans for the contiguous United States, with a time scrubber and a link to the live Layers
-panel. Explore the globe gives the canvas the full space and keeps Layers one action away beside
-Globe and Map. On phones, collapsing Layers gives the canvas the sheet’s space.
+The landing diagrams open interactive views on the shared canvas. Earth opens Storm radar within
+Layers. The sweep uses the first available RainViewer image at the current framing. The shortcut
+and the Storm radar layer use the same scan player. Explore the globe opens with Layers visible.
+On phones, collapsing Layers gives the canvas the sheet’s space.
 Below the Surface opens a Fiji–Tonga cutaway. The depth sweep reveals three recorded USGS earthquakes
 at their reported depths. Map pins the selected epicentre. Nearby reports use that epicentre and
-the current projection. Reports open in the panel and the camera moves only for an offscreen report.
+the current projection. The Earthquakes inspector opens with these local reports in Layers.
+All layers clears the local scope without moving the camera. The camera moves only for an offscreen report.
 Back to nearby earthquakes restores the list row and scroll. Back to cutaway restores the sweep,
 recorded reading, projection and camera. After Dark opens the saved city’s calculated sky at the
 current local night or the next sunset. Visitors can scrub the night, drag to look around and select
@@ -484,8 +485,7 @@ Featured experiences precede a short selection. Saved visits have a direct discl
 Continue action precedes the feature. Story discovery supports focus, hover and touch-hold regional
 previews with an explicit Locate action. Stories in the current viewport use a place name and story title
 over the globe or map. The preview temporarily expands the phone’s world and carries its location marker
-into the story while its observations load. A recent radar scan can open directly from this view with the
-same framing and scan time. Timeline milestones use the dataset's actual imagery and
+into the story while its observations load. Timeline milestones use the dataset's actual imagery and
 time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
 with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
 Closing an experience returns focus to its entry point and restores the drawer's scroll position.
@@ -652,7 +652,7 @@ the readings and source details scroll in the sheet. Grabbing the camera ends th
 Reduced motion and shared links open directly to playback. The camera holds its framing while scans change.
 A copied link carries the pin, camera, projection and displayed frame. **Back to live** restores
 the latest radar at the same place.
-The catalogue's Storm Radar view offers authored regional flights and optional NOAA detail.
+The Storm radar layer links to a regional view with authored flights and optional NOAA detail.
 Provider colors belong to the raster. Region changes reuse the camera flight, and reduced motion
 cuts directly to the chosen view. Both entries share the scan player and bounded image loader.
 

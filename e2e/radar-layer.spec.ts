@@ -131,7 +131,6 @@ for (const width of [1440, 390]) {
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await page.getByRole("button", { name: "Layers", exact: true }).click();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
     const controls = page.locator("#radar-layer-controls");
@@ -283,9 +282,7 @@ for (const width of [1440, 390]) {
     });
     await expect.poll(() => camera(page)).toEqual(mapCamera);
     await expect(page.locator("#open-explorer-radar")).toBeFocused();
-    await page.getByRole("tab", { name: "Stories", exact: true }).click();
-    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
-    await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
+    await page.locator("#open-explorer-radar").click();
     await expect(guided.locator(".radar-clock time")).toHaveAttribute(
       "datetime",
       new Date(times[1]!).toISOString(),
@@ -294,14 +291,17 @@ for (const width of [1440, 390]) {
       "aria-pressed",
       "true",
     );
-    const region = guided.getByRole("combobox", { name: "Radar region", exact: true });
-    await region.selectOption("world");
+    await guided.getByRole("combobox", { name: "Radar region", exact: true }).selectOption("world");
     await expect.poll(async () => (await camera(page))?.lon).toBe(0);
-    await guided.getByRole("button", { name: "Back to stories", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toBeFocused();
+    await guided.getByRole("button", { name: "Back to layers", exact: true }).click();
+    await expect(page.locator("#open-explorer-radar")).toBeFocused();
     await expect.poll(() => camera(page)).toEqual(mapCamera);
+    await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
+    await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveCount(0);
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
+    await expect.poll(() => camera(page)).toEqual(mapCamera);
 
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,

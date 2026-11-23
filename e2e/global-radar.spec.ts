@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { installFeeds, revealStoryTools, saveImageButton } from "./feeds";
+import { installFeeds, openLayer, saveImageButton } from "./feeds";
 
 const pixel = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
@@ -37,10 +37,11 @@ for (const width of [1440, 390]) {
       route.fulfill({ json: { features: [] } }),
     );
     await page.goto("/");
-    await revealStoryTools(page);
+    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await openLayer(page, "Storm radar");
     const canvas = page.locator("#globe-view canvas");
     const original = await canvas.elementHandle();
-    await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
+    await page.locator("#open-explorer-radar").click();
     const scene = page.getByRole("region", { name: "Storm Radar" });
     const status = scene.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Select a time to compare the observed scans.");
@@ -91,7 +92,7 @@ for (const width of [1440, 390]) {
     expect(audit.violations).toEqual([]);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/global-radar-${width}.png` });
-    await scene.getByRole("button", { name: "Back to stories" }).click();
+    await scene.getByRole("button", { name: "Back to layers" }).click();
     expect(await canvas.evaluate((node, first) => node === first, original)).toBe(true);
   });
 }

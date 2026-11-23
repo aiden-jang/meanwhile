@@ -85,6 +85,10 @@
   gap: 0 10px;
   background: var(--color-deck);
 }
+.cutaway-report-nav .layer-story-link {
+  width: auto;
+  margin-top: 0;
+}
 
 .cutaway-report-detail {
   min-width: 0;

@@ -1,6 +1,6 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
 import { RADAR_SERVICE } from "../../sources/radar";
-import { isGlobalRadar, type RadarEntry, type RadarReveal, type RadarView } from "./radarCamera";
+import { isGlobalRadar, type RadarEntry, type RadarView } from "./radarCamera";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { StoryProjection } from "../observations/StoryProjection";
 import "./radar.css";
@@ -11,12 +11,10 @@ export function RadarReadout({
   map,
   onMap,
   region,
-  focus,
 }: {
   map: boolean;
   onMap: (map: boolean) => void;
   region?: string | undefined;
-  focus?: RadarView["target"] | undefined;
 }): JSX.Element {
   const global = isGlobalRadar(region);
   return (
@@ -51,23 +49,6 @@ export function RadarReadout({
       <div className="stage-readout">
         {global ? "International radar network" : "Contiguous United States"}
       </div>
-      {focus && (
-        <button
-          type="button"
-          className="cutaway-reading-anchor radar-entrance-marker"
-          data-observation-anchor=""
-          data-compact-anchor=""
-          data-lon={focus.lon}
-          data-lat={focus.lat}
-          aria-label="Inspect this radar scan"
-          aria-controls="radar-scan-details"
-          onClick={() => {
-            const details = document.getElementById("radar-scan-details") as HTMLDetailsElement | null;
-            if (details) details.open = true;
-            details?.querySelector("summary")?.focus();
-          }}
-        />
-      )}
       <StoryProjection map={map} onMap={onMap} label="Radar projection" />
     </div>
   );
@@ -79,49 +60,25 @@ export function StormRadar({
   onClose,
   onView,
   entry,
-  tabs,
-  onLayers,
 }: {
   fromExplore: boolean;
   returnLabel?: string | undefined;
   entry: RadarEntry;
-  tabs?: ReactNode;
-  onLayers?: (() => void) | undefined;
   onClose: () => void;
   onView: (view: RadarView) => void;
 }): JSX.Element {
   const [global, setGlobal] = useState(() => isGlobalRadar(entry.region));
   const back = useRef<HTMLButtonElement>(null);
-  const [advanced, setAdvanced] = useState(false);
-  const entrance = !!tabs;
-  const compact = entrance && !advanced;
-  const reveal = useRef<RadarReveal>();
-  const publish = useCallback(
-    (view: RadarView) => {
-      if (entrance && view.image && !reveal.current)
-        reveal.current = { target: view.target, finish: () => {} };
-      onView(
-        reveal.current && reveal.current.target === view.target ? { ...view, reveal: reveal.current } : view,
-      );
-    },
-    [entrance, onView],
-  );
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onClose);
 
   const backLabel =
     returnLabel ??
-    (tabs
-      ? "Back to the Observatory"
-      : entry.story
-        ? "Back to Atmospheric River"
-        : fromExplore
-          ? "Back to Explore"
-          : "Back to Earth");
+    (entry.story ? "Back to Atmospheric River" : fromExplore ? "Back to Explore" : "Back to Earth");
   return (
     <>
       <div className="radar-heading">
-        <h2>{tabs ? "Storms in motion." : "Storm Radar"}</h2>
+        <h2>Storm Radar</h2>
         <div className="observatory-actions radar-actions">
           <button type="button" ref={back} onClick={onClose} aria-label={backLabel}>
             <span className="observation-back-full">{backLabel}</span>
@@ -129,19 +86,17 @@ export function StormRadar({
           </button>
         </div>
       </div>
-      {!compact && (
-        <div className="radar-place">
-          <label htmlFor="radar-source">Coverage</label>
-          <select
-            id="radar-source"
-            value={global ? "global" : "us"}
-            onChange={(event) => setGlobal(event.currentTarget.value === "global")}
-          >
-            <option value="global">Worldwide network</option>
-            <option value="us">United States · NOAA detail</option>
-          </select>
-        </div>
-      )}
+      <div className="radar-place">
+        <label htmlFor="radar-source">Coverage</label>
+        <select
+          id="radar-source"
+          value={global ? "global" : "us"}
+          onChange={(event) => setGlobal(event.currentTarget.value === "global")}
+        >
+          <option value="global">Worldwide network</option>
+          <option value="us">United States · NOAA detail</option>
+        </select>
+      </div>
       <Suspense
         fallback={
           <p role="status" aria-label="Radar status">
@@ -152,15 +107,13 @@ export function StormRadar({
         <RadarStage
           key={global ? "global" : "us"}
           global={global}
-          compact={compact}
-          onView={publish}
+          onView={onView}
           initialRegion={global === isGlobalRadar(entry.region) ? entry.region : undefined}
           initialAt={global === isGlobalRadar(entry.region) ? entry.at : undefined}
           initialPose={global === isGlobalRadar(entry.region) ? entry.pose : undefined}
         />
       </Suspense>
-      {tabs}
-      {global && !compact && (
+      {global && (
         <div className="radar-coverage">
           <p>
             Striped areas have no listed radar coverage. Coverage varies by country; a blank area does not
@@ -168,10 +121,7 @@ export function StormRadar({
           </p>
         </div>
       )}
-      <details
-        className="radar-coverage scene-entry-details"
-        id={entrance ? "radar-scan-details" : undefined}
-      >
+      <details className="radar-coverage scene-entry-details">
         <summary>Data &amp; coverage</summary>
         <p>
           {global
@@ -179,16 +129,6 @@ export function StormRadar({
             : "Recent radar reflectivity across the contiguous United States. GOES-East lightning covers the Americas, not the whole world."}{" "}
           Returns show what radar detected, not a forecast of where rain will move.
         </p>
-        {tabs && (
-          <div className="observatory-actions">
-            <button type="button" onClick={() => setAdvanced(!advanced)}>
-              {advanced ? "Simple radar controls" : "More radar controls"}
-            </button>
-            <button type="button" onClick={onLayers}>
-              Explore live layers
-            </button>
-          </div>
-        )}
         <div className="radar-sources" aria-label="Storm Radar sources">
           <a
             href={global ? "https://www.rainviewer.com/api/weather-maps-api.html" : RADAR_SERVICE}

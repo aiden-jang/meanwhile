@@ -66,6 +66,7 @@ export function MapLayers({
   place: ReturnType<typeof usePlaceInspection> & {
     cutaway?: DepthRecord | undefined;
     backToCutaway: () => void;
+    allLayers: () => void;
     reading?: ReactNode;
     closeReading: () => void;
   };
@@ -161,20 +162,24 @@ export function MapLayers({
 
   if (place.cutaway)
     return (
-      <CutawayReports
-        {...reports}
-        record={place.cutaway}
-        back={place.backToCutaway}
-        select={onQuake}
-        reading={place.reading}
-        onClose={place.closeReading}
-      />
+      <section className="map-layers" aria-label="Map layers">
+        <CutawayReports
+          {...reports}
+          record={place.cutaway}
+          back={place.backToCutaway}
+          allLayers={place.allLayers}
+          select={onQuake}
+          reading={place.reading}
+          onClose={place.closeReading}
+        />
+      </section>
     );
   return (
     <section
       ref={panel}
       hidden={cityWeather}
       className="map-layers"
+      data-layer={layer ?? undefined}
       aria-label="Map layers"
       onKeyDown={dismissReading}
     >
@@ -226,7 +231,7 @@ export function MapLayers({
             </p>
           ) : !controls.enabled[layer] ? (
             <p>This layer is hidden. Turn it on to show its observations.</p>
-          ) : quiet(layer) ? (
+          ) : layer !== "radar" && quiet(layer) ? (
             <p role="status">{quiet(layer)}</p>
           ) : null}
           {exampleLayer.current === layer &&

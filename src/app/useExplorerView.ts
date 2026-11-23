@@ -107,17 +107,23 @@ export function explorerEntrances(
   }
   const open = (panel?: boolean) => present(panel);
   function resume() {
-    if (!observatory.observing && observatory.browser.pane === "layers" && !explorer.nearby && !explorer.city)
+    if (
+      !observatory.observing &&
+      observatory.browser.pane === "layers" &&
+      !explorer.nearby &&
+      !explorer.city
+    ) {
+      explorer.setRailOpen(true);
       return;
+    }
     const previous = explorer.lastFree.current;
-    const panel = previous ? previous.visit.panel : !observatory.landing;
     observatory.navigation.requestExploreFocus("explorer-layers-tab");
     observatory.browser.show("layers");
-    present(panel, () => {
+    present(true, () => {
       if (previous) {
-        explorer.restore(previous);
+        explorer.restore({ ...previous, visit: { ...previous.visit, panel: true } });
         readings.restore(previous.readings);
-      } else explorer.open(panel);
+      } else explorer.open(true);
     });
     if (previous) {
       const { lon, lat, zoom } = previous.camera;
@@ -131,6 +137,20 @@ export function explorerEntrances(
         }),
       );
     }
+  }
+  function radar() {
+    const target = { ...camera.read.current() };
+    observatory.navigation.requestExploreFocus("layer-inspector-title");
+    observatory.browser.show("layers");
+    present(true, () => {
+      returnToLive();
+      readings.clear();
+      readings.openRadar(target);
+      explorer.open(true, "radar");
+    });
+    requestAnimationFrame(() =>
+      restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "layer-inspector-title" }),
+    );
   }
   function find(target: ExploreTarget) {
     const place = target.kind === "place";
@@ -189,6 +209,7 @@ export function explorerEntrances(
     observatory.exploreScene(() => {
       stopTour();
       readings.clear();
+      readings.inspect("earthquakes");
       returnToLive();
       explorer.openNearby(record, pose, from);
     });
@@ -205,7 +226,16 @@ export function explorerEntrances(
       document.getElementById("explore-nearby-earthquakes")?.focus({ preventScroll: true }),
     );
   }
-  return { open, resume, find, nearby, back, pickDate, cityWeather, backToSky };
+  function allLayers() {
+    observatory.checkpoint.current();
+    readings.clear();
+    readings.inspect(null);
+    explorer.open(true);
+    requestAnimationFrame(() =>
+      restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "inspect-earthquakes" }),
+    );
+  }
+  return { open, resume, find, radar, nearby, back, allLayers, pickDate, cityWeather, backToSky };
 }
 
 export function useExplorerHistory(

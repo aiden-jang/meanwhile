@@ -16,11 +16,10 @@ const trigger = (scene: EarthScene) => `observatory-entry-${scene}`;
 
 export function useSceneEntrances({
   views,
-  radar,
+  explorePaths,
   explorer,
   onScene,
   onHome,
-  onExplore,
   scene,
   ready,
 }: ObservatoryProps) {
@@ -29,11 +28,7 @@ export function useSceneEntrances({
   const active =
     views.observations.trigger === trigger(scene) &&
     !views.observations.entry &&
-    (scene === "live"
-      ? radar.active
-      : scene === "depth"
-        ? !!views.depthFocus?.archiveReading
-        : views.tonight.active)
+    (scene === "depth" ? !!views.depthFocus?.archiveReading : scene === "night" && views.tonight.active)
       ? scene
       : undefined;
 
@@ -45,12 +40,6 @@ export function useSceneEntrances({
   return {
     active,
     starting: views.globeStarting,
-    layers() {
-      remember();
-      views.navigation.requestExploreFocus("explorer-layers-tab");
-      views.browser.show("layers");
-      onExplore(true);
-    },
     home() {
       remember();
       onHome();
@@ -62,6 +51,11 @@ export function useSceneEntrances({
       if (active === subject || views.globeStarting) return;
       reportAnalytics({ name: "scene_selected", scene: subject });
       remember();
+      if (subject === "live") {
+        if (ready) explorePaths.radar();
+        else explorePaths.resume();
+        return;
+      }
       const saved = memory.current[subject];
       if (saved && (subject !== "night" || saved.skyCity === views.skyCity.name)) {
         views.navigation.restore(saved);
@@ -71,15 +65,6 @@ export function useSceneEntrances({
         stories?.openNightfall(cityNightOpening(views.skyCity.city, Date.now()), trigger(subject));
       } else {
         onScene(subject, true);
-        if (subject === "live") {
-          if (!ready) {
-            views.navigation.requestExploreFocus("explorer-layers-tab");
-            views.browser.show("layers");
-            onExplore(true);
-            return;
-          }
-          radar.open("national");
-        }
         views.observations.setTrigger(trigger(subject));
       }
       if (active)

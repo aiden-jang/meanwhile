@@ -81,7 +81,7 @@ const priority = new Map<string, number>(storyOrder.map((id, index) => [id, inde
 export const storyRank = (id: string) => priority.get(id) ?? storyOrder.length;
 
 export const sceneHighlights: Record<EarthScene, readonly string[]> = {
-  live: ["katrina", "iceberg", "radar"],
+  live: ["katrina", "iceberg", "tonga"],
   depth: ["float", "seafloor", "nino"],
   night: ["sky", "aurora", "shadow"],
 };

@@ -66,7 +66,7 @@ function ObservatoryContent({
   tour,
   entry,
 }: ObservatoryProps & { entry: ReturnType<typeof useSceneEntrances> }): JSX.Element {
-  const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
+  const { sun, tonight, floatDive, observations, skyCity, closeStory, landing, navigation } = views;
   const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
   const guidedStorm = navigationContext?.route?.id === stormJourney;
@@ -164,12 +164,7 @@ function ObservatoryContent({
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} projection={observations} />
       ) : radar.active ? (
-        <RadarReadout
-          map={observations.map}
-          onMap={observations.setMap}
-          region={radar.view?.region}
-          focus={tabs && radar.view?.image ? radar.view.target : undefined}
-        />
+        <RadarReadout map={observations.map} onMap={observations.setMap} region={radar.view?.region} />
       ) : tonight.view?.moonfall ? (
         <MoonfallReadout
           view={tonight.view.moonfall}
@@ -243,12 +238,10 @@ function ObservatoryContent({
               <StormRadar
                 key={JSON.stringify(radar.entry)}
                 fromExplore={radar.fromExplore}
-                returnLabel={tabs || radar.entry.story ? undefined : navigationContext?.returnLabel}
+                returnLabel={radar.entry.story ? undefined : navigationContext?.returnLabel}
                 entry={radar.entry}
-                tabs={tabs}
-                onLayers={entry.layers}
                 onView={radar.update}
-                onClose={tabs ? entry.home : closeRadar}
+                onClose={closeRadar}
               />
             ) : tonight.active ? (
               <ObservatorySky
@@ -314,10 +307,7 @@ function ObservatoryContent({
                   <>
                     {!solar && !aurora.run && !aurora.requested && (
                       <ObservatoryEntryActions
-                        explore={() => {
-                          browser.show("layers");
-                          onExplore(!landing);
-                        }}
+                        explore={explorePaths.resume}
                         browse={() => navigationContext?.browse(true)}
                       />
                     )}

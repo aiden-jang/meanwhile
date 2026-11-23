@@ -112,18 +112,17 @@
 
 .story-category button {
   display: grid;
-  grid-template-rows: 20px minmax(2.4em, 1fr);
   justify-items: center;
   gap: 3px;
   padding: 4px 2px 7px;
-  min-height: 62px;
+  min-height: 44px;
   border-bottom: 2px solid transparent;
   color: var(--color-dim);
   font-size: 12px;
   line-height: 1.2;
   text-align: center;
   text-wrap: balance;
-  align-items: start;
+  align-items: center;
   cursor: pointer;
 }
 
@@ -134,12 +133,6 @@
 
 .story-category button[aria-pressed="true"] {
   border-bottom-color: currentColor;
-}
-
-.story-category .scene-symbol {
-  width: 26px;
-  height: 20px;
-  margin: 0;
 }
 
 #explorer-stories .story-selection-heading {

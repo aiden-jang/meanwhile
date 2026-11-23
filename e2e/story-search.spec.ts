@@ -6,7 +6,6 @@ for (const [id, query, back] of [
   ["meteors", "Meteor Nights", "Back to stories"],
   ["moonfall", "Moonfall", "Back to stories"],
   ["sun", "Sun Watch", "Back to stories"],
-  ["radar", "Storm Radar", "Back to stories"],
   ["float", "Float Dive", "Back to stories"],
 ] as const) {
   test(`${query} returns keyboard focus to its search result`, async ({ page }) => {

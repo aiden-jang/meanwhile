@@ -944,7 +944,6 @@ export function App(): JSX.Element {
   const observatoryProps: ObservatoryProps = {
     explorer: {
       radarAt: mapLayers.radarAt,
-      radarFrameAt: mapLayers.radar?.at,
       ...explorerCamera(readCamera, flyTo, flat, setFlat),
       radarTime: (at) => mapLayers.selectTime("radar", at),
     },
@@ -1186,6 +1185,7 @@ export function App(): JSX.Element {
                   ...place,
                   cutaway: nearbyOrigin,
                   backToCutaway: entrances.back,
+                  allLayers: entrances.allLayers,
                   reading: nearbyOrigin && pinned && !inspection.run ? quakeDetail : null,
                   closeReading: readings.closeQuake,
                 }}

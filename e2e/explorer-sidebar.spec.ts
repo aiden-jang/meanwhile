@@ -332,9 +332,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
       "Measured profile Rise with an Argo float through temperature and salinity layers.",
     );
-    await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveAccessibleDescription(
-      "Recent observations Scrub recent radar from around the world on the globe.",
-    );
+    await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveCount(0);
     expect((await new AxeBuilder({ page }).include("#chrome-rail").analyze()).violations).toEqual([]);
   });
 }

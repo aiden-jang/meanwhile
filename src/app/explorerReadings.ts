@@ -5,7 +5,7 @@ import type { SectionHinge, SectionLine } from "./section";
 type Selection<T> = [value: T, set: (value: T) => void];
 
 export function explorerReadings(
-  layers: Pick<ReturnType<typeof useMapLayers>, "inspector" | "inspect">,
+  layers: Pick<ReturnType<typeof useMapLayers>, "inspector" | "inspect" | "openRadar">,
   place: ReturnType<typeof usePlaceInspection>,
   [quake, selectQuake]: Selection<string | null>,
   [hazard, selectHazard]: Selection<string | null>,
@@ -28,6 +28,7 @@ export function explorerReadings(
       place.close();
     },
     inspect: layers.inspect,
+    openRadar: layers.openRadar,
     locate: place.restore,
     closeQuake: () => selectQuake(null),
   };

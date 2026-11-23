@@ -7,11 +7,9 @@ import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./SceneEntrances";
-import { SceneDiagram } from "./SceneDiagram";
 import { resetStoryResults } from "./StorySearch";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { reportAnalytics } from "../../analytics/browser";
-import { layerTime } from "./layerTime";
 import "./explore-panel.css";
 
 export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
@@ -64,7 +62,6 @@ export function ExplorerSidebar({
   const { browser, observations } = context.views;
   const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
   const navigation = useStoryNavigation();
-  const radarAt = context.explorer.radarFrameAt;
   const panel = useRef<HTMLDivElement>(null);
   useReadingArrival(panel, browser.pane, "fade");
   const scrolls = useRef({ layers: 0, stories: 0 });
@@ -160,21 +157,6 @@ export function ExplorerSidebar({
           browse={browser}
           visible={!context.views.observing}
           scene={browser.category}
-          nearbyFeed={
-            radarAt !== undefined &&
-            browser.category !== "depth" &&
-            browser.category !== "night" && (
-              <button
-                type="button"
-                id="open-stories-radar"
-                className="stories-radar"
-                onClick={() => navigation?.openRadar(radarAt, context.explorer.flat, "open-stories-radar")}
-              >
-                <span>Radar for this view</span>
-                <time dateTime={new Date(radarAt).toISOString()}>{layerTime(radarAt)}</time>
-              </button>
-            )
-          }
           sceneEntry={
             scene && (
               <button
@@ -210,7 +192,6 @@ export function ExplorerSidebar({
                     browser.select(browser.category === id ? null : id);
                   }}
                 >
-                  <SceneDiagram scene={id} />
                   <span>{name}</span>
                 </button>
               ))}

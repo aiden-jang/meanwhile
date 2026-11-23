@@ -1,4 +1,3 @@
-import { CompactRadarScrub } from "./CompactRadarScrub";
 import { PlaybackButton } from "../PlaybackButton";
 import { radarScanDate, radarScanStatus } from "./radarScanStatus";
 import { layerTime } from "../layerTime";
@@ -43,7 +42,6 @@ export function RadarStage({
   dock,
   suspended = false,
   rewind = false,
-  compact = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
@@ -55,7 +53,6 @@ export function RadarStage({
   dock?: KeyboardEventHandler<HTMLElement> | undefined;
   suspended?: boolean;
   rewind?: boolean;
-  compact?: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
@@ -217,7 +214,7 @@ export function RadarStage({
     <TimelineTrack
       max={Math.max(0, scans.length - 1)}
       current={index}
-      valueLabel={selected && !compact ? `${shortTime(selected.at)} UTC` : undefined}
+      valueLabel={selected && (!layer || rewind) ? `${shortTime(selected.at)} UTC` : undefined}
     >
       <input
         id={id}
@@ -236,23 +233,6 @@ export function RadarStage({
       />
     </TimelineTrack>
   );
-  if (compact)
-    return (
-      <CompactRadarScrub
-        id={id}
-        selected={selected?.at}
-        first={scans[0]?.at}
-        shown={showingEarlier ? shown?.at : undefined}
-        latest={atLatest}
-        expired={expired}
-        timeline={timeline}
-        status={problem ? statusMessage : null}
-        retry={canRetry ? retry : undefined}
-        provider={provider}
-        follow={() => seek(null)}
-      />
-    );
-
   function togglePlay() {
     if (!playing && index === scans.length - 1) seek(scans[0] ?? null);
     setPlaying(!playing);

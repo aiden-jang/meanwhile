@@ -10,7 +10,6 @@ import type { SkyCity } from "../geo/tonight";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
-    radarFrameAt: number | undefined;
     flat: boolean;
     read: () => CameraState;
     restore: (camera: CameraState, flat?: boolean) => void;
@@ -55,6 +54,7 @@ export interface ObservatoryProps {
   explorePaths: {
     resume: () => void;
     find: (target: ExploreTarget) => void;
+    radar: () => void;
     nearby: (record: DepthRecord) => void;
     cityWeather: (city: SkyCity, at: number) => void;
   };

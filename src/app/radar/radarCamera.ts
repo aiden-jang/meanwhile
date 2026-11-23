@@ -19,7 +19,6 @@ export interface RadarView {
   selectedAt?: number | undefined;
   scan?: RadarScan | undefined;
   departing?: boolean;
-  reveal?: RadarReveal | undefined;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
   canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;
@@ -33,7 +32,7 @@ export interface RadarEntry {
 }
 
 export function captureRadarView(view: RadarView | null, camera?: RadarView["target"]) {
-  return view ? { ...view, target: camera ?? view.target, image: null, reveal: undefined } : null;
+  return view ? { ...view, target: camera ?? view.target, image: null } : null;
 }
 
 export const currentRadarRegion = "current";

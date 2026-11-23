@@ -131,7 +131,7 @@ export const normalizeStoryQuery = (query: string) =>
     .trim();
 
 export const inStoryTopic = (story: SearchStory, topic: EarthScene | null) =>
-  !topic || story.scene === topic || Boolean(story.topics?.includes(topic));
+  story.id !== "radar" && (!topic || story.scene === topic || Boolean(story.topics?.includes(topic)));
 export function findStories(query: string, scene: EarthScene | null = null): readonly SearchStory[] {
   const terms = normalizeStoryQuery(query).split(/\s+/).filter(Boolean);
   return terms.length

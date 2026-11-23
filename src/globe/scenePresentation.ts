@@ -187,7 +187,7 @@ export function createScenePresentation(
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     if (skyView?.reference && (!previousSky?.reference || previousSky.city !== skyView.city))
       controls.flyTo(skyView.reference.lon, skyView.reference.lat, skyView.reference.zoom);
-    const sweep = weather?.reveal ?? (mode === null ? mapLayers?.radar?.reveal : undefined);
+    const sweep = mode === null ? mapLayers?.radar?.reveal : undefined;
     controls.guidance.configure(
       skyView
         ? null
