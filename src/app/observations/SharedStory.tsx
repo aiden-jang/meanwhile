@@ -11,7 +11,7 @@ export function SharedStory({ moment }: { moment?: StoryMoment | undefined } = {
   if (!initial || navigation?.hasReturnOrigin) return null;
   const journey = navigation?.route?.id;
   if (
-    (journey === "reading-the-coast" || journey === "above-earth") &&
+    (journey === "reading-the-coast" || journey === "above-earth" || journey === "follow-aurora") &&
     (!session?.shared || initial.at === undefined)
   )
     return null;

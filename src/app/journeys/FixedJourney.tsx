@@ -15,13 +15,19 @@ import { useStoryNavigation } from "./StoryNavigation";
 import { warmJourneyStop } from "./warmJourneyStop";
 import { goldenGate, tidePorts } from "./coastRoute";
 import { riverBasins } from "../observations/riverGauges";
+import { auroraChapters, auroraJourney } from "./auroraJourney";
 import "./fixed-journey.css";
 
-type FixedJourneyId = "ice-in-motion" | "water-in-motion" | "reading-the-coast" | "above-earth";
+type FixedJourneyId =
+  "ice-in-motion" | "water-in-motion" | "reading-the-coast" | "above-earth" | typeof auroraJourney;
 
 export function hasFixedJourney(id: string | undefined): id is FixedJourneyId {
   return (
-    id === "ice-in-motion" || id === "water-in-motion" || id === "reading-the-coast" || id === "above-earth"
+    id === "ice-in-motion" ||
+    id === "water-in-motion" ||
+    id === "reading-the-coast" ||
+    id === "above-earth" ||
+    id === auroraJourney
   );
 }
 
@@ -64,7 +70,9 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
   const water = route.id === "water-in-motion";
   const coast = route.id === "reading-the-coast";
   const sky = route.id === "above-earth";
-  const illustrated = sky ? skyChapters : coast ? coastChapters : undefined;
+  const aurora = route.id === auroraJourney;
+  const fromPass = aurora && navigation.auroraFromPass;
+  const illustrated = sky ? skyChapters : coast ? coastChapters : aurora ? auroraChapters : undefined;
   const city = navigation.previewCity.name;
   const passCity = sky
     ? (navigation.progressFor(route.id)?.stops.find(([index]) => index === 2)?.[1].visit.position.moment
@@ -92,36 +100,44 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
       : harbor && harbor.id !== goldenGate.id
         ? "Return to harbor"
         : "Go to San Francisco";
-  const nextLabel = sky
-    ? skyNext
-    : coast
-      ? coastNext
-      : water
-        ? current === 0
-          ? "Open Rainbelt"
-          : river && riverChoice !== "hudson"
-            ? `Return to the ${river}`
-            : "Go to the Hudson"
-        : next
-          ? `Next: ${chapterTitles.get(next.id)}`
-          : undefined;
-  const context = sky
-    ? ["From your sky to the lunar surface", "Return to your city horizon", `${city} · Local time`][current]
-    : coast
-      ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
-      : water
-        ? [
-            "Same Pacific coast",
-            "A separate river gauge record",
-            "Previous view restores your satellite frame",
-          ][current]
-        : moving
-          ? "Leaving West Greenland…"
-          : [
-              "Next stop: West Greenland",
-              "Next stop: a separate iceberg record near South Georgia",
-              "Previous view restores your glacier reading",
-            ][current];
+  const nextLabel = aurora
+    ? ["Read the solar wind", "Follow magnetic north"][current]
+    : sky
+      ? skyNext
+      : coast
+        ? coastNext
+        : water
+          ? current === 0
+            ? "Open Rainbelt"
+            : river && riverChoice !== "hudson"
+              ? `Return to the ${river}`
+              : "Go to the Hudson"
+          : next
+            ? `Next: ${chapterTitles.get(next.id)}`
+            : undefined;
+  const context = aurora
+    ? moving
+      ? "Return to Earth…"
+      : ["NOAA forecast", "Separate forecast and measurement times", `${city} · Magnetic field model`][
+          current
+        ]
+    : sky
+      ? ["From your sky to the lunar surface", "Return to your city horizon", `${city} · Local time`][current]
+      : coast
+        ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
+        : water
+          ? [
+              "Same Pacific coast",
+              "A separate river gauge record",
+              "Previous view restores your satellite frame",
+            ][current]
+          : moving
+            ? "Leaving West Greenland…"
+            : [
+                "Next stop: West Greenland",
+                "Next stop: a separate iceberg record near South Georgia",
+                "Previous view restores your glacier reading",
+              ][current];
   return (
     <section
       className="fixed-journey"
@@ -129,6 +145,8 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
       data-water-step={water ? current : undefined}
       data-coast-step={coast ? current : undefined}
       data-sky-step={sky ? current : undefined}
+      data-aurora-step={aurora ? current : undefined}
+      data-aurora-leaving={route.folding === "solar" || undefined}
     >
       <div className="fixed-journey-rail">
         <div className="fixed-journey-title">
@@ -143,7 +161,7 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
               <button
                 type="button"
                 aria-current={index === current ? "step" : undefined}
-                aria-disabled={index === current || moving || !!navigation.unavailable(id)}
+                aria-disabled={index === current || moving || !!navigation.stepUnavailable(index)}
                 onClick={() => {
                   if (index !== current && !moving) navigation.step(index);
                 }}
@@ -168,16 +186,18 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
         </ol>
       </div>
       <div className="fixed-journey-pager">
-        {previous && (
+        {(previous || fromPass) && (
           <button
             className="fixed-journey-previous"
             type="button"
-            aria-disabled={moving || !!navigation.unavailable(previous.id)}
+            aria-disabled={moving || !!navigation.stepUnavailable(current - 1)}
             onClick={() => {
-              if (!moving) navigation.step(current - 1);
+              if (moving) return;
+              if (previous) navigation.step(current - 1);
+              else navigation.returnToBrowse();
             }}
           >
-            Previous view
+            {previous ? "Previous view" : "ISS finding"}
           </button>
         )}
         <p aria-live="polite">{context}</p>
@@ -185,7 +205,7 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
           <button
             className="fixed-journey-next"
             type="button"
-            aria-disabled={moving || !!navigation.unavailable(next.id)}
+            aria-disabled={moving || !!navigation.stepUnavailable(current + 1)}
             onClick={() => {
               if (!moving) navigation.step(current + 1);
             }}
@@ -193,7 +213,21 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
             {nextLabel}
           </button>
         )}
-        {!next && <div className="fixed-journey-finale" ref={finale} />}
+        {!next &&
+          (aurora ? (
+            <button
+              type="button"
+              className="fixed-journey-next"
+              onClick={() => {
+                if (fromPass) navigation.returnToBrowse();
+                else navigation.finish(true);
+              }}
+            >
+              {fromPass ? "Return to the ISS view" : "Finish journey"}
+            </button>
+          ) : (
+            <div className="fixed-journey-finale" ref={finale} />
+          ))}
       </div>
     </section>
   );
@@ -210,6 +244,8 @@ export function FixedJourneyEnding({
   finishFocus,
   playLabel = "Watch the breakup",
   playingLabel = "Watching the breakup…",
+  initialOpen = false,
+  onReveal,
 }: {
   journey: FixedJourneyId;
   canRead: boolean;
@@ -221,10 +257,12 @@ export function FixedJourneyEnding({
   finishFocus: string;
   playLabel?: string;
   playingLabel?: string;
+  initialOpen?: boolean;
+  onReveal?: () => void;
 }) {
   const navigation = useStoryNavigation();
   const target = useContext(EndingTarget);
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(initialOpen);
   const ending = useRef<HTMLHeadingElement>(null);
   useLayoutEffect(() => {
     if (!shown) return;
@@ -251,7 +289,10 @@ export function FixedJourneyEnding({
               if (shown) {
                 ending.current?.focus({ preventScroll: true });
                 revealReading(ending.current, journey === "ice-in-motion" ? "nearest" : "start");
-              } else setShown(true);
+              } else {
+                onReveal?.();
+                setShown(true);
+              }
             }}
           >
             {canRead ? "See the finding" : playing ? playingLabel : playLabel}

@@ -122,13 +122,13 @@ export function useObservationDeck(
     setTrigger(null);
     setMap(false);
   }, [setMap]);
-  const snapshot = { entry, trigger, map, query, recipient: recipient.current, moment: current() };
+  const snapshot = { entry, trigger, map, query, recipient: recipient.current };
   return {
     entry,
     revision,
     preview: preview.current,
-    capture: (camera?: CameraState) => ({ ...snapshot, camera }),
-    restore(saved: typeof snapshot & { camera?: CameraState | undefined }) {
+    capture: (camera?: CameraState) => ({ ...snapshot, moment: current(), camera }),
+    restore(saved: typeof snapshot & { moment?: StoryMoment | undefined; camera?: CameraState | undefined }) {
       recipient.current = saved.recipient;
       pending.current = false;
       departure.current = destination.current = undefined;

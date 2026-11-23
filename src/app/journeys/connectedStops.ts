@@ -3,6 +3,7 @@ import type { StoryPlace } from "../discovery/places";
 import type { FloatCheckpoint, FloatRestore } from "../float/floatPlayback";
 import { rainCoast } from "../observations/RainbeltControls";
 import type { Visit } from "../visitor/library";
+import type { AuroraRun } from "../../sources/auroraRoute";
 
 export interface JourneyArrival {
   map: boolean;
@@ -14,6 +15,8 @@ export interface JourneyArrival {
   floatState?: FloatRestore | undefined;
   departure?: StoryPlace | undefined;
   preview?: StoryPlace | undefined;
+  aurora?: AuroraRun | undefined;
+  city?: string | undefined;
 }
 
 export type ConnectedStop = { visit: Visit; arrival: JourneyArrival };
@@ -37,6 +40,8 @@ export function connectedArrival(
       pose: stopped?.arrival.pose ?? (next === "rain" ? (pacific ? pose : rainCoast) : undefined),
       float: stopped?.arrival.float,
       floatState: stopped?.arrival.floatState,
+      aurora: stopped?.arrival.aurora ?? (next === "sun" || next === "north" ? here.aurora : undefined),
+      city: stopped?.arrival.city,
       departure: float
         ? { lon: float.profile.lon, lat: float.profile.lat, label: "North Atlantic · Argo" }
         : undefined,

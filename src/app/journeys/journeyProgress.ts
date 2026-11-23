@@ -28,7 +28,7 @@ export function readJourneyProgress(raw: string | null): JourneyProgress | null 
       if (!Number.isInteger(index) || typeof stop?.arrival?.map !== "boolean") continue;
       const visit = readVisit(stop.visit);
       if (!visit || visit.id !== journey.steps[index]?.id) continue;
-      const { map, pose, floatState } = stop.arrival;
+      const { map, pose, floatState, city } = stop.arrival;
       const validPose =
         pose &&
         within(pose.lon, -360, 360) &&
@@ -38,6 +38,7 @@ export function readJourneyProgress(raw: string | null): JourneyProgress | null 
         visit,
         arrival: {
           map,
+          ...(typeof city === "string" && city.length <= 80 ? { city } : {}),
           ...(validPose ? { pose: { lon: pose.lon, lat: pose.lat, zoom: pose.zoom } } : {}),
           ...(visit.position.float && validFloatState(floatState) ? { floatState } : {}),
         },
@@ -69,7 +70,7 @@ export function packJourneyProgress(id: string, step: number, stops: Map<number,
         index,
         {
           visit,
-          arrival: { map, pose, float, floatState },
+          arrival: { map, pose, float, floatState, city },
         },
       ]) => [
         index,
@@ -78,6 +79,7 @@ export function packJourneyProgress(id: string, step: number, stops: Map<number,
           arrival: {
             map,
             pose,
+            city,
             floatState: float
               ? {
                   depth: float.depth,

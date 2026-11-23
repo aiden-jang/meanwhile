@@ -126,12 +126,16 @@ export function SolarReadouts({
   xray,
   inspecting,
   onInspect,
+  selected,
+  heldXray,
   children,
 }: {
   wind: Readings<WindSample>;
   xray: Readings<SpaceSample>;
   inspecting: WindSample | null;
   onInspect: (sample: WindSample | null) => void;
+  selected?: "wind" | "xray" | undefined;
+  heldXray?: SpaceSample | undefined;
   children: ReactNode;
 }): JSX.Element {
   const range = useId();
@@ -140,10 +144,10 @@ export function SolarReadouts({
   const exactIndex = inspecting
     ? recent.findIndex(({ at, source }) => at === inspecting.at && source === inspecting.source)
     : -1;
-  const radiation = xray.points.at(-1);
+  const radiation = heldXray ?? xray.points.at(-1);
   return (
     <div className="sun-readings" aria-label="Independent NOAA observation windows">
-      <section aria-label="Solar wind measurements">
+      <section aria-label="Solar wind measurements" hidden={selected === "xray"}>
         <div className="sun-reading-heading">
           <h3>Solar wind</h3>
           <span>1 hour</span>
@@ -208,7 +212,7 @@ export function SolarReadouts({
           </div>
         </div>
       </section>
-      <section aria-label="GOES X-ray measurements">
+      <section aria-label="GOES X-ray measurements" hidden={selected === "wind"}>
         <div className="sun-reading-heading">
           <h3>GOES X-rays</h3>
           <span>6 hours</span>
@@ -223,8 +227,15 @@ export function SolarReadouts({
           )}
         </p>
         <p className="sun-instrument">{radiation ? `${radiation.source} · 0.1–0.8 nm` : "0.1–0.8 nm band"}</p>
-        <Chart data={xray} wind={false} />
-        <Stamp data={xray} />
+        <Chart data={xray} wind={false} selected={heldXray} />
+        {heldXray ? (
+          <p className="sun-stamp">
+            Selected reading ·{" "}
+            <time dateTime={new Date(heldXray.at).toISOString()}>{dateFormat.format(heldXray.at)} UTC</time>
+          </p>
+        ) : (
+          <Stamp data={xray} />
+        )}
       </section>
     </div>
   );

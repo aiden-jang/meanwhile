@@ -225,7 +225,10 @@ export function createScenePresentation(
     planetarium = mode === "planetarium";
     if (route !== oval && (guided || !route)) controls.setOverflight(route?.focus ?? null);
     const heldRun = overflight?.held ? overflight : null;
-    if (heldRun !== held) controls.holdOverflight(!!heldRun);
+    if (heldRun !== held) {
+      controls.holdOverflight(!!heldRun);
+      if (heldRun?.pose) controls.setView(heldRun.pose);
+    }
     held = heldRun;
     if (skyView && !localLight) {
       localLight = createLocalSkyLight(lights.sun, controls.localSky.up, canvas);

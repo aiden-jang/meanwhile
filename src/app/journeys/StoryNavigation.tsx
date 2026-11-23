@@ -26,6 +26,8 @@ import { captureCollection, type CollectionPosition } from "../visitor/collectio
 import { openSkyStory } from "./openSkyStory";
 import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
+import { auroraHandoff } from "./auroraJourney";
+import { openAuroraStory } from "./openAuroraStory";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
 
@@ -82,6 +84,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     current: memory.current,
     camera: props.explorer.read,
     map: deck.map,
+    aurora: props.aurora.run ?? undefined,
+    city: props.views.skyCity.name,
     browseMap: props.explorer.flat,
     float: floatDive.view,
     curtain: active === "dust" && !!deck.view?.curtain,
@@ -117,15 +121,18 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       flat: previewOrigin.current?.flat ?? props.explorer.flat,
       ...(collection ? { collection } : {}),
       ...(origin.current ? { previous: origin.current } : {}),
-      label: collection
-        ? "Back to Saved"
-        : fromStory && active
-          ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
-          : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
-            ? "Back to stories"
-            : props.views.observing
-              ? "Back to home"
-              : "Back to layers",
+      label:
+        trigger === auroraHandoff
+          ? "Back to the ISS finding"
+          : collection
+            ? "Back to Saved"
+            : fromStory && active
+              ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
+              : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
+                ? "Back to stories"
+                : props.views.observing
+                  ? "Back to home"
+                  : "Back to layers",
       trigger,
     };
   }
@@ -160,8 +167,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       id === "radar" && !props.views.observing && !resuming ? props.explorer.read() : undefined;
     const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
     const openReplay = () => {
-      if (id === "orbit" && saved?.position.moment?.city)
-        props.views.skyCity.select(saved.position.moment.city);
+      const city = saved?.position.moment?.city ?? arrival?.city;
+      if ((id === "orbit" || id === "north") && city) props.views.skyCity.restore(city);
+      if (id === "north" && arrival?.aurora) props.aurora.restore(arrival.aurora, props.explorer.read());
       deck.open(
         id as StoryId,
         trigger,
@@ -170,7 +178,11 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       );
     };
     props.views.navigation.prepareStory(
-      keepScene && props.views.observing ? props.scene : story.scene,
+      id === "north" && arrival?.aurora
+        ? "night"
+        : keepScene && props.views.observing
+          ? props.scene
+          : story.scene,
       !standalone,
       !standalone
         ? openReplay
@@ -186,14 +198,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
                 fresh,
                 arrival?.skyDeparture ? tonight.view : null,
               );
-            } else if (id === "aurora") {
-              const moment = saved?.position.moment;
-              if (moment?.at !== undefined) props.aurora.hold(moment);
-              props.aurora.start(
-                moment?.choice === "south" ? -1 : moment?.choice === "north" ? 1 : undefined,
-                !!moment,
-              );
-            } else if (id === "sun") sun.open(saved?.position.solar, saved?.position.moment);
+            } else if (id === "aurora" || id === "sun") openAuroraStory(props, id, saved, arrival);
             else if (id === "radar") {
               const exploring = !props.views.observing && !resuming;
               props.radar.open(
@@ -289,6 +294,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       value={{
         active,
         hasReturnOrigin: origin.current !== null,
+        auroraFromPass: origin.current?.trigger === auroraHandoff,
         restoredCollection,
         dismissRestoration: () => setRestoredCollection(null),
         completed: completion?.id === active && completion.complete,

@@ -2,13 +2,14 @@ import { readSkyPosition, type SkyPosition } from "../tonight/skyMoment";
 import { searchStories } from "../storyIndex";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "../observations/storyMoment";
 import { riverGauge } from "../observations/riverGauges";
-import type { WindSample } from "../../sources/spaceWeather";
+import type { SpaceSample, WindSample } from "../../sources/spaceWeather";
 import type { CameraState } from "../../globe/controlsTypes";
 import { LAT_LIMIT, ZOOM_MAX, ZOOM_MIN } from "../../globe/framing";
 
 export interface VisitPosition {
   moment?: StoryMoment;
   solar?: WindSample;
+  solarXray?: SpaceSample;
   river?: { gauge: string; at: number; value: number };
   sky?: SkyPosition;
   float?: { profile: string; index: number; map?: boolean };
@@ -99,6 +100,16 @@ export function readVisit(value: unknown): Visit | null {
       (solar.density === null || finite(solar.density, 0, 10_000))
     )
       position.solar = { at: solar.at, source: solar.source, value: solar.value, density: solar.density };
+    const xray = source.solarXray;
+    if (
+      raw.id === "sun" &&
+      xray &&
+      time(xray.at) &&
+      typeof xray.source === "string" &&
+      /^GOES-[0-9]{1,3}$/.test(xray.source) &&
+      finite(xray.value, 0, 1)
+    )
+      position.solarXray = { at: xray.at, source: xray.source, value: xray.value };
     const sky = readSkyPosition(source.sky);
     if (sky) position.sky = sky;
     const float = source.float;

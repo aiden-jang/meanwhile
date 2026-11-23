@@ -1,6 +1,14 @@
 import { DEG } from "../../geo/sphere";
 
-export function StoryCompass({ value, label }: { value: number; label: string }): JSX.Element {
+export function StoryCompass({
+  value,
+  label,
+  position,
+}: {
+  value: number;
+  label: string;
+  position?: string | undefined;
+}): JSX.Element {
   const degrees = Math.abs(value).toFixed(2);
   const direction = Number(degrees) === 0 ? "" : value < 0 ? "west" : "east";
   const endX = 60 + 26 * Math.sin(value * DEG);
@@ -25,6 +33,7 @@ export function StoryCompass({ value, label }: { value: number; label: string })
           {degrees}°{direction && ` ${direction}`}
         </strong>
         <span>From true north to modelled magnetic north</span>
+        {position && <span>Magnetic pole · {position}</span>}
       </figcaption>
     </figure>
   );

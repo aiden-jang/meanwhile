@@ -1,41 +1,51 @@
 import { useCallback, useRef, useState, type RefObject } from "react";
 import type { StoryMoment } from "../observations/storyMoment";
 import type { AuroraRun } from "../../sources/auroraRoute";
-import type { WindSample } from "../../sources/spaceWeather";
+import type { SpaceSample, WindSample } from "../../sources/spaceWeather";
+
+type SolarSelection = { sample?: WindSample | undefined; xray?: SpaceSample | undefined };
+type SolarVisit = SolarSelection & { position?: StoryMoment };
 
 export function useSunVisit(
   before: () => void,
   changeRun: (update: (run: AuroraRun | null) => AuroraRun | null) => void,
   story?: StoryMoment,
 ) {
-  const [visit, setVisit] = useState<{ sample?: WindSample | undefined; position?: StoryMoment } | null>(
-    () => (story?.id === "sun" ? { position: story } : null),
+  const [visit, setVisit] = useState<SolarVisit | null>(() =>
+    story?.id === "sun" ? { position: story } : null,
   );
   const current = useRef<StoryMoment>();
+  const readings = useRef<SolarSelection>({});
   const position = current.current ?? visit?.position;
   const moment = (map: boolean): StoryMoment => ({ id: "sun", ...visit?.position, ...current.current, map });
   const restore = useCallback((next: typeof visit) => {
     current.current = undefined;
+    readings.current = {};
     setVisit(next);
   }, []);
   return {
-    visit: visit && { ...visit, position },
+    visit: visit && { ...visit, ...readings.current, position },
     setVisit: restore,
     moment,
     position: visit?.position,
-    remember(next: StoryMoment) {
+    remember(next: StoryMoment, selected?: SolarSelection) {
       current.current = next;
+      readings.current = selected ?? {};
     },
+    selection: () => readings.current,
     sample: visit?.sample,
-    open(sample?: WindSample, frame?: StoryMoment) {
+    xray: visit?.xray,
+    open(sample?: WindSample, frame?: StoryMoment, xray?: SpaceSample) {
       before();
       changeRun((run) => (run ? { ...run, held: true } : null));
       current.current = undefined;
-      setVisit({ sample, ...(frame ? { position: frame } : {}) });
+      readings.current = {};
+      setVisit({ sample, xray, ...(frame ? { position: frame } : {}) });
     },
     close() {
       before();
       current.current = undefined;
+      readings.current = {};
       setVisit(null);
     },
   };

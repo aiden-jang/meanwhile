@@ -38,6 +38,10 @@ export function warmJourneyStop(next: string | undefined) {
     void import("../moonfall/Moonfall").catch(() => {});
   } else if (next === "orbit") {
     void import("../observations/OrbitalPass").catch(() => {});
+  } else if (next === "sun") {
+    void import("../sun/SunWatch").catch(() => {});
+  } else if (next === "north") {
+    void import("../earth-stories/groundStories").catch(() => {});
   } else if (next === "iceberg") {
     void import("../iceberg/IcebergDrift").catch(() => {});
   }

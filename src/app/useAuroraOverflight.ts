@@ -48,6 +48,9 @@ export function useAuroraOverflight(
     run,
     requested: !!active.request,
     hold: active.setRequest,
+    restore(saved: AuroraRun, pose?: AuroraRun["pose"]) {
+      setRun({ ...saved, held: true, pose });
+    },
     newerForecast:
       active.request?.at !== undefined && run !== null && run.forecast.forecastAt !== active.request.at,
     forecastAt: current?.forecastAt,

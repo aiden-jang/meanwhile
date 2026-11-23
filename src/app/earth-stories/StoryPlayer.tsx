@@ -310,6 +310,11 @@ export function StoryPlayer({
   const readings = (
     <StoryReadings {...{ id, data, frame, index, site, selected, chooseSite }} seek={clock.seek} />
   );
+  const chooseReading = (value: string) => {
+    clock.pause();
+    setChoice(value);
+  };
+  const choices = <StoryChoices id={id} city={city} choice={choice} select={chooseReading} />;
   return (
     <ReplayPanel
       {...panel}
@@ -339,15 +344,7 @@ export function StoryPlayer({
         </>
       }
     >
-      <StoryChoices
-        id={id}
-        city={city}
-        choice={choice}
-        select={(value) => {
-          clock.pause();
-          setChoice(value);
-        }}
-      />
+      {id !== "north" && choices}
       {section.controls}
       {section.chart}
       {moorings.controls}
@@ -371,11 +368,13 @@ export function StoryPlayer({
         restored={initial?.at !== undefined}
         comparison={bloom.controls}
         compareDates={!fault}
+        yearReading={id === "north" ? readings : undefined}
         label={
           data.timelineLabel ??
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
         }
       />
+      {id === "north" && choices}
       {glacier.control}
       {comparingShoreline ? (
         <StoryFinding id={id} completed>
@@ -384,7 +383,7 @@ export function StoryPlayer({
       ) : (
         shoreline.controls
       )}
-      {!fault && readings}
+      {!fault && id !== "north" && readings}
       {failed && (
         <StoryRecovery
           reefRecent={id === "reef" && choice === "Recent observations"}

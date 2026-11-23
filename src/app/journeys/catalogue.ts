@@ -1,3 +1,5 @@
+import { auroraJourney } from "./auroraJourney";
+
 export const onward: Record<string, readonly [string, string]> = {
   epic: ["orbit", "Compare a distant photograph with a predicted low-Earth orbit."],
   deep: ["seafloor", "Look at the present-day terrain above those moving plates."],
@@ -86,6 +88,32 @@ export const journeys: readonly Journey[] = [
         id: "orbit",
         prompt: "Switch to Local sky and compare the predicted ISS path with your horizon.",
         context: "A current ISS orbit prediction. Visibility depends on sunlight and your location.",
+      },
+    ],
+  },
+  {
+    id: auroraJourney,
+    title: "Follow the aurora",
+    guide: ["Auroral oval", "Solar wind", "Magnetic north"],
+    summary:
+      "Trace the forecast around Earth, follow the solar wind upstream, and compare true and magnetic north.",
+    ending:
+      "The oval is a forecast, the instruments measure the Sun and solar wind, and the pole trace is a historical field model.",
+    steps: [
+      {
+        id: "aurora",
+        prompt: "Fly through the forecast.",
+        context: "NOAA OVATION model chance and forecast valid time.",
+      },
+      {
+        id: "sun",
+        prompt: "Read an upstream sample.",
+        context: "NOAA solar-wind and GOES X-ray measurements each have their own timestamp.",
+      },
+      {
+        id: "north",
+        prompt: "Compare the two compass needles.",
+        context: "NOAA and IAGA’s historical magnetic field model. The angle refers to your selected city.",
       },
     ],
   },

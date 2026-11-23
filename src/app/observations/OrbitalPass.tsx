@@ -105,7 +105,11 @@ function PassPlayer({
   const [horizon, setHorizon] = useState(initial?.chapter === "horizon" && !panel.map);
   const [watching, setWatching] = useState(false);
   const [watched, setWatched] = useState(initial?.chapter === "horizon");
-  const timeOf = useMemo(() => (guided ? orbitTime(city.city.zone) : passTime), [city.city.zone, guided]);
+  const localClock = useRef(guided || initial?.finding === true).current;
+  const timeOf = useMemo(
+    () => (localClock ? orbitTime(city.city.zone) : passTime),
+    [city.city.zone, localClock],
+  );
   const [ready, setReady] = useState(false);
   const [skyReady, setSkyReady] = useState(false);
   const [start] = useState(() => (initial?.at !== undefined ? nearest(data, initial.at) : 0));

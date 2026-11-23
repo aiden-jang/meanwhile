@@ -9,6 +9,7 @@ import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import { TimelineCues } from "../observations/TimelineCues";
 import { StoryDock } from "../observations/StoryDock";
+import { auroraJourney } from "../journeys/auroraJourney";
 
 type Clock = ReturnType<typeof useStoryClock>;
 export function StoryTimeline({
@@ -24,6 +25,7 @@ export function StoryTimeline({
   restored,
   comparison,
   compareDates = true,
+  yearReading,
 }: {
   startLabel?: string | undefined;
   data: EarthStoryData;
@@ -37,6 +39,7 @@ export function StoryTimeline({
   restored: boolean;
   comparison?: ReactNode;
   compareDates?: boolean;
+  yearReading?: ReactNode;
 }) {
   const annual = frame.dateTime?.length === 4;
   const [expandedAt, expand] = useState<number | null>(null);
@@ -58,6 +61,8 @@ export function StoryTimeline({
     wasFinished.current = finished;
   }, [finished]);
   const navigation = useStoryNavigation();
+  const magnetic = !!yearReading && navigation?.route?.id === auroraJourney;
+  const [timelineOpen, showTimeline] = useState(false);
   const showRestore = restored && (!navigation || !!navigation.returnLabel);
   const nearest = (at: number) =>
     data.frames.reduce(
@@ -79,80 +84,82 @@ export function StoryTimeline({
           run={frame.measurements?.find(({ label }) => label === "Model run")?.value}
         />
       )}
-      {showRestore && (
+      {showRestore && !magnetic && (
         <p className="observation-note">
           Opened at a saved moment. Choose {index === data.frames.length - 1 ? "Replay" : "Restart"} to begin
           again.
         </p>
       )}
-      <StoryDock>
-        <div className="story-time" data-compact-ending={compact || undefined}>
-          {finished && (
-            <button
-              type="button"
-              className="ending-timeline-toggle"
-              ref={toggle}
-              aria-expanded={!compact}
-              aria-controls="earth-story-time"
-              onClick={() => expand(compact ? frame.at : null)}
-            >
-              {compact ? "Timeline" : "Hide timeline"}
-            </button>
-          )}
-          <label htmlFor="earth-story-time">{label}</label>
-          <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>
-            {finished && annual ? frame.dateTime : time}
-          </time>
-          <div className="story-scrub">
-            <input
-              id="earth-story-time"
-              ref={slider}
-              className="scrub-slider"
-              type="range"
-              min={0}
-              max={data.frames.length - 1}
-              value={index}
-              aria-valuetext={time}
-              disabled={busy}
-              onInput={(event) => {
-                const next = event.currentTarget.valueAsNumber;
-                if (next !== data.frames.length - 1) expand(null);
-                clock.seek(next);
-              }}
-            />
-            {data.timelineCues && (
-              <TimelineCues
-                cues={milestones.map(({ at, label }) => ({ index: nearest(at), label }))}
-                index={index}
+      {(!magnetic || timelineOpen) && (
+        <StoryDock>
+          <div className="story-time" data-compact-ending={compact || undefined}>
+            {finished && (
+              <button
+                type="button"
+                className="ending-timeline-toggle"
+                ref={toggle}
+                aria-expanded={!compact}
+                aria-controls="earth-story-time"
+                onClick={() => expand(compact ? frame.at : null)}
+              >
+                {compact ? "Timeline" : "Hide timeline"}
+              </button>
+            )}
+            <label htmlFor="earth-story-time">{label}</label>
+            <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>
+              {finished && annual ? frame.dateTime : time}
+            </time>
+            <div className="story-scrub">
+              <input
+                id="earth-story-time"
+                ref={slider}
+                className="scrub-slider"
+                type="range"
+                min={0}
                 max={data.frames.length - 1}
+                value={index}
+                aria-valuetext={time}
+                disabled={busy}
+                onInput={(event) => {
+                  const next = event.currentTarget.valueAsNumber;
+                  if (next !== data.frames.length - 1) expand(null);
+                  clock.seek(next);
+                }}
               />
+              {data.timelineCues && (
+                <TimelineCues
+                  cues={milestones.map(({ at, label }) => ({ index: nearest(at), label }))}
+                  index={index}
+                  max={data.frames.length - 1}
+                />
+              )}
+            </div>
+          </div>
+          <div className="observatory-actions">
+            <PlaybackButton
+              playing={clock.playing}
+              ended={index === data.frames.length - 1}
+              startLabel={startLabel}
+              onClick={clock.toggle}
+              disabled={busy}
+            />
+            {index < data.frames.length - 1 && (!startLabel || clock.playing) && (
+              <button
+                type="button"
+                title="Restart the story and its cinematic entrance"
+                onClick={() => {
+                  refreshAnnotations({ camera: "resume" });
+                  clock.replay();
+                }}
+                disabled={busy}
+              >
+                Restart
+              </button>
             )}
           </div>
-        </div>
-        <div className="observatory-actions">
-          <PlaybackButton
-            playing={clock.playing}
-            ended={index === data.frames.length - 1}
-            startLabel={startLabel}
-            onClick={clock.toggle}
-            disabled={busy}
-          />
-          {index < data.frames.length - 1 && (!startLabel || clock.playing) && (
-            <button
-              type="button"
-              title="Restart the story and its cinematic entrance"
-              onClick={() => {
-                refreshAnnotations({ camera: "resume" });
-                clock.replay();
-              }}
-              disabled={busy}
-            >
-              Restart
-            </button>
-          )}
-        </div>
-        {comparison}
-      </StoryDock>
+          {comparison}
+        </StoryDock>
+      )}
       {data.glacier && frame.raster && (
         <figure className="glacier-field">
           <img
@@ -165,6 +172,7 @@ export function StoryTimeline({
         </figure>
       )}
       <div
+        data-magnetic-years={yearReading ? "" : undefined}
         data-glacier-trace={data.glacier ? "" : undefined}
         className="story-milestones"
         role="group"
@@ -202,6 +210,17 @@ export function StoryTimeline({
           );
         })}
       </div>
+      {yearReading}
+      {magnetic && (
+        <button
+          type="button"
+          className="magnetic-timeline"
+          aria-expanded={timelineOpen}
+          onClick={() => showTimeline(!timelineOpen)}
+        >
+          {timelineOpen ? "Hide full timeline" : "Open full timeline"}
+        </button>
+      )}
       {compareDates && <FrameComparison frames={data.frames} index={index} select={clock.seek} />}
       {settled &&
         index === data.frames.length - 1 &&

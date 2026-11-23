@@ -8,11 +8,14 @@ const defaultCity = () =>
 
 export function useSkyCity(initial?: string) {
   const [preferred, setPreference] = useStoredName("sky-city", defaultCity().name, names, initial);
-  const [restored, restore] = useState<string>();
+  const [restored, setRestored] = useState<string>();
+  const restore = useCallback((next?: string) => {
+    setRestored(next && names.includes(next) ? next : undefined);
+  }, []);
   const name = restored ?? preferred;
   const select = useCallback(
     (next: string) => {
-      restore(undefined);
+      setRestored(undefined);
       setPreference(next);
     },
     [setPreference],

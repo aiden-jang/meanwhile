@@ -155,6 +155,7 @@ export interface FeedOptions {
   presentation?: "fresh" | "explore";
   radar?: "default" | "off";
   now?: number;
+  auroraAt?: number;
   /** Exact USGS features, for a test that needs one specific event rather than a plausible day. */
   usgs?: unknown[];
   /** A day with nothing in it. The feeds answer; they simply have no events. */
@@ -195,7 +196,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
         localStorage.setItem("eif.presentation", "explore");
     });
 
-  await installHazards(page);
+  await installHazards(page, options.auroraAt);
   await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) =>
     route.fulfill({ json: { host: "https://tilecache.rainviewer.com", radar: { past: [] } } }),
   );
@@ -353,7 +354,7 @@ const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: 
   },
 });
 
-async function installHazards(page: Page): Promise<void> {
+async function installHazards(page: Page, auroraAt?: number): Promise<void> {
   await page.route(/gdacsapi\/api\/events\/geteventlist/, (route) => {
     const type = new URL(route.request().url()).searchParams.get("eventlist") ?? "";
     const rows: Record<string, unknown[]> = {
@@ -407,7 +408,7 @@ async function installHazards(page: Page): Promise<void> {
         coordinates.push([lon, lat, band ? 30 : 0]);
       }
     }
-    route.fulfill({ json: { "Forecast Time": new Date().toISOString(), coordinates } });
+    route.fulfill({ json: { "Forecast Time": new Date(auroraAt ?? Date.now()).toISOString(), coordinates } });
   });
 
   // EONET, for archived days. Dated inside the requested range for the reason the earthquake archive is: a

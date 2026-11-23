@@ -18,6 +18,8 @@ export interface StoryMoment {
   map: boolean;
   sky?: SkyPosition;
   aim?: SkyLook | undefined;
+  finding?: true;
+  solarReading?: "wind" | "xray";
   tongaView?: {
     phase: TongaPhase;
     held: boolean;
@@ -64,6 +66,9 @@ export function readStoryMoment(params: URLSearchParams): StoryMoment | undefine
   if (city) result.city = city;
   if (choice) result.choice = choice;
   if (chapter) result.chapter = chapter;
+  if (id === "orbit" && params.get("finding") === "1") result.finding = true;
+  const reading = params.get("reading");
+  if (id === "sun" && (reading === "wind" || reading === "xray")) result.solarReading = reading;
   const aim = params.get("aim")?.split(",").map(Number);
   if (aim?.length === 2 && aim[0]! >= 0 && aim[0]! < 360 && aim[1]! >= -90 && aim[1]! <= 90)
     result.aim = { azimuth: aim[0]!, altitude: aim[1]! };
@@ -86,6 +91,8 @@ export function writeStoryMoment(params: URLSearchParams, moment: StoryMoment) {
     ["pulse", moment.tongaView ? writeTongaPosition(moment.tongaView) : undefined],
     ["city", moment.city],
     ["chapter", moment.chapter],
+    ["finding", moment.finding ? 1 : undefined],
+    ["reading", moment.solarReading],
     ["journey", moment.journey?.id],
     ["stop", moment.journey?.step],
     ["aim", moment.aim ? `${moment.aim.azimuth},${moment.aim.altitude}` : undefined],

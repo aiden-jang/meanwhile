@@ -19,11 +19,15 @@ export function useRestoreAurora(
   }, [request, restored, forecastAt, start]);
 }
 
-export function auroraMoment(run: AuroraRun | null, request: StoryMoment | null): StoryMoment | undefined {
+export function auroraMoment(
+  run: AuroraRun | null,
+  request: StoryMoment | null,
+  map: boolean,
+): StoryMoment | undefined {
   return run
     ? {
         id: "aurora",
-        map: false,
+        map,
         at: run.forecast.forecastAt,
         choice: run.route.hemisphere === 1 ? "north" : "south",
       }

@@ -20,6 +20,7 @@ export interface BrowseOrigin {
 export type StoryNavigationValue = {
   returnLabel: string | undefined;
   hasReturnOrigin: boolean;
+  auroraFromPass: boolean;
   restoredCollection: CollectionPosition | null;
   dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;
@@ -53,5 +54,6 @@ export type StoryNavigationValue = {
   start: (id: string, trigger?: string) => void;
   tour: () => void;
   step: (index: number, selected?: Visit) => void;
+  stepUnavailable: (index: number) => string | null;
   finish: (complete: boolean) => void;
 };

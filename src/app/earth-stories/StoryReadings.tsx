@@ -26,11 +26,19 @@ export function StoryReadings({
   seek: (index: number) => void;
 }) {
   const north = id === "north";
+  const chart = data.series && (
+    <ObservationChart
+      series={data.series}
+      at={frame.at}
+      units={data.units}
+      onSeek={id === "ice" ? (at) => seek(nearestFrame(data, at)) : undefined}
+    />
+  );
   return (
     <>
-      {frame.measurements && (
+      {!north && frame.measurements && (
         <dl className="observation-values">
-          {(north ? frame.measurements.slice(0, 1) : frame.measurements).map((m) => (
+          {frame.measurements.map((m) => (
             <div key={m.label}>
               <dt>{m.label}</dt>
               <dd>{m.value}</dd>
@@ -39,18 +47,22 @@ export function StoryReadings({
         </dl>
       )}
       {north && data.series?.[0]?.samples[index] && frame.measurements?.[1] && (
-        <StoryCompass value={data.series[0].samples[index][1]} label={frame.measurements[1].label} />
+        <StoryCompass
+          value={data.series[0].samples[index][1]}
+          label={frame.measurements[1].label}
+          position={frame.measurements[0]?.value}
+        />
       )}
       {data.sites && (
         <StorySitePicker sites={data.sites} site={site} choose={chooseSite} value={selected?.value} />
       )}
-      {data.series && (
-        <ObservationChart
-          series={data.series}
-          at={frame.at}
-          units={data.units}
-          onSeek={id === "ice" ? (at) => seek(nearestFrame(data, at)) : undefined}
-        />
+      {north && chart ? (
+        <details className="magnetic-series">
+          <summary>Declination over time</summary>
+          {chart}
+        </details>
+      ) : (
+        chart
       )}
       {data.legend && (
         <ul className="story-legend">

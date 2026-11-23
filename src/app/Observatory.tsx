@@ -9,7 +9,7 @@ import { FixedJourneyLayout } from "./journeys/FixedJourney";
 import { ConnectedJourney } from "./journeys/ConnectedJourney";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { useObservatoryEscape } from "./useObservatoryEscape";
-import { Suspense, useLayoutEffect } from "react";
+import { Suspense, useLayoutEffect, useState } from "react";
 import { ObservatoryStage, ObservatoryScenePicker, SunCredits } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
@@ -32,6 +32,9 @@ import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
 import { nightfallPosition } from "./tonight/nightfall";
 import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
+import { auroraJourney } from "./journeys/auroraJourney";
+import { AuroraReading } from "./journeys/AuroraReading";
+import "./journeys/aurora-journey.css";
 export function Observatory(props: ObservatoryProps): JSX.Element {
   return (
     <StoryBoundary resetKey={props.views.navigation.key} onHome={props.onHome}>
@@ -59,6 +62,12 @@ function ObservatoryContent({
   const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
   const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
+  const guidedAurora = navigationContext?.route?.id === auroraJourney;
+  const heldOval = guidedAurora
+    ? navigationContext.progressFor(auroraJourney)?.stops.find(([step]) => step === 0)?.[1].visit.position
+        .moment
+    : undefined;
+  const [solarReadings, setSolarReadings] = useState<HTMLDivElement | null>(null);
   const closeView = (fallback: () => void) => () => {
     if (!navigationContext?.returnToBrowse()) fallback();
   };
@@ -69,9 +78,10 @@ function ObservatoryContent({
     tour.controls.current?.querySelector(".observatory-story")?.scrollTo(0, 0);
   }, [navigation.key, tour.at, tour.controls]);
   const ovalReturn = useOvalReturn(tour.controls, sun);
-  const closeSun = aurora.run
-    ? ovalReturn.close
-    : closeView(() => observations.returnTo("open-sun-watch", sun.close));
+  const closeSun =
+    aurora.run && !guidedAurora
+      ? ovalReturn.close
+      : closeView(() => observations.returnTo("open-sun-watch", sun.close));
   const closeAurora = closeView(() =>
     observations.returnTo("open-aurora-overflight", () => onScene("night")),
   );
@@ -81,6 +91,7 @@ function ObservatoryContent({
       aurora={aurora}
       ready={ready}
       solar={solar}
+      guided={guidedAurora}
       onSunWatch={ovalReturn.open}
       onCloseSun={sun.close}
       onTonight={fromAfterDark.open}
@@ -159,7 +170,9 @@ function ObservatoryContent({
           />
         )
       )}
-      <div className={`observatory-sidebar${tonight.active || radar.active ? " replay-sidebar" : ""}`}>
+      <div
+        className={`observatory-sidebar${tonight.active || radar.active || guidedAurora ? " replay-sidebar" : ""}`}
+      >
         <StoryDockProvider>
           <section
             id="observatory-intro"
@@ -238,19 +251,19 @@ function ObservatoryContent({
               </Suspense>
             ) : (
               <>
-                {(solar || aurora.run || aurora.requested) && (
+                {!guidedAurora && (solar || aurora.run || aurora.requested) && (
                   <button
                     type="button"
                     className="after-dark-return"
                     onClick={solar ? closeSun : closeAurora}
                   >
-                    {solar && aurora.run
+                    {solar && aurora.run && !guidedAurora
                       ? "Back to the oval"
                       : (navigationContext?.returnLabel ?? "Back to stars")}
                   </button>
                 )}
                 <div className="observatory-story" aria-live="polite" aria-atomic="true">
-                  <StoryIdentity id={navigationContext?.active} heading={title} />
+                  {!guidedAurora && <StoryIdentity id={navigationContext?.active} heading={title} />}
                   <h2 key={title}>
                     {landing ? (
                       <>
@@ -262,7 +275,11 @@ function ObservatoryContent({
                     )}
                   </h2>
                   <p key={description} className="observatory-description">
-                    {description}
+                    {guidedAurora
+                      ? solar
+                        ? "Read NOAA’s solar measurements beside the held forecast."
+                        : "Follow NOAA’s forecast over Earth’s night side."
+                      : description}
                   </p>
                   {active && tour.stop ? (
                     <p
@@ -277,6 +294,7 @@ function ObservatoryContent({
                     </p>
                   ) : null}
                 </div>
+                {guidedAurora && solar && <div className="aurora-solar-panel" ref={setSolarReadings} />}
                 {solar && <SunCredits />}
                 {active ? (
                   <ObservatoryTourControls tour={tour} onExplore={onExplore} />
@@ -331,7 +349,8 @@ function ObservatoryContent({
                     The linked forecast is no longer available. Showing NOAA’s current forecast.
                   </p>
                 )}
-                {(solar || aurora.run) && auroraControls}
+                {guidedAurora && !solar && aurora.run && <AuroraReading run={aurora.run} />}
+                {((solar && !guidedAurora) || (!solar && aurora.run)) && auroraControls}
                 {feedNote && !landing ? (
                   <p className="observatory-source-note" role="status">
                     {feedNote}
@@ -346,10 +365,25 @@ function ObservatoryContent({
       </div>
       {solar && (
         <Suspense fallback={<SunLoading />}>
-          <SunWatch onClose={closeSun} sample={sun.sample} position={sun.position} remember={sun.remember} />
+          <SunWatch
+            onClose={closeSun}
+            sample={sun.sample}
+            xraySample={sun.xray}
+            position={sun.position}
+            remember={sun.remember}
+            journey={
+              guidedAurora
+                ? {
+                    readings: solarReadings,
+                    forecastAt: aurora.run?.forecast.forecastAt ?? heldOval?.at,
+                    southern: aurora.run ? aurora.run.route.hemisphere === -1 : heldOval?.choice === "south",
+                  }
+                : undefined
+            }
+          />
         </Suspense>
       )}
     </section>
   );
-  return tonight.active ? <FixedJourneyLayout>{story}</FixedJourneyLayout> : story;
+  return tonight.active || guidedAurora ? <FixedJourneyLayout>{story}</FixedJourneyLayout> : story;
 }

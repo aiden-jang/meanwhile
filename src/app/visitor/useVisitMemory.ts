@@ -22,9 +22,14 @@ export function useVisitMemory(
   const read = () => {
     if (!active) return null;
     const position: VisitPosition = {};
-    const { observations, tonight, floatDive } = props.views;
+    const { observations, tonight, floatDive, sun } = props.views;
     const moment = props.views.getMoment();
     if (moment?.id === active) position.moment = moment;
+    if (active === "sun" && moment?.journey?.id === "follow-aurora") {
+      const { sample, xray } = sun.selection();
+      if (sample) position.solar = sample;
+      if (xray) position.solarXray = xray;
+    }
     const sky = tonight.view;
     if (sky) position.sky = skyPosition(sky, observations.map, tonight.orbit);
     const float = floatDive.view;

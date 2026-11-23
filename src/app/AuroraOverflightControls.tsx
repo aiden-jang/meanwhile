@@ -7,6 +7,7 @@ export function AuroraOverflightControls({
   aurora,
   ready,
   solar,
+  guided,
   onSunWatch,
   onCloseSun,
   onTonight,
@@ -15,6 +16,7 @@ export function AuroraOverflightControls({
   aurora: ReturnType<typeof useAuroraOverflight>;
   ready: boolean;
   solar: boolean;
+  guided: boolean;
   onSunWatch: () => void;
   onCloseSun: () => void;
   onTonight: () => void;
@@ -22,10 +24,10 @@ export function AuroraOverflightControls({
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
-    if (!aurora.run || aurora.run.held || solar) return;
+    if (!aurora.run || aurora.run.held || solar || guided) return;
     const frame = requestAnimationFrame(() => primary.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [aurora.run, solar]);
+  }, [aurora.run, solar, guided]);
   const other = aurora.routes.find((route) => route.hemisphere !== aurora.run?.route.hemisphere);
   const next = nextMeteor(Date.now());
   return (
@@ -47,14 +49,18 @@ export function AuroraOverflightControls({
             {aurora.run ? "Replay flight" : "Follow the aurora"}
           </button>
         )}
-        <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
-          Tonight’s Sky
-        </button>
+        {!guided && (
+          <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
+            Tonight’s Sky
+          </button>
+        )}
         {aurora.run && !solar && (
           <>
-            <button type="button" id="visit-sun-watch" onClick={onSunWatch}>
-              Visit Sun Watch
-            </button>
+            {!guided && (
+              <button type="button" id="visit-sun-watch" onClick={onSunWatch}>
+                Visit Sun Watch
+              </button>
+            )}
             {other && (
               <button
                 type="button"

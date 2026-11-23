@@ -1,0 +1,275 @@
+.fixed-journey[data-aurora-step] {
+  --journey-accent: #a9e1d8;
+}
+
+.fixed-journey[data-aurora-step="1"] {
+  --journey-accent: #a8d3ec;
+}
+
+.fixed-journey[data-aurora-step="2"] {
+  --journey-accent: #ebcea0;
+}
+
+.fixed-journey[data-aurora-step] .fixed-journey-rail svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fixed-journey[data-aurora-step] .fixed-journey-rail [aria-current="step"] svg {
+  color: var(--journey-accent);
+}
+
+.aurora-journey-reading {
+  margin: 14px 0 5px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.zones:has(.fixed-journey[data-aurora-step]) .observatory-story h2 {
+  max-width: 16ch;
+  font-family: "Alumni Sans", var(--font-sans);
+  font-weight: 600;
+  line-height: 0.94;
+}
+
+.aurora-journey-reading div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-block: 7px;
+}
+
+.aurora-journey-reading div + div {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.aurora-journey-reading dt,
+.aurora-held-time {
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.aurora-journey-reading dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.aurora-journey-reading dd:has(time) {
+  font-size: var(--text-caption);
+}
+
+.aurora-journey-reading div:first-child dd {
+  font-size: clamp(22px, 2.3vw, 34px);
+  line-height: 1;
+  color: #c2ead8;
+}
+
+.aurora-solar-panel .sun-console {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.aurora-solar-panel .sun-readings {
+  display: block;
+}
+
+.aurora-solar-panel .sun-readings section {
+  padding-inline: 0;
+  border-inline: 0;
+}
+
+.aurora-sun-readings {
+  justify-content: flex-start;
+  padding-inline: 0;
+}
+
+.aurora-held-time {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: 10px;
+  padding-block: 7px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.aurora-held-time time {
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.sun-watch-stage[data-guided-solar] {
+  grid-template-rows: minmax(0, 1fr);
+  grid-row: 1;
+  overflow: hidden;
+}
+
+.sun-watch-stage[data-guided-solar] .sun-archive-disk {
+  width: min(92%, 64dvh);
+  height: 100%;
+  inset-inline-start: 10%;
+}
+
+.zones:has(.sun-watch-stage[data-guided-solar]:not([data-leg="earth"])) .camera-recenter {
+  display: none;
+}
+
+.sun-skip-upstream {
+  position: absolute;
+  inset: auto 0 8px auto;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+}
+
+.zones:has(.fixed-journey[data-aurora-step="0"]) .observatory-stage[data-stage="aurora"] .stage-readout {
+  display: none;
+}
+
+.story-finding #related-story-aurora-journey + small {
+  display: block;
+  margin-block: 3px 7px;
+}
+
+.story-finding button[id="related-story-aurora-journey"] {
+  margin-inline-end: 12px;
+  font-weight: 620;
+}
+
+.magnetic-series {
+  margin-top: 8px;
+  color: var(--color-dim);
+}
+
+.magnetic-series summary {
+  min-height: 44px;
+  padding-block: 11px;
+}
+
+.magnetic-timeline {
+  min-height: 44px;
+  color: var(--color-ink);
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.zones:has(.fixed-journey[data-aurora-step="2"]) [data-magnetic-years] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 5px;
+}
+
+.zones:has(.fixed-journey[data-aurora-step="2"]) .observation-heading .observatory-actions {
+  display: none;
+}
+
+.zones:has(.fixed-journey[data-aurora-step="2"]) [data-magnetic-years] button {
+  justify-items: center;
+}
+
+.zones:has(.fixed-journey[data-aurora-step="2"]) [data-magnetic-years] small {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .zones:has(.fixed-journey[data-aurora-leaving]) .sun-watch-stage {
+    animation: aurora-earth-return 480ms cubic-bezier(0.23, 0.72, 0.26, 1) both;
+  }
+}
+
+@keyframes aurora-earth-return {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (min-width: 900px) {
+  .zones:has(.fixed-journey[data-aurora-step]) .observatory-intro {
+    align-content: start;
+    padding-block-start: clamp(28px, 5vh, 65px);
+  }
+}
+
+@media (max-width: 599px) {
+  .frame[data-presentation="observe"] .zones:has(.fixed-journey[data-aurora-step]):has(.replay-sidebar) {
+    grid-template-rows: clamp(105px, 22dvh, 170px) minmax(0, 1fr);
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step]) .observatory-intro {
+    gap: 6px;
+    padding-block-start: 10px;
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step]) .observatory-intro h2 {
+    font-size: clamp(28px, 9vw, 42px);
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step]) .observatory-description {
+    margin-block: 3px 0;
+  }
+
+  .aurora-solar-panel .sun-readings section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .aurora-solar-panel .sun-readings section[hidden] {
+    display: none;
+  }
+
+  .aurora-solar-panel .sun-chart {
+    order: 1;
+  }
+
+  .aurora-solar-panel .sun-reading-actions {
+    order: 2;
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step="2"]) .story-compass {
+    margin-block: 5px;
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step="2"]) .story-compass svg {
+    width: 55px;
+  }
+
+  .zones:has(.fixed-journey[data-aurora-step="2"]) .observatory-stage .stage-ident {
+    display: none;
+  }
+
+  .fixed-journey[data-aurora-step] .fixed-journey-rail ol {
+    padding-inline: 6px;
+    gap: 0;
+  }
+
+  .fixed-journey[data-aurora-step] .fixed-journey-pager {
+    grid-template-columns: auto 1fr;
+  }
+
+  .fixed-journey[data-aurora-step] .fixed-journey-pager button {
+    font-size: 12px;
+    padding-inline: 8px;
+  }
+
+  .fixed-journey[data-aurora-step] .fixed-journey-rail svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 700px) {
+  .zones:has(.fixed-journey[data-aurora-step="2"])
+    .observation-panel:has([data-magnetic-years])
+    > .observation-heading
+    + .observation-note {
+    display: none;
+  }
+}

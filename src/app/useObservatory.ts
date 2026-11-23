@@ -148,7 +148,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     skyCity: skyCity.name,
     focus,
     run: run && !run.held ? { ...run, held: true as const } : run,
-    sunWatch: sunWatch ? { ...sunWatch, position: sun.moment(observations.map) } : null,
+    sunWatch: sunWatch ? { ...sunWatch, ...sun.selection(), position: sun.moment(observations.map) } : null,
     browser,
     origin,
     sky: sky.capture(),
@@ -311,7 +311,7 @@ export function useObservatory(shared: Partial<Permalink>) {
           sky.moment(observations.map) ??
           getFloatMoment(observations.map) ??
           observations.getMoment() ??
-          auroraMoment(auroraRun, auroraRequest),
+          auroraMoment(auroraRun, auroraRequest, observations.map),
         routeExtension.current.journey(),
       ),
     openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
@@ -383,7 +383,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     floatDive,
     radar,
     globe(guided: boolean): GlobePresentation {
-      if (observations.entry) return observations.view ?? loadingBackdrop.current;
+      if (observations.entry) return observations.view ?? auroraRun ?? loadingBackdrop.current;
       if (floatView === "opening" || radarOpening) return loadingBackdrop.current;
       if (night) {
         if (tonightView === "opening" && skyEntry.nightfall) return "dayline";

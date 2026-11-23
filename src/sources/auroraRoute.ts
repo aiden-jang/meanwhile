@@ -1,6 +1,7 @@
 import { DEG } from "../geo/sphere";
 import { subsolarPoint } from "../geo/sun";
 import { AURORA_LON, auroraAt, type Aurora } from "./aurora";
+import type { CameraState } from "../globe/controlsTypes";
 
 export type Hemisphere = 1 | -1;
 
@@ -20,6 +21,7 @@ export interface AuroraRun {
   forecast: Aurora;
   route: AuroraRoute;
   held?: true;
+  pose?: CameraState | undefined;
 }
 
 const DARK = Math.sin(-6 * DEG);

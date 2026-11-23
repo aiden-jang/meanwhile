@@ -964,3 +964,10 @@ Meteor Nights follow the observing content. Orbit, Map and Local sky use the sam
 bearing. The orbit-to-horizon route turns above Earth and pitches into the local sky as it lands.
 Reduced motion settles directly into the requested view. Switching back from a shower restores the held sky time
 and bearing for the same city. The radar player stays mounted between the layer list and its inspector, preserving the selected scan. The city selector names its curated scope explicitly.
+
+Follow the aurora opens from the ISS finding or the journey shelf. The guided solar flight pulls
+away from the held oval without replacing the globe or map. The valid time of the forecast stays
+beside the separately dated solar measurement. The return reveals the same Earth while Wandering
+North loads, then frames the modelled pole. The compass and year choices sit together in the
+reading. Previous view restores the camera, projection and selected reading. Returning to the
+ISS finding restores the city, local time and held horizon.

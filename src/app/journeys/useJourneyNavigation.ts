@@ -9,8 +9,9 @@ import { goldenGate } from "./coastRoute";
 import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./connectedStops";
 import { foldDeparture } from "./foldDeparture";
 import { journeyProgressKey, packJourneyProgress, readJourneyProgress } from "./journeyProgress";
+import { auroraHandoff, auroraJourney } from "./auroraJourney";
 
-type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" | "glacier" };
+type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" | "glacier" | "solar" };
 
 interface JourneyInputs {
   linked?: { id: string; step: number } | undefined;
@@ -18,6 +19,8 @@ interface JourneyInputs {
   current: () => Visit | null;
   camera: () => CameraState;
   map: boolean;
+  aurora: JourneyArrival["aurora"];
+  city: string;
   browseMap: boolean;
   float: FloatDiveView | null;
   curtain: boolean;
@@ -42,6 +45,7 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     current: new Map<number, ConnectedStop>(inputs.linked ? progressFor(inputs.linked.id)?.stops : undefined),
   }));
   const folding = useRef<(() => void) | undefined>();
+  const opening = useRef(false);
   const activeRoute = journeys.find(({ id }) => id === route?.id);
   const visible = route && activeRoute?.steps[route.step]?.id === inputs.active ? route : null;
   useEffect(() => {
@@ -66,11 +70,16 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
 
   function capture() {
     const pose = inputs.camera();
-    return { pose, map: inputs.map, float: inputs.float?.checkpoint(pose) };
+    return {
+      pose,
+      map: inputs.map,
+      float: inputs.float?.checkpoint(pose),
+      ...(visible?.id === auroraJourney ? { city: inputs.city, aurora: inputs.aurora } : {}),
+    };
   }
 
   function checkpoint() {
-    if (!visible) return;
+    if (!visible || opening.current) return;
     const visit = inputs.current();
     if (visit && !visible.folding) {
       const prior = stops.current.get(visible.step);
@@ -87,24 +96,43 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     setRoute(null);
   }
 
+  function stepUnavailable(index: number) {
+    const next = activeRoute?.steps[index];
+    return next && !(next.id === "aurora" && stops.current.get(index)?.arrival.aurora)
+      ? inputs.unavailable(next.id)
+      : null;
+  }
+
+  function open(...args: Parameters<JourneyInputs["open"]>) {
+    // View teardown triggers checkpoints too, after some player refs have been cleared.
+    opening.current = true;
+    try {
+      inputs.open(...args);
+    } finally {
+      opening.current = false;
+    }
+  }
+
   function enter(id: string, index: number, trigger: string, resume: boolean) {
     const journey = journeys.find((entry) => entry.id === id);
     const next = journey?.steps[index];
     if (!journey || !next || inputs.unavailable(next.id)) return;
+    checkpoint();
     const saved = resume ? progressFor(id) : null;
-    stops.current = new Map(saved?.stops);
-    const stop = stops.current.get(index);
-    const map = inputs.browseMap;
-    if (!stop)
-      stops.current.set(index, { visit: { id: next.id, seen: Date.now(), position: {} }, arrival: { map } });
-    setRoute({ id, step: index });
-    inputs.open(
+    const nextStops = new Map(saved?.stops);
+    const stop = nextStops.get(index);
+    const map = trigger === auroraHandoff ? inputs.map : inputs.browseMap;
+    const arrival = stop?.arrival ?? { map };
+    if (!stop) nextStops.set(index, { visit: { id: next.id, seen: Date.now(), position: {} }, arrival });
+    open(
       next.id,
       trigger,
       stop?.visit,
       !!journey.guide || resume,
-      stop?.arrival ?? (journey.guide ? { map } : undefined),
+      journey.guide || stop ? arrival : undefined,
     );
+    stops.current = nextStops;
+    setRoute({ id, step: index });
     persist(id, index);
     if (!resume) reportAnalytics({ name: "journey_started", journey: id });
   }
@@ -124,6 +152,7 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     },
     checkpoint,
     leave,
+    stepUnavailable,
     start: (id: string, trigger = `journey-${id}`) => enter(id, 0, trigger, false),
     continueJourney(id: string, trigger: string) {
       const progress = progressFor(id);
@@ -131,7 +160,7 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
     },
     step(index: number, selected?: Visit) {
       const next = activeRoute?.steps[index];
-      if (!route || route.folding || index === route.step || !next || inputs.unavailable(next.id)) return;
+      if (!route || route.folding || index === route.step || !next || stepUnavailable(index)) return;
       const revisit = stops.current.has(index);
       const here = capture();
       const visit = inputs.current();
@@ -147,11 +176,18 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       if (selected?.id === next.id) stop.visit = selected;
       const connected = !!activeRoute?.guide || revisit;
       const iceCrossing = route.id === "ice-in-motion" && next.id === "iceberg";
+      const returnFromSun = route.id === auroraJourney && inputs.active === "sun" && next.id === "north";
       const coastCrossing = route.id === "reading-the-coast" && !revisit && index > route.step;
       if (iceCrossing || coastCrossing || (route.id === "water-in-motion" && next.id === "river"))
         stop.arrival.crossing = true;
       if (route.id === "reading-the-coast" && next.id === "tide" && !revisit)
         stop.visit.position.moment = { id: "tide", map: stop.arrival.map, choice: goldenGate.id };
+      if (route.id === auroraJourney && !revisit) {
+        stop.arrival.city = inputs.city;
+        if (next.id === "sun") stop.arrival.pose = here.pose;
+        if (next.id === "north") stop.arrival.crossing = true;
+        if (next.id === "aurora") stop.visit.position = {};
+      }
       if (route.id === "water-in-motion" && inputs.active === "atmospheric-river" && next.id === "rain") {
         stop.arrival.keepForecast = !revisit || stop.arrival.map === here.map;
         if (!revisit) stop.arrival.pose = here.pose;
@@ -159,7 +195,7 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
       const advance = () => {
         folding.current = undefined;
         stops.current.set(index, stop);
-        inputs.open(
+        open(
           next.id,
           `journey-${route.id}`,
           connected ? stop.visit : undefined,
@@ -169,18 +205,20 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
         setRoute({ id: route.id, step: index });
         persist(route.id, index);
       };
-      if (
-        iceCrossing &&
-        inputs.active === "glacier" &&
+      const departure =
         !matchMedia("(prefers-reduced-motion: reduce)").matches &&
-        inputs.foldGlacier()
-      ) {
+        (returnFromSun
+          ? "solar"
+          : iceCrossing && inputs.active === "glacier" && inputs.foldGlacier()
+            ? "glacier"
+            : null);
+      if (departure) {
         const finish = () => {
           if (folding.current === finish) advance();
         };
         folding.current = finish;
-        setRoute({ ...route, folding: "glacier" });
-        window.setTimeout(finish, 380);
+        setRoute({ ...route, folding: departure });
+        window.setTimeout(finish, departure === "solar" ? 480 : 380);
         return;
       }
       const transition = foldDeparture(inputs.float, inputs.curtain, folding, advance);
