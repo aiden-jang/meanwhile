@@ -72,7 +72,9 @@ export function TonightSky({
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
   const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(returnSky ?? null);
-  const [started, setObserving] = useState(Boolean(initialPosition) && !nightfall);
+  const [started, setObserving] = useState(
+    Boolean(initialPosition) && (!nightfall || !!initialPosition?.direct),
+  );
   const [arrivalCity, setArrivalCity] = useState(() =>
     nightfall ? skyCities.find(({ name }) => name === initialPosition?.city) : undefined,
   );
@@ -269,6 +271,13 @@ export function TonightSky({
           </div>
         </section>
       )}
+      <SkyCityPicker
+        city={city.name}
+        select={(name) => {
+          setArrivalCity(undefined);
+          preference.select(name);
+        }}
+      />
       {mode === "sky" && !guided && (
         <div className="tonight-moonfall-entry">
           <button type="button" id="open-moonfall" onClick={approachMoon}>
@@ -277,13 +286,6 @@ export function TonightSky({
           </button>
         </div>
       )}
-      <SkyCityPicker
-        city={city.name}
-        select={(name) => {
-          setArrivalCity(undefined);
-          preference.select(name);
-        }}
-      />
       {mode === "meteors" ? (
         <MeteorNights
           city={city}

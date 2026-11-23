@@ -68,15 +68,15 @@ export interface SlabLayer {
   dispose: () => void;
 }
 
-export function createSlabLayer(morph = { value: 0 }): SlabLayer {
+export function createSlabLayer(morph = { value: 0 }, reading = false): SlabLayer {
   const geometry = new BufferGeometry();
   const material = new ShaderMaterial({
     ...SHADER,
     uniforms: {
-      uColor: { value: new Color(COLOR_SLAB) },
+      uColor: { value: new Color(reading ? 0xffdfac : COLOR_SLAB) },
       uOpacity: { value: 0 },
       uPixelRatio: { value: 1 },
-      uSize: { value: SIZE_PX },
+      uSize: { value: reading ? 13 : SIZE_PX },
       // The scene's own value, not a copy: this has to flatten with the geography under it.
       uMorph: morph,
     },
@@ -91,7 +91,7 @@ export function createSlabLayer(morph = { value: 0 }): SlabLayer {
   const object = new Points(geometry, material);
   // Under the plate lines and everything above them: the deepest thing on the globe, and the only layer
   // that is literally beneath the others.
-  object.renderOrder = 2;
+  object.renderOrder = reading ? 6 : 2;
   object.visible = false;
   object.frustumCulled = false;
 

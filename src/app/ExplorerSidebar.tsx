@@ -187,9 +187,7 @@ export function ExplorerSidebar({
                     observations.setQuery("");
                     context.onScene(scene.id);
                   });
-                  document
-                    .querySelector<HTMLElement>('#observatory-scenes button[aria-pressed="true"]')
-                    ?.focus({ preventScroll: true });
+                  document.getElementById(`observatory-entry-${scene.id}`)?.focus({ preventScroll: true });
                 }}
               >
                 Open {scene.name} scene

@@ -495,8 +495,11 @@ export async function revealSceneEntry(page: Page, name: SceneName) {
 }
 
 export async function selectScene(page: Page, name: SceneName) {
-  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-  if (await scenes.isVisible()) await scenes.getByRole("button", { name, exact: true }).click();
+  const stage = { Earth: "live", "Below the Surface": "depth", "After Dark": "night" }[name];
+  if (await page.locator(`main:not([data-landing]) .observatory-stage[data-stage="${stage}"]`).isVisible())
+    await page
+      .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })
+      .click();
   else await (await revealSceneEntry(page, name)).click();
 }
 
@@ -539,7 +542,7 @@ export async function startJourney(page: Page, id: string) {
 
 export async function revealStoryTools(page: Page) {
   const browse = page.getByRole("button", { name: "Browse stories", exact: true });
-  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  const scenes = page.getByRole("group", { name: "Explore by subject", exact: true });
   if ((await browse.isVisible()) || (await scenes.isVisible())) await openStories(page, "all");
 }
 

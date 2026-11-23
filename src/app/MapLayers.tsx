@@ -294,6 +294,18 @@ export function MapLayers({
         )}
       </div>
       <div hidden={!!rewindPoint}>
+        {layer === null && Object.values(controls.enabled).every((on) => !on) && (
+          <div className="layer-note">
+            <p role="status">All layers are off.</p>
+            <button
+              type="button"
+              className="layer-story-link"
+              onClick={() => controls.change("earthquakes", true)}
+            >
+              Show earthquakes
+            </button>
+          </div>
+        )}
         <LayerCatalogue controls={controls} quiet={quiet} disabled={disabled} onInspect={inspect} />
         {!archived && (
           <details className="layer-place" hidden={layer !== null}>
@@ -301,11 +313,6 @@ export function MapLayers({
             <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
             <PlaceContext {...reports} />
           </details>
-        )}
-        {layer === null && Object.values(controls.enabled).every((on) => !on) && (
-          <p role="status" className="layer-note">
-            All layers are off. Turn one on to see its data.
-          </p>
         )}
         <div hidden={layer !== "earthquakes"}>{children}</div>
         {hazardKind && (

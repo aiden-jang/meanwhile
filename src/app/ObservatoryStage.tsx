@@ -1,5 +1,8 @@
 import { StoryProjection } from "./observations/StoryProjection";
 import { reportAnalytics } from "../../analytics/browser";
+import type { ObservatoryProps } from "./observatoryProps";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { cityNightOpening } from "./tonight/nightfall";
 import { SceneDiagram } from "./SceneDiagram";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
@@ -126,44 +129,50 @@ export function ObservatoryStage({
   );
 }
 
-export function ObservatoryScenePicker({
-  scene,
+export function ObservatoryEntrances({
   ready,
-  deepAvailable,
+  views,
+  onExplore,
   onScene,
-}: {
-  scene: EarthScene;
-  ready: boolean;
-  deepAvailable: boolean;
-  onScene: (scene: EarthScene) => void;
-}): JSX.Element {
+}: Pick<ObservatoryProps, "ready" | "views" | "onExplore" | "onScene">): JSX.Element {
+  const navigation = useStoryNavigation();
+  function open(subject: EarthScene) {
+    reportAnalytics({ name: "scene_selected", scene: subject });
+    if (subject === "night") {
+      navigation?.openNightfall(cityNightOpening(views.skyCity.city, Date.now()), "observatory-entry-night");
+      return;
+    }
+    onScene(subject, true);
+    if (subject === "live") {
+      views.navigation.requestExploreFocus("explorer-layers-tab");
+      views.browser.show("layers");
+      onExplore(true);
+    }
+  }
+  const destination = { live: "Live layers", depth: "Earthquake cutaway", night: "Tonight’s Sky" };
   return (
     <div
       id="observatory-scenes"
       tabIndex={-1}
       className="observatory-scenes"
       role="group"
-      aria-label="Earth scenes"
+      aria-label="Explore by subject"
     >
-      {OBSERVATORY_SCENES.map((option) => (
+      {OBSERVATORY_SCENES.map(({ id, name }) => (
         <button
-          key={option.id}
+          key={id}
+          id={`observatory-entry-${id}`}
           type="button"
-          onClick={() => {
-            if (scene !== option.id) reportAnalytics({ name: "scene_selected", scene: option.id });
-            onScene(option.id);
-          }}
-          aria-pressed={scene === option.id}
-          aria-label={option.name}
-          disabled={!ready}
-          aria-describedby={
-            option.id === "depth" && scene === "depth" && ready && !deepAvailable
-              ? "depth-availability"
-              : undefined
-          }
+          onClick={() => open(id)}
+          aria-label={name}
+          aria-describedby={`observatory-destination-${id}`}
+          disabled={!ready && id !== "live"}
         >
-          <SceneDiagram scene={option.id} />
-          <span className="scene-label">{option.name}</span>
+          <SceneDiagram scene={id} />
+          <span className="scene-label">{name}</span>
+          <span id={`observatory-destination-${id}`} className="scene-destination">
+            {destination[id]}
+          </span>
         </button>
       ))}
     </div>

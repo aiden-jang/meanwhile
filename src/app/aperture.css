@@ -72,6 +72,13 @@
 .frame[data-landing] .observatory-entry-actions > button {
   pointer-events: auto;
 }
+.frame[data-landing] .observatory-scenes {
+  grid-column: 1;
+  margin: 0;
+}
+.frame[data-landing] .observatory-scenes button {
+  pointer-events: auto;
+}
 .frame[data-landing] .observatory-entry-actions .observatory-primary {
   display: inline-flex;
   align-items: center;
@@ -369,7 +376,11 @@
     height: var(--landing-height);
   }
   .frame[data-landing] .observatory-intro {
-    padding-top: 64px;
+    padding-block: 64px 46px;
+    align-content: center;
+  }
+  .frame[data-landing] .observatory-story h2 br {
+    display: contents;
   }
   .frame[data-landing] .observatory-description {
     max-width: none;
@@ -467,9 +478,6 @@
 }
 
 @media (max-width: 599px) and (orientation: portrait) and (max-height: 620px) {
-  .frame[data-landing] .zones {
-    --phone-earth-height: min(88vw, 40dvh);
-  }
   .frame[data-landing] .observatory-intro {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
@@ -487,13 +495,23 @@
     font-size: 13px;
   }
   .frame[data-landing] .observatory-stage {
-    inset: var(--head-h) 18px 55px;
+    inset: var(--head-h) 18px auto;
     width: auto;
-    height: auto;
+    height: var(--phone-earth-height);
   }
   .frame[data-landing] .stage-readout > div:not(.layer-readout),
   .frame[data-landing] .stage-readout > time {
     display: none;
+  }
+}
+
+@media (max-width: 599px) and (orientation: portrait) and (max-height: 680px) {
+  .frame[data-landing] .zones {
+    --phone-earth-height: min(82vw, 34dvh);
+  }
+  .frame[data-landing] .observatory-intro {
+    padding-top: calc(var(--head-h) + var(--phone-earth-height) + 12px);
+    gap: 10px;
   }
 }
 

@@ -39,6 +39,7 @@ for (const [width, height] of [
     const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
     const browse = page.getByRole("button", { name: "Browse stories", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
+    await expect(page.locator("#globe-view canvas")).toBeVisible();
     await Promise.all([
       expect(page.locator("#chrome-rail")).toBeHidden(),
       expect(stage).toContainText("Day–night boundary"),
@@ -46,7 +47,7 @@ for (const [width, height] of [
       expect(explore).toBeVisible(),
       expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
-      expect(page.getByRole("group", { name: "Earth scenes" })).toHaveCount(0),
+      expect(page.getByRole("group", { name: "Explore by subject" })).toBeInViewport({ ratio: 1 }),
     ]);
     const bounds = await page.evaluate(() => {
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();
@@ -87,14 +88,9 @@ for (const [width, height] of [
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
     await expect(stage).toContainText("Catalogue sky");
     expect(await credit.boundingBox()).toEqual(creditPosition);
-    await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
-    await depth.click();
+    await expect(page.getByRole("group", { name: "Explore by subject" })).toBeVisible();
+    await selectScene(page, "Below the Surface");
     await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
-    await expect(depth).toHaveAttribute("aria-pressed", "true");
     await expect(stage).toContainText("300 / 600 / 900 km");
     expect(await credit.boundingBox()).toEqual(creditPosition);
     if (width === 320 || width === 812) {

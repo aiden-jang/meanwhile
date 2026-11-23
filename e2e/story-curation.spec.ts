@@ -10,7 +10,7 @@ for (const width of [1440, 390]) {
     await page.goto("/");
     const browse = page.getByRole("button", { name: "Browse stories", exact: true });
     await expect(browse).toBeVisible();
-    await expect(page.getByRole("group", { name: "Earth scenes" })).toHaveCount(0);
+    await expect(page.getByRole("group", { name: "Explore by subject" })).toBeVisible();
     await expect(page.locator(".story-continue")).toHaveCount(0);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();

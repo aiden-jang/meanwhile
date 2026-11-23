@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, selectScene } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("a shared scene opens the same category in a fresh browser @dev", async ({ page, browser }) => {
   await installFeeds(page, { presentation: "fresh" });
@@ -90,26 +90,15 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await selectScene(page, "Earth");
-  await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  for (const name of ["After Dark", "Below the Surface", "Earth", "After Dark"]) {
-    await page.getByRole("button", { name, exact: true }).dispatchEvent("click");
-  }
-  await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await page
-    .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
-    .dispatchEvent("click");
-  await page
-    .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })
-    .dispatchEvent("click");
-  await page
-    .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
-    .dispatchEvent("click");
+  const entrances = page.getByRole("group", { name: "Explore by subject" });
+  const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
+  await entrances.getByRole("button", { name: "After Dark", exact: true }).click();
+  await home.dispatchEvent("click");
+  await entrances.getByRole("button", { name: "Below the Surface", exact: true }).dispatchEvent("click");
+  await home.dispatchEvent("click");
+  await entrances.getByRole("button", { name: "Earth", exact: true }).dispatchEvent("click");
   await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
   await expect
     .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))

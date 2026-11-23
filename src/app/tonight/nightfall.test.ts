@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { sunElevation } from "../../geo/sun";
 import { skyCities } from "./cities";
 import { localNight } from "../../geo/nightWindow";
-import { nightfallPosition, skyLight } from "./nightfall";
+import { cityNightOpening, nightfallPosition, skyLight } from "./nightfall";
 
 test("Nightfall chooses a calculated evening close to now throughout the day", () => {
   for (const hour of [0, 4, 8, 12, 16, 20]) {
@@ -21,4 +21,17 @@ test("the rounded bounds read as sunset and sunrise", () => {
   const night = localNight(city, Date.UTC(2026, 10, 20, 12));
   expect(skyLight(city, night.start, night)).toBe("Sunset");
   expect(skyLight(city, night.end, night)).toBe("Sunrise");
+});
+
+test("the After Dark entrance opens the saved city's next sunset or its current night", () => {
+  const city = skyCities.find(({ name }) => name === "New York")!;
+  const afternoon = Date.UTC(2026, 10, 20, 19);
+  const night = localNight(city, afternoon);
+  expect(cityNightOpening(city, afternoon)).toMatchObject({ city: "New York", at: night.start });
+  const morning = Date.UTC(2026, 10, 21, 8, 12, 19);
+  expect(cityNightOpening(city, morning)).toMatchObject({
+    city: "New York",
+    nightStart: night.start,
+    at: Date.UTC(2026, 10, 21, 8, 12),
+  });
 });

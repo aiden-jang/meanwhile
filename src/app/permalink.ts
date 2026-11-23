@@ -8,6 +8,7 @@ import { readStoryMoment, writeStoryMoment, type StoryMoment } from "./observati
 // Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 import { readLayers, writeLayers, type SharedLayers } from "./layerLink";
+import { depthRecord, type DepthRecord } from "../data/depthRecords";
 import type { EarthScene } from "./useObservatory";
 
 /* "Look at this" as a link. See ARCHITECTURE.md#srcapppermalinkts. */
@@ -24,6 +25,7 @@ export interface Permalink extends SharedLayers {
   flat?: boolean;
   presentation?: "observe" | "explore";
   scene?: EarthScene;
+  depthEvent?: DepthRecord["id"];
   catalogue?: EarthScene | "all";
   /** `source:id`, or null. Not our internal key. */
   event: string | null;
@@ -59,6 +61,7 @@ export function encode(state: Permalink): string {
   if (state.flat !== undefined) parts.push(`p=${state.flat ? "map" : "globe"}`);
   if (state.presentation) parts.push(`v=${state.presentation}`);
   if (state.scene) parts.push(`scene=${state.scene}`);
+  if (state.depthEvent) parts.push(`depthEvent=${state.depthEvent}`);
   if (state.catalogue) parts.push(`catalogue=${state.catalogue}`);
   if (state.event) parts.push(`e=${state.event}`);
   // Seconds, not milliseconds. The strip is 24 buckets wide, so a shared moment is good to about a minute.
@@ -98,6 +101,8 @@ export function decode(fragment: string): Partial<Permalink> {
   if (presentation === "observe" || presentation === "explore") out.presentation = presentation;
   const scene = params.get("scene");
   if (scene === "live" || scene === "depth" || scene === "night") out.scene = scene;
+  const reading = scene === "depth" && !story ? depthRecord(params.get("depthEvent")) : undefined;
+  if (reading) out.depthEvent = reading.id;
   const catalogue = params.get("catalogue");
   if (catalogue === "live" || catalogue === "depth" || catalogue === "night" || catalogue === "all")
     out.catalogue = catalogue;

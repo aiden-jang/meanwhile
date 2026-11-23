@@ -370,8 +370,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     events.setGlobeRadius(radiusPx);
     markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
-  const cutaway = createCutaway();
-  world.add(cutaway.object);
+  const cutaway = createCutaway(morph);
+  world.add(cutaway.object, cutaway.reading);
   for (const layer of [ocean, fill, grat, plateLines, plateEdge, coast, night, glint]) {
     cutaway.patch(layer.material);
   }
@@ -393,9 +393,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (previous !== presentation.shadows() && moment !== null) aimSun(moment);
     },
     setCutaway: (focus) => {
-      controls.setDive(focus?.dive === true);
+      controls.setDive(focus?.dive === true && !focus.cameraOnly);
       cutaway.set(focus);
-      if (focus) lights.begin();
+      if (focus && !focus.cameraOnly && !cutaway.isOpen()) lights.begin();
     },
     cutawayOpen: cutaway.isOpen,
     beginRegroup: regroup.begin,
@@ -559,7 +559,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
          are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md#srcglobescenets. */
       const { first, last } = visibleMapCopies(camera, period);
-
       renderer.autoClear = true;
       for (let k = first; k <= last; k += 1) {
         world.position.x = k * period;
@@ -576,6 +575,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       regroup.dispose();
       events.dispose();
       slab.dispose();
+      cutaway.dispose();
       starfield.dispose();
       moon.dispose();
       figures.dispose();

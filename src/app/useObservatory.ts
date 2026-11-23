@@ -22,6 +22,7 @@ import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
 import { isSkyStory } from "./tonight/skyMoment";
 import { useFloatView } from "./float/useFloatView";
+import { useDepthCutaway } from "./recordedCutaway";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
@@ -36,7 +37,6 @@ export function useObservatory(shared: Partial<Permalink>) {
     checkpoint.current();
   }, []);
   const [scene, setScene] = useState(() => initialScene(shared));
-  const [focus, setFocus] = useState<CutawayFocus | null>(null);
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
@@ -44,7 +44,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const { visit: sunWatch, setVisit: setSunWatch, ...sun } = useSunVisit(before, setRun, story);
   const skyCity = useSkyCity(shared.story?.city);
   const sky = useSkyView(skyCity.name, before, story);
-  const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
+  const { view: tonightView, entry: skyEntry, setView: setTonightView } = sky;
   const {
     entry: floatEntry,
     view: floatView,
@@ -63,10 +63,11 @@ export function useObservatory(shared: Partial<Permalink>) {
       ? story
       : undefined,
     before,
-    story?.map,
+    story?.map ?? (shared.depthEvent ? shared.flat : undefined),
     story ? linkedPose(shared) : undefined,
   );
-  const closeObservations = observations.close;
+  const { focus, setFocus, depthFocus, selectDepth } = useDepthCutaway(shared, tourStop, observations);
+  const closeDeck = observations.close;
   const radarEntry = useRef<RadarEntry>(story?.id === "radar" ? radarLink(story, linkedPose(shared)) : {});
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);
@@ -78,9 +79,9 @@ export function useObservatory(shared: Partial<Permalink>) {
     setRadarView(null);
     setTonightView(null);
     setFloatView(null);
-    closeObservations();
+    closeDeck();
     storyFromExplore.current = false;
-  }, [closeObservations, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora]);
+  }, [closeDeck, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora]);
   const {
     presentation,
     changePresentation,
@@ -118,10 +119,10 @@ export function useObservatory(shared: Partial<Permalink>) {
       setRadarView(null);
       setTonightView(null);
       setFloatView(null);
-      if (!keepDeck) closeObservations();
+      if (!keepDeck) closeDeck();
       open?.();
     },
-    [closeObservations, before, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora],
+    [closeDeck, before, setTonightView, setRadarView, setFloatView, setSunWatch, requestAurora, setFocus],
   );
   const radar = radarActions(
     { radarView, radarOrigin, radarEntry, setRadarView, updateRadar },
@@ -181,6 +182,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         !tonight &&
         !floatView &&
         !radarView &&
+        !depthFocus?.archiveReading &&
         !observations.entry,
     backgroundLayers:
       !observing || (scene === "live" && !depth && !observations.entry && !floatView && !radarView),
@@ -302,6 +304,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       radarView !== null ||
       tonight ||
       floatView !== null ||
+      (depth && !!depthFocus?.archiveReading) ||
       !!observations.entry,
     observations,
     getMoment: () =>
@@ -347,7 +350,8 @@ export function useObservatory(shared: Partial<Permalink>) {
     exploreScene,
     observeScene,
     depth,
-    depthFocus: depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null,
+    depthFocus: depth ? depthFocus : null,
+    selectDepth,
     night,
     aurora: {
       run: auroraRun,
@@ -361,11 +365,9 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     sun: { ...sun, active: sunActive },
     tonight: {
+      ...sky,
       active: tonight,
       view: localSky,
-      entry: skyEntry,
-      orbit: sky.orbit,
-      setOrbit: sky.setOrbit,
       open(...args: Parameters<typeof sky.open>) {
         before();
         sky.open(...args);
@@ -373,8 +375,6 @@ export function useObservatory(shared: Partial<Permalink>) {
         requestAurora(null);
         setSunWatch(null);
       },
-      update: updateSky,
-      handoff: sky.handoff,
       close: () => {
         before();
         setTonightView(null);

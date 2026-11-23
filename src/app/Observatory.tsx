@@ -10,7 +10,7 @@ import { ConnectedJourney } from "./journeys/ConnectedJourney";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { useObservatoryEscape } from "./useObservatoryEscape";
 import { Suspense, useLayoutEffect, useState } from "react";
-import { ObservatoryStage, ObservatoryScenePicker, SunCredits } from "./ObservatoryStage";
+import { ObservatoryStage, ObservatoryEntrances, SunCredits } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
@@ -33,6 +33,7 @@ import { StoryDockProvider } from "./observations/StoryDock";
 import { nightfallPosition } from "./tonight/nightfall";
 import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
 import { auroraJourney } from "./journeys/auroraJourney";
+import { DepthReading } from "./DepthReading";
 import { AuroraReading } from "./journeys/AuroraReading";
 import { stormJourney } from "./journeys/stormJourney";
 import "./journeys/aurora-journey.css";
@@ -109,6 +110,16 @@ function ObservatoryContent({
     deepAvailable,
     landing,
   });
+  const depthRecord = views.depthFocus?.archiveReading;
+  if (depthRecord)
+    return (
+      <DepthReading
+        record={depthRecord}
+        select={views.selectDepth}
+        onHome={onHome}
+        projection={observations}
+      />
+    );
   if (observations.entry)
     return (
       <FixedJourneyLayout>
@@ -321,21 +332,8 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {!landing && !active && !solar && !aurora.run && !aurora.requested && (
-                  <ObservatoryScenePicker
-                    scene={scene}
-                    ready={ready}
-                    deepAvailable={deepAvailable}
-                    onScene={(next) => {
-                      observations.setQuery("");
-                      if (scene === next) {
-                        onHome();
-                        return;
-                      }
-                      browser.select(next);
-                      onScene(next);
-                    }}
-                  />
+                {!active && !solar && !aurora.run && !aurora.requested && (
+                  <ObservatoryEntrances ready={ready} views={views} onExplore={onExplore} onScene={onScene} />
                 )}
                 {scene === "depth" && ready && !deepAvailable && (
                   <p id="depth-availability" className="observatory-depth-note">

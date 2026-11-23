@@ -4,6 +4,7 @@ import type { Permalink } from "./permalink";
 import { stored } from "./stored";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
+import { recordedCutaway } from "./recordedCutaway";
 import type { EarthScene, Presentation } from "./useObservatory";
 
 export function linkedPose({ lon, lat, zoom }: Partial<Permalink>) {
@@ -22,7 +23,7 @@ export function initialScene(shared: Partial<Permalink>): EarthScene {
 }
 
 export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {
-  if (shared.story) return "observe";
+  if (shared.story || shared.depthEvent) return "observe";
   if (shared.catalogue) return "explore";
   if (shared.section && !shared.presentation) return "explore";
   if (shared.presentation) return shared.presentation;
@@ -48,11 +49,15 @@ export function initialPresentation(shared: Partial<Permalink>, read = stored): 
 
 export function earthSceneTarget(
   scene: EarthScene,
-  deepest: CutawayFocus | null,
+  deepest: CutawayFocus | "archive" | null,
   at: number,
   home: { lon: number; lat: number; zoom: number } = DEFAULT_CAMERA,
 ): { scene: EarthScene; focus: CutawayFocus | null; camera: [number, number, number] } {
-  if (scene === "depth" && deepest) {
+  if (scene === "depth" && deepest === "archive") {
+    const focus = recordedCutaway();
+    return { scene, focus, camera: [focus.lon, focus.lat, 1.95] };
+  }
+  if (scene === "depth" && deepest && deepest !== "archive") {
     return { scene, focus: { ...deepest, dive: true }, camera: [deepest.lon, deepest.lat, 1.9] };
   }
   if (scene === "night") {

@@ -196,3 +196,75 @@ test("From Radar to Recovery returns to the held scan, Gulf fix and night-light 
   for (const key of ["lon", "lat", "zoom"]) expect(restored[key]).toBeCloseTo(radarPose[key], 2);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
+
+test("the three landing entrances open live layers, a measured cutaway and the saved city's sky", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.addInitScript(() => {
+    localStorage.setItem("eif.sky-city", "Tokyo");
+    localStorage.setItem(
+      "eif.mapLayers",
+      JSON.stringify({
+        earthquakes: false,
+        radar: false,
+        cyclones: false,
+        fires: false,
+        floods: false,
+        volcanoes: false,
+        aurora: false,
+        wind: false,
+        lightning: false,
+      }),
+    );
+  });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const entries = page.getByRole("group", { name: "Explore by subject" });
+  const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
+  await entries.getByRole("button", { name: "Earth", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  const layers = page.getByRole("region", { name: "Map layers", exact: true });
+  await expect(layers.getByText("All layers are off.", { exact: true })).toBeVisible();
+  await layers.getByRole("button", { name: "Show earthquakes", exact: true }).click();
+  await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.goBack();
+  await expect(entries).toBeVisible();
+
+  await entries.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  const depth = page.getByRole("region", { name: "Earthquake cutaway", exact: true });
+  const choices = depth.getByRole("group", { name: "Recorded earthquakes", exact: true });
+  await expect(depth.getByText("600 km deep", { exact: true })).toBeVisible();
+  await choices.getByRole("button", { name: /670\.8 km/ }).click();
+  await expect(depth.getByText("670.8 km deep", { exact: true })).toBeVisible();
+  await expect(depth.getByRole("link", { name: "USGS event record" })).toHaveAttribute("href", /us2000h9e2$/);
+  const map = depth.getByRole("button", { name: "Map", exact: true });
+  await map.click();
+  await expect(map).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  await expect(page).toHaveURL(/depthEvent=us2000h9e2/);
+  await depth.getByRole("button", { name: "Globe", exact: true }).click();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Globe");
+  await expect(choices.getByRole("button", { name: /670\.8 km/ })).toHaveAttribute("aria-pressed", "true");
+  await home.click();
+
+  const afterDark = entries.getByRole("button", { name: "After Dark", exact: true });
+  await afterDark.focus();
+  await afterDark.press("Enter");
+  await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "City", exact: true })).toHaveValue("Tokyo");
+  const slider = page.getByRole("slider", { name: "City local time", exact: true });
+  await expect(slider).toBeInViewport();
+  await slider.press("End");
+  await expect(slider).toHaveValue((await slider.getAttribute("max"))!);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  await page.goBack();
+  await expect(entries.getByRole("button", { name: "After Dark", exact: true })).toBeFocused();
+});

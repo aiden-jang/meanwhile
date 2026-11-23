@@ -1,3 +1,5 @@
+import type { DepthRecord } from "../data/depthRecords";
+import { createSlabLayer } from "./slab";
 import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "./cutawayScale";
 import {
   BufferAttribute,
@@ -19,6 +21,7 @@ export interface CutawayFocus {
   lat: number;
   dive?: true;
   cameraOnly?: true;
+  archiveReading?: DepthRecord;
 }
 const ANGLE = 20 * DEG;
 const INNER_RADIUS = 1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM;
@@ -67,7 +70,9 @@ function wellGeometry(): BufferGeometry {
   return geometry;
 }
 
-export function createCutaway() {
+export function createCutaway(morph: { value: number }) {
+  const reading = createSlabLayer(morph, true);
+  reading.object.name = "cutaway-record";
   const center = { value: new Vector3(0, 1, 0) };
   const threshold = { value: 1 };
   const enabled = { value: 0 };
@@ -148,6 +153,8 @@ export function createCutaway() {
   let guideProgress = 0;
   return {
     object,
+    reading: reading.object,
+    dispose: reading.dispose,
     patch(material: Material): void {
       const compile = material.onBeforeCompile;
       const cacheKey = material.customProgramCacheKey();
@@ -177,6 +184,9 @@ export function createCutaway() {
       material.customProgramCacheKey = () => `${cacheKey}-cutaway`;
     },
     set(focus: CutawayFocus | null): void {
+      const event = focus?.archiveReading;
+      if (event) reading.set([[event.lon, event.lat, event.depthKm, event.magnitude]]);
+      reading.setOpacity(event ? 1 : 0);
       if (focus?.cameraOnly) focus = null;
       target = focus ? 1 : 0;
       if (focus && progress === 0) guideProgress = 0;

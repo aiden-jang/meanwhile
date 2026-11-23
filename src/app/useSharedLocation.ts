@@ -23,6 +23,7 @@ interface Props {
     getMoment: () => Permalink["story"];
     navigation: { key: string };
     observations: { map: boolean };
+    depthFocus: { archiveReading?: { id: NonNullable<Permalink["depthEvent"]> } } | null;
   };
   layers: Permalink["layers"];
   layerTimes: Permalink["layerTimes"];
@@ -49,6 +50,7 @@ export function useSharedLocation({
     getMoment,
     navigation: { key: navigationKey },
     observations: { map: storyMap },
+    depthFocus,
   },
   layers,
   layerTimes,
@@ -56,6 +58,7 @@ export function useSharedLocation({
   camera,
   lastWritten,
 }: Props) {
+  const depthEvent = depthFocus?.archiveReading?.id;
   const heldCursor = playing ? null : at;
   const sharedCursor = useRef(at);
   sharedCursor.current = at;
@@ -73,10 +76,11 @@ export function useSharedLocation({
         windowHours: filters.windowMs / 3_600_000,
         sources: [...filters.sources],
         ramp,
-        flat: mapOn,
+        flat: depthEvent ? storyMap : mapOn,
+        ...(depthEvent ? { depthEvent } : {}),
         presentation,
         ...(scene ? { scene } : {}),
-        ...(catalogue ? { catalogue } : {}),
+        ...(catalogue && !depthEvent ? { catalogue } : {}),
         story: storyMoment.current(),
         ...(layers ? { layers } : {}),
         ...(layerTimes ? { layerTimes } : {}),
@@ -109,6 +113,7 @@ export function useSharedLocation({
     mapOn,
     presentation,
     scene,
+    depthEvent,
     catalogue,
     navigationKey,
     storyMap,

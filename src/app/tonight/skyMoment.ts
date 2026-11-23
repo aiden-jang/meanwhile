@@ -11,6 +11,7 @@ export interface SkyPosition {
   at: number;
   look: SkyLook;
   nightStart?: number;
+  direct?: true;
   shower?: string;
   target?: string;
   trail?: boolean;

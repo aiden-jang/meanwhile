@@ -102,8 +102,7 @@ for (const [width, height] of [
         .click();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await selectScene(page, "Below the Surface");
-      const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
-      await expect(dive).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
       const reduced = await depthView();
       expect(reduced.settled).toBe(true);
       expect(reduced.gap).toBeGreaterThan(0.04);

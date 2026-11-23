@@ -13,6 +13,7 @@ export function createDepthDive(camera: PerspectiveCamera) {
 
   return {
     set(on: boolean): void {
+      if (destination === Number(on)) return;
       destination = on ? 1 : 0;
       held = false;
     },

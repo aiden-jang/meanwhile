@@ -31,7 +31,7 @@ describe("finite scene presentation", () => {
   });
 
   it("opens a fixed region at true scale, closes it on the map, and skips easing under reduced motion", () => {
-    const cutaway = createCutaway();
+    const cutaway = createCutaway({ value: 0 });
     const material = new MeshBasicMaterial();
     cutaway.patch(material);
     const shader = { uniforms: {}, vertexShader: "void main() {}", fragmentShader: "void main() {}" };

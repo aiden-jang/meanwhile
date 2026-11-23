@@ -26,6 +26,8 @@ export interface ObservatoryProps {
     | "observing"
     | "observeScene"
     | "landing"
+    | "depthFocus"
+    | "selectDepth"
     | "sun"
     | "tonight"
     | "floatDive"
@@ -41,7 +43,7 @@ export interface ObservatoryProps {
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   layerReadout: ReactNode;
-  onScene: (scene: EarthScene) => void;
+  onScene: (scene: EarthScene, direct?: boolean) => void;
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
   onPickDate: () => void;

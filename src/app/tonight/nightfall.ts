@@ -2,6 +2,7 @@ import { distanceKm } from "../../geo/sphere";
 import { subsolarPoint, sunElevation } from "../../geo/sun";
 import { horizontal, localNight, type SkyCity } from "../../geo/nightWindow";
 import { skyCities } from "./cities";
+import { openingSky } from "../../geo/tonight";
 import type { SkyPosition } from "./skyMoment";
 
 const DAY = 86_400_000;
@@ -32,6 +33,21 @@ export function nightfallPosition(at: number, anchor: { lon: number; lat: number
     }
   }
   throw new Error("No featured city has a sunset");
+}
+
+export function cityNightOpening(city: SkyCity, now: number): SkyPosition {
+  const previous = localNight(city, now - DAY);
+  const night = now >= previous.start && now < previous.end ? previous : localNight(city, now);
+  const at = Math.max(night.start, Math.floor(now / 60_000) * 60_000);
+  const { look, targetName } = openingSky(city, at, at);
+  return {
+    city: city.name,
+    at,
+    nightStart: night.start,
+    look,
+    direct: true,
+    ...(targetName ? { target: targetName } : {}),
+  };
 }
 
 export function skyLight(city: SkyCity, at: number, night: ReturnType<typeof localNight>) {

@@ -1,0 +1,74 @@
+.depth-reading-value {
+  display: grid;
+  gap: 4px;
+  margin-block: 8px;
+  padding-block: 10px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.depth-reading-value > strong {
+  font:
+    550 clamp(34px, 4vw, 52px) / 1 "Alumni Sans",
+    var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.depth-reading-value small {
+  font: 500 var(--text-control) var(--font-sans);
+}
+
+.depth-reading-value time,
+.depth-reading-source {
+  color: var(--color-dim);
+  font-size: var(--text-control);
+}
+
+.depth-reading-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.depth-reading-options button {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  min-height: 44px;
+  padding: 5px 7px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  text-align: start;
+  line-height: 1.25;
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.depth-reading-options button span {
+  color: var(--color-dim);
+  font-size: 0.75rem;
+}
+
+.depth-reading-options button:is(:hover, [aria-pressed="true"]) {
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+}
+
+.depth-reading-source {
+  display: inline-grid;
+  justify-self: start;
+  min-height: 44px;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 599px) {
+  .depth-reading .observation-panel {
+    row-gap: 8px;
+  }
+
+  .depth-reading-value {
+    margin-block: 0;
+    padding-block: 6px;
+  }
+}

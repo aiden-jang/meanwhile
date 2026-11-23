@@ -292,7 +292,6 @@ export function App(): JSX.Element {
   const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
-  /* Never reload here: the in-memory buffer owns the events on screen. */
   const resetView = useCallback(() => {
     setQuery("");
     setSectionLine(null);
@@ -301,7 +300,6 @@ export function App(): JSX.Element {
     setMarkId(null);
     setFarSideOf(null);
     setFilters({ ...DEFAULT_FILTERS, sources: new Set(DEFAULT_FILTERS.sources) });
-    // Only when there is an archive to leave: `resumeLive` clears the store.
     if (feed.snapshot().archive !== null) backToLive();
     if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
     flyTo.current(home.current.lon, home.current.lat, home.current.zoom, 0, true);
@@ -489,12 +487,14 @@ export function App(): JSX.Element {
       else if (kind === "hazard") setMarkId(null);
       else setSectionLine(null);
     });
-  const chooseEarthScene = (scene: EarthScene): void => {
+  const chooseEarthScene = (scene: EarthScene, direct = false): void => {
     stopTour();
-    const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt(), home.current);
+    const deepest = direct ? "archive" : journey.deepest;
+    const next = earthSceneTarget(scene, deepest, view.at ?? clockAt(), home.current);
     chooseScene(next.scene, next.focus);
-    if (next.scene === "live" && archived) backToLive();
-    flyTo.current(...next.camera);
+    if (next.scene === "live" && (archived || archiveBusy)) backToLive();
+    if (!direct || scene !== "live") flyTo.current(...next.camera);
+    else setScrub(LIVE);
   };
   function returnHome() {
     observatory.home(stopTour);

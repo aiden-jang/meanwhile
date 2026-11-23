@@ -429,8 +429,12 @@ The landing’s Browse stories opens Explore’s Stories catalogue. The header�
 from the landing and searches over the current layer, pinned event or story elsewhere. Dismissing Find restores
 header focus and the underlying view. Older catalogue links also resolve to Explore. Its Earth, Below the Surface and After Dark diagrams filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
-The cinematic Earth, depth and sky views open through a scene action shown within the corresponding
-category. Those scene views provide a Browse stories action into the same catalogue.
+The landing diagrams are direct entrances. Earth opens the live Layers panel with the current
+camera and layer preferences. Below the Surface reveals a fixed Fiji–Tonga cutaway and three
+USGS readings. The highlighted earthquake moves to its reported depth on the globe and to its
+epicentre in Map. After Dark opens the saved city’s calculated sky and time scrubber immediately,
+at the current local night or the next sunset. The scene previews within the Story catalogue
+retain their historical entry paths.
 All topics clears the topic filter. View all stories expands the highlights into the full catalogue.
 Filtering keeps the query, camera and filter controls in place.
 On taller panels, search and categories stay visible above the scrolling results. The sticky controls
