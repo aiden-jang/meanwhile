@@ -138,25 +138,26 @@ test.describe("touch discovery", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await openStories(page, "search");
-    await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonga");
+    const search = page.getByRole("searchbox", { name: "Find a story" });
+    await search.fill("Tonga");
     const story = page.locator("#search-story-tonga");
-    await expect(page.getByText("Story location preview", { exact: true })).toBeHidden();
-    await story.dispatchEvent("pointerdown", {
-      pointerType: "touch",
-      pointerId: 1,
-      clientX: 100,
-      clientY: 500,
+    const preview = page.getByText("Story location preview", { exact: true });
+    await story.scrollIntoViewIfNeeded();
+    await search.hover();
+    await expect(preview).toBeHidden();
+    const bounds = await story.boundingBox();
+    expect(bounds).not.toBeNull();
+    const { x, y, width, height } = bounds!;
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: x + width / 2, y: y + height / 2 }],
     });
-    await expect(page.getByText("Story location preview", { exact: true })).toBeVisible();
-    await story.dispatchEvent("pointerup", {
-      pointerType: "touch",
-      pointerId: 1,
-      clientX: 100,
-      clientY: 500,
-    });
-    await story.dispatchEvent("click");
+    await expect(preview).toBeVisible();
+    await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await touch.detach();
     await expect(story).toBeVisible();
-    await expect(page.getByText("Story location preview", { exact: true })).toBeVisible();
+    await expect(preview).toBeVisible();
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
     await story.tap();
     await expect(page.getByRole("region", { name: "Tonga’s shockwave", exact: true })).toBeVisible();
