@@ -39,6 +39,7 @@ for (const [width, height] of [
     const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
     const browse = page.getByRole("button", { name: "Browse stories", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
+    const entrances = page.getByRole("group", { name: "Explore by subject" });
     await expect(page.locator("#globe-view canvas")).toBeVisible();
     await Promise.all([
       expect(page.locator("#chrome-rail")).toBeHidden(),
@@ -47,7 +48,10 @@ for (const [width, height] of [
       expect(explore).toBeVisible(),
       expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
-      expect(page.getByRole("group", { name: "Explore by subject" })).toBeInViewport({ ratio: 1 }),
+      expect(entrances).toBeInViewport({ ratio: 1 }),
+      expect(entrances.getByText("Live weather", { exact: true })).toBeVisible(),
+      expect(entrances.getByText("Quake depths", { exact: true })).toBeVisible(),
+      expect(entrances.getByText("Local sky", { exact: true })).toBeVisible(),
     ]);
     const bounds = await page.evaluate(() => {
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();

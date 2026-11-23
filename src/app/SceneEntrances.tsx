@@ -111,7 +111,7 @@ export function ObservatoryEntrances({
           <SceneDiagram scene={id} />
           <span className="scene-label">
             {name}
-            {!active && <small className="scene-cue">{sceneCues[id]}</small>}
+            {!active && <small className="scene-entrance-cue">{sceneCues[id]}</small>}
           </span>
         </button>
       ))}
