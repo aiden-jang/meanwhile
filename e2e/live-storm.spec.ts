@@ -120,6 +120,7 @@ for (const { width, height, covered } of [
     } else {
       await expect(radar.getByText("No radar coverage here.", { exact: true })).toBeVisible();
       await expect(radar.getByRole("slider")).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Radar by RainViewer", exact: true })).toHaveCount(0);
       await radar.getByText("No radar coverage here.", { exact: true }).scrollIntoViewIfNeeded();
       await track.getByRole("button", { name: "Previous reported position" }).click();
     }

@@ -12,10 +12,10 @@ export function stormCamera(storm: Cyclone) {
   const south = Math.min(lat, ...storm.track.map((point) => point.lat));
   const north = Math.max(lat, ...storm.track.map((point) => point.lat));
   const extent = Math.max(east - west, north - south);
-  const shortPhone = matchMedia("(max-width: 767px) and (max-height: 700px)").matches;
+  const phone = matchMedia("(max-width: 767px)").matches;
   return {
     lon: lon + (west + east) / 2,
     lat: (south + north) / 2,
-    zoom: Math.max(1.65, Math.min(shortPhone ? 3.8 : 6, 48 / Math.max(1, extent))),
+    zoom: Math.max(1.65, Math.min(phone ? 11 : 6, (phone ? 120 : 48) / Math.max(1, extent))),
   };
 }

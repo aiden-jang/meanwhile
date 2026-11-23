@@ -185,6 +185,7 @@ export function useMapLayers(
     }),
   ];
   return {
+    followingStorm,
     enabled,
     visible,
     rendered,

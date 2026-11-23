@@ -182,3 +182,9 @@
     padding: 10px;
   }
 }
+
+@media (max-width: 767px) {
+  .zones:has(.live-storm) [data-scale] {
+    bottom: 8px;
+  }
+}

@@ -27,10 +27,11 @@ export function LayerReadout({
     return () => window.removeEventListener("resize", resize);
   }, []);
   if (controls.suspended || (!controls.active && !legend)) return null;
+  const radar = controls.followingStorm && !controls.radar?.image ? null : controls.radar;
   const weather = (["wind", "lightning"] as WeatherLayerId[]).filter(
-    (id) => controls.active && controls.enabled[id] && controls.weather[id]?.frame,
+    (id) => controls.active && controls.visible[id] && controls.weather[id]?.frame,
   );
-  const hasTimes = weather.length > 0 || Boolean(controls.radar);
+  const hasTimes = weather.length > 0 || Boolean(radar);
   if (!hasTimes && !legend) return null;
   const close = () => {
     panel.current?.hidePopover();
@@ -38,7 +39,7 @@ export function LayerReadout({
   };
   return (
     <div className="layer-readout">
-      <RadarCanvasCredit radar={controls.radar} />
+      <RadarCanvasCredit radar={radar} />
       <button
         ref={trigger}
         className="layer-times-toggle"
@@ -100,13 +101,13 @@ export function LayerReadout({
           </div>
         )}
         {withLegend && hasTimes && <h3>Displayed times</h3>}
-        {controls.radar && (
+        {radar && (
           <span>
             RainViewer radar ·{" "}
-            {controls.radar.at === undefined ? (
+            {radar.at === undefined ? (
               "No scan image displayed"
             ) : (
-              <time dateTime={new Date(controls.radar.at).toISOString()}>{layerTime(controls.radar.at)}</time>
+              <time dateTime={new Date(radar.at).toISOString()}>{layerTime(radar.at)}</time>
             )}
           </span>
         )}
