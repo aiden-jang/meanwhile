@@ -1,4 +1,5 @@
 import { auroraJourney } from "./auroraJourney";
+import { stormJourney } from "./stormJourney";
 
 export const onward: Record<string, readonly [string, string]> = {
   epic: ["orbit", "Compare a distant photograph with a predicted low-Earth orbit."],
@@ -114,6 +115,31 @@ export const journeys: readonly Journey[] = [
         id: "north",
         prompt: "Compare the two compass needles.",
         context: "NOAA and IAGA’s historical magnetic field model. The angle refers to your selected city.",
+      },
+    ],
+  },
+  {
+    id: stormJourney,
+    title: "From Radar to Recovery",
+    guide: ["Recent radar scans", "NOAA’s 2005 best track", "NASA’s 2017 night lights"],
+    summary: "Read recent radar, follow Katrina to Louisiana, and see where lights returned after Maria.",
+    ending:
+      "Radar shows precipitation, the best track records storm intensity, and nighttime imagery shows a later hurricane’s effect on power and daily life.",
+    steps: [
+      {
+        id: "radar",
+        prompt: "Scrub recent scans to see how precipitation moved.",
+        context: "Recent composites from RainViewer or NOAA, depending on coverage.",
+      },
+      {
+        id: "katrina",
+        prompt: "Follow Katrina to Louisiana, then compare the offshore peak with the Buras landfall.",
+        context: "Gulf of Mexico · August 2005 · NOAA HURDAT2 best track.",
+      },
+      {
+        id: "lights",
+        prompt: "Slide between the baseline and a recovery period to see where lights returned.",
+        context: "Puerto Rico · Hurricane Maria, September 2017 · NASA Black Marble.",
       },
     ],
   },

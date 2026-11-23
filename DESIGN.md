@@ -971,3 +971,12 @@ beside the separately dated solar measurement. The return reveals the same Earth
 North loads, then frames the modelled pole. The compass and year choices sit together in the
 reading. Previous view restores the camera, projection and selected reading. Returning to the
 ISS finding restores the city, local time and held horizon.
+
+From Radar to Recovery holds one selected radar scan as the shared globe or map leaves
+recent weather for Katrina’s August 2005 best track. The track draws into the Gulf view.
+An overview at Buras keeps all seven NOAA fixes selectable and the offshore peak and
+landfall readings side by side. The crossing to Puerto Rico introduces Hurricane Maria
+as a separate event. The NASA night-light comparison opens at the early aftermath and
+keeps both dates registered to the same coastline. Previous view restores the held scan,
+coverage area, projection and camera, the chosen best-track fix, or the recovery period
+and divider.

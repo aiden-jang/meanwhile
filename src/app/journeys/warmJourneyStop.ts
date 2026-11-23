@@ -42,6 +42,10 @@ export function warmJourneyStop(next: string | undefined) {
     void import("../sun/SunWatch").catch(() => {});
   } else if (next === "north") {
     void import("../earth-stories/groundStories").catch(() => {});
+  } else if (next === "katrina") {
+    void import("../storm/StormStage").catch(() => {});
+  } else if (next === "lights") {
+    void import("../lights/LightsReturn").catch(() => {});
   } else if (next === "iceberg") {
     void import("../iceberg/IcebergDrift").catch(() => {});
   }

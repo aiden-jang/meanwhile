@@ -16,10 +16,16 @@ import { warmJourneyStop } from "./warmJourneyStop";
 import { goldenGate, tidePorts } from "./coastRoute";
 import { riverBasins } from "../observations/riverGauges";
 import { auroraChapters, auroraJourney } from "./auroraJourney";
+import { stormChapters, stormJourney } from "./stormJourney";
 import "./fixed-journey.css";
 
 type FixedJourneyId =
-  "ice-in-motion" | "water-in-motion" | "reading-the-coast" | "above-earth" | typeof auroraJourney;
+  | "ice-in-motion"
+  | "water-in-motion"
+  | "reading-the-coast"
+  | "above-earth"
+  | typeof auroraJourney
+  | typeof stormJourney;
 
 export function hasFixedJourney(id: string | undefined): id is FixedJourneyId {
   return (
@@ -27,7 +33,8 @@ export function hasFixedJourney(id: string | undefined): id is FixedJourneyId {
     id === "water-in-motion" ||
     id === "reading-the-coast" ||
     id === "above-earth" ||
-    id === auroraJourney
+    id === auroraJourney ||
+    id === stormJourney
   );
 }
 
@@ -71,8 +78,18 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
   const coast = route.id === "reading-the-coast";
   const sky = route.id === "above-earth";
   const aurora = route.id === auroraJourney;
+  const storm = route.id === stormJourney;
+  const stormChapter = storm ? stormChapters[current] : undefined;
   const fromPass = aurora && navigation.auroraFromPass;
-  const illustrated = sky ? skyChapters : coast ? coastChapters : aurora ? auroraChapters : undefined;
+  const illustrated = sky
+    ? skyChapters
+    : coast
+      ? coastChapters
+      : aurora
+        ? auroraChapters
+        : storm
+          ? stormChapters
+          : undefined;
   const city = navigation.previewCity.name;
   const passCity = sky
     ? (navigation.progressFor(route.id)?.stops.find(([index]) => index === 2)?.[1].visit.position.moment
@@ -100,44 +117,52 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
       : harbor && harbor.id !== goldenGate.id
         ? "Return to harbor"
         : "Go to San Francisco";
-  const nextLabel = aurora
-    ? ["Read the solar wind", "Follow magnetic north"][current]
-    : sky
-      ? skyNext
-      : coast
-        ? coastNext
-        : water
-          ? current === 0
-            ? "Open Rainbelt"
-            : river && riverChoice !== "hudson"
-              ? `Return to the ${river}`
-              : "Go to the Hudson"
-          : next
-            ? `Next: ${chapterTitles.get(next.id)}`
-            : undefined;
-  const context = aurora
-    ? moving
-      ? "Return to Earth…"
-      : ["NOAA forecast", "Separate forecast and measurement times", `${city} · Magnetic field model`][
-          current
-        ]
-    : sky
-      ? ["From your sky to the lunar surface", "Return to your city horizon", `${city} · Local time`][current]
-      : coast
-        ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][current]
-        : water
-          ? [
-              "Same Pacific coast",
-              "A separate river gauge record",
-              "Previous view restores your satellite frame",
-            ][current]
-          : moving
-            ? "Leaving West Greenland…"
-            : [
-                "Next stop: West Greenland",
-                "Next stop: a separate iceberg record near South Georgia",
-                "Previous view restores your glacier reading",
-              ][current];
+  const nextLabel =
+    stormChapter?.next ??
+    (aurora
+      ? ["Read the solar wind", "Follow magnetic north"][current]
+      : sky
+        ? skyNext
+        : coast
+          ? coastNext
+          : water
+            ? current === 0
+              ? "Open Rainbelt"
+              : river && riverChoice !== "hudson"
+                ? `Return to the ${river}`
+                : "Go to the Hudson"
+            : next
+              ? `Next: ${chapterTitles.get(next.id)}`
+              : undefined);
+  const context =
+    (moving ? stormChapter?.leaving : stormChapter?.description) ??
+    (aurora
+      ? moving
+        ? "Return to Earth…"
+        : ["NOAA forecast", "Separate forecast and measurement times", `${city} · Magnetic field model`][
+            current
+          ]
+      : sky
+        ? ["From your sky to the lunar surface", "Return to your city horizon", `${city} · Local time`][
+            current
+          ]
+        : coast
+          ? ["A separate event in the Pacific", "A separate harbor record", "Compare your three views"][
+              current
+            ]
+          : water
+            ? [
+                "Same Pacific coast",
+                "A separate river gauge record",
+                "Previous view restores your satellite frame",
+              ][current]
+            : moving
+              ? "Leaving West Greenland…"
+              : [
+                  "Next stop: West Greenland",
+                  "Next stop: a separate iceberg record near South Georgia",
+                  "Previous view restores your glacier reading",
+                ][current]);
   return (
     <section
       className="fixed-journey"
@@ -146,6 +171,7 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
       data-coast-step={coast ? current : undefined}
       data-sky-step={sky ? current : undefined}
       data-aurora-step={aurora ? current : undefined}
+      data-storm-step={storm ? current : undefined}
       data-aurora-leaving={route.folding === "solar" || undefined}
     >
       <div className="fixed-journey-rail">
@@ -214,7 +240,7 @@ function FixedJourney({ finale }: { finale: (element: HTMLDivElement | null) => 
           </button>
         )}
         {!next &&
-          (aurora ? (
+          (aurora || storm ? (
             <button
               type="button"
               className="fixed-journey-next"

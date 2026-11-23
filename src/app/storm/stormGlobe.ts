@@ -30,9 +30,12 @@ export function stormGeography(
   { storm, camera }: Frame,
   cinematic: boolean,
   comparing: boolean,
+  drawTrack = false,
 ): Pick<ObservationView, "frame" | "follow"> {
   const center = { lon: storm.lon, lat: storm.lat };
-  const paths: ObservationPath[] = [{ color: comparing ? 0xa6f2e3 : 0x738e99, points: track }];
+  const paths: ObservationPath[] = [
+    { color: comparing ? 0xa6f2e3 : 0x738e99, points: track, trace: drawTrack },
+  ];
   if (!comparing) paths.push({ color: 0xa6f2e3, points: [...track.slice(0, storm.fixIndex + 1), center] });
   if (storm.r34) paths.push(windPath(storm, storm.r34, 0xa5c9d9));
   if (storm.r64) paths.push(windPath(storm, storm.r64, 0xf1bd77));
@@ -40,6 +43,7 @@ export function stormGeography(
     frame: {
       at: storm.at,
       raster: gulf,
+      flow: drawTrack,
       paths,
       marks: [
         ...track.map((point, index) => ({

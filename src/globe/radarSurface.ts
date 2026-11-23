@@ -12,6 +12,7 @@ export function createRadarSurface(
   const geometry = rasterGeometry(RADAR_BOUNDS);
   let worldwide = false;
   let reveal = 1;
+  let departure = 0;
   const material = new MeshBasicMaterial({
     side: DoubleSide,
     transparent: true,
@@ -95,11 +96,12 @@ export function createRadarSurface(
   return {
     object,
     setImage,
-    step(dt: number, reduced: boolean, strength = 1): boolean {
+    step(dt: number, reduced: boolean, strength = 1, departing = false): boolean {
       if (!object.visible) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 0.24);
-      material.opacity = reveal * strength;
-      return reveal < 1;
+      departure = departing ? (reduced ? 1 : Math.min(1, departure + dt / 0.26)) : 0;
+      material.opacity = reveal * (1 - departure * departure * (3 - 2 * departure)) * strength;
+      return reveal < 1 || (departing && departure < 1);
     },
   };
 }

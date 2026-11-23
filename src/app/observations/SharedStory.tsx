@@ -1,6 +1,7 @@
 import { storyObservationTime } from "../layerTime";
 import { useContext, useRef } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { stormJourney } from "../journeys/stormJourney";
 import { StorySession } from "./StorySession";
 import type { StoryMoment } from "./storyMoment";
 
@@ -11,7 +12,10 @@ export function SharedStory({ moment }: { moment?: StoryMoment | undefined } = {
   if (!initial || navigation?.hasReturnOrigin) return null;
   const journey = navigation?.route?.id;
   if (
-    (journey === "reading-the-coast" || journey === "above-earth" || journey === "follow-aurora") &&
+    (journey === "reading-the-coast" ||
+      journey === "above-earth" ||
+      journey === "follow-aurora" ||
+      journey === stormJourney) &&
     (!session?.shared || initial.at === undefined)
   )
     return null;

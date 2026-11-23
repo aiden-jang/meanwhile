@@ -72,6 +72,10 @@ test("radar reveals once, keeps scan changes immediate, and releases its frame l
   radar.setImage({ width: 2, height: 2 } as ImageBitmap);
   expect(radar.object.material.opacity).toBe(1);
   expect(radar.step(0.1, false)).toBe(false);
+  expect(radar.step(0.13, false, 1, true)).toBe(true);
+  expect(radar.object.material.opacity).toBeCloseTo(0.5);
+  expect(radar.step(0.13, false, 1, true)).toBe(false);
+  expect(radar.object.material.opacity).toBe(0);
   radar.setImage(null);
   expect(radar.step(0.1, false)).toBe(false);
   radar.setImage(image);

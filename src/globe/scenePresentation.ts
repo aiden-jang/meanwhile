@@ -91,6 +91,7 @@ export function createScenePresentation(
   const placeDayline = createDaylineLabel(canvas, controls, lights.sun);
   let orbitalMoon = false;
   let overviewRadar = false;
+  let radarDeparting = false;
   let liveFocus: LayerEmphasis | null = null;
 
   function step(dt: number, reduced: boolean, elapsed = dt, cameraMoving = true) {
@@ -104,6 +105,7 @@ export function createScenePresentation(
       dt,
       reduced,
       overviewRadar ? (0.7 + 0.3 * detail) * emphasis.radar() : 1,
+      radarDeparting,
     );
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
@@ -313,6 +315,7 @@ export function createScenePresentation(
         ? (mapLayers?.emphasis ?? null)
         : null;
     overviewRadar = !weather && !!mapLayers?.radar;
+    radarDeparting = weather?.departing === true;
     if (radarFrame && !radar) {
       radar = createRadarSurface(projection, radarReveal.uniforms);
       spin.add(radar.object);

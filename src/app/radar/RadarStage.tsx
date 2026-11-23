@@ -34,7 +34,6 @@ const radarDate = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
   timeZone: "UTC",
 });
-const label = layerTime;
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
 export function RadarStage({
@@ -110,9 +109,10 @@ export function RadarStage({
   const showingEarlier = !!shownImage && shown?.at !== selected?.at;
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
+  const restoredPose = initialRegion === regionId ? initialPose : undefined;
   const target = useMemo(
-    () => (global ? radarCamera(regionId, initialPose) : regionCamera(region)),
-    [region, regionId, global, initialPose],
+    () => restoredPose ?? (global ? radarCamera(regionId) : regionCamera(region)),
+    [region, regionId, global, restoredPose],
   );
 
   const lightning = useRadarLightning(showLightning && shownImage ? shown?.at : undefined);
@@ -125,6 +125,7 @@ export function RadarStage({
         image: shownImage ?? null,
         at: shownImage ? shown?.at : undefined,
         selectedAt: restored ? selected?.at : initialAt,
+        scan: restored ? selected : undefined,
         canRewind,
         lightning: lightning?.frame ?? undefined,
         feed,
@@ -135,7 +136,7 @@ export function RadarStage({
       lightning,
       onView,
       target,
-      selected?.at,
+      selected,
       regionId,
       feed,
       restored,
@@ -215,7 +216,7 @@ export function RadarStage({
                   : "Select a time to compare the observed scans.";
   const canRetry = status === "error" || status === "empty" || image === null;
   const atLatest = index === scans.length - 1 && chosen === null;
-  const timeLabel = selected ? label(selected.at) : "Waiting for scans";
+  const timeLabel = selected ? layerTime(selected.at) : "Waiting for scans";
 
   const problem = !!lastAvailable || canRetry || image === undefined || delayed;
   const statusMessage = (
@@ -223,7 +224,7 @@ export function RadarStage({
       {lastAvailable ? (
         <>
           Showing the last available radar scans. Latest available scan{" "}
-          <time dateTime={new Date(lastAvailable.at).toISOString()}>{label(lastAvailable.at)}</time>.
+          <time dateTime={new Date(lastAvailable.at).toISOString()}>{layerTime(lastAvailable.at)}</time>.
           {image === null && " This scan’s image is unavailable."}
         </>
       ) : (
@@ -252,7 +253,7 @@ export function RadarStage({
         )}
         {showingEarlier && (
           <p className="radar-reading-date">
-            Still showing <time dateTime={new Date(shown!.at).toISOString()}>{label(shown!.at)}</time>.
+            Still showing <time dateTime={new Date(shown!.at).toISOString()}>{layerTime(shown!.at)}</time>.
           </p>
         )}
         <RadarTransport layer={layer} dock={dock}>

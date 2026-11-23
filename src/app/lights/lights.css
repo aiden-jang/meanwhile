@@ -147,3 +147,27 @@
 .lights-journey:has(.lights-comparison) .stage-readout {
   visibility: hidden;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lights-exposure {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 54%, transparent 4%, var(--color-void) 98%);
+    opacity: 0;
+    transition: opacity 440ms ease-out;
+    pointer-events: none;
+  }
+
+  .lights-exposure:not([data-arrived]) {
+    animation: lights-exposure-dim 850ms ease-out both;
+  }
+}
+
+@keyframes lights-exposure-dim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.85;
+  }
+}

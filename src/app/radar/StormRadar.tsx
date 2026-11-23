@@ -110,7 +110,7 @@ export function StormRadar({
           onView={onView}
           initialRegion={global === isGlobalRadar(entry.region) ? entry.region : undefined}
           initialAt={global === isGlobalRadar(entry.region) ? entry.at : undefined}
-          initialPose={global ? entry.pose : undefined}
+          initialPose={global === isGlobalRadar(entry.region) ? entry.pose : undefined}
         />
       </Suspense>
       {global && (

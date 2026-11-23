@@ -5,6 +5,8 @@ import type { useObservationDeck } from "../observations/useObservationDeck";
 import type { EarthScene, Presentation } from "../useObservatory";
 import { currentRadarRegion, radarCamera, type RadarEntry, type RadarView } from "./radarCamera";
 
+import { holdRadarScan } from "./heldRadarScan";
+
 interface RadarState {
   radarView: RadarView | null;
   radarOrigin: MutableRefObject<Presentation>;
@@ -44,7 +46,7 @@ export function radarActions(
         if (story) observations.close();
         setRadarView({
           kind: "radar",
-          target: radarCamera(region, pose),
+          target: pose ?? radarCamera(region),
           region: region ?? "world",
           image: null,
           selectedAt: at,
@@ -61,6 +63,15 @@ export function radarActions(
           },
           false,
         );
+    },
+    depart(fade: boolean) {
+      if (!radarView) return false;
+      holdRadarScan(radarView);
+      if (fade && radarView.image) {
+        updateRadar({ ...radarView, departing: true });
+        return true;
+      }
+      return false;
     },
     close() {
       before();

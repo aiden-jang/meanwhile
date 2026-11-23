@@ -10,8 +10,13 @@ import { connectedArrival, type ConnectedStop, type JourneyArrival } from "./con
 import { foldDeparture } from "./foldDeparture";
 import { journeyProgressKey, packJourneyProgress, readJourneyProgress } from "./journeyProgress";
 import { auroraHandoff, auroraJourney } from "./auroraJourney";
+import { stormJourney } from "./stormJourney";
 
-type JourneyRoute = { id: string; step: number; folding?: "waterline" | "curtain" | "glacier" | "solar" };
+type JourneyRoute = {
+  id: string;
+  step: number;
+  folding?: "waterline" | "curtain" | "glacier" | "solar" | "radar" | "storm";
+};
 
 interface JourneyInputs {
   linked?: { id: string; step: number } | undefined;
@@ -25,6 +30,8 @@ interface JourneyInputs {
   float: FloatDiveView | null;
   curtain: boolean;
   foldGlacier: () => boolean;
+  departRadar: (fade: boolean) => boolean;
+  departStorm: () => boolean;
   unavailable: (id: string) => string | null;
   open: (id: string, trigger: string, visit?: Visit, fresh?: boolean, arrival?: JourneyArrival) => void;
 }
@@ -173,6 +180,14 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
           stop.arrival.map = false;
         }
       }
+      const storm = route.id === stormJourney;
+      const stormForward = storm && !revisit && index > route.step;
+      if (storm && !revisit && next.id === "katrina") stop.visit.position = {};
+      if (stormForward) {
+        stop.arrival.crossing = true;
+        if (inputs.active === "radar")
+          stop.arrival.departure = { lon: here.pose.lon, lat: here.pose.lat, label: "Recent radar" };
+      }
       if (selected?.id === next.id) stop.visit = selected;
       const connected = !!activeRoute?.guide || revisit;
       const iceCrossing = route.id === "ice-in-motion" && next.id === "iceberg";
@@ -205,13 +220,20 @@ export function useJourneyNavigation(inputs: JourneyInputs) {
         setRoute({ id: route.id, step: index });
         persist(route.id, index);
       };
+      const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const fadeRadar = storm && inputs.active === "radar" && inputs.departRadar(motion && stormForward);
+      const fadeStorm = motion && stormForward && inputs.active === "katrina" && inputs.departStorm();
       const departure =
-        !matchMedia("(prefers-reduced-motion: reduce)").matches &&
-        (returnFromSun
-          ? "solar"
-          : iceCrossing && inputs.active === "glacier" && inputs.foldGlacier()
-            ? "glacier"
-            : null);
+        motion &&
+        (fadeRadar
+          ? "radar"
+          : fadeStorm
+            ? "storm"
+            : returnFromSun
+              ? "solar"
+              : iceCrossing && inputs.active === "glacier" && inputs.foldGlacier()
+                ? "glacier"
+                : null);
       if (departure) {
         const finish = () => {
           if (folding.current === finish) advance();

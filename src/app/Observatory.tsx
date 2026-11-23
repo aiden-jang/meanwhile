@@ -34,6 +34,7 @@ import { nightfallPosition } from "./tonight/nightfall";
 import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
 import { auroraJourney } from "./journeys/auroraJourney";
 import { AuroraReading } from "./journeys/AuroraReading";
+import { stormJourney } from "./journeys/stormJourney";
 import "./journeys/aurora-journey.css";
 export function Observatory(props: ObservatoryProps): JSX.Element {
   return (
@@ -62,6 +63,7 @@ function ObservatoryContent({
   const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
   const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
+  const guidedStorm = navigationContext?.route?.id === stormJourney;
   const guidedAurora = navigationContext?.route?.id === auroraJourney;
   const heldOval = guidedAurora
     ? navigationContext.progressFor(auroraJourney)?.stops.find(([step]) => step === 0)?.[1].visit.position
@@ -359,7 +361,9 @@ function ObservatoryContent({
               </>
             )}
             {tonight.active && <ConnectedJourney />}
-            {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
+            {(floatDive.active || (radar.active && !guidedStorm) || solar || aurora.run) && (
+              <ExperienceEnding />
+            )}
           </section>
         </StoryDockProvider>
       </div>
@@ -385,5 +389,9 @@ function ObservatoryContent({
       )}
     </section>
   );
-  return tonight.active || guidedAurora ? <FixedJourneyLayout>{story}</FixedJourneyLayout> : story;
+  return tonight.active || guidedAurora || guidedStorm ? (
+    <FixedJourneyLayout>{story}</FixedJourneyLayout>
+  ) : (
+    story
+  );
 }

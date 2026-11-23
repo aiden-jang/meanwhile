@@ -22,6 +22,7 @@ import { savedVisitKey } from "../visitor/library";
 import terra from "./terra-2005-08-28.webp?url";
 import { StormFinding, StormInvitation } from "./StormNarrative";
 import { StormTransport } from "./StormTransport";
+import { stormJourney } from "../journeys/stormJourney";
 
 const comparisonTarget = { ...stormTarget, lat: 26.55 };
 const MOTION = "(prefers-reduced-motion: reduce)";
@@ -52,8 +53,9 @@ const duration = (playback: Playback) => (playback.survey ? SURVEY_MS : FLIGHT_M
 export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
   const navigation = useStoryNavigation();
+  const guided = navigation?.route?.id === stormJourney;
   const [view, setView] = useState<Playback>(() =>
-    initial
+    initial && initial.chapter !== "intro" && (!guided || initial.at !== undefined)
       ? initialPlayback(initial.at ?? START, initial.chapter === "compare")
       : { elapsed: 0, survey: matchMedia(MOTION).matches, playing: false, phase: "intro" },
   );
@@ -147,7 +149,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     [compareAt],
   );
   const archiveOpacity =
-    !panel.map && archiveReady && !initial && (view.phase === "intro" || !view.survey)
+    !guided && !panel.map && archiveReady && !initial && (view.phase === "intro" || !view.survey)
       ? Math.max(0, 1 - view.elapsed / 1600)
       : 0;
   const visibleArchive = archiveOpacity > 0;
@@ -155,8 +157,9 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     const frame = stormFrame(view.elapsed, view.survey);
     onView({
       kind: "observation",
-      ...stormGeography(frame, !view.survey, comparing),
+      ...stormGeography(frame, !view.survey, comparing, guided && invited),
       ...(hold.current ? { holdGeography: true, follow: undefined } : {}),
+      ...(guided && !view.playing ? { follow: undefined } : {}),
       capture: !visibleArchive,
       image: coast,
       target: comparing ? comparisonTarget : stormTarget,
@@ -164,8 +167,8 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       ...(hold.current ? {} : { arrive }),
       pickMarks: invited || visibleArchive ? undefined : { points: FIXES, select: inspectFix },
     });
-    remember?.({ chapter: comparing ? "compare" : "" });
-  }, [view, onView, arrive, coast, comparing, remember, visibleArchive, invited, inspectFix]);
+    remember?.({ chapter: guided && invited ? "intro" : comparing ? "compare" : "" });
+  }, [view, onView, arrive, coast, comparing, remember, visibleArchive, invited, inspectFix, guided]);
   const storm = stormFrame(view.elapsed, view.survey).storm;
   const { fix } = storm;
   const minute = Math.floor((storm.at - START) / 60_000);
@@ -274,7 +277,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
       inset={
         <>
-          {!initial && (
+          {!initial && !guided && (
             <img
               className="storm-archive"
               src={terra}

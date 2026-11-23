@@ -8,6 +8,7 @@ import type { Journey } from "./catalogue";
 export const featuredJourney = "ice-in-motion";
 
 const anchors: Record<string, StoryPlace> = {
+  radar: { lon: -98, lat: 38, label: "Recent radar · North America" },
   rain: { lon: -126, lat: 42, label: "Pacific coast" },
   river: { lon: -73.58, lat: 43.26, label: "Hudson River" },
   drifter: { lon: -87.064, lat: 28.872, label: "Gulf of Mexico" },

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { radarCatalogUrl, radarImageUrl, radarScans, type RadarScan } from "../../sources/radar";
 
 import { RAINVIEWER_CATALOGUE, rainviewerScans } from "../../sources/rainviewer";
 import { forgetRainviewer, RainviewerConnectionError, rainviewerFetch } from "./rainviewerFetch";
 import { globalRadarCoverage, globalRadarImage } from "./globalRadarImage";
+import { readHeldRadarScan } from "./heldRadarScan";
 
 const POLL_MS = 120_000;
 
@@ -20,7 +21,7 @@ const fetchBounded = (url: string, signal: AbortSignal) =>
   fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(14_000)]) });
 
 export function useRadarScans(
-  held: RefObject<RadarScan | null>,
+  held: MutableRefObject<RadarScan | null>,
   global: boolean,
   showHistory: boolean,
   initialAt: number | undefined,
@@ -182,13 +183,29 @@ export function useRadarScans(
     loadOnDemand.current = () => {
       if (deferredHistory) void load();
     };
-    void load();
+    const saved = readHeldRadarScan(global, demand.current.initialAt);
+    if (saved) {
+      void createImageBitmap(saved.image).then(
+        (image) => {
+          if (leaving) {
+            image.close();
+            return;
+          }
+          held.current = saved.scan;
+          images.set(saved.scan.id, image);
+          setData((old) => ({ ...old, scans: [saved.scan], images: new Map(images) }));
+          void load();
+        },
+        () => void load(),
+      );
+    } else void load();
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", leave);
     window.addEventListener("pageshow", returnToPage);
     window.addEventListener("online", refresh.current);
     const online = refresh.current;
     return () => {
+      leaving = true;
       stop();
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", leave);

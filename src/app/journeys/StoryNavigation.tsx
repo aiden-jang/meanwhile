@@ -89,7 +89,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     browseMap: props.explorer.flat,
     float: floatDive.view,
     curtain: active === "dust" && !!deck.view?.curtain,
-    foldGlacier: deck.foldGlacier,
+    foldGlacier: () => deck.depart("glacier"),
+    departRadar: props.radar.depart,
+    departStorm: () => deck.depart("katrina"),
     unavailable,
     open: (id, trigger, visit, fresh, arrival) =>
       navigate(id, trigger, visit, false, fresh, undefined, arrival),
@@ -163,8 +165,6 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
-    const radarPose =
-      id === "radar" && !props.views.observing && !resuming ? props.explorer.read() : undefined;
     const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
     const openReplay = () => {
       const city = saved?.position.moment?.city ?? arrival?.city;
@@ -205,9 +205,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
                 exploring ? currentRadarRegion : saved?.position.radar?.region,
                 false,
                 exploring ? props.explorer.radarAt : saved?.position.radar?.at,
-                radarPose ?? saved?.position.radar?.pose,
+                arrival?.pose ?? (exploring ? props.explorer.read() : saved?.position.radar?.pose),
               );
-              deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
+              deck.setMap(map ?? saved?.position.radar?.map ?? false);
             } else if (id === "float") {
               const exploring = !props.views.observing && !resuming;
               deck.setMap(

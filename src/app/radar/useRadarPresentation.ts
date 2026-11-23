@@ -15,7 +15,7 @@ export function useRadarPresentation(story?: StoryMoment, pose?: RadarEntry["pos
   }, []);
   const update = useCallback((next: RadarView | null) => {
     if (next?.image) ready.current = true;
-    set((active) => (active === null ? null : next));
+    set((active) => (active === null || active.departing ? active : next));
   }, []);
   // A later missing scan must not send an already framed radar view back home.
   return { view, setView, update, opening: view !== null && !ready.current };

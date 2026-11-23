@@ -17,8 +17,12 @@ import { useStorySession } from "../observations/StorySession";
 import { StoryLoading } from "../StoryLoading";
 import { lightsCities } from "./lightsSurface";
 import { surveyComparison } from "../observations/surveyComparison";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { stormJourney } from "../journeys/stormJourney";
+import { useMedia } from "../useNarrow";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
+const phoneLens = { globe: 17.5, map: 42 };
 const LAST = lightsPeriods.length - 1;
 const bounds = { bounds: lightsBounds, corners: lightsCorners, opacity: 1, feather: 0.045 };
 const locator = [{ lon: puertoRico.lon, lat: puertoRico.lat, size: 19, color: 0xe6caa6 }];
@@ -46,16 +50,20 @@ const sources = (
 
 export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
+  const guided = useStoryNavigation()?.route?.id === stormJourney;
+  const openComparison = guided && initial?.choice === undefined;
+  const phone = useMedia("(max-width: 599px)");
+  const lens = guided && phone ? phoneLens : lightsLens;
   const [images, setImages] = useState<HTMLImageElement[]>();
   const [failed, setFailed] = useState(false);
   const [attempt, retry] = useState(0);
   const [arrived, setArrived] = useState(false);
   const [settled, setSettled] = useState(false);
   const [index, setIndex] = useState(() =>
-    Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice) || 0))),
+    Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice ?? (openComparison ? 1 : 0)) || 0))),
   );
-  const [playing, setPlaying] = useState(() => !initial && !matchMedia(MOTION).matches);
-  const [compare, setCompare] = useState(() => initial?.chapter?.startsWith("compare:") ?? false);
+  const [playing, setPlaying] = useState(() => !guided && !initial && !matchMedia(MOTION).matches);
+  const [compare, setCompare] = useState(() => initial?.chapter?.startsWith("compare:") ?? openComparison);
   const [split, setSplit] = useState(() => clamp(Number(initial?.chapter?.split(":")[1] ?? 50) || 0));
   const play = useRef<HTMLButtonElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
@@ -115,7 +123,7 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
       image: arrived ? images[index]! : null,
       ...(arrived && surface ? { surface, surveyDivider: split / 100 } : {}),
       capture: arrived,
-      lens: lightsLens,
+      lens,
       arrive,
       comparisonFrame: framing,
       holdGeography: settled,
@@ -132,6 +140,7 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
     arrived,
     arrive,
     framing,
+    lens,
     settled,
     panel.map,
     remember,
@@ -175,31 +184,37 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
       location="Puerto Rico"
       subtitle="Follow the uneven return of nighttime light after Hurricane Maria."
       className="lights-journey"
+      finding={!guided}
       status={failed ? "NASA image unavailable" : !arrived ? "Approaching the island" : displayed.title}
       at={arrived ? <span>{displayed.dates}</span> : null}
       inset={
-        arrived && (
-          <>
-            <div className="lights-geography" aria-hidden="true">
-              {lightsCities.map(({ id, name, lon, lat }) => (
-                <span
-                  key={id}
-                  data-observation-anchor=""
-                  data-compact-anchor=""
-                  data-lon={lon}
-                  data-lat={lat}
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-            <div className="lights-key" aria-label="Relative nighttime light intensity">
-              <span>Dimmer</span>
-              <i aria-hidden="true" />
-              <span>Brighter</span>
-            </div>
-          </>
-        )
+        <>
+          {guided && (
+            <div className="lights-exposure" data-arrived={arrived || undefined} aria-hidden="true" />
+          )}
+          {arrived && (
+            <>
+              <div className="lights-geography" aria-hidden="true">
+                {lightsCities.map(({ id, name, lon, lat }) => (
+                  <span
+                    key={id}
+                    data-observation-anchor=""
+                    data-compact-anchor=""
+                    data-lon={lon}
+                    data-lat={lat}
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+              <div className="lights-key" aria-label="Relative nighttime light intensity">
+                <span>Dimmer</span>
+                <i aria-hidden="true" />
+                <span>Brighter</span>
+              </div>
+            </>
+          )}
+        </>
       }
       sources={sources}
     >
@@ -253,6 +268,7 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
                     </button>
                   )}
                   <PlaybackButton
+                    className="lights-playback-button"
                     playing={playing}
                     ended={index === LAST}
                     buttonRef={play}

@@ -1,6 +1,6 @@
 import type { StoryMoment } from "../observations/storyMoment";
 import type { ObservationFrame } from "../observations/types";
-import { RADAR_BOUNDS } from "../../sources/radar";
+import { RADAR_BOUNDS, type RadarScan } from "../../sources/radar";
 import type { RadarFeedHealth } from "./radarFeedHealth";
 
 interface RadarCamera {
@@ -17,6 +17,8 @@ export interface RadarView {
   at?: number | undefined;
   // Selection survives navigation even while its image is loading or unavailable.
   selectedAt?: number | undefined;
+  scan?: RadarScan | undefined;
+  departing?: boolean;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
   canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;

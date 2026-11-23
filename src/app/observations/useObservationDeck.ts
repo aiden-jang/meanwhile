@@ -163,8 +163,8 @@ export function useObservationDeck(
     shownSource: published.current,
     map,
     update,
-    foldGlacier() {
-      if (!view?.image || published.current !== "glacier") return false;
+    depart(id: StoryId) {
+      if (!view || published.current !== id || (id === "glacier" && !view.image)) return false;
       folding.current = true;
       setView({ ...view, departing: true });
       return true;
