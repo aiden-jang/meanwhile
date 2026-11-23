@@ -163,6 +163,13 @@
   background: transparent;
   color: var(--pressure-ink);
 }
+.tonga-evidence .related-stories {
+  margin-block-start: 12px;
+  border-color: #10273035;
+}
+.tonga-evidence .related-stories :is(p, button span) {
+  color: var(--pressure-dim);
+}
 .tonga-evidence .connected-journey-steps {
   border-color: color-mix(in srgb, var(--pressure-ink) 24%, transparent);
   margin-block: 12px;

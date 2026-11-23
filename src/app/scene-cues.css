@@ -54,6 +54,18 @@
 .scene-layer-example .scene-cue-label {
   bottom: calc(var(--cue-radius, 13px) + 6px);
 }
+.scene-layer-example:is([data-cue-side="left"], [data-cue-side="right"]) .scene-cue-label {
+  top: 0;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+.scene-layer-example[data-cue-side="right"] .scene-cue-label {
+  left: calc(var(--cue-radius, 13px) + 6px);
+}
+.scene-layer-example[data-cue-side="left"] .scene-cue-label {
+  right: calc(var(--cue-radius, 13px) + 6px);
+  left: auto;
+}
 .scene-cue-label > svg {
   flex: none;
   width: 15px;

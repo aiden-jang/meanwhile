@@ -138,7 +138,9 @@ test("cancelling a resize releases page selection and stops movement", async ({ 
   await page.goto("/");
   await waitForData(page);
   const handle = page.getByRole("separator", { name: "Rail width", exact: true });
-  await handle.dispatchEvent("pointerdown", { pointerId: 1 });
+  await handle.dispatchEvent("pointerdown", { pointerId: 2, pointerType: "touch", isPrimary: false });
+  expect(await page.evaluate(() => document.body.style.userSelect)).toBe("");
+  await handle.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "mouse", isPrimary: true });
   expect(await page.evaluate(() => document.body.style.userSelect)).toBe("none");
   const width = await handle.getAttribute("aria-valuenow");
   await page.evaluate(() => {

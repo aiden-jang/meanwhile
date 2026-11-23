@@ -82,11 +82,13 @@ test("switching glacier years holds the trace at the same point", async ({ page 
 test("closing the lidar slice keeps the chosen dust observation", async ({ page }) => {
   await open(page, "dust");
   await page.getByRole("button", { name: "Open lidar slice" }).click();
-  const slider = page.getByRole("slider").first();
+  const slider = page.getByRole("slider", { name: "Observation time", exact: true });
+  await expect(page.getByRole("slider", { name: "Profile altitude", exact: true })).toBeVisible();
   await slider.press("Home");
   const value = await slider.inputValue();
   await page.getByRole("button", { name: "Close lidar slice" }).click();
   await expect(slider).toHaveValue(value);
+  await expect(page.getByRole("slider", { name: "Profile altitude", exact: true })).toHaveCount(0);
 });
 test("one click reopens the local sky after switching to the map", async ({ page }) => {
   await open(page, "apophis");

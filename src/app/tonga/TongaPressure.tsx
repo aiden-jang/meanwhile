@@ -71,6 +71,9 @@ export function TongaPressure({
           {...(!shared ? { onSeek: (next) => onSeek(next, station) } : {})}
         />
         <ConnectedJourney compact />
+        {!shared && !guided && (
+          <ExperienceEnding id="tonga" showFinding={false} showSave={false} evidenceOpen />
+        )}
         <p className="tonga-evidence-source">
           One-minute station pressure · ASOS / IEM.
           <br />
@@ -117,20 +120,17 @@ export function TongaPressure({
         )}
       </div>
       {!shared && (
-        <>
-          <ShareMoment
-            label="Share finding"
-            share={pressureShare}
-            current={() => ({
-              id: "tonga",
-              at: Date.parse(timeIso(minute)),
-              choice: station.id,
-              chapter: "pressure",
-              map,
-            })}
-          />
-          {!guided && <ExperienceEnding id="tonga" showFinding={false} showSave={false} evidenceOpen />}
-        </>
+        <ShareMoment
+          label="Share finding"
+          share={pressureShare}
+          current={() => ({
+            id: "tonga",
+            at: Date.parse(timeIso(minute)),
+            choice: station.id,
+            chapter: "pressure",
+            map,
+          })}
+        />
       )}
     </section>
   );

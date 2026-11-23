@@ -53,15 +53,22 @@ export function createLayerExample(canvas: HTMLCanvasElement, globe: ReturnType<
       const radius =
         quake === undefined ? 1 : RADIUS_EVENTS - (state.depthSink ? depths.getX(quake) * (1 - morph) : 0);
       const point = controls.project(lon, lat, radius, box);
-      return point && bounds.fits(point, 72, size + 32, size) ? point : null;
+      if (!point) return null;
+      if (bounds.fits(point, 72, size + 32, size)) return { point, side: "above" };
+      if (!bounds.fits(point, size, size, size)) return null;
+      const offset = size + 78;
+      if (bounds.fits({ x: point.x + offset, y: point.y }, 72, size, size)) return { point, side: "right" };
+      if (bounds.fits({ x: point.x - offset, y: point.y }, 72, size, size)) return { point, side: "left" };
+      return null;
     };
     const count = geometry.drawRange.count;
     if (!selection && now - lastSearch >= 180 && now - started < 1700) {
       lastSearch = now;
       let distance = Infinity;
       const nearest = (option: Example) => {
-        const point = project(option);
-        if (!point) return;
+        const projected = project(option);
+        if (!projected) return;
+        const { point } = projected;
         const score = Math.hypot(point.x - bounds.centre.x, point.y - bounds.centre.y);
         if (score < distance) {
           distance = score;
@@ -94,8 +101,9 @@ export function createLayerExample(canvas: HTMLCanvasElement, globe: ReturnType<
         node.setAttribute("data-picked", "");
       }
     }
-    if (selection && matchesSelection(selection)) placeSceneCue(node, project(selection));
-    else node.removeAttribute("data-visible");
+    const location = selection && matchesSelection(selection) ? project(selection) : null;
+    if (location && node.dataset["cueSide"] !== location.side) node.dataset["cueSide"] = location.side;
+    placeSceneCue(node, location?.point ?? null);
 
     function matchesSelection(picked: Example) {
       const index = picked.quake;

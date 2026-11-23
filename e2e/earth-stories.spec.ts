@@ -25,7 +25,7 @@ for (const [id, title, action] of stories) {
     });
     await page.goto(`/#v=observe&story=${id}`);
     const panel = page.getByRole("region", { name: title, exact: true });
-    const timeline = panel.getByRole("slider");
+    const timeline = panel.locator("#earth-story-time");
     await expect(timeline).toBeVisible();
     await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
@@ -71,7 +71,7 @@ for (const [id, title, action] of stories) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/#v=observe&story=${id}`);
     const panel = page.getByRole("region", { name: title, exact: true });
-    const timeline = panel.getByRole("slider");
+    const timeline = panel.locator("#earth-story-time");
     await expect(timeline).toBeVisible();
     await panel.getByRole("button", { name: action, exact: true }).click();
     await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
