@@ -132,6 +132,7 @@ test("Storm Radar remains available in the catalogue after exploring the map", a
   await page.getByRole("button", { name: "Map", exact: true }).click();
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await revealStoryTools(page);
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();

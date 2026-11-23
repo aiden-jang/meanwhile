@@ -336,6 +336,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             : undefined),
         browse: showCatalogue,
         explore() {
+          if (props.views.depthFocus?.archiveReading)
+            return props.onDepthNearby(props.views.depthFocus.archiveReading);
           if (active !== null && origin.current?.route.origin.presentation === "explore" && returnToBrowse())
             return;
           panelReturn.cancel();
@@ -343,11 +345,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           setPreviewOpen(false);
           origin.current = null;
           journey.leave();
-          const pane = props.views.browser.pane;
-          const focus = pane === "stories" ? "explorer-stories-tab" : "explorer-layers-tab";
-          props.views.navigation.requestExploreFocus(focus);
-          props.views.browser.show(pane);
-          props.onExplore(true);
+          props.views.navigation.requestExploreFocus(`explorer-${props.views.browser.pane}-tab`);
+          props.views.browser.show(props.views.browser.pane);
+          props.onExplore(!props.views.landing);
         },
         openRadar(at, map, trigger = "open-explorer-radar") {
           rememberOrigin(trigger);

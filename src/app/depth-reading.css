@@ -23,6 +23,59 @@
   font-size: var(--text-control);
 }
 
+.depth-reading-next {
+  padding-block: 8px 4px;
+}
+
+.depth-reading-next button {
+  min-height: 44px;
+  padding-inline: 12px;
+  border-radius: 6px;
+  background: var(--color-ink);
+  color: var(--color-void);
+  cursor: pointer;
+}
+
+.depth-reading-next button:hover {
+  background: var(--color-dim);
+}
+
+.cutaway-reports h2 {
+  font:
+    600 clamp(32px, 4vw, 52px) / 1 "Alumni Sans",
+    var(--font-sans);
+}
+
+.cutaway-reports p,
+.cutaway-reports li span {
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.cutaway-reports ul {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.cutaway-reports li button {
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  min-height: 44px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--color-hairline);
+  text-align: start;
+  cursor: pointer;
+}
+
+.cutaway-reports li button:hover {
+  background: var(--color-raised);
+}
+
+.cutaway-reports .held-cutaway {
+  padding-block-start: 8px;
+  border-block-start: 1px solid var(--color-hairline);
+}
+
 .depth-reading-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -70,5 +123,14 @@
   .depth-reading-value {
     margin-block: 0;
     padding-block: 6px;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 640px) {
+  .depth-reading-next {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: var(--color-deck);
   }
 }

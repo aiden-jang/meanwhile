@@ -21,6 +21,10 @@ export function sceneCueBounds(canvas: HTMLCanvasElement, box: DOMRect, landing 
   let left = Math.max(box.left, 0) + 8;
   const right = Math.min(box.right, innerWidth) - 8;
   let bottom = Math.min(box.bottom, innerHeight) - 20;
+  if (landing && innerWidth < 600 && innerHeight <= 620) {
+    const attribution = frame?.querySelector(".stage-readout .layer-readout")?.getBoundingClientRect();
+    if (attribution?.height) bottom = Math.min(bottom, attribution.top - 4);
+  }
   if (rail?.width && rail.height) {
     if (rail.right < innerWidth * 0.65) left = Math.max(left, rail.right + 12);
     else if (rail.top >= top) bottom = Math.min(bottom, rail.top - 38);

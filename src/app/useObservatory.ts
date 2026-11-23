@@ -240,9 +240,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         browser.category ?? "all",
         observations.entry ??
           (tonight
-            ? localSky?.lunarDeparture
-              ? "moonfall"
-              : skyEntry.mode
+            ? sky.historyKey(!!localSky?.lunarDeparture, observations.map)
             : sunActive
               ? "sun"
               : floatView

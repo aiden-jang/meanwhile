@@ -325,6 +325,7 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await expect(lightningPanel).toHaveCount(0);
   await selectScene(page, "After Dark");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await expect(windPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
   await openLayer(page, "Lightning");

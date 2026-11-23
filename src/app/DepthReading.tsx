@@ -16,11 +16,13 @@ export function DepthReading({
   record,
   select,
   onHome,
+  onNearby,
   projection,
 }: {
   record: DepthRecord;
   select: (record: DepthRecord) => void;
   onHome: () => void;
+  onNearby: () => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
 }) {
   const title = useRef<HTMLHeadingElement>(null);
@@ -87,6 +89,16 @@ export function DepthReading({
           >
             USGS event record
           </a>
+          <div className="depth-reading-next">
+            <button
+              id="explore-nearby-earthquakes"
+              className="observatory-primary"
+              type="button"
+              onClick={onNearby}
+            >
+              Explore nearby earthquakes
+            </button>
+          </div>
         </div>
       </div>
     </section>

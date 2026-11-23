@@ -144,7 +144,7 @@ test("scenes preserve existing preferences and shared event links open the explo
       figures: localStorage.getItem("eif.figures"),
       rail: localStorage.getItem("eif.railOpen"),
     })),
-  ).toEqual({ depth: "0", ramp: "cividis", figures: null, rail: "1" });
+  ).toEqual({ depth: "0", ramp: "cividis", figures: null, rail: "0" });
   await page.goto("/#e=usgs:missing-shared-event");
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "explore");
 });
@@ -214,11 +214,14 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     );
   const original = await contexts();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page
+    .getByRole("group", { name: "Explore by subject" })
+    .getByRole("button", { name: "Earth", exact: true })
+    .click();
   const rail = page.locator("#chrome-rail");
   await Promise.all([
     expect(rail).toBeVisible(),
-    expect(page.locator("#view-projection")).toBeFocused(),
+    expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused(),
     expect(rail).toHaveCSS("background-image", /^linear-gradient\(/),
   ]);
   await expect
@@ -263,6 +266,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     });
   expect(interrupted).toEqual({ before: true, after: 0 });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   const [readingMotions, finalContexts] = await Promise.all([
     page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length),

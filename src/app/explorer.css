@@ -791,6 +791,17 @@
   border-color: transparent;
   background: transparent;
 }
+.explorer-fold[data-label-layers] {
+  width: auto;
+  padding-inline: 14px;
+  font-size: var(--text-control);
+}
+@media (max-width: 767px) {
+  .explorer-fold[data-label-layers] {
+    top: auto;
+    bottom: calc(var(--credit-space, 60px) + 56px);
+  }
+}
 .explorer-fold[aria-expanded="false"] svg {
   transform: rotate(180deg);
 }

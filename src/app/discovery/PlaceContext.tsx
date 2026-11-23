@@ -30,11 +30,16 @@ export function nearbyQuakes(
   at: number,
   now: number,
   place: { lon: number; lat: number },
+  radius = 500,
 ) {
   const found: Quake[] = [];
   feed.store.forEach((quake) => {
     const p = quake.primary;
-    if (p.time <= at && matches(quake, filters, now) && distanceKm(place.lon, place.lat, p.lon, p.lat) <= 500)
+    if (
+      p.time <= at &&
+      matches(quake, filters, now) &&
+      distanceKm(place.lon, place.lat, p.lon, p.lat) <= radius
+    )
       found.push(quake);
   });
   return found.sort((a, b) => b.primary.time - a.primary.time);

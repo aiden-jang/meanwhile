@@ -485,12 +485,39 @@
   content: "";
 }
 
+.sky-earth-entry {
+  min-height: 44px;
+  justify-self: start;
+  padding-inline: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sky-earth-entry:hover {
+  background: var(--color-raised);
+}
+
+.sky-held-reading {
+  display: grid;
+  gap: 4px;
+  margin-block: 8px;
+  padding-block: 12px;
+  border-block: 1px solid var(--color-hairline);
+  color: var(--color-dim);
+}
+
+.sky-held-reading time {
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
 .observatory-stage:is([data-stage="tonight"], [data-stage="aurora"]):has(.story-projection) .stage-ident {
   inset-inline-end: calc(var(--stage-inset) + 132px);
   justify-content: start;
 }
 
-.observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
+.observatory-stage[data-stage="tonight"]:not([data-city-reference]):has(.story-projection) .stage-ident {
   inset-inline-end: calc(var(--stage-inset) + 220px);
 }
 
@@ -577,10 +604,5 @@
 @media (max-width: 599px) and (max-height: 640px) {
   .tonight-compass:not([data-open-compass]) :is(.tonight-drag-hint, .tonight-target-bearing) {
     display: none;
-  }
-
-  .observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
-    inset-block-start: var(--stage-inset);
-    max-width: calc(100% - 218px);
   }
 }

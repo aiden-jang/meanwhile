@@ -39,7 +39,10 @@ export function useSkyView(city: string, before: () => void, story?: StoryMoment
       entry: {
         ...entry,
         ...(view.radiantTrail ? { mode: "meteors" as const, returnSky: memory.current } : {}),
-        position: skyPosition(view, false, orbit),
+        position: {
+          ...skyPosition(view, false, orbit),
+          ...(entry.position?.direct && { direct: true as const }),
+        },
       },
     };
   };
@@ -48,6 +51,10 @@ export function useSkyView(city: string, before: () => void, story?: StoryMoment
     entry,
     orbit,
     setOrbit,
+    historyKey(lunar: boolean, map: boolean) {
+      if (lunar) return "moonfall";
+      return entry.position?.direct && (map || orbit) ? "sky-reference" : entry.mode;
+    },
     setView,
     update,
     handoff(next: TonightPresentation) {

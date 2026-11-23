@@ -34,7 +34,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         className="header-navigation-action header-explore"
         aria-label="Explore"
         aria-current={exploring ? "location" : undefined}
-        aria-description="Open Layers and Stories, or return to your previous Explore view"
+        aria-description="Explore the globe or return to your previous Explore view"
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();

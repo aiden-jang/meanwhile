@@ -9,13 +9,13 @@ import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { usePlaceInspection } from "./app/discovery/usePlaceInspection";
+import { explorerEntrances, useExplorerHistory, useExplorerView } from "./app/useExplorerView";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
 import { hazardsInWindow, hasLegendMarks, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
-import { useSceneHistory } from "./app/useSceneHistory";
 import { useSharedLocation } from "./app/useSharedLocation";
 import { explorerCamera, useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
@@ -51,7 +51,6 @@ import { createFeed, DEFAULT_FILTERS } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
-import { useFloatingChrome } from "./app/useNarrow";
 import { useStoredFlag, useStoredName, useStoredNumber } from "./app/useStored";
 import { newestEpisode } from "./sources/volcanoes";
 import { summarise, FEED_CAP } from "./sources/wildfires";
@@ -108,7 +107,8 @@ export function App(): JSX.Element {
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
-  const { flyTo, camera, home, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
+  const globeCamera = useGlobeCamera(shared, setGlobeReady);
+  const { flyTo, camera, home, read: readCamera, onReady } = globeCamera;
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -160,7 +160,8 @@ export function App(): JSX.Element {
     !archiveBusy &&
     snapshot.statuses.usgs.kind === "failing" &&
     snapshot.statuses.emsc.kind === "failing";
-  const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section ? true : shared.flat);
+  const explorerView = useExplorerView(shared);
+  const { mapOn, setFlat, railOpen, setRailOpen, chromeFloats } = explorerView;
   const flat = observatory.observing ? observatory.observations.map : mapOn;
   const chase = useEclipsePlayback(
     loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
@@ -365,25 +366,7 @@ export function App(): JSX.Element {
     () => (selected ? feed.store.get(selected)?.primary : null) ?? camera.current,
     setSinkOn,
   );
-  useSceneHistory({
-    route: {
-      ...observatory.navigation,
-      capture: () => ({ view: observatory.navigation.capture(readCamera.current()), day: loadedDay, mapOn }),
-      restore: (saved) => {
-        stopTour();
-        setFlat(saved.mapOn);
-        observatory.navigation.restore(saved.view);
-        if (saved.day !== loadedDay || archiveBusy) {
-          if (saved.day) void archiveState.loadArchive(saved.day);
-          else backToLive();
-        }
-      },
-    },
-    checkpoint: observatory.checkpoint,
-    readCamera,
-    flyTo,
-    lastWritten,
-  });
+  useExplorerHistory(explorerView, observatory, archiveState, () => stopTour(), globeCamera, lastWritten);
   useSharedLocation({
     feed,
     filters,
@@ -476,11 +459,21 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  function openExplorer(showPanel = false) {
-    if (showPanel && !railOpen) setRailOpen(true);
-    reportAnalytics({ name: "explore_opened" });
-    observatory.exploreScene(stopTour);
-  }
+  const entrances = explorerEntrances(
+    explorerView,
+    observatory,
+    globeCamera,
+    stopTour,
+    () => {
+      setSelected(null);
+      setMarkId(null);
+      setSectionLine(null);
+    },
+    () => {
+      if (archived || archiveBusy) backToLive();
+      setScrub(LIVE);
+    },
+  );
   const closeReading = (kind: "quake" | "hazard" | "section") =>
     closeDetail(kind, () => {
       if (kind === "quake") setSelected(null);
@@ -497,7 +490,10 @@ export function App(): JSX.Element {
     else setScrub(LIVE);
   };
   function returnHome() {
-    observatory.home(stopTour);
+    observatory.home(() => {
+      stopTour();
+      explorerView.open(undefined);
+    });
     if (archived || archiveBusy) backToLive();
     flyTo.current(home.current.lon, home.current.lat, home.current.zoom);
   }
@@ -787,12 +783,11 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [here, filters, snapshot.revision, replay, view.at, clockAt]);
 
-  const chromeFloats = useFloatingChrome();
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
-  const [railOpen, setRailOpen] = useStoredFlag("railOpen", true, shared.radarPlace ? true : undefined);
-  const railShown = !observatory.observing && (railOpen || !chromeFloats);
+  const railShown = !observatory.observing && railOpen;
   useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
   const place = usePlaceInspection(setRailOpen, shared.radarPlace);
+  const placePin = explorerView.nearby?.record ?? place.point;
   const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
@@ -990,9 +985,10 @@ export function App(): JSX.Element {
     deepAvailable: journey.deepest !== null,
     onScene: chooseEarthScene,
     onHome: returnHome,
-    onExplore: openExplorer,
+    onExplore: entrances.open,
+    onDepthNearby: entrances.nearby,
     onPickDate: () => {
-      openExplorer(true);
+      entrances.open(true);
       mapLayers.inspect("earthquakes");
       observatory.browser.show("layers");
       requestAnimationFrame(() =>
@@ -1151,14 +1147,14 @@ export function App(): JSX.Element {
                 places={{
                   ready: observatory.ready,
                   feed,
-                  filters: mapLayers.globeFilters,
+                  filters: explorerView.nearby ? filters : mapLayers.globeFilters,
                   at: view.at ?? now,
                   now,
                   revision: snapshot.revision,
                   hazards,
                   feeds,
                 }}
-                place={place}
+                place={{ ...place, cutaway: explorerView.nearby?.record, backToCutaway: entrances.back }}
                 readCamera={readCamera.current}
                 panelVisible={railShown}
                 onQuake={selectQuake}
@@ -1304,7 +1300,9 @@ export function App(): JSX.Element {
             </ExplorerSidebar>
           </aside>
 
-          {chromeFloats && !observatory.observing && <ExplorerFold open={railOpen} onChange={setRailOpen} />}
+          {!observatory.observing && (chromeFloats || !railOpen) && (
+            <ExplorerFold open={railOpen} onChange={setRailOpen} labelLayers={explorerView.foldedByEntry} />
+          )}
 
           <Resizer
             axis="x"
@@ -1359,11 +1357,12 @@ export function App(): JSX.Element {
                 onCapture={onCapture}
                 {...(clip.recording ? { onFrame: clip.onFrame } : {})}
                 onSelectMark={selectMark}
-                placePin={observatory.observing || mapLayers.suspended ? null : place.point}
+                placePin={observatory.observing || mapLayers.suspended ? null : placePin}
                 onPlace={
                   !observatory.observing &&
                   !mapLayers.suspended &&
                   !mapLayers.rewindPoint &&
+                  !explorerView.nearby &&
                   !selected &&
                   !markId
                     ? place.open

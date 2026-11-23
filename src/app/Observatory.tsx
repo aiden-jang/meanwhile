@@ -59,6 +59,7 @@ function ObservatoryContent({
   onScene,
   onHome,
   onExplore,
+  onDepthNearby,
   tour,
 }: ObservatoryProps): JSX.Element {
   const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
@@ -118,6 +119,7 @@ function ObservatoryContent({
         select={views.selectDepth}
         onHome={onHome}
         projection={observations}
+        onNearby={() => onDepthNearby(depthRecord)}
       />
     );
   if (observations.entry)
@@ -160,6 +162,7 @@ function ObservatoryContent({
             projection={observations}
             orbit={tonight.orbit}
             onOrbit={tonight.setOrbit}
+            cityReference={tonight.entry.mode === "sky" && !!tonight.entry.position?.direct}
           />
         </Suspense>
       ) : (
@@ -317,7 +320,7 @@ function ObservatoryContent({
                       <ObservatoryEntryActions
                         explore={() => {
                           browser.show("layers");
-                          onExplore();
+                          onExplore(!landing);
                         }}
                         browse={() => navigationContext?.browse(true)}
                       />

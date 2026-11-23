@@ -268,3 +268,71 @@ test("the three landing entrances open live layers, a measured cutaway and the s
   await page.goBack();
   await expect(entries.getByRole("button", { name: "After Dark", exact: true })).toBeFocused();
 });
+
+test("globe-first entry and geographic detours keep the same world and reading", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.addInitScript(() => localStorage.setItem("eif.sky-city", "Tokyo"));
+  await page.goto("/#v=observe&at=-74,40,1");
+  const globe = page.locator("#globe-view");
+  const canvas = await globe.locator("canvas").elementHandle();
+  const entrances = page.getByRole("group", { name: "Explore by subject" });
+  const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
+  const button = (name: string) => page.getByRole("button", { name, exact: true });
+  const rail = page.locator("#chrome-rail");
+  await button("Explore the globe").click();
+  await expect(rail).toBeHidden();
+  await expect(button("Layers")).toBeFocused();
+  await button("Layers").click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+  await home.click();
+  await entrances.getByRole("button", { name: "Earth", exact: true }).click();
+  await expect(rail).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await home.click();
+
+  await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  const depth = page.getByRole("region", { name: "Earthquake cutaway" });
+  await depth.getByRole("button", { name: /670\.8 km/ }).click();
+  await depth.getByRole("button", { name: "Map", exact: true }).click();
+  const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  const nearby = button("Explore nearby earthquakes");
+  await nearby.click();
+  await expect(page.getByRole("heading", { name: "Nearby earthquakes" })).toBeFocused();
+  await expect(globe).toHaveAttribute("aria-label", "Map");
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  await expect(page.getByRole("region", { name: "Nearby earthquake reports" })).toContainText(
+    "670.8 km deep",
+  );
+  await button("Globe").click();
+  await expect(globe).toHaveAttribute("aria-label", "Globe");
+  await button("Back to cutaway").click();
+  await expect(nearby).toBeFocused();
+  await expect(depth.getByText("670.8 km deep", { exact: true })).toBeVisible();
+  await expect(globe).toHaveAttribute("aria-label", "Map");
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBeNull();
+  await home.click();
+
+  await entrances.getByRole("button", { name: "After Dark", exact: true }).click();
+  const scrubber = page.getByRole("slider", { name: "City local time" });
+  const facing = page.getByRole("group", { name: "Look around the local sky" });
+  await scrubber.press("End");
+  await facing.press("ArrowRight");
+  const direction = await facing.innerText();
+  const minute = await scrubber.getAttribute("aria-valuetext");
+  const seeCity = button("See Tokyo on Earth");
+  await seeCity.click();
+  await expect(page.getByRole("heading", { name: "Tokyo on Earth" })).toBeVisible();
+  await expect(globe).toHaveAttribute("aria-label", "Map");
+  await expect(page.locator(".sky-held-reading time")).toHaveText(minute!);
+  await button("Back to local sky").click();
+  await expect(seeCity).toBeFocused();
+  await expect(scrubber).toHaveAttribute("aria-valuetext", minute!);
+  await expect(facing).toHaveText(direction, { useInnerText: true });
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

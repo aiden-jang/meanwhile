@@ -509,8 +509,14 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const exploring = await tab.isVisible();
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   if (!exploring) {
-    await page.getByRole("button", { name: "Explore", exact: true }).click();
-    await tab.click();
+    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const layers = page.getByRole("button", { name: "Layers", exact: true });
+    if (await page.locator(".frame[data-landing]").isVisible()) await browse.click();
+    else {
+      if (await layers.isVisible()) await layers.click();
+      else await page.getByRole("button", { name: "Explore", exact: true }).click();
+      await tab.click();
+    }
   }
   const catalogue = page.getByRole("region", { name: "Story catalogue", exact: true });
   await expect(catalogue).toBeVisible();
@@ -548,6 +554,8 @@ export async function revealStoryTools(page: Page) {
 
 export async function openLayer(page: Page, name = "Earthquakes") {
   const tab = page.getByRole("tab", { name: "Layers", exact: true });
+  const layers = page.getByRole("button", { name: "Layers", exact: true });
+  if (await layers.isVisible()) await layers.click();
   await expect(tab).toBeVisible();
   if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   const title = page.getByRole("heading", { name, exact: true });

@@ -33,9 +33,10 @@ import { LayerSources } from "./LayerSources";
 import { HazardList } from "./HazardList";
 import { LayerExample, hasLayerExample } from "./LayerExample";
 import { LayerIcon } from "./LayerIcon";
+import { CutawayReports } from "./CutawayReports";
+import type { DepthRecord } from "../data/depthRecords";
 import "./map-layers.css";
 import "./discovery/discovery.css";
-
 const RadarLayer = lazy(() =>
   import("./radar/RadarLayer").then(({ RadarLayer }) => ({ default: RadarLayer })),
 );
@@ -63,7 +64,10 @@ export function MapLayers({
 }: {
   controls: ReturnType<typeof useMapLayers>;
   places: PlaceContextProps;
-  place: ReturnType<typeof usePlaceInspection>;
+  place: ReturnType<typeof usePlaceInspection> & {
+    cutaway?: DepthRecord | undefined;
+    backToCutaway: () => void;
+  };
   readCamera: () => CameraState;
   panelVisible: boolean;
   onQuake: (id: string) => void;
@@ -177,6 +181,8 @@ export function MapLayers({
     } else back();
   };
 
+  if (place.cutaway)
+    return <CutawayReports {...reports} record={place.cutaway} back={place.backToCutaway} select={onQuake} />;
   return (
     <section ref={panel} className="map-layers" aria-label="Map layers" onKeyDown={dismissReading}>
       {place.point && !rewindPoint && (

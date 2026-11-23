@@ -24,6 +24,7 @@ import { SkyObjects } from "./SkyObjects";
 import { skyDirection, skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
 import { TonightMoonfall } from "./TonightMoonfall";
+import { SkyEarthEntry, SkyEarthReading, SkyHeading, skyTimeFormats } from "./SkyEarthReading";
 const MINUTE = 60_000;
 function depart(view: TonightView, camera?: CameraState) {
   const moon = view.bodies[0]!;
@@ -91,20 +92,7 @@ export function TonightSky({
     const candidate = localNight(city, initial?.nightStart ?? at);
     return at < candidate.start && initial ? localNight(city, at - 12 * 3_600_000) : candidate;
   }, [city, openedAt, initial]);
-  const format = useMemo(
-    () => ({
-      clock: new Intl.DateTimeFormat("en", { timeZone: city.zone, hour: "numeric", minute: "2-digit" }),
-      local: new Intl.DateTimeFormat("en", {
-        timeZone: city.zone,
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZoneName: "short",
-      }),
-    }),
-    [city],
-  );
+  const format = useMemo(() => skyTimeFormats(city.zone), [city.zone]);
   const opening = useMemo(() => {
     const base = { ...openingSky(city, night.start, night.end), nightStart: night.start };
     if (!initial || initial.at < night.start || initial.at > night.end) return base;
@@ -183,7 +171,16 @@ export function TonightSky({
     document.getElementById("moonfall-back")?.focus({ preventScroll: true });
     if (guided) onView(departure.aim);
   }, [departure, guided, onView]);
-  useObservatoryEscape(departure ? returnToSky : onClose);
+  const cityReference = mode === "sky" && !guided && !!initialPosition?.direct;
+  const fromEarth = cityReference && (projection.map || orbit);
+  const returnFromEarth = () => {
+    onJourney(current);
+    onLocalSky();
+    requestAnimationFrame(() =>
+      document.getElementById("see-observing-city")?.focus({ preventScroll: true }),
+    );
+  };
+  useObservatoryEscape(departure ? returnToSky : fromEarth ? returnFromEarth : onClose);
   function approachMoon() {
     const flight = depart(current, projection.map ? readCamera() : undefined);
     setDeparture(flight);
@@ -206,16 +203,12 @@ export function TonightSky({
         }
       />
     );
+  if (fromEarth)
+    return <SkyEarthReading city={city} at={at} time={format.local.format(at)} onBack={returnFromEarth} />;
+  const title = mode === "sky" ? "Tonight’s Sky" : "Meteor Nights";
   return (
     <>
-      <div className="tonight-heading">
-        <h2 id="local-sky-title">{mode === "sky" ? "Tonight’s Sky" : "Meteor Nights"}</h2>
-        <div className="observatory-actions tonight-back">
-          <button type="button" ref={back} onClick={onClose}>
-            {returnLabel}
-          </button>
-        </div>
-      </div>
+      <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} />
       {mode === "sky" && !observing && !guided && (
         <section className="tonight-invitation" aria-label="Start observing">
           <h3>
@@ -278,6 +271,15 @@ export function TonightSky({
           preference.select(name);
         }}
       />
+      {cityReference && (
+        <SkyEarthEntry
+          city={city}
+          open={() => {
+            onJourney(current);
+            projection.setMap(true);
+          }}
+        />
+      )}
       {mode === "sky" && !guided && (
         <div className="tonight-moonfall-entry">
           <button type="button" id="open-moonfall" onClick={approachMoon}>

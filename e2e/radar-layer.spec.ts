@@ -131,6 +131,7 @@ for (const width of [1440, 390]) {
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
+    await page.getByRole("button", { name: "Layers", exact: true }).click();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
     const controls = page.locator("#radar-layer-controls");

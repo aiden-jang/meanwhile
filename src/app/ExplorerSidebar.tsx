@@ -14,11 +14,23 @@ import { reportAnalytics } from "../../analytics/browser";
 import { layerTime } from "./layerTime";
 import "./explore-panel.css";
 
-export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
+export function ExplorerFold({
+  open,
+  onChange,
+  labelLayers,
+}: {
+  open: boolean;
+  onChange: (open: boolean) => void;
+  labelLayers: boolean;
+}) {
+  function change() {
+    onChange(!open);
+    if (labelLayers) requestAnimationFrame(() => document.getElementById("explorer-layers-tab")?.focus());
+  }
   function fold() {
     const scene = document.querySelector<HTMLElement>("#globe-view .globe-scene");
     if (!scene?.animate || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      onChange(!open);
+      change();
       return;
     }
     const from = globeFramingRect(scene);
@@ -26,27 +38,33 @@ export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (ope
       .getAnimations()
       .find((motion) => motion.id === "globe-fold")
       ?.cancel();
-    flushSync(() => onChange(!open));
+    flushSync(change);
     shiftGlobe(scene, from, "globe-fold");
   }
   return (
     <button
       type="button"
+      id="explorer-fold"
       className="explorer-fold"
+      data-label-layers={labelLayers || undefined}
       onClick={fold}
-      aria-label={open ? "Hide the panel" : "Show the panel"}
+      aria-label={labelLayers ? "Layers" : open ? "Hide the panel" : "Show the panel"}
       aria-expanded={open}
       aria-controls="chrome-rail"
     >
-      <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-        <path
-          d="m12 6-4 4 4 4"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      {labelLayers ? (
+        "Layers"
+      ) : (
+        <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
+          <path
+            d="m12 6-4 4 4 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
     </button>
   );
 }

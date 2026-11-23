@@ -17,12 +17,14 @@ export function TonightCompass({
   projection,
   orbit,
   onOrbit,
+  cityReference,
 }: {
   view: TonightPresentation | null;
   onView: (view: TonightView) => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
   orbit: boolean;
   onOrbit: (orbit: boolean) => void;
+  cityReference: boolean;
 }): JSX.Element {
   const [directions, setDirections] = useState(false);
   const menu = useId();
@@ -44,9 +46,10 @@ export function TonightCompass({
     <div
       className="observatory-stage"
       data-stage="tonight"
+      data-city-reference={cityReference || undefined}
       data-meteor-view={view?.radiantTrail ? true : undefined}
       role="group"
-      aria-label="Local horizon"
+      aria-label={cityReference && fromEarth ? "Earth reference" : "Local horizon"}
     >
       <div className="stage-corners" aria-hidden="true">
         <span />
@@ -96,27 +99,29 @@ export function TonightCompass({
           {view.city.name}
         </span>
       )}
-      {view && !view.radiantTrail && (
+      {view && !view.radiantTrail && (!cityReference || fromEarth) && (
         <StoryProjection
           map={projection.map}
           globeActive={orbit && !projection.map}
-          globeLabel="Orbit"
+          globeLabel={cityReference ? "Globe" : "Orbit"}
           onMap={(map) => {
             onOrbit(!map);
             projection.setMap(map);
           }}
           label="Sky reference projection"
         >
-          <button
-            type="button"
-            aria-pressed={!fromEarth}
-            onClick={() => {
-              onOrbit(false);
-              projection.setMap(false);
-            }}
-          >
-            Local sky
-          </button>
+          {!cityReference && (
+            <button
+              type="button"
+              aria-pressed={!fromEarth}
+              onClick={() => {
+                onOrbit(false);
+                projection.setMap(false);
+              }}
+            >
+              Local sky
+            </button>
+          )}
         </StoryProjection>
       )}
       {view && !fromEarth && (

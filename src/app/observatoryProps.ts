@@ -4,6 +4,7 @@ import type { Stop } from "./tour";
 import type { DiscoveriesData } from "./visitor/Discoveries";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
+import type { DepthRecord } from "../data/depthRecords";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
@@ -46,6 +47,7 @@ export interface ObservatoryProps {
   onScene: (scene: EarthScene, direct?: boolean) => void;
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
+  onDepthNearby: (record: DepthRecord) => void;
   onPickDate: () => void;
   tour: {
     at: number | null;
