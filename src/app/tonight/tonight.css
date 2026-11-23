@@ -599,12 +599,6 @@
   .field-journey .observation-picker select {
     min-height: 44px;
   }
-}
-
-@media (max-width: 599px) and (max-height: 640px) {
-  .tonight-compass:not([data-open-compass]) :is(.tonight-drag-hint, .tonight-target-bearing) {
-    display: none;
-  }
 
   .observatory-intro:has(.sky-earth-entry) .tonight-heading {
     flex-direction: row;
@@ -613,5 +607,11 @@
 
   .observatory-intro:has(.sky-earth-entry) .tonight-heading h2 {
     font-size: 34px;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 640px) {
+  .tonight-compass:not([data-open-compass]) :is(.tonight-drag-hint, .tonight-target-bearing) {
+    display: none;
   }
 }
