@@ -1,10 +1,21 @@
-import { NetCDFReader, type Attribute } from "netcdfjs";
+import { NetCDFReader, type Attribute, type Variable } from "netcdfjs";
 import type { GeoPoint, ObservationPath, ObservationSource } from "../../app/observations/types";
 import { DEG } from "../../geo/sphere";
 import { HOUR, request, utc } from "./common";
 import jetStream from "./jet-stream.nc?url";
 
 const wrap = (lon: number) => ((lon + 540) % 360) - 180;
+
+function attribute(variable: Variable | undefined, name: string) {
+  const attributes: readonly Attribute[] = variable?.attributes ?? [];
+  return attributes.find((item) => item.name === name)?.value;
+}
+
+function timeOrigin(axis: Variable | undefined) {
+  const unit = attribute(axis, "units");
+  const epoch = typeof unit === "string" ? /^hours? since (.+)$/i.exec(unit)?.[1] : undefined;
+  return Date.parse(epoch ?? "");
+}
 
 function vectors(u: number[], v: number[], lons: number[], lats: number[], offset: number) {
   const paths: ObservationPath[] = [];
@@ -41,18 +52,31 @@ export const wind: ObservationSource = {
     const jet = option === "jet";
     const response = await request(jet ? jetStream : "/api/observations/wind", signal);
     const grid = new NetCDFReader(await response.arrayBuffer());
-    const variable = grid.variables.find(({ name }) => name === "time");
-    const attributes: readonly Attribute[] = variable?.attributes ?? [];
-    const unit = attributes.find(({ name }) => name === "units")?.value;
-    const epoch = typeof unit === "string" ? /^hours? since (.+)$/i.exec(unit)?.[1] : undefined;
-    const origin = Date.parse(epoch ?? "");
+    const level = jet ? "isobaric" : "height_above_ground";
+    const uName = `u-component_of_wind_${level}`;
+    // Unidata appends a number when the collection has several forecast time coordinates.
+    const dimension = grid.variables.find(({ name }) => name === uName)?.dimensions[0];
+    const time = dimension === undefined ? undefined : grid.dimensions[dimension]?.name;
+    const axis = grid.variables.find(({ name }) => name === time);
+    if (!axis) throw new Error("Missing forecast time axis");
+    const referenceName = axis.name.replace(/^time/, "reftime");
+    const reference = grid.variables.find(
+      (variable) =>
+        variable !== axis &&
+        variable.dimensions.length === 1 &&
+        variable.dimensions[0] === dimension &&
+        (variable.name === referenceName ||
+          attribute(variable, "standard_name") === "forecast_reference_time"),
+    );
+    const origin = timeOrigin(axis);
+    const referenceOrigin = timeOrigin(reference);
+    const runOrigin = Number.isFinite(referenceOrigin) ? referenceOrigin : origin;
     const field = (name: string) => grid.getDataVariable(name).map(Number);
-    const times = field("time");
-    const runs = field("reftime");
+    const times = field(axis.name);
+    const runs = reference ? field(reference.name) : [];
     const lons = field("longitude");
     const lats = field("latitude");
-    const level = jet ? "isobaric" : "height_above_ground";
-    const u = field(`u-component_of_wind_${level}`);
+    const u = field(uName);
     const v = field(`v-component_of_wind_${level}`);
     const cells = lons.length * lats.length * times.length;
     if (
@@ -78,7 +102,7 @@ export const wind: ObservationSource = {
             {
               label: "Model run",
               value: Number.isFinite(runs[index])
-                ? utc(origin + runs[index]! * HOUR)
+                ? utc(runOrigin + runs[index]! * HOUR)
                     .slice(0, 16)
                     .replace("T", " ") + " UTC"
                 : "Unavailable",
