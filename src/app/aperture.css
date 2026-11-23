@@ -19,6 +19,12 @@
   inset: var(--head-h) clamp(24px, 2.35vw, 38px) 54px 0;
   transform-origin: calc(50% + var(--landing-sky-bleed) * 0.5vw) center;
 }
+.frame[data-landing] .zone-canvas:has(.globe-unavailable) {
+  isolation: isolate;
+}
+.frame[data-landing] .globe-unavailable {
+  inset-inline-start: calc(var(--landing-sky-bleed) * 1vw);
+}
 .frame[data-landing] .observatory-sidebar {
   position: absolute;
   inset: 0;

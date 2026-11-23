@@ -373,6 +373,12 @@ test("a missing WebGL context still offers the source readings", async ({ page }
     await expect(await revealSceneEntry(page, scene)).toBeDisabled();
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await waitForData(page);
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
+  await page
+    .getByRole("group", { name: "Explore by subject" })
+    .getByRole("button", { name: "Earth", exact: true })
+    .click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeVisible();
 });
 
 test("a shared map restores Explore and the Observatory preserves the held view", async ({
