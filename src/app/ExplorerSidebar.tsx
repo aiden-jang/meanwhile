@@ -8,11 +8,18 @@ import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./SceneEntrances";
 import { resetStoryResults } from "./StorySearch";
-import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { reportAnalytics } from "../../analytics/browser";
 import "./explore-panel.css";
 
-export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
+export function ExplorerFold({
+  open,
+  pane,
+  onChange,
+}: {
+  open: boolean;
+  pane: "layers" | "stories";
+  onChange: (open: boolean) => void;
+}) {
   function change() {
     onChange(!open);
     if (!open)
@@ -36,6 +43,7 @@ export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (ope
     flushSync(change);
     shiftGlobe(scene, from, "globe-fold");
   }
+  const label = pane === "stories" ? "Stories" : "Layers";
   return (
     <button
       type="button"
@@ -45,7 +53,7 @@ export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (ope
       aria-expanded={open}
       aria-controls="chrome-rail"
     >
-      {open ? "Hide Layers" : "Layers"}
+      {open ? `Hide ${label}` : label}
     </button>
   );
 }
@@ -61,7 +69,6 @@ export function ExplorerSidebar({
 }) {
   const { browser, observations } = context.views;
   const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
-  const navigation = useStoryNavigation();
   const panel = useRef<HTMLDivElement>(null);
   useReadingArrival(panel, browser.pane, "fade");
   const scrolls = useRef({ layers: 0, stories: 0 });
@@ -206,8 +213,6 @@ export function ExplorerSidebar({
               city={context.views.skyCity.city}
             />
           }
-          onHistory={context.onHistory}
-          onPickDate={context.onPickDate}
           onSelect={() => {
             browser.scroll.current = document.getElementById("chrome-rail")?.scrollTop ?? 0;
           }}
@@ -215,17 +220,7 @@ export function ExplorerSidebar({
             select("layers");
             document.getElementById("explorer-layers-tab")?.focus();
           }}
-        >
-          <button
-            id="start-story-tour"
-            type="button"
-            className="story-library-toggle"
-            onClick={() => navigation?.tour()}
-            disabled={!context.tour.available || !context.ready}
-          >
-            Take a tour
-          </button>
-        </StoriesDrawer>
+        />
       </div>
     </>
   );

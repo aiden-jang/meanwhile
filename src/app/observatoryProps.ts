@@ -57,8 +57,8 @@ export interface ObservatoryProps {
     radar: () => void;
     nearby: (record: DepthRecord) => void;
     cityWeather: (city: SkyCity, at: number) => void;
+    pickDate: () => void;
   };
-  onPickDate: () => void;
   tour: {
     at: number | null;
     stop: Stop | null;

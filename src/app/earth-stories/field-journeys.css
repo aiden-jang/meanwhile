@@ -41,7 +41,7 @@
   overflow: hidden;
   border: 1px solid var(--color-hairline);
   cursor: crosshair;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .lidar-plot img {
@@ -195,7 +195,7 @@
 }
 
 @media (max-width: 599px), (orientation: landscape) and (max-height: 480px) {
-  .observation-panel:has(.connected-journey-steps) > .observation-heading + .observation-note {
+  .observation-panel:has(.connected-journey-steps) > .observation-note {
     display: none;
   }
 

@@ -368,16 +368,6 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.story-secondary {
-  border-top: 1px solid var(--color-hairline);
-  padding-top: 4px;
-}
-.story-secondary p {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--color-dim);
-}
-.story-secondary > button,
 .story-archive-actions button {
   display: block;
   min-height: 44px;

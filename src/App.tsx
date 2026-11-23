@@ -1,3 +1,4 @@
+import { EarthquakeDiscovery } from "./app/EarthquakeDiscovery";
 import { searchStories } from "./app/storyIndex";
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
@@ -971,7 +972,6 @@ export function App(): JSX.Element {
     onHome: returnHome,
     onExplore: entrances.open,
     explorePaths: entrances,
-    onPickDate: entrances.pickDate,
     aurora: overflight,
     views: observatory,
     radar: observatory.radar,
@@ -1072,7 +1072,7 @@ export function App(): JSX.Element {
               clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
             />
           }
-          layers={<ExplorerFold open={railOpen} onChange={setRailOpen} />}
+          layers={<ExplorerFold open={railOpen} pane={observatory.browser.pane} onChange={setRailOpen} />}
           clip={clip}
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
@@ -1226,17 +1226,7 @@ export function App(): JSX.Element {
                   <EarthquakeInspector
                     stats={snapshot.stats}
                     options={
-                      <EarthquakeOptions
-                        ramp={ramp}
-                        setRamp={setRamp}
-                        sound={sound}
-                        setSound={setSound}
-                        tourAt={tourAt}
-                        startTour={startTour}
-                        stopTour={stopTour}
-                        tourButton={tourButton}
-                        tourDisabled={journey.stops.length === 0 || !observatory.ready}
-                      />
+                      <EarthquakeOptions ramp={ramp} setRamp={setRamp} sound={sound} setSound={setSound} />
                     }
                     headline={{
                       time: archived
@@ -1294,6 +1284,7 @@ export function App(): JSX.Element {
                 )}
                 {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
                 {!archived && archiveControls}
+                <EarthquakeDiscovery context={observatoryProps} />
                 <details className="context-fold" hidden={!mapLayers.enabled.earthquakes}>
                   <summary className="disclose text-dim">More context</summary>
                   {!replay && !flat && (

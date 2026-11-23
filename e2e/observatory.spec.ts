@@ -3,7 +3,7 @@ import {
   openLayer,
   installFeeds,
   waitForData,
-  openStories,
+  openEarthquakeArchives,
   saveImageButton,
   revealStoryTools,
   revealSceneEntry,
@@ -155,8 +155,9 @@ test("tour controls pause, advance, stop and leave the readings accessible", asy
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await revealStoryTools(page);
-  const tour = page.getByRole("button", { name: "Take a tour" });
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await openLayer(page);
+  const tour = page.getByRole("button", { name: "Earthquake tour" });
   await expect(tour).toBeEnabled();
   await tour.click();
   await expect(page.locator(".observatory-location")).toBeVisible();
@@ -285,7 +286,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   const download = page.waitForEvent("download");
   await (await saveImageButton(page)).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
-  await openStories(page, "all");
+  await openEarthquakeArchives(page);
   await page.getByRole("button", { name: "Japan, 2011", exact: true }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();
@@ -298,7 +299,8 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
   await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await openLayer(page);
+  await expect(page.getByRole("button", { name: "Earthquake tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await selectScene(page, "Below the Surface");
@@ -325,7 +327,8 @@ test("unavailable earthquake feeds do not masquerade as an empty or loading view
   await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
   await expect(page.locator(".observatory-summary")).toContainText("Earthquake feeds unavailable.");
   await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await openLayer(page);
+  await expect(page.getByRole("button", { name: "Earthquake tour" })).toBeDisabled();
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
 });

@@ -162,7 +162,7 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
       </div>
       {library.recent.length > 0 && (
         <details className="saved-recent" id="saved-recent-journeys">
-          <summary>Recent journeys</summary>
+          <summary>Recent visits</summary>
           {library.recent.map((visit) => (
             <button
               type="button"

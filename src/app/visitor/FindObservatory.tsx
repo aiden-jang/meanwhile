@@ -1,6 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StoryThumbnail } from "../StoryThumbnail";
+import { searchStories } from "../storyIndex";
+import { savedVisitKey, type Library, type Visit } from "./library";
+import { visitNote } from "./VisitShelf";
 import { LayerIcon } from "../LayerIcon";
 import { findObservatory, type ExploreTarget } from "./observatorySearch";
 
@@ -9,11 +12,17 @@ export function FindObservatory({
   open,
   explore,
   unavailable,
+  library,
+  openJourney,
+  resume,
 }: {
   onClose: () => void;
   open: (id: string) => void;
   explore: (target: ExploreTarget) => void;
   unavailable: (id: string) => string | null;
+  library: Library;
+  openJourney: (id: string) => void;
+  resume: (visit: Visit, recent: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -24,8 +33,16 @@ export function FindObservatory({
     search.current?.focus();
     return () => panel.close();
   }, []);
-  const { places, stories, layers } = findObservatory(query);
-  const count = places.length + stories.length + layers.length;
+  const results = findObservatory(query, library);
+  const { places, stories, layers, journeys } = results;
+  const typing = !!query.trim();
+  const count =
+    places.length +
+    stories.length +
+    layers.length +
+    journeys.length +
+    results.saved.length +
+    results.recent.length;
   const choose = (next: () => void) => {
     dialog.current?.close();
     next();
@@ -65,15 +82,88 @@ export function FindObservatory({
           onKeyDown={(event) => {
             if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
             event.preventDefault();
-            dialog.current?.querySelector<HTMLButtonElement>(".find-result:enabled")?.click();
+            const options = Array.from(
+              dialog.current?.querySelectorAll<HTMLButtonElement>(".find-result:enabled") ?? [],
+            );
+            const exact = options.find(
+              (row) => row.dataset["findName"]?.toLowerCase() === query.trim().toLowerCase(),
+            );
+            (exact ?? options[0])?.click();
           }}
         />
       </div>
       <p className="sr-only" role="status">
         {query.trim() ? `${count} ${count === 1 ? "result" : "results"}` : ""}
       </p>
-      {query.trim() && !count && (
-        <p className="find-empty">No matches. Try a featured city, a story subject, or a layer name.</p>
+      {(!typing || !count) && (
+        <>
+          <p className="find-empty">
+            {typing ? "No matches. " : ""}
+            Search featured cities, layers, stories, journeys and saved readings.
+          </p>
+          <div className="find-examples" aria-label="Search examples">
+            {["Tokyo", "Storm radar", "Ice in Motion"].map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => {
+                  setQuery(example);
+                  search.current?.focus();
+                }}
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {(
+        [
+          ["Saved readings", results.saved],
+          ["Recent visits", results.recent],
+        ] as const
+      ).map(
+        ([label, visits]) =>
+          visits.length > 0 && (
+            <section key={label} className="find-results" aria-label={label}>
+              <h3>{label}</h3>
+              {visits.map((visit) => (
+                <button
+                  key={savedVisitKey(visit)}
+                  type="button"
+                  className="find-result find-story-result"
+                  disabled={!!unavailable(visit.id)}
+                  onClick={() => choose(() => resume(visit, label === "Recent visits"))}
+                >
+                  <StoryThumbnail id={visit.id} />
+                  <span>
+                    {searchStories.find(({ id }) => id === visit.id)?.title ?? visit.id}
+                    <small>{unavailable(visit.id) ?? visitNote(visit)}</small>
+                  </span>
+                </button>
+              ))}
+            </section>
+          ),
+      )}
+      {!!journeys.length && (
+        <section className="find-results" aria-label="Journeys">
+          <h3>Journeys</h3>
+          {journeys.map((journey) => (
+            <button
+              key={journey.id}
+              data-find-name={journey.title}
+              type="button"
+              className="find-result find-story-result"
+              onClick={() => choose(() => openJourney(journey.id))}
+            >
+              <StoryThumbnail id={journey.steps[0]!.id} />
+              <span>
+                {journey.title}
+                <small>{journey.summary}</small>
+              </span>
+            </button>
+          ))}
+        </section>
       )}
       {!!places.length && (
         <section className="find-results" aria-label="Places">
@@ -110,6 +200,7 @@ export function FindObservatory({
             return (
               <button
                 key={story.id}
+                data-find-name={story.title}
                 type="button"
                 className="find-result find-story-result"
                 disabled={!!reason}
@@ -134,6 +225,7 @@ export function FindObservatory({
               type="button"
               className="find-result"
               key={layer.id}
+              data-find-name={layer.name}
               onClick={() => choose(() => explore(layer))}
             >
               <LayerIcon layer={layer.id} />

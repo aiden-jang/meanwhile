@@ -309,3 +309,16 @@
     background-color: transparent;
   }
 }
+
+.find-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.find-examples button {
+  min-height: 44px;
+  color: var(--color-dim);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

@@ -17,20 +17,6 @@
   font-weight: 600;
 }
 
-.journey-shelf-heading button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  padding-inline: 6px;
-  color: var(--color-dim);
-  font-size: 12px;
-}
-
-.journey-shelf-heading button[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
 .journey-feature {
   display: grid;
   gap: 10px;
@@ -150,21 +136,22 @@
 
 .journey-shelf-all {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 12px;
+  margin-bottom: 8px;
 }
 
 .journey-shelf-all button {
   min-height: 44px;
-  padding: 6px;
+  display: grid;
+  gap: 3px;
+  padding: 8px 6px;
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-dim);
   font-size: 12px;
   text-align: left;
 }
 
-.journey-shelf-all button[aria-pressed="true"],
-.journey-shelf-heading button:hover {
+.journey-shelf-all button strong,
+.journey-shelf-all button[aria-pressed="true"] {
   color: var(--color-ink);
 }
 

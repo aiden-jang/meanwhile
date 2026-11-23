@@ -142,7 +142,7 @@ test("two Float readings retain separate notes, focus and scroll after a phone r
   await expect(collection.getByRole("article")).toHaveCount(1);
   await collection.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(collection.getByRole("article")).toHaveCount(2);
-  await collection.getByText("Recent journeys", { exact: true }).click();
+  await collection.getByText("Recent visits", { exact: true }).click();
   const recent = collection.locator("#saved-entry-recent-float");
   await recent.click();
   await page.getByRole("button", { name: "Back to Saved", exact: true }).click();

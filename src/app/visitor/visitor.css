@@ -1,66 +1,8 @@
-.visit-shelf {
-  border-bottom: 1px solid var(--color-hairline);
-  padding-block: 4px 16px;
-}
-.visit-shelf h3 {
-  font-size: 14px;
-  font-weight: 550;
-  margin-bottom: 6px;
-}
-.visit-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid var(--color-hairline);
-}
-.visit-row button {
-  min-height: 44px;
-  padding-block: 10px;
-  text-align: left;
-  font-size: var(--text-control);
-  cursor: pointer;
-}
-.visit-row button:first-child {
-  display: grid;
-  gap: 4px;
-  flex: 1;
-}
-.visit-row button:first-child > span,
 .discovery-list button > span {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-}
-.visit-row small,
-.visit-shelf p,
-.visit-shelf [role="status"],
-.visit-save span {
-  color: var(--color-dim);
-  font-size: var(--text-caption);
-  line-height: 1.5;
-}
-.visit-row .visit-observation-note {
-  color: var(--color-ink);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.visit-row button:hover,
-.visit-shelf > details > button:hover,
-.visit-save button:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.visit-shelf summary,
-.visit-shelf > details > button,
-.visit-save button {
-  min-height: 44px;
-  align-content: center;
-  font-size: var(--text-control);
-  cursor: pointer;
-}
-.visit-shelf > details {
-  margin-top: 10px;
 }
 .visit-save {
   display: flex;
@@ -70,15 +12,17 @@
   border-top: 1px solid var(--color-hairline);
   margin-top: 16px;
 }
-.visit-feedback {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+.visit-save span {
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  line-height: 1.5;
 }
-.visit-feedback button {
+.visit-save button {
   min-height: 44px;
   font-size: var(--text-control);
+  cursor: pointer;
+}
+.visit-save button:hover {
   text-decoration: underline;
   text-underline-offset: 4px;
 }

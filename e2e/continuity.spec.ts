@@ -520,3 +520,26 @@ test("Tokyo weather stays on the shared world and returns to the exact local sky
   await expect(facing).toHaveText(direction, { useInnerText: true });
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
+
+test("Find opens an exact journey and the folded Stories panel keeps its identity", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const button = (name: string) => page.getByRole("button", { name, exact: true });
+  await button("Browse stories").click();
+  await button("Hide Stories").click();
+  await button("Stories").click();
+  await expect(page.getByRole("tab", { name: "Stories" })).toHaveAttribute("aria-selected", "true");
+  await button("Find").click();
+  const search = page.getByRole("searchbox", { name: "Search places, stories and layers" });
+  await search.fill("Ice in Motion");
+  await expect(page.getByRole("region", { name: "Journeys", exact: true })).toContainText("Ice in Motion");
+  await search.press("Enter");
+  await expect(page.getByRole("region", { name: "Current journey", exact: true })).toContainText(
+    "Ice in Motion",
+  );
+  await button("Back to stories").click();
+  await expect(button("Find")).toBeFocused();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

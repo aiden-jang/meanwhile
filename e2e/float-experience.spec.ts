@@ -210,3 +210,35 @@ test("Float Dive returns through the waterline to the same globe and holds the m
   expect(Math.hypot(start.x - end.x, start.y - end.y)).toBeLessThan(8);
   await expect(pin).toHaveText("Argo 6901932");
 });
+
+test("the measured chart stays exposed on short phones and in landscape", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/#story=float&choice=recorded/6901932/268/1792482240000&chapter=317&v=observe");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await page.getByRole("button", { name: "View measured profile", exact: true }).click();
+  const profile = page.getByRole("region", { name: "Measured float profile" });
+  const plot = profile.getByRole("img", { name: /Temperature.*by estimated depth/ });
+  const sample = profile.getByRole("slider", { name: "Inspect profile sample" });
+  await expect(sample).toHaveValue("317");
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 812, height: 375 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(plot).toBeInViewport({ ratio: 1 });
+    await expect(sample).toBeInViewport({ ratio: 1 });
+    expect(
+      await plot.evaluate((svg) => {
+        const { x, y, width, height } = svg.getBoundingClientRect();
+        return svg.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+      }),
+    ).toBe(true);
+    await sample.press("ArrowRight");
+  }
+  await expect(sample).toHaveValue("319");
+  await page.getByRole("button", { name: "Close measured profile" }).click();
+  await expect(page.getByRole("slider", { name: "Ascent depth" })).toHaveValue("319");
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

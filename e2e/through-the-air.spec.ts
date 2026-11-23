@@ -4,7 +4,7 @@ import { installFeeds, openStories, startJourney } from "./feeds";
 test("Through the Air restores the lidar cursor, smoke scan, and Tonga station on one canvas", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 390, height: 664 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
@@ -16,16 +16,20 @@ test("Through the Air restores the lidar cursor, smoke scan, and Tonga station o
   const previous = guide.getByRole("button", { name: "Previous view", exact: true });
   const next = (title: string) => guide.getByRole("button", { name: `Next: ${title}`, exact: true });
   const altitude = page.getByRole("slider", { name: "Profile altitude", exact: true });
+  const along = page.getByRole("slider", { name: "Along the track" });
   const replay = page.getByRole("slider", { name: "Replay time", exact: true });
   const mapFocus = page.getByRole("combobox", { name: "Map focus", exact: true });
   const pressure = page.getByRole("slider", { name: "Station pressure time", exact: true });
   const station = page.getByRole("combobox", { name: "Ground station", exact: true });
 
   await expect(guide).toContainText("1 of 3");
+  await expect(button("Open lidar slice")).toBeInViewport({ ratio: 1 });
   await button("Map").click();
   await button("Open lidar slice").click();
   await page.getByText("Read the lidar profile", { exact: true }).click();
   await altitude.press("ArrowUp");
+  await along.press("End");
+  const heldAlong = await along.inputValue();
   const heldAltitude = await altitude.inputValue();
   await next("Smoke Crossing").click();
   await expect(guide).toContainText("2 of 3");
@@ -49,6 +53,7 @@ test("Through the Air restores the lidar cursor, smoke scan, and Tonga station o
   await expect(page.getByRole("group", { name: "Smoke Crossing on the globe" })).toBeVisible();
   await previous.click();
   await expect(altitude).toHaveValue(heldAltitude);
+  await expect(along).toHaveValue(heldAlong);
   await expect(page.getByRole("group", { name: "Dust Curtain on the map" })).toBeVisible();
   await next("Smoke Crossing").click();
   await expect(replay).toHaveValue(heldScan);

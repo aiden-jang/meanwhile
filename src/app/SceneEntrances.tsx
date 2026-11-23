@@ -12,6 +12,12 @@ export const OBSERVATORY_SCENES = [
   { id: "night", name: "After Dark" },
 ] as const;
 
+const sceneCues: Record<EarthScene, string> = {
+  live: "Live weather",
+  depth: "Quake depths",
+  night: "Local sky",
+};
+
 const trigger = (scene: EarthScene) => `observatory-entry-${scene}`;
 
 export function useSceneEntrances({
@@ -98,11 +104,15 @@ export function ObservatoryEntrances({
           type="button"
           onClick={() => open(id)}
           aria-label={name}
+          aria-description={!active ? sceneCues[id] : undefined}
           aria-pressed={active === id}
           disabled={starting || (!ready && id !== "live")}
         >
           <SceneDiagram scene={id} />
-          <span className="scene-label">{name}</span>
+          <span className="scene-label">
+            {name}
+            {!active && <small className="scene-cue">{sceneCues[id]}</small>}
+          </span>
         </button>
       ))}
     </div>

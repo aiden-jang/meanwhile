@@ -20,6 +20,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const [find, setFind] = useState(false);
   const findTrigger = useRef<HTMLButtonElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const savedTrigger = useRef<HTMLElement | null>(null);
   const heldPlayback = useRef<HTMLButtonElement | undefined>();
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
@@ -37,7 +38,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
     document.querySelector<HTMLDialogElement>("#saved-observations")?.close();
     navigation.dismissRestoration();
     setSaved(false);
-    trigger.current?.focus({ preventScroll: true });
+    (savedTrigger.current ?? trigger.current)?.focus({ preventScroll: true });
   };
   return (
     <>
@@ -101,7 +102,14 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         aria-controls={saved ? "saved-observations" : undefined}
         onPointerEnter={warmCollection}
         onFocus={warmCollection}
-        onClick={() => (saved ? close() : setSaved(true))}
+        onClick={() => {
+          if (saved) return close();
+          savedTrigger.current =
+            document.getElementById("open-catalogue-saved") === document.activeElement
+              ? (document.activeElement as HTMLElement)
+              : trigger.current;
+          setSaved(true);
+        }}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path d="M6 3h12v18l-6-4-6 4Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
@@ -111,6 +119,18 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
       {find && (
         <FindObservatory
           unavailable={navigation.unavailable}
+          library={navigation.library}
+          openJourney={(id) => {
+            heldPlayback.current = undefined;
+            setFind(false);
+            if (navigation.progressFor(id)) navigation.continueJourney(id, "open-observatory-find");
+            else navigation.start(id, "open-observatory-find");
+          }}
+          resume={(visit, recent) => {
+            heldPlayback.current = undefined;
+            setFind(false);
+            navigation.resume(visit, "open-observatory-find", recent);
+          }}
           onClose={closeFind}
           explore={(target) => {
             heldPlayback.current = undefined;

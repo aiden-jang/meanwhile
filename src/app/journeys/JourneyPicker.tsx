@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StoryThumbnail } from "../StoryThumbnail";
 import { searchStories } from "../storyIndex";
@@ -14,7 +14,7 @@ const artwork: Record<string, string> = {
 };
 const titles = new Map(searchStories.map(({ id, title }) => [id, title]));
 
-export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExpand: () => void }) {
+export function JourneyPicker() {
   const navigation = useStoryNavigation();
   const progress = navigation?.journeyProgress;
   const [selected, select] = useState<string>();
@@ -69,6 +69,69 @@ export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExp
 
   if (!navigation) return null;
   const id = `journey-${featured.id}`;
+  const feature = (
+    <div
+      className="journey-feature"
+      data-previewing={showing || undefined}
+      onPointerLeave={() => {
+        clearTimeout(timer.current);
+        setPreview((current) => (current === "hover" ? null : current));
+      }}
+    >
+      <button
+        data-journey-control=""
+        type="button"
+        className="journey-feature-cover"
+        ref={cameraControl}
+        disabled={!!unavailable || !places.length}
+        aria-pressed={preview === "pinned"}
+        onPointerEnter={(event) => {
+          clearTimeout(timer.current);
+          if (event.pointerType === "mouse")
+            timer.current = setTimeout(() => setPreview((current) => current ?? "hover"), 180);
+        }}
+        onClick={() => setPreview((current) => (current === "pinned" ? null : "pinned"))}
+      >
+        <span className="journey-shelf-art">
+          <StoryThumbnail id={artwork[featured.id] ?? featured.steps[0]!.id} featured />
+        </span>
+        <span className="journey-shelf-title">
+          <strong>{featured.title}</strong>
+          <small>{previewLabel}</small>
+        </span>
+      </button>
+      <ol className="journey-shelf-stops" aria-label="Journey stops">
+        {featured.steps.map(({ id }, index) => (
+          <li key={id} aria-current={resume?.step === index ? "step" : undefined}>
+            <span>{index + 1}</span>
+            {titles.get(id)}
+          </li>
+        ))}
+      </ol>
+      <button
+        data-journey-control=""
+        type="button"
+        className="journey-shelf-start"
+        id={id}
+        disabled={!!unavailable}
+        onClick={() =>
+          resume ? navigation.continueJourney(featured.id, id) : navigation.start(featured.id, id)
+        }
+      >
+        <span>{resume ? `Continue ${featured.title}` : "Start journey"}</span>
+        {resume ? (
+          <small>
+            {resume.step + 1} of {featured.steps.length}
+          </small>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        )}
+      </button>
+      {unavailable && <small className="journey-shelf-status">{unavailable}</small>}
+    </div>
+  );
   return (
     <section
       className="journey-shelf"
@@ -82,102 +145,37 @@ export function JourneyPicker({ expanded, onExpand }: { expanded: boolean; onExp
     >
       <div className="journey-shelf-heading">
         <h3>Journeys</h3>
-        <button
-          data-journey-control=""
-          id="journey-browse"
-          type="button"
-          aria-expanded={expanded}
-          aria-controls="journey-catalogue"
-          onClick={onExpand}
-        >
-          All journeys
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        </button>
       </div>
-      <div
-        className="journey-feature"
-        data-previewing={showing || undefined}
-        onPointerLeave={() => {
-          clearTimeout(timer.current);
-          setPreview((current) => (current === "hover" ? null : current));
-        }}
-      >
-        <button
-          data-journey-control=""
-          type="button"
-          className="journey-feature-cover"
-          ref={cameraControl}
-          disabled={!!unavailable || !places.length}
-          aria-pressed={preview === "pinned"}
-          onPointerEnter={(event) => {
-            clearTimeout(timer.current);
-            if (event.pointerType === "mouse")
-              timer.current = setTimeout(() => setPreview((current) => current ?? "hover"), 180);
-          }}
-          onClick={() => setPreview((current) => (current === "pinned" ? null : "pinned"))}
-        >
-          <span className="journey-shelf-art">
-            <StoryThumbnail id={artwork[featured.id] ?? featured.steps[0]!.id} featured />
-          </span>
-          <span className="journey-shelf-title">
-            <strong>{featured.title}</strong>
-            <small>{previewLabel}</small>
-          </span>
-        </button>
-        <ol className="journey-shelf-stops" aria-label="Journey stops">
-          {featured.steps.map(({ id }, index) => (
-            <li key={id} aria-current={resume?.step === index ? "step" : undefined}>
-              <span>{index + 1}</span>
-              {titles.get(id)}
-            </li>
+      <div id="journey-catalogue" className="journey-shelf-all">
+        {[...journeys]
+          .sort(
+            (a, b) =>
+              Number(b.id === (progress?.id ?? featuredJourney)) -
+              Number(a.id === (progress?.id ?? featuredJourney)),
+          )
+          .map((entry) => (
+            <Fragment key={entry.id}>
+              <button
+                id={`select-journey-${entry.id}`}
+                data-journey-control=""
+                type="button"
+                aria-pressed={entry.id === featured.id}
+                onClick={() => {
+                  select(entry.id);
+                  setPreview("pinned");
+                  requestAnimationFrame(() => document.getElementById(`journey-${entry.id}`)?.focus());
+                }}
+              >
+                <strong>{entry.title}</strong>
+                <small>{entry.summary}</small>
+                {entry.id !== featured.id && (
+                  <small>{entry.steps.map(({ id }) => titles.get(id)).join(" · ")}</small>
+                )}
+              </button>
+              {entry.id === featured.id && feature}
+            </Fragment>
           ))}
-        </ol>
-        <button
-          data-journey-control=""
-          type="button"
-          className="journey-shelf-start"
-          id={id}
-          disabled={!!unavailable}
-          onClick={() =>
-            resume ? navigation.continueJourney(featured.id, id) : navigation.start(featured.id, id)
-          }
-        >
-          <span>{resume ? `Continue ${featured.title}` : "Start journey"}</span>
-          {resume ? (
-            <small>
-              {resume.step + 1} of {featured.steps.length}
-            </small>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-          )}
-        </button>
-        {unavailable && <small className="journey-shelf-status">{unavailable}</small>}
       </div>
-      {expanded && (
-        <div id="journey-catalogue" className="journey-shelf-all">
-          {journeys.map((entry) => (
-            <button
-              key={entry.id}
-              id={`select-journey-${entry.id}`}
-              data-journey-control=""
-              type="button"
-              aria-pressed={entry.id === featured.id}
-              onClick={() => {
-                select(entry.id);
-                setPreview("pinned");
-                onExpand();
-                requestAnimationFrame(() => cameraControl.current?.focus());
-              }}
-            >
-              {entry.title}
-            </button>
-          ))}
-        </div>
-      )}
       {stage &&
         places.length > 0 &&
         createPortal(

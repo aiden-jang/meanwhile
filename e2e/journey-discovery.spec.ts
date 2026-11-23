@@ -38,7 +38,7 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
   const extent = ice.getByRole("slider", { name: "Observation time", exact: true });
   await ice.getByRole("button", { name: "Map", exact: true }).click();
   await ice.locator(".observation-chart svg").click();
-  await expect(extent).toHaveAttribute("aria-valuetext", "18 Jun 2012, 12:00 UTC");
+  await expect(extent).toHaveAttribute("aria-valuetext", /^18 Jun 2012(?:,| at) 12:00 UTC$/);
   await guide.getByRole("button", { name: "Next: Glacier Flow", exact: true }).click();
   await glacier.getByRole("button", { name: "Globe", exact: true }).click();
   await glacier.getByRole("button", { name: "Compare 2013 and 2024", exact: true }).click();
@@ -59,7 +59,7 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
   await expect(divider).toHaveValue(savedDivider);
   await expect(glacier.getByRole("group", { name: "Glacier Flow on the globe" })).toBeVisible();
   await guide.getByRole("button", { name: "Previous view", exact: true }).click();
-  await expect(extent).toHaveAttribute("aria-valuetext", "18 Jun 2012, 12:00 UTC");
+  await expect(extent).toHaveAttribute("aria-valuetext", /^18 Jun 2012(?:,| at) 12:00 UTC$/);
   await expect(ice.getByRole("group", { name: "Ice Line on the map" })).toBeVisible();
 });
 

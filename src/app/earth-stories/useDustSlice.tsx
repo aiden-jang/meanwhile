@@ -54,23 +54,32 @@ export function useDustSlice(
     framing,
     chapter: open ? (cursor ? `slice:${cursor.join(":")}` : "slice") : "",
     forcedPause: open,
-    control: enabled && (
+    action: enabled && (
+      <div className="observatory-actions">
+        <button
+          type="button"
+          aria-pressed={open}
+          onClick={() => {
+            clock.pause();
+            setArrived(false);
+            if (!open) {
+              refreshAnnotations({ camera: "resume" });
+              clock.seek(nearestFrame(data, observation));
+            }
+            setOpen(!open);
+          }}
+        >
+          {open ? "Close lidar slice" : "Open lidar slice"}
+        </button>
+      </div>
+    ),
+    control: enabled && open && (
       <DustSliceControls
-        open={open}
         image={image.element?.src}
         failed={image.status === "failed"}
         retry={image.retry}
         cursor={cursor}
         select={setCursor}
-        toggle={() => {
-          clock.pause();
-          setArrived(false);
-          if (!open) {
-            refreshAnnotations({ camera: "resume" });
-            clock.seek(nearestFrame(data, observation));
-          }
-          setOpen(!open);
-        }}
       />
     ),
   };

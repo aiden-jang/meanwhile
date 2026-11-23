@@ -252,7 +252,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       scroll: saved.scroll,
       focus: saved.trigger,
       fallback: saved.trigger.startsWith("journey-")
-        ? "journey-browse"
+        ? "journeys-toggle"
         : active
           ? `continue-story-${active}`
           : saved.scrollTarget,

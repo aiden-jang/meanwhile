@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData, openLayer, openStories } from "./feeds";
+import { installFeeds, waitForData, openLayer, openEarthquakeArchives } from "./feeds";
 
 async function watchEclipse(page: Page) {
   const watch = page.getByRole("button", { name: "Watch eclipse" });
@@ -40,7 +40,7 @@ test("reduced motion opens a held eclipse on a phone", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await openStories(page, "all");
+  await openEarthquakeArchives(page);
   await page.getByRole("button", { name: /Total eclipse, 2024/ }).click();
   const replay = await watchEclipse(page);
   const slider = replay.getByRole("slider", { name: "Eclipse time" });

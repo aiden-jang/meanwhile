@@ -73,6 +73,7 @@ export function ReplayPanel({
   horizon = false,
   projection,
   journeyControls = true,
+  primaryAction,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
   location: string;
@@ -93,6 +94,7 @@ export function ReplayPanel({
   horizon?: boolean;
   projection?: ReactNode;
   journeyControls?: boolean;
+  primaryAction?: ReactNode;
 }): JSX.Element {
   const navigation = useStoryNavigation();
   const active = navigation?.active;
@@ -143,6 +145,7 @@ export function ReplayPanel({
                 </button>
               </div>
             </div>
+            {primaryAction}
             <p className="observation-note">{subtitle}</p>
             {navigation?.route?.id !== "water-in-motion" && <SharedStory moment={sharedMoment} />}
             {journeyControls && <ConnectedJourney />}

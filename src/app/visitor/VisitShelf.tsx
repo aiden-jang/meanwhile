@@ -1,13 +1,10 @@
 import { lunarTraverses } from "../../sources/moonfall/traverses";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
-import { searchStories } from "../storyIndex";
 import { savedVisitKey, type Visit } from "./library";
 import "./visitor.css";
 import { layerTime, storyObservationTime } from "../layerTime";
-import { useRef } from "react";
 import { discharge, riverGauge } from "../observations/riverGauges";
 
-const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
 export function visitNote(visit: Visit) {
   const river = visit.position.river;
   if (river) return `${riverGauge(river.gauge)?.label} · ${discharge(river.value)} · ${layerTime(river.at)}`;
@@ -32,82 +29,6 @@ export function visitNote(visit: Visit) {
   if (at !== undefined) return storyObservationTime(visit.id, at);
   if (visit.position.float) return "Saved float profile and depth";
   return "Opens the latest available view";
-}
-export function VisitShelf() {
-  const feedback = useRef<HTMLDivElement>(null);
-  const navigation = useStoryNavigation();
-  if (!navigation) return null;
-  const { library } = navigation;
-  const row = (visit: Visit, saved: boolean) => (
-    <div className="visit-row" key={saved ? savedVisitKey(visit) : visit.id}>
-      <button
-        type="button"
-        onClick={() => navigation.resume(visit)}
-        disabled={!!navigation.unavailable(visit.id)}
-      >
-        <span>
-          {title(visit.id)}
-          <span aria-hidden="true">→</span>
-        </span>
-        <small>{navigation.unavailable(visit.id) ?? visitNote(visit)}</small>
-        {(visit.note || visit.observation?.note) && (
-          <small className="visit-observation-note">{visit.note ?? visit.observation?.note}</small>
-        )}
-      </button>
-      {saved && (
-        <button
-          type="button"
-          aria-label={`Remove saved ${title(visit.id)}`}
-          onClick={() => library.remove(savedVisitKey(visit))}
-        >
-          Remove
-        </button>
-      )}
-    </div>
-  );
-  return (
-    <section className="visit-shelf" aria-label="Your visits">
-      {!library.recent.length && !library.saved.length && (
-        <p>Stories you open and views you save will appear here, only on this device.</p>
-      )}
-      {library.recent.length > 0 && (
-        <>
-          <h3>Pick up where you left off</h3>
-          {library.recent.slice(0, 2).map((visit) => row(visit, false))}
-        </>
-      )}
-      <details>
-        <summary>Saved views ({library.saved.length})</summary>
-        {library.saved.length ? (
-          library.saved.map((visit) => row(visit, true))
-        ) : (
-          <p>Use Save view in a story to keep it here.</p>
-        )}
-        <p>Only on this device.</p>
-        {library.recent.length > 0 && (
-          <button type="button" onClick={library.clearRecent}>
-            Clear recent visits
-          </button>
-        )}
-      </details>
-      <div ref={feedback} className="visit-feedback" tabIndex={-1}>
-        <span role="status" aria-label="Visit library status">
-          {library.notice}
-        </span>
-        {library.canUndo && (
-          <button
-            type="button"
-            onClick={() => {
-              library.undo();
-              feedback.current?.focus({ preventScroll: true });
-            }}
-          >
-            Undo
-          </button>
-        )}
-      </div>
-    </section>
-  );
 }
 export function SaveVisit() {
   const navigation = useStoryNavigation();

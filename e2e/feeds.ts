@@ -510,7 +510,7 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   if (!exploring) {
     const browse = page.getByRole("button", { name: "Browse stories", exact: true });
-    const layers = page.getByRole("button", { name: "Layers", exact: true });
+    const layers = page.locator("#explorer-fold[aria-expanded=false]");
     if (await page.locator(".frame[data-landing]").isVisible()) await browse.click();
     else {
       if (await layers.isVisible()) await layers.click();
@@ -524,11 +524,6 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
   if (expand !== "all") return;
-  for (const label of ["Saved & recent", "All journeys", "Archives"]) {
-    const summary = catalogue.getByRole("button", { name: label, exact: true });
-    if ((await summary.count()) && (await summary.getAttribute("aria-expanded")) === "false")
-      await summary.click();
-  }
   const today = catalogue.locator(".story-today");
   if ((await today.count()) && !(await today.evaluate((node) => (node as HTMLDetailsElement).open)))
     await today.locator("summary").click();
@@ -539,8 +534,6 @@ export async function startJourney(page: Page, id: string) {
   if ((await journeys.getAttribute("aria-expanded")) === "false") await journeys.click();
   const start = page.locator(`#journey-${id}`);
   if (!(await start.isVisible())) {
-    const summary = page.getByRole("button", { name: "All journeys", exact: true });
-    if ((await summary.getAttribute("aria-expanded")) === "false") await summary.click();
     await page.locator(`#select-journey-${id}`).click();
   }
   await start.click();
@@ -554,8 +547,9 @@ export async function revealStoryTools(page: Page) {
 
 export async function openLayer(page: Page, name = "Earthquakes") {
   const tab = page.getByRole("tab", { name: "Layers", exact: true });
-  const layers = page.getByRole("button", { name: "Layers", exact: true });
+  const layers = page.locator("#explorer-fold[aria-expanded=false]");
   if (await layers.isVisible()) await layers.click();
+  else if (!(await tab.isVisible())) await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(tab).toBeVisible();
   if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   const title = page.getByRole("heading", { name, exact: true });
@@ -568,7 +562,7 @@ export async function openLayer(page: Page, name = "Earthquakes") {
 
 export async function earthquakeOptions(page: Page) {
   await openLayer(page);
-  const toggle = page.getByText("Display, alerts & tour", { exact: true });
+  const toggle = page.getByText("Display & alerts", { exact: true });
   if (!(await toggle.locator("..").getAttribute("open"))) {
     const open = await toggle.locator("..").evaluate((element) => element.hasAttribute("open"));
     if (!open) await toggle.click();
@@ -588,4 +582,9 @@ export async function saveImageButton(page: Page) {
       await toggle.click();
   }
   return page.getByRole("button", { name: "Save image", exact: true });
+}
+
+export async function openEarthquakeArchives(page: Page) {
+  await openLayer(page);
+  await page.locator(".story-archive-actions summary").click();
 }

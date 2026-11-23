@@ -269,3 +269,10 @@
     grid-template-rows: minmax(140px, 1fr) min(365px, calc(100dvh - var(--head-h) - 140px));
   }
 }
+
+.scene-cue {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-dim);
+  font-size: 0.9em;
+}

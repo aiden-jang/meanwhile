@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, selectScene } from "./feeds";
+import { installFeeds, openStories, openEarthquakeArchives, selectScene } from "./feeds";
 
 test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -118,7 +118,7 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
       }),
   );
   await page.goto("/");
-  await openStories(page, "all");
+  await openEarthquakeArchives(page);
   await page.getByRole("button", { name: /Japan, 2011/ }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   const pinned = page.getByRole("complementary", { name: "Pinned earthquake" });

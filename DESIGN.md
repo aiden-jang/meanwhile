@@ -426,7 +426,7 @@ and scene-specific reference where space allows. Phone and short-height layouts 
 reachable controls and source disclosure.
 
 The landing’s Browse stories opens Explore’s Stories catalogue. Find uses the same dialog across the
-landing, Explore and stories. It groups the existing featured cities, stories and layers. City results
+landing, Explore and stories. It groups featured cities, stories, layers, journeys, saved readings and recent visits. City results
 open nearby readings and layer results open their full inspectors. Dismissing Find restores header focus
 and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.
 Header Explore restores the last free-explore camera, projection and reading in this session. Contextual
@@ -900,8 +900,7 @@ and reserves more room for the chart and instrument. Playback follows elapsed ti
 motion uses bounded integration, so slow rendering does not stretch the measured ascent.
 The recorded invitation retains
 its source context at every width. Optional notes remain secondary to keeping an observation.
-While the profile is open, its sample slider owns inspection and the ascent transport shows a selected
-depth readout instead of a second slider. The panel unfolds over 520ms and the finding settles over
+While the profile is open, its sample slider owns inspection. At compact sizes the profile uses its own space with the ascent transport and story text out of the way. On larger screens the transport shows the selected depth without a second slider. The panel unfolds over 520ms and the finding settles over
 420ms; both are finite and skip motion entirely under reduced motion. The phone inspector can grow
 to 300px within its canvas allocation and scrolls its own content. Notice brings the finding into
 the reading pane without scrolling the shared world or playback.
@@ -924,7 +923,7 @@ reading and kept cards arrive once. Reduced motion presents the same content imm
 
 ### Shared cinematic journeys
 
-The Journeys control sits beside story search and opens a featured journey with its existing story artwork, ordered stops and a single Start or Continue action. Preview route frames numbered geographic anchors on the shared globe or map. Dashed lines connect the tour stops as a guide to the journey. Hover is temporary, while activating the preview keeps it open until dismissal. A local checkpoint reopens the shelf and retains the last journey, including earlier stops, camera, projection and readings for a return after reload.
+The Journeys control sits beside story search and opens the route list directly. Each option names its subject and stops. The selected route shows its artwork, preview and a single Start or Continue action. Preview route frames numbered geographic anchors on the shared globe or map. Dashed lines connect the tour stops as a guide to the journey. Hover is temporary, while activating the preview keeps it open until dismissal. A local checkpoint reopens the shelf and retains the last journey, including earlier stops, camera, projection and readings for a return after reload.
 
 Recorded observations and Earth stories use one retained playback dock outside the reading scrollport.
 It sits over the world on desktop and short landscape layouts, and below the phone reading panel.

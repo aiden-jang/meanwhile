@@ -263,11 +263,11 @@ for (const width of [1440, 812, 390]) {
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
     const saved = stories.getByRole("button", { name: "Saved & recent", exact: true });
-    await expect(saved).toHaveAttribute("aria-expanded", "false");
     await saved.click();
-    await expect(stories.locator("#story-library-panel-visits")).toBeVisible();
-    await saved.click();
-    await expect(stories.locator("#story-library-panel-visits")).toBeHidden();
+    const collection = page.getByRole("dialog", { name: "Saved observations" });
+    await expect(collection).toBeVisible();
+    await collection.getByRole("button", { name: "Close saved observations" }).click();
+    await expect(saved).toBeFocused();
     await expect(allStories).toHaveAttribute("aria-pressed", "true");
     await afterDark.click();
     await expect(afterDark).toHaveAttribute("aria-pressed", "true");

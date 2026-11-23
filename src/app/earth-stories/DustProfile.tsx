@@ -3,6 +3,7 @@ import type { PointerEvent } from "react";
 export type LidarCursor = readonly [along: number, altitude: number];
 const center: LidarCursor = [50, 50];
 const percent = (value: number) => Math.max(0, Math.min(100, Math.round(value * 100)));
+const distance = (along: number) => `${along}% along the recorded track`;
 const height = (altitude: number) => `${((15 * altitude) / 100).toFixed(1)} km altitude`;
 
 export function readLidarCursor(chapter: string | undefined): LidarCursor | null {
@@ -73,6 +74,20 @@ export function DustProfile({
           aria-label="Profile altitude"
           aria-valuetext={height(altitude)}
           onChange={(event) => select([along, event.currentTarget.valueAsNumber])}
+        />
+      </label>
+      <label className="lidar-altitude">
+        <span>Along the track</span>
+        <output>{along}%</output>
+        <input
+          className="scrub-slider"
+          type="range"
+          min={0}
+          max={100}
+          value={along}
+          aria-label="Along the track"
+          aria-valuetext={distance(along)}
+          onChange={(event) => select([event.currentTarget.valueAsNumber, altitude])}
         />
       </label>
     </details>

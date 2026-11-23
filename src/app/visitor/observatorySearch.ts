@@ -1,5 +1,8 @@
+import { journeys } from "../journeys/catalogue";
+import type { Library, Visit } from "./library";
+import { visitNote } from "./VisitShelf";
 import { mapLayerNames, type MapLayer } from "../layerVisibility";
-import { findStories, normalizeStoryQuery } from "../storyIndex";
+import { findStories, normalizeStoryQuery, searchStories } from "../storyIndex";
 import { skyCities } from "../tonight/cities";
 
 export type ExploreTarget =
@@ -11,14 +14,25 @@ const layers = (Object.keys(mapLayerNames) as MapLayer[]).map((id) => ({
   name: mapLayerNames[id],
 }));
 
-export function findObservatory(query: string) {
+export function findObservatory(query: string, library?: Library) {
   const terms = normalizeStoryQuery(query).split(/\s+/).filter(Boolean);
-  const matches = (text: string) => terms.length > 0 && terms.every((term) => text.includes(term));
+  const matches = (text: string) => {
+    const normal = normalizeStoryQuery(text);
+    return terms.length > 0 && terms.every((term) => normal.includes(term));
+  };
+  const stories = findStories(query);
+  const matchesVisit = (visit: Visit) => {
+    const story = searchStories.find(({ id }) => id === visit.id);
+    return matches(`${visit.id} ${story?.title ?? ""} ${visitNote(visit)} ${visit.note ?? ""}`);
+  };
   return {
     places: skyCities
       .filter(({ name }) => matches(normalizeStoryQuery(name)))
       .map(({ name, lon, lat }) => ({ kind: "place" as const, name, lon, lat })),
-    stories: findStories(query),
+    stories,
+    journeys: journeys.filter(({ title, summary }) => matches(`${title} ${summary}`)),
+    saved: library?.saved.filter(matchesVisit) ?? [],
+    recent: (terms.length ? library?.recent.filter(matchesVisit) : library?.recent.slice(0, 3)) ?? [],
     layers: layers.filter(({ id, name }) => matches(normalizeStoryQuery(`${name} ${id}`))),
   };
 }

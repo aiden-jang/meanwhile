@@ -335,6 +335,7 @@ export function StoryPlayer({
       sharedMoment={
         initial?.at !== undefined && id === "aral" ? { ...initial, at: data.frames[start]!.at } : undefined
       }
+      primaryAction={dust.action}
       sources={<StorySources id={id} />}
       inset={
         <>

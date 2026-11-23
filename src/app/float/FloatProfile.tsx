@@ -45,8 +45,9 @@ export function FloatProfile({ view }: { view: FloatDiveView }) {
   const selected = `${Math.round(sample.depth).toLocaleString()} m · ${value}`;
 
   function selectSample(event: React.PointerEvent<SVGSVGElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const y = ((event.clientY - bounds.top) / bounds.height) * height;
+    const matrix = event.currentTarget.getScreenCTM();
+    if (!matrix) return;
+    const { y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
     const depth = Math.max(0, Math.min(1, (y - top) / (bottom - top))) * plot.deepest;
     let nearest = 0;
     for (let candidate = 1; candidate < samples.length; candidate++) {

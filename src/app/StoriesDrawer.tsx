@@ -2,7 +2,6 @@ import { useReadingArrival } from "./useReadingArrival";
 import { useRef, useState, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { ContinueVisit } from "./visitor/ContinueVisit";
-import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryRow } from "./StoryRow";
 import type { EarthScene, useObservatory } from "./useObservatory";
@@ -11,7 +10,6 @@ import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
 import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
 import { inStoryTopic, searchStories } from "./storyIndex";
-import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import "./stories.css";
 
 type Observatory = ReturnType<typeof useObservatory>;
@@ -20,17 +18,13 @@ export function StoriesDrawer({
   visible = true,
   ready,
   observations: deck,
-  onHistory,
-  onPickDate,
   onSelect,
   onDismiss,
-  children,
   discoveries,
   filter,
   sceneEntry,
   browse,
 }: {
-  children: ReactNode;
   discoveries?: ReactNode;
   filter?: ReactNode;
   sceneEntry?: ReactNode;
@@ -39,8 +33,6 @@ export function StoriesDrawer({
   scene: EarthScene | null;
   ready: boolean;
   observations: Observatory["observations"];
-  onHistory: (day: string) => void;
-  onPickDate: () => void;
   onSelect: () => void;
   onDismiss: () => void;
 }) {
@@ -143,34 +135,9 @@ export function StoriesDrawer({
           }
         >
           <div id="journeys-panel" hidden={!showJourneys}>
-            {showJourneys && (
-              <JourneyPicker
-                expanded={browse.sections.includes("journeys")}
-                onExpand={() => browse.fold("journeys", !browse.sections.includes("journeys"))}
-              />
-            )}
+            {showJourneys && <JourneyPicker />}
           </div>
-          {deck.query.trim() && browse.sections.includes("visits") && (
-            <button
-              type="button"
-              className="story-library-toggle"
-              id="story-library-visits"
-              aria-expanded={browse.sections.includes("visits")}
-              aria-controls="story-library-panel-visits"
-              onClick={() => browse.fold("visits", !browse.sections.includes("visits"))}
-            >
-              Saved &amp; recent
-            </button>
-          )}
-          <section
-            id="story-library-panel-visits"
-            className="story-secondary"
-            aria-label="Saved and recent stories"
-            hidden={!browse.sections.includes("visits")}
-          >
-            <VisitShelf />
-          </section>
-          {!deck.query.trim() && (
+          {!deck.query.trim() && !showJourneys && (
             <>
               {sceneEntry}
               {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
@@ -212,10 +179,12 @@ export function StoriesDrawer({
                   <button
                     type="button"
                     className="story-library-toggle"
-                    id="story-library-visits"
-                    aria-expanded={browse.sections.includes("visits")}
-                    aria-controls="story-library-panel-visits"
-                    onClick={() => browse.fold("visits", !browse.sections.includes("visits"))}
+                    id="open-catalogue-saved"
+                    aria-haspopup="dialog"
+                    onClick={(event) => {
+                      event.currentTarget.focus({ preventScroll: true });
+                      document.getElementById("open-saved-observations")?.click();
+                    }}
                   >
                     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                       <path
@@ -239,41 +208,6 @@ export function StoriesDrawer({
                   {discoveries}
                 </details>
               )}
-              <div className="story-browse-footer">
-                <button
-                  type="button"
-                  id="story-library-archives"
-                  className="story-library-toggle"
-                  aria-expanded={browse.sections.includes("archives")}
-                  aria-controls="story-library-panel-archives"
-                  onClick={() => browse.fold("archives", !browse.sections.includes("archives"))}
-                >
-                  Archives
-                </button>
-                {children}
-              </div>
-              <section
-                id="story-library-panel-archives"
-                className="story-secondary"
-                aria-labelledby="story-library-archives"
-                hidden={!browse.sections.includes("archives")}
-              >
-                <p>Earthquake and eclipse archives</p>
-                <div className="story-archive-actions">
-                  <button type="button" onClick={() => onHistory("2011-03-11")}>
-                    Japan, 2011
-                  </button>
-                  <button type="button" onClick={() => onHistory("2013-05-24")}>
-                    Deep beneath Okhotsk
-                  </button>
-                  <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                    Total eclipse, 2024
-                  </button>
-                  <button type="button" onClick={onPickDate}>
-                    Pick a past date
-                  </button>
-                </div>
-              </section>
             </>
           )}
         </StorySearch>
