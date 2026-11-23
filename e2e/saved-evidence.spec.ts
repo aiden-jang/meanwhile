@@ -117,6 +117,7 @@ test("two Float readings retain separate notes, focus and scroll after a phone r
   await note.fill("Edited deep sample");
   await page.getByRole("button", { name: "Save note", exact: true }).click();
   await expect(page.getByRole("button", { name: "Kept", exact: true })).toBeVisible();
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("chapter")).toBe("200");
   await page.reload();
   await expect(depth).toHaveValue("200");
   await page.locator("#open-saved-observations").click();

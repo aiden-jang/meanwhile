@@ -299,8 +299,6 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
   await revealStoryTools(page);
-  await openLayer(page);
-  await expect(page.getByRole("button", { name: "Earthquake tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await selectScene(page, "Below the Surface");
@@ -314,6 +312,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await openLayer(page);
+  await expect(page.getByRole("button", { name: "Earthquake tour" })).toBeDisabled();
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
     "No earthquakes reported in this window.",
   );

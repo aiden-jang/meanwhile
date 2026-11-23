@@ -135,22 +135,24 @@ for (const blocked of [false, true]) {
     }, blocked);
     await start(page);
     await openStories(page, "all");
-    const shelf = page.getByRole("region", { name: "Your visits" });
-    await shelf.getByText("Saved views (1)", { exact: true }).click();
+    await page.getByRole("button", { name: "Saved & recent", exact: true }).click();
+    const shelf = page.getByRole("dialog", { name: "Saved observations", exact: true });
     await shelf.getByRole("button", { name: "Remove saved Vanishing Sea" }).click();
-    await expect(shelf).toContainText("Saved views (0)");
+    await expect(shelf.locator(".kept-item")).toHaveCount(0);
     await shelf.getByRole("button", { name: "Undo", exact: true }).press("Enter");
-    await expect(shelf).toContainText("Saved views (1)");
-    await expect(shelf.locator(".visit-feedback")).toBeFocused();
+    await expect(shelf.locator(".kept-item")).toHaveCount(1);
+    await expect(shelf.locator(".saved-feedback")).toBeFocused();
     await expect(shelf).toContainText(blocked ? "Restored for this visit" : "Restored on this device");
+    await shelf.getByText("Recent visits", { exact: true }).click();
     await shelf.getByRole("button", { name: "Clear recent visits" }).click();
     await expect(page.locator(".story-continue")).toHaveCount(0);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`undo-phone-${blocked}.png`) });
     await shelf.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(shelf.locator(".kept-item")).toHaveCount(1);
+    await shelf.getByRole("button", { name: "Close saved observations" }).click();
     await page.getByRole("button", { name: "Show highlights", exact: true }).click();
     await expect(page.locator(".story-continue")).toContainText("Continue Vanishing Sea");
-    await expect(shelf).toContainText("Saved views (1)");
   });
 }
 

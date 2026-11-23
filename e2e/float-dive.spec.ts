@@ -194,6 +194,9 @@ for (const width of [1440, 390])
     if (process.env["EIF_CAPTURE_UI"]) {
       await page.locator(".float-profile").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-profile-${width}.png` });
+    }
+    await page.getByRole("button", { name: "Close measured profile", exact: true }).click();
+    if (process.env["EIF_CAPTURE_UI"]) {
       await dive.locator(".float-takeaway").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-ending-${width}.png` });
     }

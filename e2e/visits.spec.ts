@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
+
+async function openSaved(page: Page) {
+  await page.getByRole("button", { name: "Saved & recent", exact: true }).click();
+  const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
+  await expect(collection).toBeVisible();
+  return collection;
+}
 
 const home = "meanwhile. Earth, ocean & sky, back to the Observatory";
 test("discovery changes with the scene and keeps the same globe", async ({ page }) => {
@@ -52,10 +59,9 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   );
   await page.goto("/");
   await openStories(page, "all");
-  await page
-    .getByRole("region", { name: "Your visits" })
-    .getByRole("button", { name: /Moonfall Traverse 2/ })
-    .click();
+  const collection = await openSaved(page);
+  await expect(collection.locator(".kept-item")).toContainText("Traverse 2");
+  await collection.getByRole("button", { name: "Reopen this moment" }).click();
   await expect(distance).toHaveValue(value);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });
@@ -88,12 +94,8 @@ test("a saved float returns to its measured depth after a new page visit", async
   );
   await page.goto("/");
   await openStories(page, "all");
-  const shelf = page.getByRole("region", { name: "Your visits" });
-  await shelf.getByText("Saved views (1)", { exact: true }).click();
-  await shelf
-    .locator("details")
-    .getByRole("button", { name: /Float Dive .* °C/ })
-    .click();
+  const collection = await openSaved(page);
+  await collection.getByRole("button", { name: "Reopen this moment" }).click();
   await expect(depth).toHaveValue(value);
   await expect(page.getByRole("group", { name: "Float projection" })).toBeHidden();
   await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
@@ -113,16 +115,16 @@ test("saved views and recent history can be cleared independently", async ({ pag
   });
   await page.goto("/");
   await openStories(page, "all");
-  const shelf = page.getByRole("region", { name: "Your visits" });
-  await shelf.getByText("Saved views (1)", { exact: true }).click();
-  await shelf.getByRole("button", { name: "Remove saved Float Dive" }).click();
-  await expect(shelf).toContainText("Saved views (0)");
-  await expect(shelf).toContainText("Float Dive");
-  await shelf.getByRole("button", { name: "Clear recent visits" }).click();
-  await expect(shelf).toContainText("Recent visits cleared.");
-  await shelf.getByRole("button", { name: "Undo", exact: true }).click();
-  await expect(shelf).toContainText("Float Dive");
-  await expect(shelf).toContainText("Saved views (0)");
+  const collection = await openSaved(page);
+  await collection.getByRole("button", { name: "Remove saved Float Dive" }).click();
+  await expect(collection.locator(".kept-item")).toHaveCount(0);
+  await collection.getByText("Recent visits", { exact: true }).click();
+  await expect(collection.getByRole("button", { name: "Float Dive", exact: true })).toBeVisible();
+  await collection.getByRole("button", { name: "Clear recent visits" }).click();
+  await expect(collection).toContainText("Recent visits cleared.");
+  await collection.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(collection.getByText("Recent visits", { exact: true })).toBeVisible();
+  await expect(collection.locator(".kept-item")).toHaveCount(0);
 });
 
 test("refused storage keeps a usable visit without promising persistence", async ({ page }) => {
@@ -143,6 +145,6 @@ test("refused storage keeps a usable visit without promising persistence", async
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await page.getByRole("button", { name: home }).click();
   await openStories(page, "all");
-  await expect(page.getByRole("region", { name: "Your visits" })).toContainText("Eye of the Storm");
+  await expect((await openSaved(page)).locator(".kept-item")).toContainText("Eye of the Storm");
   expect(await page.evaluate(() => localStorage.getItem("eif.visits-v2"))).toBeNull();
 });

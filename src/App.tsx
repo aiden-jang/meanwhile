@@ -1225,6 +1225,7 @@ export function App(): JSX.Element {
                 {mapLayers.enabled.earthquakes && (
                   <EarthquakeInspector
                     stats={snapshot.stats}
+                    discovery={<EarthquakeDiscovery context={observatoryProps} />}
                     options={
                       <EarthquakeOptions ramp={ramp} setRamp={setRamp} sound={sound} setSound={setSound} />
                     }
@@ -1284,7 +1285,6 @@ export function App(): JSX.Element {
                 )}
                 {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
                 {!archived && archiveControls}
-                <EarthquakeDiscovery context={observatoryProps} />
                 <details className="context-fold" hidden={!mapLayers.enabled.earthquakes}>
                   <summary className="disclose text-dim">More context</summary>
                   {!replay && !flat && (

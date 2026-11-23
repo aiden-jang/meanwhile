@@ -63,6 +63,7 @@ test("a delayed story keeps the globe usable and cannot reopen after returning @
   await openStories(page, "search");
   await page.getByRole("searchbox", { name: "Find a story" }).fill("Aral");
   const trigger = page.locator("#search-story-aral");
+  await expect(trigger).toBeEnabled();
   const before = await camera(page);
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const response = page.waitForResponse(

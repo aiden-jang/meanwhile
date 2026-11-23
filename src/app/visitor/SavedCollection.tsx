@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { restoreCollection } from "./collectionReturn";
 import { visitEvidence } from "./visitEvidence";
@@ -115,6 +115,7 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
 export function SavedCollection({ onClose }: { onClose: () => void }) {
   const navigation = useStoryNavigation();
   const restore = navigation?.restoredCollection;
+  const feedback = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (!restore) return;
     const panel = document.getElementById("saved-observations");
@@ -152,10 +153,16 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
           />
         ))}
       </div>
-      <div className="saved-feedback">
+      <div className="saved-feedback" ref={feedback} tabIndex={-1}>
         <span role="status">{library.notice}</span>
         {library.canUndo && (
-          <button type="button" onClick={library.undo}>
+          <button
+            type="button"
+            onClick={() => {
+              library.undo();
+              feedback.current?.focus({ preventScroll: true });
+            }}
+          >
             Undo
           </button>
         )}
@@ -177,6 +184,15 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
               {visitEvidence(visit).title}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              library.clearRecent();
+              feedback.current?.focus({ preventScroll: true });
+            }}
+          >
+            Clear recent visits
+          </button>
         </details>
       )}
     </>

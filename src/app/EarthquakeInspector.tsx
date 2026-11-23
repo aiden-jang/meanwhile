@@ -8,6 +8,7 @@ export function EarthquakeInspector({
   headline,
   stats,
   options,
+  discovery,
   filters,
   timeline,
   query,
@@ -16,6 +17,7 @@ export function EarthquakeInspector({
   list,
 }: {
   options: ReactNode;
+  discovery: ReactNode;
   stats: FeedSnapshot["stats"];
   headline: ComponentProps<typeof EarthquakeHeadline>;
   filters: ReactNode;
@@ -61,6 +63,7 @@ export function EarthquakeInspector({
 
       {query.value && regionalResults}
       {options}
+      {discovery}
       <details className="layer-sources">
         <summary>Report totals</summary>
         <dl>
