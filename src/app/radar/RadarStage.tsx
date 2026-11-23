@@ -1,4 +1,6 @@
+import { CompactRadarScrub } from "./CompactRadarScrub";
 import { PlaybackButton } from "../PlaybackButton";
+import { radarScanDate, radarScanStatus } from "./radarScanStatus";
 import { layerTime } from "../layerTime";
 import {
   type KeyboardEventHandler,
@@ -28,12 +30,6 @@ import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 import { radarFeedHealth } from "./radarFeedHealth";
 
-const radarDate = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
 export function RadarStage({
@@ -47,6 +43,7 @@ export function RadarStage({
   dock,
   suspended = false,
   rewind = false,
+  compact = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
@@ -58,6 +55,7 @@ export function RadarStage({
   dock?: KeyboardEventHandler<HTMLElement> | undefined;
   suspended?: boolean;
   rewind?: boolean;
+  compact?: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
@@ -108,7 +106,15 @@ export function RadarStage({
   const shownImage = shown && images.get(shown.id);
   const showingEarlier = !!shownImage && shown?.at !== selected?.at;
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
-  const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
+  const autoFocus = useMemo(
+    () =>
+      focus === undefined && !layer && !global && latestImage
+        ? (strongestRegion(latestImage) ?? null)
+        : focus,
+    [focus, latestImage, global, layer],
+  );
+  const region =
+    regionId === "auto" ? (autoFocus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
   const restoredPose = initialRegion === regionId ? initialPose : undefined;
   const target = useMemo(
     () => restoredPose ?? (global ? radarCamera(regionId) : regionCamera(region)),
@@ -167,9 +173,8 @@ export function RadarStage({
   }, [rewind, seek, suspended, image, selected]);
 
   useEffect(() => {
-    if (layer || global || !latestImage || focus !== undefined) return;
-    setFocus(strongestRegion(latestImage) ?? null);
-  }, [focus, latestImage, global, layer]);
+    if (focus === undefined && autoFocus !== undefined) setFocus(autoFocus);
+  }, [focus, autoFocus]);
 
   useEffect(() => {
     if (suspended || !playing || !selected || image === undefined || document.hidden) return;
@@ -195,43 +200,58 @@ export function RadarStage({
 
   const place = global ? globalRadarName(regionId) : (region?.name ?? "National view");
   const provider = global ? "RainViewer" : "NOAA";
-  const delayed = latest !== undefined && checkedAt - latest.at > 20 * 60_000;
-  const lastAvailable =
-    status === "error" || status === "empty" ? scans.filter(({ id }) => images.get(id)).at(-1) : undefined;
-  const statusText =
-    status === "loading"
-      ? `Loading ${provider} radar scans…`
-      : status === "empty"
-        ? "No recent radar scans available."
-        : status === "error"
-          ? `Couldn’t reach ${provider} radar.`
-          : image === null
-            ? "This scan’s image is unavailable."
-            : image === undefined
-              ? "Loading the selected scan…"
-              : delayed
-                ? `${provider}’s latest scan is delayed.`
-                : regionId === "auto" && region
-                  ? "Automatic focus · area with visible returns"
-                  : "Select a time to compare the observed scans.";
-  const canRetry = status === "error" || status === "empty" || image === null;
+  const { canRetry, problem, statusMessage } = radarScanStatus({
+    latest,
+    scans,
+    images,
+    checkedAt,
+    status,
+    image,
+    provider,
+    autoFocus: regionId === "auto" && !!region,
+  });
   const atLatest = index === scans.length - 1 && chosen === null;
   const timeLabel = selected ? layerTime(selected.at) : "Waiting for scans";
 
-  const problem = !!lastAvailable || canRetry || image === undefined || delayed;
-  const statusMessage = (
-    <>
-      {lastAvailable ? (
-        <>
-          Showing the last available radar scans. Latest available scan{" "}
-          <time dateTime={new Date(lastAvailable.at).toISOString()}>{layerTime(lastAvailable.at)}</time>.
-          {image === null && " This scan’s image is unavailable."}
-        </>
-      ) : (
-        statusText
-      )}
-    </>
+  const timeline = (
+    <TimelineTrack
+      max={Math.max(0, scans.length - 1)}
+      current={index}
+      valueLabel={selected && !compact ? `${shortTime(selected.at)} UTC` : undefined}
+    >
+      <input
+        id={id}
+        className="scrub-slider radar-scrub"
+        type="range"
+        min={0}
+        max={Math.max(0, scans.length - 1)}
+        value={index}
+        disabled={scans.length < 2}
+        aria-label="Radar scan time"
+        aria-valuetext={timeLabel}
+        onChange={(event) => {
+          setPlaying(false);
+          seek(scans[event.currentTarget.valueAsNumber] ?? null);
+        }}
+      />
+    </TimelineTrack>
   );
+  if (compact)
+    return (
+      <CompactRadarScrub
+        id={id}
+        selected={selected?.at}
+        first={scans[0]?.at}
+        shown={showingEarlier ? shown?.at : undefined}
+        latest={atLatest}
+        expired={expired}
+        timeline={timeline}
+        status={problem ? statusMessage : null}
+        retry={canRetry ? retry : undefined}
+        provider={provider}
+        follow={() => seek(null)}
+      />
+    );
 
   function togglePlay() {
     if (!playing && index === scans.length - 1) seek(scans[0] ?? null);
@@ -262,7 +282,7 @@ export function RadarStage({
               {selected && (
                 <time dateTime={new Date(selected.at).toISOString()}>
                   <strong>{shortTime(selected.at)} UTC</strong>
-                  <span className="radar-reading-date">{radarDate.format(selected.at)}</span>
+                  <span className="radar-reading-date">{radarScanDate(selected.at)}</span>
                 </time>
               )}
               {scans[0] && latest && (
@@ -288,27 +308,7 @@ export function RadarStage({
               </button>
             )}
           </div>
-          <TimelineTrack
-            max={Math.max(0, scans.length - 1)}
-            current={index}
-            valueLabel={selected ? `${shortTime(selected.at)} UTC` : undefined}
-          >
-            <input
-              id={id}
-              className="scrub-slider radar-scrub"
-              type="range"
-              min={0}
-              max={Math.max(0, scans.length - 1)}
-              value={index}
-              disabled={scans.length < 2}
-              aria-label="Radar scan time"
-              aria-valuetext={timeLabel}
-              onChange={(event) => {
-                setPlaying(false);
-                seek(scans[event.currentTarget.valueAsNumber] ?? null);
-              }}
-            />
-          </TimelineTrack>
+          {timeline}
           <div className="observatory-actions radar-actions radar-playback">
             <button
               type="button"

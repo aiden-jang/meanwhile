@@ -6,7 +6,7 @@ import { globeFramingRect } from "../globe/globeFraming";
 import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
-import { OBSERVATORY_SCENES } from "./ObservatoryStage";
+import { OBSERVATORY_SCENES } from "./SceneEntrances";
 import { SceneDiagram } from "./SceneDiagram";
 import { resetStoryResults } from "./StorySearch";
 import { useStoryNavigation } from "./journeys/StoryNavigation";

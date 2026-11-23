@@ -168,7 +168,7 @@ export function createScenePresentation(
     );
   }
 
-  function set(mode: GlobePresentation, geography: readonly Object3D[]) {
+  function set(mode: GlobePresentation, geography: readonly Object3D[], cutawayCamera = false) {
     const mapLayers =
       mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
     if (mapLayers) mode = mapLayers.base ?? null;
@@ -187,7 +187,7 @@ export function createScenePresentation(
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     if (skyView?.reference && (!previousSky?.reference || previousSky.city !== skyView.city))
       controls.flyTo(skyView.reference.lon, skyView.reference.lat, skyView.reference.zoom);
-    const sweep = mode === null ? mapLayers?.radar?.reveal : undefined;
+    const sweep = weather?.reveal ?? (mode === null ? mapLayers?.radar?.reveal : undefined);
     controls.guidance.configure(
       skyView
         ? null
@@ -296,10 +296,11 @@ export function createScenePresentation(
       if (!observation.crossing && observation.arrive) observationCrossing = undefined;
     } else if (returnCamera) {
       if (
-        mode === "dayline" ||
-        mode === null ||
-        mapLayers ||
-        ((returningFromArchive || observationTarget) && mode === "planetarium")
+        !cutawayCamera &&
+        (mode === "dayline" ||
+          mode === null ||
+          mapLayers ||
+          ((returningFromArchive || observationTarget) && mode === "planetarium"))
       )
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
       returnCamera = undefined;

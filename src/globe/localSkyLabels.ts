@@ -76,7 +76,12 @@ export function createLocalSkyLabels(canvas: HTMLCanvasElement, up: Vector3) {
           x < 87 &&
           y > 10 &&
           y < 88 &&
-          !placed.some((previous) => Math.abs(previous.x - x) < 16 && Math.abs(previous.y - y) < 5);
+          !placed.some(
+            (previous) =>
+              Math.abs(previous.x - x) < 16 &&
+              Math.abs(previous.y - y) <
+                (label.tagName === "BUTTON" ? 4400 / Math.max(1, canvas.clientHeight) : 5),
+          );
         if (visible) {
           placed.push({ x, y });
           label.style.left = `${x}%`;

@@ -1,0 +1,122 @@
+import { reportAnalytics } from "../../analytics/browser";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
+import type { ObservatoryProps } from "./observatoryProps";
+import { SceneDiagram } from "./SceneDiagram";
+import { cityNightOpening } from "./tonight/nightfall";
+import type { EarthScene } from "./useObservatory";
+import "./scene-entrances.css";
+
+export const OBSERVATORY_SCENES = [
+  { id: "live", name: "Earth" },
+  { id: "depth", name: "Below the Surface" },
+  { id: "night", name: "After Dark" },
+] as const;
+
+const trigger = (scene: EarthScene) => `observatory-entry-${scene}`;
+
+export function useSceneEntrances({
+  views,
+  radar,
+  explorer,
+  onScene,
+  onHome,
+  onExplore,
+  scene,
+  ready,
+}: ObservatoryProps) {
+  const stories = useStoryNavigation();
+  const memory = views.entranceVisits;
+  const active =
+    views.observations.trigger === trigger(scene) &&
+    !views.observations.entry &&
+    (scene === "live"
+      ? radar.active
+      : scene === "depth"
+        ? !!views.depthFocus?.archiveReading
+        : views.tonight.active)
+      ? scene
+      : undefined;
+
+  function remember() {
+    if (!active) return;
+    memory.current[active] = views.navigation.capture({ ...explorer.read() });
+  }
+
+  return {
+    active,
+    layers() {
+      remember();
+      views.navigation.requestExploreFocus("explorer-layers-tab");
+      views.browser.show("layers");
+      onExplore(true);
+    },
+    home() {
+      remember();
+      onHome();
+      requestAnimationFrame(() =>
+        document.getElementById(trigger(active ?? "live"))?.focus({ preventScroll: true }),
+      );
+    },
+    open(subject: EarthScene) {
+      if (active === subject) return;
+      reportAnalytics({ name: "scene_selected", scene: subject });
+      remember();
+      const saved = memory.current[subject];
+      if (saved && (subject !== "night" || saved.skyCity === views.skyCity.name)) {
+        views.navigation.restore(saved);
+        if (saved.deck.camera && (subject !== "night" || saved.deck.map || saved.sky.orbit))
+          explorer.restore(saved.deck.camera, saved.deck.map);
+      } else if (subject === "night") {
+        stories?.openNightfall(cityNightOpening(views.skyCity.city, Date.now()), trigger(subject));
+      } else {
+        onScene(subject, true);
+        if (subject === "live") {
+          if (!ready) {
+            views.navigation.requestExploreFocus("explorer-layers-tab");
+            views.browser.show("layers");
+            onExplore(true);
+            return;
+          }
+          radar.open("national");
+        }
+        views.observations.setTrigger(trigger(subject));
+      }
+      if (active)
+        requestAnimationFrame(() =>
+          document.getElementById(trigger(subject))?.focus({ preventScroll: true }),
+        );
+    },
+  };
+}
+
+export function ObservatoryEntrances({
+  ready,
+  active,
+  open,
+}: { ready: boolean } & Pick<ReturnType<typeof useSceneEntrances>, "active" | "open">) {
+  return (
+    <div
+      id="observatory-scenes"
+      tabIndex={-1}
+      className="observatory-scenes"
+      data-active-scene={active}
+      role="group"
+      aria-label="Explore by subject"
+    >
+      {OBSERVATORY_SCENES.map(({ id, name }) => (
+        <button
+          key={id}
+          id={trigger(id)}
+          type="button"
+          onClick={() => open(id)}
+          aria-label={name}
+          aria-pressed={active === id}
+          disabled={!ready && id !== "live"}
+        >
+          <SceneDiagram scene={id} />
+          <span className="scene-label">{name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}

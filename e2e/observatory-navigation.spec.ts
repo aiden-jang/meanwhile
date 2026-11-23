@@ -99,7 +99,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).dispatchEvent("click");
   await home.dispatchEvent("click");
   await entrances.getByRole("button", { name: "Earth", exact: true }).dispatchEvent("click");
-  await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
+  await expect(page.getByRole("heading", { name: "Storms in motion.", exact: true })).toBeVisible();
   await expect
     .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))
     .toBe(0);

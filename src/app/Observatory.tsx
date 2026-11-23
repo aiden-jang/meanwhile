@@ -1,7 +1,7 @@
 import type { ObservatoryProps } from "./observatoryProps";
 export type { ObservatoryProps } from "./observatoryProps";
 import { observatoryIntroduction, observatoryReadingLabel } from "./observatoryIntroduction";
-import { SunWatch, SunLoading, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
+import { SunWatch, SunLoading, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { useOvalReturn } from "./sun/useSunVisit";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryIdentity } from "./journeys/StoryIdentity";
@@ -10,7 +10,9 @@ import { ConnectedJourney } from "./journeys/ConnectedJourney";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { useObservatoryEscape } from "./useObservatoryEscape";
 import { Suspense, useLayoutEffect, useState } from "react";
-import { ObservatoryStage, ObservatoryEntrances, SunCredits } from "./ObservatoryStage";
+import { ObservatoryStage, SunCredits } from "./ObservatoryStage";
+import { ObservatoryEntrances, useSceneEntrances } from "./SceneEntrances";
+import { ObservatorySky } from "./tonight/ObservatorySky";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
@@ -38,9 +40,10 @@ import { AuroraReading } from "./journeys/AuroraReading";
 import { stormJourney } from "./journeys/stormJourney";
 import "./journeys/aurora-journey.css";
 export function Observatory(props: ObservatoryProps): JSX.Element {
+  const entry = useSceneEntrances(props);
   return (
     <StoryBoundary resetKey={props.views.navigation.key} onHome={props.onHome}>
-      <ObservatoryContent {...props} />
+      <ObservatoryContent {...props} entry={entry} />
     </StoryBoundary>
   );
 }
@@ -61,7 +64,8 @@ function ObservatoryContent({
   onExplore,
   explorePaths,
   tour,
-}: ObservatoryProps): JSX.Element {
+  entry,
+}: ObservatoryProps & { entry: ReturnType<typeof useSceneEntrances> }): JSX.Element {
   const { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation } = views;
   const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
@@ -75,8 +79,8 @@ function ObservatoryContent({
   const closeView = (fallback: () => void) => () => {
     if (!navigationContext?.returnToBrowse()) fallback();
   };
-  const active = tour.at !== null;
-  const solar = sun.active && !active;
+  const active = tour.at !== null,
+    solar = sun.active && !active;
   useLayoutEffect(() => {
     tour.controls.current?.scrollTo(0, 0);
     tour.controls.current?.querySelector(".observatory-story")?.scrollTo(0, 0);
@@ -111,13 +115,26 @@ function ObservatoryContent({
     deepAvailable,
     landing,
   });
+  const entrances = <ObservatoryEntrances ready={ready} {...entry} />;
+  const tabs =
+    entry.active && !tonight.view?.lunarDeparture && !tonight.view?.moonfall && !tonight.view?.radiantTrail
+      ? entrances
+      : undefined;
+  const closeRadar = radar.entry.story
+    ? radar.close
+    : closeView(() =>
+        observations.returnTo(radar.fromExplore ? "open-explorer-radar" : "open-storm-radar", radar.close),
+      );
   const depthRecord = views.depthFocus?.archiveReading;
   if (depthRecord)
     return (
       <DepthReading
         record={depthRecord}
         select={views.selectDepth}
-        onHome={onHome}
+        sweepKm={views.depthFocus?.sweepKm}
+        onSweep={views.sweepDepth}
+        tabs={tabs}
+        onHome={tabs ? entry.home : onHome}
         projection={observations}
         onNearby={() => explorePaths.nearby(depthRecord)}
       />
@@ -140,13 +157,19 @@ function ObservatoryContent({
   const story = (
     <section
       className="replay-region"
+      data-entry-scene={tabs ? entry.active : undefined}
       aria-labelledby={tonight.active ? "local-sky-title" : undefined}
       aria-label={radar.active ? "Storm Radar" : undefined}
     >
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} projection={observations} />
       ) : radar.active ? (
-        <RadarReadout map={observations.map} onMap={observations.setMap} region={radar.view?.region} />
+        <RadarReadout
+          map={observations.map}
+          onMap={observations.setMap}
+          region={radar.view?.region}
+          focus={tabs && radar.view?.image ? radar.view.target : undefined}
+        />
       ) : tonight.view?.moonfall ? (
         <MoonfallReadout
           view={tonight.view.moonfall}
@@ -162,6 +185,7 @@ function ObservatoryContent({
             projection={observations}
             orbit={tonight.orbit}
             onOrbit={tonight.setOrbit}
+            interactive={entry.active === "night"}
             cityReference={tonight.entry.mode === "sky" && !!tonight.entry.position?.direct}
           />
         </Suspense>
@@ -219,53 +243,24 @@ function ObservatoryContent({
               <StormRadar
                 key={JSON.stringify(radar.entry)}
                 fromExplore={radar.fromExplore}
-                returnLabel={radar.entry.story ? undefined : navigationContext?.returnLabel}
+                returnLabel={tabs || radar.entry.story ? undefined : navigationContext?.returnLabel}
                 entry={radar.entry}
+                tabs={tabs}
+                onLayers={entry.layers}
                 onView={radar.update}
-                onClose={
-                  radar.entry.story
-                    ? radar.close
-                    : closeView(() => {
-                        const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
-                        observations.returnTo(trigger, radar.close);
-                      })
-                }
+                onClose={tabs ? entry.home : closeRadar}
               />
             ) : tonight.active ? (
-              <Suspense fallback={<StoryLoading>Opening Tonight’s Sky…</StoryLoading>}>
-                <TonightSky
-                  key={tonight.entry.revision}
-                  view={tonight.view}
-                  onView={tonight.update}
-                  onJourney={tonight.handoff}
-                  onLocalSky={() => {
-                    tonight.setOrbit(false);
-                    observations.setMap(false);
-                  }}
-                  readCamera={explorer.read}
-                  preference={skyCity}
-                  projection={observations}
-                  initialMode={tonight.entry.mode}
-                  returnSky={tonight.entry.returnSky}
-                  initialPosition={tonight.entry.position}
-                  nightfall={tonight.entry.nightfall}
-                  orbit={tonight.orbit}
-                  onCityWeather={explorePaths.cityWeather}
-                  returnLabel={fromAfterDark.label ?? navigationContext?.returnLabel ?? "Back to After Dark"}
-                  onClose={
-                    fromAfterDark.close ??
-                    closeView(() => {
-                      const id =
-                        tonight.entry.mode === "meteors"
-                          ? "open-meteor-nights"
-                          : tonight.entry.mode === "moonfall"
-                            ? "open-featured-moonfall"
-                            : "open-tonight-sky";
-                      observations.returnTo(id, tonight.close);
-                    })
-                  }
-                />
-              </Suspense>
+              <ObservatorySky
+                {...{ views, explorer, explorePaths, tabs }}
+                returnLabel={
+                  tabs
+                    ? "Back to the Observatory"
+                    : (fromAfterDark.label ?? navigationContext?.returnLabel ?? "Back to After Dark")
+                }
+                onClose={tabs ? entry.home : fromAfterDark.close}
+                closeFromBrowse={closeView}
+              />
             ) : (
               <>
                 {!guidedAurora && (solar || aurora.run || aurora.requested) && (
@@ -336,9 +331,7 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {!active && !solar && !aurora.run && !aurora.requested && (
-                  <ObservatoryEntrances ready={ready} views={views} onExplore={onExplore} onScene={onScene} />
-                )}
+                {!active && !solar && !aurora.run && !aurora.requested && entrances}
                 {scene === "depth" && ready && !deepAvailable && (
                   <p id="depth-availability" className="observatory-depth-note">
                     No earthquake at least 70 km deep in this window. Recorded depth stories are still
@@ -362,8 +355,8 @@ function ObservatoryContent({
                 ) : null}
               </>
             )}
-            {tonight.active && <ConnectedJourney />}
-            {(floatDive.active || (radar.active && !guidedStorm) || solar || aurora.run) && (
+            {tonight.active && !tabs && <ConnectedJourney />}
+            {(floatDive.active || (radar.active && !guidedStorm && !tabs) || solar || aurora.run) && (
               <ExperienceEnding />
             )}
           </section>

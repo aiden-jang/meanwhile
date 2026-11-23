@@ -5,7 +5,6 @@ import type { Permalink } from "./permalink";
 import { useFloatingChrome } from "./useNarrow";
 import { useStoredFlag } from "./useStored";
 import type { useObservatory } from "./useObservatory";
-import { recordedCutaway } from "./recordedCutaway";
 import { reportAnalytics } from "../../analytics/browser";
 import { useSceneHistory } from "./useSceneHistory";
 import type { useArchive } from "./useArchive";
@@ -16,7 +15,8 @@ import { restorePanel } from "./panelReturn";
 import type { SkyCity } from "../geo/tonight";
 import type { CityWeatherLayers, CityWeatherVisit } from "./tonight/cityWeather";
 
-type Nearby = { record: DepthRecord; camera: CameraState; originMap: boolean; map: boolean };
+type SceneVisit = ReturnType<ReturnType<typeof useObservatory>["navigation"]["capture"]>;
+type Nearby = { record: DepthRecord; camera: CameraState; from: SceneVisit; map: boolean };
 type Visit = {
   panel?: boolean | undefined;
   nearby?: Nearby;
@@ -67,8 +67,8 @@ export function useExplorerView(shared: Partial<Permalink>) {
     open(panel: boolean | undefined, destination?: string) {
       setVisit({ panel, destination });
     },
-    openNearby(record: DepthRecord, camera: CameraState, map: boolean) {
-      setVisit({ panel: true, nearby: { record, camera, originMap: map, map } });
+    openNearby(record: DepthRecord, camera: CameraState, from: SceneVisit) {
+      setVisit({ panel: true, nearby: { record, camera, from, map: from.deck.map } });
     },
     openCity(city: CityWeatherVisit) {
       setVisit({ panel: true, city });
@@ -183,25 +183,22 @@ export function explorerEntrances(
   }
   function nearby(record: DepthRecord) {
     const pose = { ...camera.read.current() };
-    const map = observatory.observations.map;
+    const from = observatory.navigation.capture(pose);
     observatory.navigation.requestExploreFocus("cutaway-nearby-title");
     observatory.browser.show("layers");
     observatory.exploreScene(() => {
       stopTour();
       readings.clear();
       returnToLive();
-      explorer.openNearby(record, pose, map);
+      explorer.openNearby(record, pose, from);
     });
   }
   function back() {
     const saved = explorer.nearby;
     if (!saved) return;
-    observatory.observeScene(() => {
-      readings.clear();
-      explorer.open(undefined);
-      observatory.chooseScene("depth", recordedCutaway(saved.record));
-      observatory.observations.setMap(saved.originMap);
-    });
+    observatory.navigation.restore(saved.from);
+    readings.clear();
+    explorer.open(undefined);
     const { lon, lat, zoom } = saved.camera;
     camera.flyTo.current(lon, lat, zoom);
     requestAnimationFrame(() =>

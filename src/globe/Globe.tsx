@@ -420,12 +420,12 @@ export function Globe({
       redraw();
     };
     presentationRef.current = globe.setPresentation;
-    presentationRef.current(live.current.globePresentation);
     cutawayRef.current = (next) => {
       globe.setCutaway(next);
       wake();
     };
     globe.setCutaway(live.current.cutaway);
+    presentationRef.current(live.current.globePresentation);
     globe.setSlab(live.current.slab ?? null);
     globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {

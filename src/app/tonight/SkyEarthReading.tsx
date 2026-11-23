@@ -20,18 +20,20 @@ export function SkyHeading({
   label,
   back,
   onBack,
+  compact,
 }: {
   title: string;
   label: string;
   back: RefObject<HTMLButtonElement>;
   onBack: () => void;
+  compact?: boolean;
 }) {
   return (
     <div className="tonight-heading">
       <h2 id="local-sky-title">{title}</h2>
       <div className="observatory-actions tonight-back">
-        <button type="button" ref={back} onClick={onBack}>
-          {label}
+        <button type="button" ref={back} onClick={onBack} aria-label={compact ? label : undefined}>
+          {compact ? "Back" : label}
         </button>
       </div>
     </div>

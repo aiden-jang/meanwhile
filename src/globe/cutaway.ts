@@ -1,4 +1,4 @@
-import type { DepthRecord } from "../data/depthRecords";
+import { depthRecords, type DepthRecord } from "../data/depthRecords";
 import { createSlabLayer } from "./slab";
 import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "./cutawayScale";
 import {
@@ -22,6 +22,7 @@ export interface CutawayFocus {
   dive?: true;
   cameraOnly?: true;
   archiveReading?: DepthRecord;
+  sweepKm?: number | undefined;
 }
 const ANGLE = 20 * DEG;
 const INNER_RADIUS = 1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM;
@@ -107,6 +108,20 @@ export function createCutaway(morph: { value: number }) {
   );
   guide.renderOrder = 0.2;
   object.add(guide);
+  const sweepGeometry = new BufferGeometry();
+  sweepGeometry.setAttribute(
+    "position",
+    new BufferAttribute(new Float32Array(positions.slice(0, 96 * 2 * 3)), 3),
+  );
+  const sweep = new LineSegments(
+    sweepGeometry,
+    new LineBasicMaterial({ color: 0xffb36e, transparent: true, opacity: 0.86 }),
+  );
+  sweep.renderOrder = 1;
+  sweep.visible = false;
+  object.add(sweep);
+  let sweepDepth: number | undefined;
+  let litRecords = "";
   object.visible = false;
   const opening = { value: 0 };
   for (const material of [floor.material, guide.material]) {
@@ -151,10 +166,12 @@ export function createCutaway(morph: { value: number }) {
   let target = 0,
     progress = 0;
   let guideProgress = 0;
+  let cameraActive = false;
   return {
     object,
     reading: reading.object,
     dispose: reading.dispose,
+    cameraActive: () => cameraActive,
     patch(material: Material): void {
       const compile = material.onBeforeCompile;
       const cacheKey = material.customProgramCacheKey();
@@ -184,9 +201,21 @@ export function createCutaway(morph: { value: number }) {
       material.customProgramCacheKey = () => `${cacheKey}-cutaway`;
     },
     set(focus: CutawayFocus | null): void {
+      cameraActive = focus?.dive === true || focus?.cameraOnly === true;
       const event = focus?.archiveReading;
-      if (event) reading.set([[event.lon, event.lat, event.depthKm, event.magnitude]]);
-      reading.setOpacity(event ? 1 : 0);
+      sweepDepth = focus?.cameraOnly ? undefined : focus?.sweepKm;
+      const points = !event
+        ? []
+        : sweepDepth === undefined
+          ? [event]
+          : depthRecords.filter((record) => record.depthKm <= sweepDepth!);
+      const key = points.map(({ id }) => id).join(",");
+      if (key !== litRecords) {
+        litRecords = key;
+        reading.set(points.map(({ lon, lat, depthKm, magnitude }) => [lon, lat, depthKm, magnitude]));
+      }
+      reading.setOpacity(points.length ? 1 : 0);
+      if (sweepDepth !== undefined) sweep.scale.setScalar(1 - sweepDepth / EARTH_RADIUS_KM);
       if (focus?.cameraOnly) focus = null;
       target = focus ? 1 : 0;
       if (focus && progress === 0) guideProgress = 0;
@@ -221,6 +250,7 @@ export function createCutaway(morph: { value: number }) {
       enabled.value = angle > 0.0001 ? 1 : 0;
       // Reveal the well through the same aperture; the surface hides the rest while it opens.
       object.visible = angle > 0.0001;
+      sweep.visible = progress >= 0.98 && morph === 0 && sweepDepth !== undefined;
       return (progress !== openingTarget || (openingTarget === 1 && guideProgress < 1)) && morph === 0;
     },
   };

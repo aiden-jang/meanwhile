@@ -1,9 +1,4 @@
 import { StoryProjection } from "./observations/StoryProjection";
-import { reportAnalytics } from "../../analytics/browser";
-import type { ObservatoryProps } from "./observatoryProps";
-import { useStoryNavigation } from "./journeys/StoryNavigation";
-import { cityNightOpening } from "./tonight/nightfall";
-import { SceneDiagram } from "./SceneDiagram";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { subsolarPoint } from "../geo/sun";
@@ -13,11 +8,7 @@ import type { AuroraRun } from "../sources/auroraRoute";
 import type { ReactNode } from "react";
 import "./scene-cues.css";
 
-export const OBSERVATORY_SCENES = [
-  { id: "live", name: "Earth" },
-  { id: "depth", name: "Below the Surface" },
-  { id: "night", name: "After Dark" },
-] as const;
+import { OBSERVATORY_SCENES } from "./SceneEntrances";
 
 export function ObservatoryStage({
   scene,
@@ -125,56 +116,6 @@ export function ObservatoryStage({
           {time.slice(11, 16)} UTC
         </time>
       </div>
-    </div>
-  );
-}
-
-export function ObservatoryEntrances({
-  ready,
-  views,
-  onExplore,
-  onScene,
-}: Pick<ObservatoryProps, "ready" | "views" | "onExplore" | "onScene">): JSX.Element {
-  const navigation = useStoryNavigation();
-  function open(subject: EarthScene) {
-    reportAnalytics({ name: "scene_selected", scene: subject });
-    if (subject === "night") {
-      navigation?.openNightfall(cityNightOpening(views.skyCity.city, Date.now()), "observatory-entry-night");
-      return;
-    }
-    onScene(subject, true);
-    if (subject === "live") {
-      views.navigation.requestExploreFocus("explorer-layers-tab");
-      views.browser.show("layers");
-      onExplore(true);
-    }
-  }
-  const destination = { live: "Live layers", depth: "Earthquake cutaway", night: "Tonight’s Sky" };
-  return (
-    <div
-      id="observatory-scenes"
-      tabIndex={-1}
-      className="observatory-scenes"
-      role="group"
-      aria-label="Explore by subject"
-    >
-      {OBSERVATORY_SCENES.map(({ id, name }) => (
-        <button
-          key={id}
-          id={`observatory-entry-${id}`}
-          type="button"
-          onClick={() => open(id)}
-          aria-label={name}
-          aria-describedby={`observatory-destination-${id}`}
-          disabled={!ready && id !== "live"}
-        >
-          <SceneDiagram scene={id} />
-          <span className="scene-label">{name}</span>
-          <span id={`observatory-destination-${id}`} className="scene-destination">
-            {destination[id]}
-          </span>
-        </button>
-      ))}
     </div>
   );
 }

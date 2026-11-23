@@ -1,3 +1,4 @@
+import { EARTH_RADIUS_KM } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { positionEvidenceConnector } from "./evidenceConnector";
 import { positionJourneyPreview } from "./journeyPreview";
@@ -44,7 +45,12 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       anchor.style.visibility = "hidden";
       continue;
     }
-    const point = controls.project(Number(anchor.dataset["lon"]), Number(anchor.dataset["lat"]), 1.01);
+    const depth = anchor.dataset["depthKm"];
+    const point = controls.project(
+      Number(anchor.dataset["lon"]),
+      Number(anchor.dataset["lat"]),
+      depth === undefined ? 1.01 : 1 - Number(depth) / EARTH_RADIUS_KM,
+    );
     const parent = anchor.parentElement ? parents.get(anchor.parentElement) : undefined;
     const x = (point?.x ?? 0) - (parent?.left ?? 0);
     const y = (point?.y ?? 0) - (parent?.top ?? 0);

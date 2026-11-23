@@ -215,10 +215,8 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     );
   const original = await contexts();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page
-    .getByRole("group", { name: "Explore by subject" })
-    .getByRole("button", { name: "Earth", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   const rail = page.locator("#chrome-rail");
   await Promise.all([
     expect(rail).toBeVisible(),

@@ -1,8 +1,9 @@
+import { SkyInvitation } from "./SkyInvitation";
 import type { CameraState } from "../../globe/controlsTypes";
 import { ShareMoment } from "../observations/StorySession";
 import { skyPosition, skyStoryMoment, type SkyPosition } from "./skyMoment";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   aimAt,
   localNight,
@@ -16,12 +17,13 @@ import { nightTrail } from "../../geo/nightTrail";
 import { skyLight } from "./nightfall";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
-import { TimelineTrack } from "../observations/TimelineTrack";
+import { SkyTimeline } from "./SkyTimeline";
+import { traceSkyBody } from "./traceSkyBody";
 import { StoryDock } from "../observations/StoryDock";
 import { SkyCityPicker, type SkyCityPreference } from "./SkyCityPicker";
 import { MeteorNights } from "./MeteorNights";
 import { SkyObjects } from "./SkyObjects";
-import { skyDirection, skyTargets } from "./skyTargets";
+import { skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
 import { lunarFlight, TonightMoonfall } from "./TonightMoonfall";
 import { SkyEarthEntry, SkyEarthReading, SkyHeading, skyTimeFormats } from "./SkyEarthReading";
@@ -42,8 +44,10 @@ export function TonightSky({
   returnLabel,
   projection,
   readCamera,
+  tabs,
 }: {
   view: TonightPresentation | null;
+  tabs?: ReactNode;
   onView: (next: TonightPresentation) => void;
   onJourney: (next: TonightPresentation) => void;
   onLocalSky: () => void;
@@ -127,13 +131,20 @@ export function TonightSky({
   );
   const { target } = skyTargets(current.bodies);
   function findBody(body: TonightView["bodies"][number]) {
-    const points =
-      current.targetName === body.name && current.nightTrail
-        ? current.nightTrail.points
-        : nightTrail(city, body.name, night.start, night.end);
     setObserving(true);
     onLocalSky();
-    onView({ ...current, look: aimAt(body), targetName: body.name, nightTrail: { points, following: true } });
+    onView(traceSkyBody(current, body, night));
+  }
+  function seek(at: number) {
+    const bodies = skyBodies(city, at);
+    const followed = current.nightTrail?.following && bodies.find((body) => body.name === current.targetName);
+    onView({
+      ...current,
+      at,
+      bodies,
+      look: followed && followed.altitude > 0 ? aimAt(followed) : current.look,
+    });
+    setObserving(true);
   }
   const sky = skyLight(city, at, night);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
@@ -205,64 +216,31 @@ export function TonightSky({
       />
     );
   const title = mode === "sky" ? "Tonight’s Sky" : "Meteor Nights";
-  return (
+  const timeline = (
+    <SkyTimeline
+      id={rangeId}
+      at={at}
+      night={night}
+      format={format}
+      kept={kept}
+      onSeek={seek}
+      compact={!!tabs}
+    />
+  );
+  const objects = (
+    <SkyObjects
+      current={current}
+      sky={sky}
+      onFind={findBody}
+      moonset={
+        moonset === null
+          ? undefined
+          : `${at < moonset ? "Sets at" : "Set at"} ${format.clock.format(moonset)}`
+      }
+    />
+  );
+  const cityControls = (
     <>
-      <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} />
-      {mode === "sky" && !observing && !guided && (
-        <section className="tonight-invitation" aria-label="Start observing">
-          <h3>
-            {arrivalCity
-              ? `Nightfall in ${city.name}`
-              : target
-                ? `Look ${skyDirection(target.azimuth)}.`
-                : "Move through the night."}
-          </h3>
-          <p>
-            {arrivalCity
-              ? "Begin at calculated local sunset. Move through the night or follow the Moon to Apollo 17."
-              : target
-                ? `${target.name === "Moon" ? "The Moon" : target.name} is above ${city.name}’s horizon. Start there, then move through the night.`
-                : `The Moon and planets are below ${city.name}’s horizon at this time. Try another moment in the night.`}
-          </p>
-          <p className="tonight-invitation-context">
-            {city.name} · <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
-            {!arrivalCity && " · Calculated sky"}
-            {target && (
-              <span>
-                {arrivalCity && `${target.name} · `}
-                {Math.round(target.altitude)}° above horizon · {Math.round(target.azimuth) % 360}° bearing
-              </span>
-            )}
-          </p>
-          <div className="observatory-actions">
-            {target && (
-              <button
-                type="button"
-                className="tonight-find"
-                onClick={() => {
-                  findBody(target);
-                  requestAnimationFrame(() =>
-                    document.querySelector<HTMLButtonElement>(".tonight-objects button")?.focus(),
-                  );
-                }}
-              >
-                Find {target.name === "Moon" ? "the Moon" : target.name}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setObserving(true);
-                requestAnimationFrame(() =>
-                  document.querySelector<HTMLSelectElement>(".tonight-city select")?.focus(),
-                );
-              }}
-            >
-              Change city or night
-            </button>
-          </div>
-        </section>
-      )}
       <SkyCityPicker
         city={city.name}
         select={(name) => {
@@ -279,14 +257,68 @@ export function TonightSky({
           }}
         />
       )}
-      {mode === "sky" && !guided && (
-        <div className="tonight-moonfall-entry">
-          <button type="button" id="open-moonfall" onClick={approachMoon}>
-            <strong>{current.bodies[0]!.altitude > 0 ? "Approach the Moon" : "Visit Apollo 17"}</strong>
-            <span>Moonfall · Taurus–Littrow</span>
+    </>
+  );
+  const moonfallEntry = mode === "sky" && !guided && (
+    <div className="tonight-moonfall-entry">
+      <button type="button" id="open-moonfall" onClick={approachMoon}>
+        <strong>{current.bodies[0]!.altitude > 0 ? "Approach the Moon" : "Visit Apollo 17"}</strong>
+        <span>Moonfall · Taurus–Littrow</span>
+      </button>
+    </div>
+  );
+  const share = (
+    <ShareMoment
+      current={() =>
+        skyStoryMoment("sky", {
+          ...skyPosition(current, projection.map, orbit),
+          ...(projection.map || orbit ? { reference: readCamera() } : {}),
+        })
+      }
+    />
+  );
+  if (tabs && mode === "sky")
+    return (
+      <>
+        <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} compact />
+        {timeline}
+        <div className="entry-sky-city">{cityControls}</div>
+        {tabs}
+        <details className="scene-entry-details">
+          <summary>Sky details</summary>
+          {objects}
+          {moonfallEntry}
+          <button
+            type="button"
+            onClick={() => {
+              setMeteorDeparture(current);
+              setMode("meteors");
+            }}
+          >
+            Meteor Nights
           </button>
-        </div>
+          {share}
+        </details>
+      </>
+    );
+  return (
+    <>
+      <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} />
+      {mode === "sky" && !observing && !guided && (
+        <SkyInvitation
+          arrivalCity={!!arrivalCity}
+          city={city.name}
+          at={at}
+          time={format.local.format(at)}
+          target={target}
+          onFind={() => {
+            if (target) findBody(target);
+          }}
+          onChange={() => setObserving(true)}
+        />
       )}
+      {cityControls}
+      {moonfallEntry}
       {mode === "meteors" ? (
         <MeteorNights
           city={city}
@@ -298,60 +330,9 @@ export function TonightSky({
       ) : (
         <>
           <StoryDock label="Tonight’s Sky time" deferOnShortPhone={!observing && !guided}>
-            <div className="tonight-time">
-              <div className="tonight-clock">
-                <label htmlFor={rangeId}>City local time</label>
-                <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
-              </div>
-              <TimelineTrack
-                max={(night.end - night.start) / MINUTE}
-                current={(at - night.start) / MINUTE}
-                kept={kept}
-              >
-                <input
-                  id={rangeId}
-                  type="range"
-                  className="scrub-slider tonight-scrub"
-                  min={0}
-                  max={(night.end - night.start) / MINUTE}
-                  value={(at - night.start) / MINUTE}
-                  aria-valuetext={format.local.format(at)}
-                  onChange={(event) => {
-                    const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
-                    const bodies = skyBodies(city, at);
-                    const followed =
-                      current.nightTrail?.following &&
-                      bodies.find((body) => body.name === current.targetName);
-                    onView({
-                      ...current,
-                      at,
-                      bodies,
-                      look: followed && followed.altitude > 0 ? aimAt(followed) : current.look,
-                    });
-                    setObserving(true);
-                  }}
-                />
-              </TimelineTrack>
-              <div className="tonight-clock tonight-edges">
-                <span>
-                  {night.sunset ? "Sunset" : "Evening"} · {format.clock.format(night.start)}
-                </span>
-                <span>
-                  {night.sunrise ? "Sunrise" : "Morning"} · {format.clock.format(night.end)}
-                </span>
-              </div>
-            </div>
+            {timeline}
           </StoryDock>
-          <SkyObjects
-            current={current}
-            sky={sky}
-            onFind={findBody}
-            moonset={
-              moonset === null
-                ? undefined
-                : `${at < moonset ? "Sets at" : "Set at"} ${format.clock.format(moonset)}`
-            }
-          />
+          {objects}
         </>
       )}
       <div className="tonight-onward">
@@ -382,16 +363,7 @@ export function TonightSky({
           </button>
         </div>
       </div>
-      {mode === "sky" && observing && (
-        <ShareMoment
-          current={() =>
-            skyStoryMoment("sky", {
-              ...skyPosition(current, projection.map, orbit),
-              ...(projection.map || orbit ? { reference: readCamera() } : {}),
-            })
-          }
-        />
-      )}
+      {mode === "sky" && observing && share}
       <ExperienceEnding id={mode} />
     </>
   );

@@ -19,6 +19,7 @@ export interface RadarView {
   selectedAt?: number | undefined;
   scan?: RadarScan | undefined;
   departing?: boolean;
+  reveal?: RadarReveal | undefined;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
   canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;
@@ -29,6 +30,10 @@ export interface RadarEntry {
   story?: boolean;
   at?: number;
   pose?: RadarCamera | undefined;
+}
+
+export function captureRadarView(view: RadarView | null, camera?: RadarView["target"]) {
+  return view ? { ...view, target: camera ?? view.target, image: null, reveal: undefined } : null;
 }
 
 export const currentRadarRegion = "current";
@@ -125,10 +130,12 @@ export function radarLink(story: StoryMoment, pose?: RadarCamera): RadarEntry {
   const region =
     story.choice === currentRadarRegion && pose
       ? currentRadarRegion
-      : [...radarRegions, ...globalRadarRegions].find(({ id }) => id === story.choice)?.id;
+      : story.choice === "auto" || story.choice === "national"
+        ? story.choice
+        : [...radarRegions, ...globalRadarRegions].find(({ id }) => id === story.choice)?.id;
   return {
     ...(region ? { region } : {}),
-    ...(region === currentRadarRegion ? { pose } : {}),
+    ...(region === currentRadarRegion || region === "auto" ? { pose } : {}),
     ...(story.at !== undefined ? { at: story.at } : {}),
   };
 }

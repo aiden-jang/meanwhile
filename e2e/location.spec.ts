@@ -16,10 +16,8 @@ async function setup(page: Page, width = 1440) {
 }
 
 async function explore(page: Page) {
-  await page
-    .getByRole("group", { name: "Explore by subject" })
-    .getByRole("button", { name: "Earth", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await expect(page.getByRole("button", { name: "Use device location", exact: true })).toBeHidden();
   await page.getByText("Find a place", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Use device location", exact: true })).toBeVisible();

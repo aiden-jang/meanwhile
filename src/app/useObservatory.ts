@@ -16,7 +16,7 @@ import { skyReference, useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
-import { radarLink, radarMoment, type RadarEntry } from "./radar/radarCamera";
+import { captureRadarView, radarLink, radarMoment, type RadarEntry } from "./radar/radarCamera";
 import { useRadarPresentation } from "./radar/useRadarPresentation";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
@@ -66,7 +66,8 @@ export function useObservatory(shared: Partial<Permalink>) {
     story?.map ?? (shared.depthEvent ? shared.flat : undefined),
     story ? linkedPose(shared) : undefined,
   );
-  const { focus, setFocus, depthFocus, selectDepth } = useDepthCutaway(shared, tourStop, observations);
+  const cutaway = useDepthCutaway(shared, tourStop, observations);
+  const { focus, setFocus, depthFocus } = cutaway;
   const closeDeck = observations.close;
   const radarEntry = useRef<RadarEntry>(story?.id === "radar" ? radarLink(story, linkedPose(shared)) : {});
   const radarOrigin = useRef<Presentation>("observe");
@@ -145,7 +146,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const capture = (camera?: CameraState) => ({
     scene,
     extension: routeExtension.current.capture(),
-    auroraRequest: auroraRequest,
+    auroraRequest,
     skyCity: skyCity.name,
     focus,
     run: run && !run.held ? { ...run, held: true as const } : run,
@@ -160,18 +161,16 @@ export function useObservatory(shared: Partial<Permalink>) {
         : floatView === null
           ? null
           : floatView.checkpoint(camera ?? floatView.target),
-    radar: radarView ? { ...radarView, target: camera ?? radarView.target, image: null } : null,
+    radar: captureRadarView(radarView, camera),
   });
+  const entranceVisits = useRef<Partial<Record<EarthScene, ReturnType<typeof capture>>>>({});
   return {
+    entranceVisits,
     observing,
     landing:
       observing &&
       scene === "live" &&
-      !browser.open &&
-      !tourStop &&
-      !floatView &&
-      !radarView &&
-      !observations.entry,
+      !(browser.open || tourStop || floatView || radarView || observations.entry),
     browsingStories: !observing
       ? browser.pane === "stories"
       : browser.open &&
@@ -236,8 +235,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         presentation,
         observing ? "observe" : browser.pane,
         scene,
-        browser.open,
-        browser.category ?? "all",
+        `${browser.open}:${browser.category ?? "all"}`,
         observations.entry ??
           (tonight
             ? sky.historyKey(!!localSky?.lunarDeparture, observations.map)
@@ -349,7 +347,8 @@ export function useObservatory(shared: Partial<Permalink>) {
     observeScene,
     depth,
     depthFocus: depth ? depthFocus : null,
-    selectDepth,
+    selectDepth: cutaway.selectDepth,
+    sweepDepth: cutaway.sweepDepth,
     night,
     aurora: {
       run: auroraRun,

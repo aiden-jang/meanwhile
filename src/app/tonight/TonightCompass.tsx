@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { StoryProjection } from "../observations/StoryProjection";
 import { bearingLabel, type TonightView } from "../../geo/tonight";
 import { manualSkyLook, useSkyLook } from "./useSkyLook";
+import { traceSkyBody } from "./traceSkyBody";
 import type { TonightPresentation } from "../../globe/scenePresentation";
 
 const bearings = [
@@ -18,6 +19,7 @@ export function TonightCompass({
   orbit,
   onOrbit,
   cityReference,
+  interactive = false,
 }: {
   view: TonightPresentation | null;
   onView: (view: TonightView) => void;
@@ -25,6 +27,7 @@ export function TonightCompass({
   orbit: boolean;
   onOrbit: (orbit: boolean) => void;
   cityReference: boolean;
+  interactive?: boolean;
 }): JSX.Element {
   const [directions, setDirections] = useState(false);
   const menu = useId();
@@ -81,12 +84,25 @@ export function TonightCompass({
           <path data-sky-arc="" pathLength="1" />
         </svg>
       )}
-      <div className="tonight-labels" data-sky-labels="" aria-hidden="true">
-        {view?.bodies.map(({ name }) => (
-          <span key={name} data-body={name} data-target={target?.name === name || undefined}>
-            {name}
-          </span>
-        ))}
+      <div className="tonight-labels" data-sky-labels="" aria-hidden={!(interactive && local)}>
+        {view?.bodies.map((body) =>
+          interactive && local ? (
+            <button
+              key={body.name}
+              type="button"
+              data-body={body.name}
+              data-target={target?.name === body.name || undefined}
+              aria-label={`Trace ${body.name}`}
+              onClick={() => body.altitude > 0 && onView(traceSkyBody(view, body))}
+            >
+              {body.name}
+            </button>
+          ) : (
+            <span key={body.name} data-body={body.name} data-target={target?.name === body.name || undefined}>
+              {body.name}
+            </span>
+          ),
+        )}
       </div>
       {view && fromEarth && (
         <span

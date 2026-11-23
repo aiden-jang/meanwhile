@@ -389,7 +389,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     beginArrival: lights.begin,
     setPresentation: (mode) => {
       const previous = presentation.shadows();
-      presentation.set(mode, modern);
+      presentation.set(mode, modern, cutaway.cameraActive());
       if (previous !== presentation.shadows() && moment !== null) aimSun(moment);
     },
     setCutaway: (focus) => {

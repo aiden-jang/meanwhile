@@ -278,76 +278,72 @@ test("From Radar to Recovery returns to the held scan, Gulf fix and night-light 
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
-test("the three landing entrances open live layers, a measured cutaway and the saved city's sky", async ({
-  page,
-}) => {
+test("scene tabs scrub live radar and depth and restore each position on one globe", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
+  const now = new Date("2026-11-24T09:30:00Z").getTime();
+  await page.clock.setFixedTime(now);
   await page.addInitScript(() => {
     localStorage.setItem("eif.sky-city", "Tokyo");
-    localStorage.setItem(
-      "eif.mapLayers",
-      JSON.stringify({
-        earthquakes: false,
-        radar: false,
-        cyclones: false,
-        fires: false,
-        floods: false,
-        volcanoes: false,
-        aurora: false,
-        wind: false,
-        lightning: false,
-      }),
-    );
+    localStorage.setItem("eif.mapLayers", JSON.stringify({ radar: false, earthquakes: false }));
   });
+  const scans = [now - 1_200_000, now - 600_000, now];
+  await page.route("**/radar_base_reflectivity_time/ImageServer/query?**", (route) =>
+    route.fulfill({
+      json: {
+        features: scans.map((at, index) => ({ attributes: { objectid: index + 1, idp_validtime: at } })),
+      },
+    }),
+  );
+  await page.route("**/radar_base_reflectivity_time/ImageServer/exportImage?**", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    }),
+  );
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  const entries = page.getByRole("group", { name: "Explore by subject" });
-  const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
-  await entries.getByRole("button", { name: "Earth", exact: true }).click();
-  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toHaveAttribute(
-    "aria-selected",
-    "true",
-  );
-  const layers = page.getByRole("region", { name: "Map layers", exact: true });
-  await expect(layers.getByText("All layers are off.", { exact: true })).toBeVisible();
-  await layers.getByRole("button", { name: "Show earthquakes", exact: true }).click();
-  await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await page.goBack();
-  await expect(entries).toBeVisible();
-
-  await entries.getByRole("button", { name: "Below the Surface", exact: true }).click();
-  const depth = page.getByRole("region", { name: "Earthquake cutaway", exact: true });
-  const choices = depth.getByRole("group", { name: "Recorded earthquakes", exact: true });
-  await expect(depth.getByText("600 km deep", { exact: true })).toBeVisible();
-  await choices.getByRole("button", { name: /670\.8 km/ }).click();
+  const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
+  const tab = (name: string) =>
+    page.getByRole("group", { name: "Explore by subject" }).getByRole("button", { name, exact: true });
+  await tab("Earth").click();
+  const radar = page.getByRole("region", { name: "Storm Radar" });
+  const scan = radar.getByRole("slider", { name: "Radar scan time" });
+  await expect(scan).toBeEnabled();
+  await expect(scan).toBeInViewport({ ratio: 1 });
+  await scan.press("Home");
+  await expect(scan).toHaveValue("0");
+  await expect(radar.getByRole("button", { name: "Play" })).toHaveCount(0);
+  await radar.getByText("Data & coverage", { exact: true }).click();
+  await expect(radar.getByRole("link", { name: "NOAA MRMS" })).toBeVisible();
+  await tab("Below the Surface").click();
+  const depth = page.getByRole("region", { name: "Earthquake cutaway" });
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  const handle = depth.getByRole("slider", { name: "Drag to change depth" });
+  await expect(handle).toBeInViewport({ ratio: 1 });
+  await handle.press("End");
+  await expect(handle).toHaveAttribute("aria-valuetext", "900 km");
   await expect(depth.getByText("670.8 km deep", { exact: true })).toBeVisible();
+  await depth.getByText("Quake readings & sources", { exact: true }).click();
   await expect(depth.getByRole("link", { name: "USGS event record" })).toHaveAttribute("href", /us2000h9e2$/);
-  const map = depth.getByRole("button", { name: "Map", exact: true });
-  await map.click();
-  await expect(map).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
-  await expect(page).toHaveURL(/depthEvent=us2000h9e2/);
-  await depth.getByRole("button", { name: "Globe", exact: true }).click();
-  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Globe");
-  await expect(choices.getByRole("button", { name: /670\.8 km/ })).toHaveAttribute("aria-pressed", "true");
-  await home.click();
-
-  const afterDark = entries.getByRole("button", { name: "After Dark", exact: true });
-  await afterDark.focus();
-  await afterDark.press("Enter");
+  await tab("After Dark").click();
   await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "City", exact: true })).toHaveValue("Tokyo");
-  const slider = page.getByRole("slider", { name: "City local time", exact: true });
-  await expect(slider).toBeInViewport();
-  await slider.press("End");
-  await expect(slider).toHaveValue((await slider.getAttribute("max"))!);
-  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  const sky = page.getByRole("slider", { name: "City local time", exact: true });
+  await expect(sky).toBeInViewport({ ratio: 1 });
+  await sky.press("End");
+  const time = await sky.getAttribute("aria-valuetext");
+  await tab("Earth").click();
+  await expect(scan).toHaveValue("0");
   await page.goBack();
-  await expect(entries.getByRole("button", { name: "After Dark", exact: true })).toBeFocused();
+  await expect(sky).toHaveAttribute("aria-valuetext", time!);
+  await tab("Below the Surface").click();
+  await expect(handle).toHaveAttribute("aria-valuetext", "900 km");
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!).radar)).toBe(false);
 });
 
 test("globe-first entry and nearby Fiji reports keep the same world and reading", async ({ page }) => {
@@ -394,6 +390,8 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
     await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
   await home.click();
   await entrances.getByRole("button", { name: "Earth", exact: true }).click();
+  await page.getByText("Data & coverage", { exact: true }).click();
+  await button("Explore live layers").click();
   await expect(rail).toBeVisible();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toHaveAttribute(
     "aria-selected",
@@ -403,7 +401,11 @@ test("globe-first entry and nearby Fiji reports keep the same world and reading"
 
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
-  await depth.getByRole("button", { name: /670\.8 km/ }).click();
+  await depth.getByText("Quake readings & sources", { exact: true }).click();
+  await depth
+    .getByRole("group", { name: "Recorded earthquakes" })
+    .getByRole("button", { name: /670\.8 km/ })
+    .click();
   await depth.getByRole("button", { name: "Map", exact: true }).click();
   const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
   await expect.poll(pose).toBe("-176,-18.3,1.95");
