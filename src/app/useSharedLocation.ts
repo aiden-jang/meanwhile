@@ -4,6 +4,7 @@ import type { Filters } from "../data/types";
 import type { CameraState } from "../globe/controls";
 import { encode, type Permalink } from "./permalink";
 import { replaceViewLocation } from "./viewLocation";
+import type { VisitPosition } from "./visitor/library";
 
 interface Props {
   feed: Feed;
@@ -24,6 +25,7 @@ interface Props {
     navigation: { key: string };
     observations: { map: boolean };
     depthFocus: { archiveReading?: { id: NonNullable<Permalink["depthEvent"]> } } | null;
+    floatDive: { entry: VisitPosition["float"] };
   };
   layers: Permalink["layers"];
   layerTimes: Permalink["layerTimes"];
@@ -51,6 +53,7 @@ export function useSharedLocation({
     navigation: { key: navigationKey },
     observations: { map: storyMap },
     depthFocus,
+    floatDive: { entry: resumedFloat },
   },
   layers,
   layerTimes,
@@ -117,6 +120,7 @@ export function useSharedLocation({
     catalogue,
     navigationKey,
     storyMap,
+    resumedFloat,
     layers,
     layerTimes,
     radarPlace,

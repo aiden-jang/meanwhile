@@ -52,7 +52,7 @@ export function useFloatView(shared: StoryMoment | undefined, before: () => void
       ) {
         before();
         pending.current = !saved && state ? { state, pose } : undefined;
-        entry.current = saved ? undefined : resume;
+        entry.current = !saved && resume ? { ...resume } : undefined;
         setView(saved ? createFloatPlayback(saved.profile, false, saved.source, saved) : "opening");
       },
       close() {

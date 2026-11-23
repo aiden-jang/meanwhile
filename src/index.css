@@ -951,8 +951,12 @@
   display: none;
 }
 
+.mobile-sheet-grip {
+  display: none;
+}
 @media (width < 768px) {
   .mobile-sheet-grip {
+    display: block;
     inset-inline: calc(50% - 57px) auto;
     width: 114px;
     height: 44px;

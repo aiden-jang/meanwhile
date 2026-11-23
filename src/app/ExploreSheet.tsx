@@ -72,11 +72,7 @@ export function ExploreSheet({
       valueText={`${Math.round(current)} pixels of world. Tap or press Enter for ${action.toLowerCase()}.`}
       caption={action}
       grip
-      className={
-        visible
-          ? `mobile-sheet-grip absolute z-[2] md:hidden${moreWorld ? "" : " sheet-most-world"}`
-          : "hidden"
-      }
+      className={visible ? "mobile-sheet-grip absolute" : "hidden"}
       style={{ top: "calc(var(--sheet-position) - 22px)" }}
     />
   );

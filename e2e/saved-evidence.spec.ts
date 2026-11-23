@@ -135,6 +135,7 @@ test("two Float readings retain separate notes, focus and scroll after a phone r
     const scroll = await collection.evaluate((el) => el.scrollTop);
     await entry.click();
     await expect(depth).toHaveValue(String(index));
+    expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("chapter")).toBe(String(index));
     if (!(await note.isVisible())) await page.locator(".float-observation-note summary").click();
     await expect(note).toHaveValue(message);
     await page.getByRole("button", { name: "Back to Saved", exact: true }).click();

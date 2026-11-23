@@ -130,6 +130,7 @@ test("keyboard shortcuts stay in View options without moving the world footer", 
   ]) {
     await page.setViewportSize(view);
     await page.goto(`/?projection=${view.projection}#v=explore&p=${view.projection}&at=15,25,1.5`);
+    await expect(page.getByRole("separator", { name: "Sheet height", exact: true })).toBeHidden();
     const options = page.getByRole("button", { name: "View options", exact: true });
     const panel = page.getByRole("region", { name: "View options", exact: true });
     const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
