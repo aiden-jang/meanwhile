@@ -220,10 +220,6 @@
     margin-block: 4px;
   }
 
-  .float-profile-inspect {
-    grid-row: 3;
-  }
-
   .float-profile-inspect > span {
     display: block;
   }
@@ -245,6 +241,10 @@
   .float-profile-inspect,
   .float-profile > p {
     grid-column: 1 / -1;
+  }
+
+  .float-profile-inspect {
+    grid-row: 3;
   }
 
   .float-profile-fields {

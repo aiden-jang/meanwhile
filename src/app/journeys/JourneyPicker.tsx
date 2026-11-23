@@ -24,6 +24,7 @@ export function JourneyPicker() {
   latest.current = navigation;
   const featured = journeys.find(({ id }) => id === (selected ?? progress?.id ?? featuredJourney))!;
   const resume = navigation?.progressFor(featured.id);
+  const showDetails = !!selected || !!resume;
   const opening = featured.steps[resume?.step ?? 0]!;
   const unavailable = navigation?.unavailable(opening.id);
   const journeyActive = !!navigation?.browsingStories && !navigation.active;
@@ -159,7 +160,7 @@ export function JourneyPicker() {
                 id={`select-journey-${entry.id}`}
                 data-journey-control=""
                 type="button"
-                aria-pressed={entry.id === featured.id}
+                aria-pressed={showDetails && entry.id === featured.id}
                 onClick={() => {
                   select(entry.id);
                   setPreview("pinned");
@@ -168,11 +169,11 @@ export function JourneyPicker() {
               >
                 <strong>{entry.title}</strong>
                 <small>{entry.summary}</small>
-                {entry.id !== featured.id && (
+                {(!showDetails || entry.id !== featured.id) && (
                   <small>{entry.steps.map(({ id }) => titles.get(id)).join(" · ")}</small>
                 )}
               </button>
-              {entry.id === featured.id && feature}
+              {showDetails && entry.id === featured.id && feature}
             </Fragment>
           ))}
       </div>
