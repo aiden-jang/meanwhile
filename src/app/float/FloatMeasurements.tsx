@@ -101,7 +101,14 @@ export function FloatMeasurements({
       <button type="button" aria-pressed={stage === "rise"} onClick={view.rise}>
         Rise
       </button>
-      <button type="button" aria-pressed={stage === "notice"} onClick={view.notice}>
+      <button
+        type="button"
+        aria-pressed={stage === "notice"}
+        onClick={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
+          view.notice();
+        }}
+      >
         Notice
       </button>
     </div>
