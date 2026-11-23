@@ -85,7 +85,8 @@ export function FloatFinding({
           <div className="float-finding-actions">
             <button
               type="button"
-              onClick={() => {
+              onClick={(event) => {
+                event.currentTarget.focus({ preventScroll: true });
                 view.seek(finding.index);
                 view.inspect(true);
               }}
