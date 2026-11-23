@@ -605,4 +605,13 @@
   .tonight-compass:not([data-open-compass]) :is(.tonight-drag-hint, .tonight-target-bearing) {
     display: none;
   }
+
+  .observatory-intro:has(.sky-earth-entry) .tonight-heading {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .observatory-intro:has(.sky-earth-entry) .tonight-heading h2 {
+    font-size: 34px;
+  }
 }

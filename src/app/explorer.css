@@ -797,9 +797,8 @@
   font-size: var(--text-control);
 }
 @media (max-width: 767px) {
-  .explorer-fold[data-label-layers] {
-    top: auto;
-    bottom: calc(var(--credit-space, 60px) + 56px);
+  .frame[data-presentation="explore"] .zones:has(#chrome-rail[hidden]) {
+    grid-template-rows: minmax(0, 1fr) var(--credit-space, 60px);
   }
 }
 .explorer-fold[aria-expanded="false"] svg {

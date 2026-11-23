@@ -282,6 +282,11 @@ test("globe-first entry and geographic detours keep the same world and reading",
   const rail = page.locator("#chrome-rail");
   await button("Explore the globe").click();
   await expect(rail).toBeHidden();
+  const viewport = page.viewportSize()!;
+  if (viewport.width < 768)
+    await expect
+      .poll(async () => (await globe.boundingBox())?.height ?? 0)
+      .toBeGreaterThan(viewport.height * 0.7);
   await expect(button("Layers")).toBeFocused();
   await button("Layers").click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
@@ -326,12 +331,14 @@ test("globe-first entry and geographic detours keep the same world and reading",
   const direction = await facing.innerText();
   const minute = await scrubber.getAttribute("aria-valuetext");
   const seeCity = button("See Tokyo on Earth");
+  await expect(seeCity).toBeInViewport({ ratio: 1 });
   await seeCity.click();
   await expect(page.getByRole("heading", { name: "Tokyo on Earth" })).toBeVisible();
   await expect(globe).toHaveAttribute("aria-label", "Map");
   await expect(page.locator(".sky-held-reading time")).toHaveText(minute!);
   await button("Back to local sky").click();
   await expect(seeCity).toBeFocused();
+  await expect(seeCity).toBeInViewport({ ratio: 1 });
   await expect(scrubber).toHaveAttribute("aria-valuetext", minute!);
   await expect(facing).toHaveText(direction, { useInnerText: true });
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
