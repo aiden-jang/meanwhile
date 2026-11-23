@@ -21,7 +21,7 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  onReady: (flyTo: FlyTo, read: () => CameraState) => void;
+  onReady: (flyTo: FlyTo | null, read?: () => CameraState) => void;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobepropsts. */
   onFrame?: (source: HTMLCanvasElement) => void;
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;

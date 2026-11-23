@@ -278,6 +278,31 @@ test("From Radar to Recovery returns to the held scan, Gulf fix and night-light 
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
+test("Earth waits for the globe before offering live radar", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  let releaseGlobe!: () => void;
+  const loading = new Promise<void>((resolve) => {
+    releaseGlobe = resolve;
+  });
+  await page.route(/\/(?:Globe-[\w-]+\.js|src\/globe\/Globe\.tsx)(?:\?|$)/, async (route) => {
+    await loading;
+    await route.continue();
+  });
+  const earth = page
+    .getByRole("group", { name: "Explore by subject" })
+    .getByRole("button", { name: "Earth", exact: true });
+  try {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(earth).toBeDisabled();
+  } finally {
+    releaseGlobe();
+  }
+  await expect(earth).toBeEnabled();
+  await earth.click();
+  await expect(page.getByRole("heading", { name: "Storms in motion." })).toBeVisible();
+});
+
 test("scene tabs scrub live radar and depth and restore each position on one globe", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -334,6 +359,7 @@ test("scene tabs scrub live radar and depth and restore each position on one glo
   await expect(page.getByRole("combobox", { name: "City", exact: true })).toHaveValue("Tokyo");
   const sky = page.getByRole("slider", { name: "City local time", exact: true });
   await expect(sky).toBeInViewport({ ratio: 1 });
+  await expect(tab("After Dark")).toBeInViewport({ ratio: 1 });
   await sky.press("End");
   const time = await sky.getAttribute("aria-valuetext");
   await tab("Earth").click();

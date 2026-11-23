@@ -29,6 +29,7 @@ export interface ObservatoryProps {
     | "observing"
     | "observeScene"
     | "landing"
+    | "globeStarting"
     | "entranceVisits"
     | "depthFocus"
     | "selectDepth"

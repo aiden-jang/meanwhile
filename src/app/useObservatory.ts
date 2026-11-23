@@ -38,7 +38,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   }, []);
   const [scene, setScene] = useState(() => initialScene(shared));
   const [tourStop, setTourStop] = useState<Stop | null>(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState<boolean | null>(null);
   const [run, setRun] = useState<AuroraRun | null>(null);
   const { request: auroraRequest, set: requestAurora } = useLinkedAurora(story);
   const { visit: sunWatch, setVisit: setSunWatch, ...sun } = useSunVisit(before, setRun, story);
@@ -284,9 +284,10 @@ export function useObservatory(shared: Partial<Permalink>) {
       },
     },
     scene,
-    ready,
+    ready: ready === true,
+    globeStarting: ready === null,
     canCapture:
-      ready &&
+      ready === true &&
       !sunActive &&
       tonightView !== "opening" &&
       floatView !== "opening" &&

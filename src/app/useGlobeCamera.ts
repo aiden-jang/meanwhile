@@ -29,7 +29,11 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
     return stop;
   }, [shared]);
   const onReady = useCallback(
-    (fly: FlyTo, current: () => CameraState) => {
+    (fly: FlyTo | null, current?: () => CameraState) => {
+      if (!fly || !current) {
+        setReady(false);
+        return;
+      }
       flight.current = fly;
       flyTo.current = (...args) => {
         untouched.current = false;

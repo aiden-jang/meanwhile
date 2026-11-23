@@ -151,6 +151,7 @@ export function Globe({
       globe = createGlobe(el);
     } catch {
       setUnavailable("startup");
+      onReady(null);
       return undefined;
     }
     setUnavailable(null);
@@ -167,7 +168,6 @@ export function Globe({
       createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival),
       globe.controls.state,
     );
-
     let archiveTo = feed.snapshot().archive?.to;
     const clockAt = () => archiveTo ?? Date.now();
     let contextLost = false;

@@ -44,6 +44,7 @@ export function useSceneEntrances({
 
   return {
     active,
+    starting: views.globeStarting,
     layers() {
       remember();
       views.navigation.requestExploreFocus("explorer-layers-tab");
@@ -58,7 +59,7 @@ export function useSceneEntrances({
       );
     },
     open(subject: EarthScene) {
-      if (active === subject) return;
+      if (active === subject || views.globeStarting) return;
       reportAnalytics({ name: "scene_selected", scene: subject });
       remember();
       const saved = memory.current[subject];
@@ -93,7 +94,8 @@ export function ObservatoryEntrances({
   ready,
   active,
   open,
-}: { ready: boolean } & Pick<ReturnType<typeof useSceneEntrances>, "active" | "open">) {
+  starting,
+}: { ready: boolean } & Pick<ReturnType<typeof useSceneEntrances>, "active" | "open" | "starting">) {
   return (
     <div
       id="observatory-scenes"
@@ -102,6 +104,7 @@ export function ObservatoryEntrances({
       data-active-scene={active}
       role="group"
       aria-label="Explore by subject"
+      aria-busy={starting || undefined}
     >
       {OBSERVATORY_SCENES.map(({ id, name }) => (
         <button
@@ -111,7 +114,7 @@ export function ObservatoryEntrances({
           onClick={() => open(id)}
           aria-label={name}
           aria-pressed={active === id}
-          disabled={!ready && id !== "live"}
+          disabled={starting || (!ready && id !== "live")}
         >
           <SceneDiagram scene={id} />
           <span className="scene-label">{name}</span>
