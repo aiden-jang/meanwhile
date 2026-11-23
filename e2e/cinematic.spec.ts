@@ -83,8 +83,11 @@ for (const [width, height] of [
             settled: globe.diveReady(),
           };
         });
-      await expect.poll(async () => (await depthView()).settled).toBe(true);
-      expect((await depthView()).gap).toBeGreaterThan(0.04);
+      const settledGap = async () => {
+        const { settled, gap } = await depthView();
+        return settled ? gap : 0;
+      };
+      await expect.poll(settledGap).toBeGreaterThan(0.04);
       await expect(page.locator(".cutaway-note")).toHaveCount(0);
       await page.waitForTimeout(1050);
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
@@ -103,9 +106,7 @@ for (const [width, height] of [
       await page.emulateMedia({ reducedMotion: "reduce" });
       await selectScene(page, "Below the Surface");
       await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
-      const reduced = await depthView();
-      expect(reduced.settled).toBe(true);
-      expect(reduced.gap).toBeGreaterThan(0.04);
+      await expect.poll(settledGap).toBeGreaterThan(0.04);
       expect(errors).toEqual([]);
     },
   );

@@ -393,7 +393,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (previous !== presentation.shadows() && moment !== null) aimSun(moment);
     },
     setCutaway: (focus) => {
-      controls.setDive(focus?.dive === true && !focus.cameraOnly);
+      controls.setDive(focus?.dive === true);
       cutaway.set(focus);
       if (focus && !focus.cameraOnly && !cutaway.isOpen()) lights.begin();
     },

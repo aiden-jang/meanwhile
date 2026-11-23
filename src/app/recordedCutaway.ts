@@ -17,7 +17,9 @@ export function useDepthCutaway(
   );
   const depthFocus = useMemo<CutawayFocus | null>(() => {
     if (tour?.purpose === "depth") return tour;
-    return focus?.archiveReading && map ? { ...focus, cameraOnly: true as const } : focus;
+    if (focus?.archiveReading && map)
+      return { lon: focus.lon, lat: focus.lat, archiveReading: focus.archiveReading, cameraOnly: true };
+    return focus;
   }, [focus, map, tour]);
   return {
     focus,
