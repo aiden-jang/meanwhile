@@ -25,6 +25,7 @@ export function useRadarScans(
   global: boolean,
   showHistory: boolean,
   initialAt: number | undefined,
+  area?: { lon: number; lat: number },
 ) {
   const [data, setData] = useState<RadarData>(() => ({
     scans: [],
@@ -34,7 +35,7 @@ export function useRadarScans(
   }));
   const refresh = useRef(() => {});
   const loadOnDemand = useRef(() => {});
-  const demand = useRef({ showHistory, initialAt });
+  const demand = useRef({ showHistory, initialAt, area });
 
   useEffect(() => {
     const images = new Map<number, ImageBitmap | null>();
@@ -83,11 +84,12 @@ export function useRadarScans(
         );
         function nextScan() {
           if (!global || queue[0]?.id === newest.id) return queue.shift();
-          const { showHistory, initialAt } = demand.current;
+          const { showHistory, initialAt, area } = demand.current;
+          const loadHistory = showHistory && (!area || coverage?.covers(area));
           const selectedAt = held.current?.at ?? initialAt;
           const selected = queue.findIndex(({ at }) => at === selectedAt);
           const recent = queue.findIndex(({ id }) => id === fresh.at(-2)?.id);
-          const index = selected >= 0 ? selected : recent >= 0 ? recent : showHistory ? 0 : -1;
+          const index = selected >= 0 ? selected : recent >= 0 ? recent : loadHistory ? 0 : -1;
           return index < 0 ? undefined : queue.splice(index, 1)[0];
         }
         if (global && queue.length && !coverage) coverage = await globalRadarCoverage(signal);
@@ -218,13 +220,15 @@ export function useRadarScans(
   }, [held, global]);
   useEffect(() => {
     const previous = demand.current;
-    demand.current = { showHistory, initialAt };
+    demand.current = { showHistory, initialAt, area };
     if (
       global &&
-      (showHistory ? !previous.showHistory : initialAt !== undefined && initialAt !== previous.initialAt)
+      (showHistory
+        ? !previous.showHistory || previous.area !== area
+        : initialAt !== undefined && initialAt !== previous.initialAt)
     )
       loadOnDemand.current();
-  }, [global, showHistory, initialAt]);
+  }, [global, showHistory, initialAt, area]);
 
   return { ...data, retry: () => refresh.current() };
 }

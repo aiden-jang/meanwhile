@@ -37,6 +37,7 @@ export interface MapLayerPresentation {
   radar: RadarLayerView | null;
   emphasis?: LayerEmphasis | null;
   observation: ObservationView | null;
+  storm?: ObservationView | undefined;
 }
 
 export function composeMapLayers(layers: MapLayerPresentation | null) {

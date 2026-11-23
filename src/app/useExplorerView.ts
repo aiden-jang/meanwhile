@@ -35,7 +35,11 @@ type ExploreSnapshot = {
 
 export function useExplorerView(shared: Partial<Permalink>) {
   const [preferredMap, setPreferredMap] = useStoredFlag("flat", false, shared.section ? true : shared.flat);
-  const [railOpen, saveRailOpen] = useStoredFlag("railOpen", true, shared.radarPlace ? true : undefined);
+  const [railOpen, saveRailOpen] = useStoredFlag(
+    "railOpen",
+    true,
+    shared.radarPlace || shared.mark?.startsWith("cyclone:") ? true : undefined,
+  );
   const [visit, setVisit] = useState<Visit>({});
   const lastFree = useRef<ExploreSnapshot>();
   const chromeFloats = useFloatingChrome();
@@ -152,6 +156,19 @@ export function explorerEntrances(
       restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "layer-inspector-title" }),
     );
   }
+  function storm(id: string) {
+    const prepare = () => {
+      readings.clear();
+      readings.selectHazard(id);
+      explorer.open(true, "storm");
+    };
+    if (explorer.destination !== "storm") observatory.checkpoint.current();
+    if (observatory.observing) {
+      observatory.navigation.requestExploreFocus("live-storm-title");
+      observatory.browser.show("layers");
+      present(true, prepare);
+    } else prepare();
+  }
   function find(target: ExploreTarget) {
     const place = target.kind === "place";
     const focus = place ? "place-title" : "layer-inspector-title";
@@ -235,7 +252,7 @@ export function explorerEntrances(
       restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "inspect-earthquakes" }),
     );
   }
-  return { open, resume, find, radar, nearby, back, allLayers, pickDate, cityWeather, backToSky };
+  return { open, resume, find, radar, storm, nearby, back, allLayers, pickDate, cityWeather, backToSky };
 }
 
 export function useExplorerHistory(
@@ -259,7 +276,8 @@ export function useExplorerHistory(
           !observatory.observing &&
           observatory.browser.pane === "layers" &&
           !explorer.nearby &&
-          !explorer.city
+          !explorer.city &&
+          explorer.destination !== "storm"
         )
           explorer.lastFree.current = {
             ...state,

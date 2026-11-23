@@ -50,6 +50,7 @@ index to the matching implementation note.
 - [src/app/omori.ts](#srcappomorits)
 - [src/app/permalink.test.ts](#srcapppermalinktestts)
 - [src/app/permalink.ts](#srcapppermalinkts)
+- [src/app/useExploreKeys.ts](#srcappuseexplorekeysts)
 - [src/app/useSharedLocation.ts](#srcappusesharedlocationts)
 - [src/app/viewLocation.ts](#srcappviewlocationts)
 - [src/app/useGlobeResources.ts](#srcappusegloberesourcests)
@@ -3513,6 +3514,23 @@ one's end. Stitch by walking the ends, never by trusting the `Class` numbering, 
 
 Drop a segment spanning more than `WRAP_DEG`: a Pacific storm really does cross the antimeridian, and
 joining 179 to -179 draws a line across the whole world.
+
+### src/app/useExploreKeys.ts
+
+Explore shortcuts use the current time window when a key is pressed. Escape closes the innermost
+reading, and playback keys only act when the globe or page has focus.
+
+### src/sources/cycloneAdvisories.ts
+
+Selecting a live cyclone opens its reading in Explore on the existing canvas. Other layers pause
+visually while the track and radar share that canvas. Back restores the previous camera, projection,
+panel and layer choices. Only the storm view uses its own radar playhead.
+
+The on-demand GDACS episode timeline supplies timestamped observed fixes. It excludes forecast
+positions and displays wind and pressure only when published. If the advisory timeline is unavailable,
+the existing GDACS geometry still supplies track coordinates. RainViewer provides a separate clock
+and a coverage mask. A location outside that mask, a covered scan without any echoes and a request
+failure represent distinct states.
 
 ### src/sources/emsc.live.test.ts
 

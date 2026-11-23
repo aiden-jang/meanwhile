@@ -187,6 +187,48 @@ describe("stitching the track", () => {
     ]);
   });
 
+  it("uses the connected observations when forecast lines are interleaved", () => {
+    const { features } = lines([
+      [
+        [10, 1],
+        [11, 2],
+      ],
+      [
+        [12, 3],
+        [13, 4],
+      ],
+      [
+        [90, 11],
+        [91, 12],
+      ],
+      [
+        [11, 2],
+        [12, 3],
+      ],
+      [
+        [11, 2],
+        [16, 3],
+      ],
+    ]);
+    const forecast = features.at(-1)!;
+    expect(
+      parseTrack({
+        features: [
+          ...features.slice(0, -1),
+          {
+            ...forecast,
+            properties: { ...forecast.properties, forecast: true },
+          },
+        ],
+      }),
+    ).toEqual([
+      { lon: 10, lat: 1 },
+      { lon: 11, lat: 2 },
+      { lon: 12, lat: 3 },
+      { lon: 13, lat: 4 },
+    ]);
+  });
+
   it("has nothing to draw when there are no lines", () => {
     expect(parseTrack({ features: [] })).toEqual([]);
     expect(parseTrack(null)).toEqual([]);

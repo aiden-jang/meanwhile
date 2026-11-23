@@ -116,13 +116,18 @@ export function attachMarkerInspection(
     }, 140);
   };
   const down = (e: PointerEvent) => {
-    if (isLocalView(read().globePresentation)) return;
+    const mode = read().globePresentation;
+    if (
+      isLocalView(mode) ||
+      (mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" && mode.storm)
+    )
+      return;
     interrupt();
     tap.down(e);
   };
   const up = (e: PointerEvent) => {
     const morph = scene.controls.morph();
-    if (!tap.up(e) || (morph > 0 && morph < 1)) return;
+    if (!tap.up(e) || e.defaultPrevented || (morph > 0 && morph < 1)) return;
     const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
     const quakeHits: MarkerHit[] = [];
     const markHits: MarkerHit[] = [];

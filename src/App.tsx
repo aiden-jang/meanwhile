@@ -70,9 +70,10 @@ import { closestTo, localZone, viewerPlace } from "./app/viewer";
 import { comparableCount, rankDay, type Span as BaselineSpan } from "./data/baseline";
 import { boundarySegments, nearestBoundaryKm } from "./geo/boundaryDistance";
 import { boundarySummary } from "./app/boundarySummary";
+import { useExploreKeys } from "./app/useExploreKeys";
 import { ExploreSheet } from "./app/ExploreSheet";
-import { ViewNotices } from "./app/ViewNotices";
-import { sharedEarthquakeNotice, sharedHazardNotice } from "./app/linkNotices";
+import { ExploreNotices } from "./app/ViewNotices";
+import { useLiveStorm } from "./app/storm/useLiveStorm";
 import { earthquakeCoverage, earthquakeEmpty, earthquakeReach } from "./app/earthquakeStatus";
 import { feedStatus } from "./app/feedStatus";
 import { useHazardLayers } from "./app/useHazardLayers";
@@ -209,6 +210,13 @@ export function App(): JSX.Element {
     revealAt,
     minuteClock,
   ]);
+  const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
+  const followEnabled = !archived && !archiveBusy && !explorerView.nearby && !explorerView.city;
+  const storm = useLiveStorm(
+    followEnabled && !observatory.observing && observatory.browser.pane === "layers"
+      ? cyclones.find(({ id }) => markId === `cyclone:${id}`)
+      : undefined,
+  );
   const mapLayers = useMapLayers(
     filters,
     observatory.backgroundLayers,
@@ -217,6 +225,7 @@ export function App(): JSX.Element {
     shared,
     observatory.browsingStories && !observatory.localReadings ? "catalogue" : observatory.localReadings,
     explorerView.nearby ? "nearby" : explorerView.city?.layers,
+    storm?.overlay,
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.rendered), [inWindow, mapLayers.rendered]);
   const hazardTally = useMemo(() => {
@@ -295,7 +304,6 @@ export function App(): JSX.Element {
   // Read lazily, so the first paint has the right ramp instead of flashing the default one.
   const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
-  const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
   const resetView = useCallback(() => {
     setQuery("");
     setSectionLine(null);
@@ -557,7 +565,14 @@ export function App(): JSX.Element {
     () => hazardGroups(onGlobe, minuteClock, archived),
     [onGlobe, archived, minuteClock],
   );
-  const markSubject = !observatory.observing ? findSubject(markId, onGlobe) : null;
+  const markSubject = !storm && !observatory.observing ? findSubject(markId, onGlobe) : null;
+  const closeStorm = useCallback(() => {
+    if (explorerView.destination === "storm") history.back();
+    else {
+      setMarkId(null);
+      document.getElementById("globe-view")?.focus({ preventScroll: true });
+    }
+  }, [explorerView.destination]);
   const nearbyOrigin = explorerView.nearby?.record;
   const { selectMark, selectQuake } = useWorldSelection({
     onGlobe,
@@ -566,6 +581,7 @@ export function App(): JSX.Element {
     camera,
     flyTo,
     nearbyOrigin,
+    followStorm: followEnabled ? entrances.storm : undefined,
     setMarkId,
     setSelected,
     feed,
@@ -592,58 +608,22 @@ export function App(): JSX.Element {
     snapshot.archive,
   );
 
-  /*
-   * Space and the step keys only while nothing is focused, or space stops activating a focused button.
-   * Escape is not gated that way: it is an escape.
-   */
-  useEffect(() => {
-    // Read at the press. A span captured when the listener was armed is stale by however long the tab
-    // has been open.
-    const spanNow = (): { from: number; to: number } => {
-      const at = Date.now();
-      return feed.snapshot().archive ?? { from: at - filters.windowMs, to: at };
-    };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape" && !document.querySelector(":popover-open")) {
-        // One rung at a time, innermost first: closing the pin and the section together undoes two decisions
-        // with one press.
-        if (e.defaultPrevented || e.cancelBubble) return;
-        if (query) setQuery("");
-        else if (sectionLine) setSectionLine(null);
-        else if (scrub.at !== null) setScrub(LIVE);
-        /* Both panels on one rung, cleared without being read. See ARCHITECTURE.md#srcapptsx. */
-        else {
-          setMarkId(null);
-          setSelected(null);
-        }
-        return;
-      }
-      const active = document.activeElement;
-      if (active && active !== document.body && active.id !== "globe-view") return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === " ") {
-        const live = spanNow();
-        setScrub((sc) => togglePlay(clampScrub(sc, live), live));
-      } else if (e.key === "," || e.key === ".") {
-        // No shift multiplier: shift-comma is `<` here and something else on the next layout, so the hint
-        // strip could not print it.
-        const live = spanNow();
-        setScrub((sc) => nudge(clampScrub(sc, live), live, e.key === "." ? 1 : -1));
-      } else if (e.key === "f" || e.key === "F") {
-        /* Requested on the frame, not on `documentElement`, so the letterboxing takes the page's background. */
-        const el = document.querySelector(".frame");
-        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-        else if (el) void (el as HTMLElement).requestFullscreen?.().catch(() => {});
-      } else if (e.key === "[" || e.key === "]") {
-        e.preventDefault();
-        stepDay(e.key === "]" ? 1 : -1);
-      } else return;
-      // Space scrolls a page, so the transport must not depend on `overflow: hidden` staying true.
-      e.preventDefault();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [sectionLine, scrub.at, filters.windowMs, query, stepDay]);
+  useExploreKeys({
+    feed,
+    windowMs: filters.windowMs,
+    scrubAt: scrub.at,
+    setScrub,
+    stepDay,
+    hasQuery: !!query,
+    clearQuery: () => setQuery(""),
+    sectionOpen: !!sectionLine,
+    closeSection: () => setSectionLine(null),
+    clearPins: () => {
+      setMarkId(null);
+      setSelected(null);
+    },
+    closeStorm: storm ? closeStorm : undefined,
+  });
 
   const toggleSource = (id: SourceId): void => {
     reportAnalytics({ name: "source_filter_changed" });
@@ -1131,32 +1111,13 @@ export function App(): JSX.Element {
             <ExplorerSidebar
               context={observatoryProps}
               notices={
-                <>
-                  {!archived && feeds.silent ? (
-                    <div className="tb-notes">
-                      <span className="label">Feeds</span>
-                      <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
-                    </div>
-                  ) : null}
-                  <ViewNotices
-                    statuses={snapshot.statuses}
-                    archiveDay={archived ? loadedDay : null}
-                    cursor={view.at}
-                    staleCursor={!archiveBusy && staleCursor}
-                    earthquakeNotice={sharedEarthquakeNotice(
-                      pinned ? null : missingShared,
-                      snapshot,
-                      loadedDay,
-                      archiveBusy,
-                    )}
-                    hazardNotice={sharedHazardNotice(
-                      markId === shared.mark && !markSubject ? markId : null,
-                      archived,
-                      archiveHazards,
-                      answered,
-                    )}
-                  />
-                </>
+                <ExploreNotices
+                  {...{ archived, loadedDay, archiveBusy, staleCursor, snapshot, archiveHazards, answered }}
+                  silent={feeds.silent}
+                  cursor={view.at}
+                  missingQuake={pinned ? null : missingShared}
+                  missingMark={markId === shared.mark && !markSubject && !storm ? markId : null}
+                />
               }
             >
               {archived && mapLayers.inspector !== "earthquakes" && archiveControls}
@@ -1169,6 +1130,8 @@ export function App(): JSX.Element {
                 />
               )}
               <MapLayers
+                storm={storm}
+                onCloseStorm={closeStorm}
                 cityWeather={!!explorerView.city}
                 places={{
                   ready: observatory.ready,

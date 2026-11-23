@@ -1,3 +1,4 @@
+import type { ObservationView } from "./observations/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Filters } from "../data/types";
 import { stored, store } from "./stored";
@@ -26,7 +27,9 @@ export function useMapLayers(
   shared: SharedLayers = {},
   cover: boolean | "catalogue" = false,
   scope?: "nearby" | CityWeatherLayers,
+  storm?: ObservationView | null,
 ) {
+  const followingStorm = !!storm;
   const nearby = scope === "nearby";
   const cityLayers = nearby ? undefined : scope;
   const suspended = !!cover;
@@ -86,8 +89,10 @@ export function useMapLayers(
     () =>
       suspended
         ? (Object.fromEntries(Object.keys(enabled).map((id) => [id, false])) as typeof enabled)
-        : enabled,
-    [enabled, suspended],
+        : followingStorm
+          ? isolateLayer(enabled, "radar")
+          : enabled,
+    [enabled, suspended, followingStorm],
   );
   const rendered = fading ? enabled : visible;
   useEffect(() => {
@@ -101,7 +106,7 @@ export function useMapLayers(
       return next;
     });
   }, []);
-  const radarActive = enabled.radar && active;
+  const radarActive = (enabled.radar || followingStorm) && active;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
     if (!scope && (archived || !enabled.radar)) setRewind(null);
@@ -114,12 +119,13 @@ export function useMapLayers(
             region: "world",
             image: radarView?.image ?? null,
             at: radarView?.at,
-            reveal: cityLayers
-              ? undefined
-              : (rewind?.reveal ?? (radarView?.image && inspector === "radar" ? radarArrival : undefined)),
+            reveal:
+              cityLayers || followingStorm
+                ? undefined
+                : (rewind?.reveal ?? (radarView?.image && inspector === "radar" ? radarArrival : undefined)),
           }
         : null,
-    [radarActive, radarView, rewind?.reveal, cityLayers, inspector, radarArrival],
+    [radarActive, radarView, rewind?.reveal, cityLayers, followingStorm, inspector, radarArrival],
   );
   const latest = useRef(savedLayers);
   const change = useCallback((layer: MapLayer, on: boolean) => {
@@ -141,7 +147,7 @@ export function useMapLayers(
     () => weatherOverlay(wind?.frame, lightning?.frame),
     [wind?.frame, lightning?.frame],
   );
-  const subject = scope ? null : emphasisLayer(rewind ? "radar" : inspector);
+  const subject = scope || followingStorm ? null : emphasisLayer(rewind ? "radar" : inspector);
   const emphasis = active && subject && enabled[subject] ? subject : null;
   const presentation = useMemo<MapLayerPresentation | null>(
     () =>
@@ -152,10 +158,10 @@ export function useMapLayers(
             observation: fading ? observation : null,
             emphasis: "catalogue",
           }
-        : !suspended && (radar || observation || emphasis)
-          ? { kind: "map-layers", radar, observation, emphasis }
+        : !suspended && (radar || observation || emphasis || storm)
+          ? { kind: "map-layers", radar, observation, emphasis, storm: storm ?? undefined }
           : null,
-    [catalogue, fading, radar, observation, suspended, emphasis],
+    [catalogue, fading, radar, observation, suspended, emphasis, storm],
   );
   const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [

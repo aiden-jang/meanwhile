@@ -5,6 +5,7 @@ import type { visibleHazards } from "./layerVisibility";
 import type { createFeed } from "./feed";
 import type { useGlobeCamera } from "./useGlobeCamera";
 import { findSubject } from "./MarkCard";
+import { stormCamera } from "./storm/stormCamera";
 import { liftForPanel } from "./panelLift";
 import { tick } from "./touch";
 import { revealReadingInWorld } from "../globe/annotationInput";
@@ -16,6 +17,7 @@ export function useWorldSelection({
   camera,
   flyTo,
   nearbyOrigin,
+  followStorm,
   setMarkId,
   setSelected,
   feed,
@@ -24,6 +26,7 @@ export function useWorldSelection({
   observing: boolean;
   enterExplore: () => void;
   nearbyOrigin: DepthRecord | undefined;
+  followStorm: ((id: string) => void) | undefined;
   setMarkId: (id: string | null) => void;
   setSelected: (key: string | null) => void;
   feed: ReturnType<typeof createFeed>;
@@ -32,17 +35,25 @@ export function useWorldSelection({
   onGlobeRef.current = onGlobe;
   const observingRef = useRef(observing);
   observingRef.current = observing;
+  const follow = useRef(followStorm);
+  follow.current = followStorm;
   const selectMark = useCallback(
     (id: string | null) => {
-      setMarkId(id);
+      const found = findSubject(id, onGlobeRef.current);
+      const openStorm = found?.kind === "cyclone" ? follow.current : undefined;
+      if (openStorm && id) openStorm(id);
+      else setMarkId(id);
       // A quake hit clears the mark without clearing the quake.
       if (id === null) return;
-      if (observingRef.current) enterExplore();
+      if (!openStorm && observingRef.current) enterExplore();
       setSelected(null);
-      const where = findSubject(id, onGlobeRef.current)?.subject;
-      if (where) {
+      if (found) {
         reportAnalytics({ name: "event_opened" });
-        flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
+        const target =
+          found.kind === "cyclone" && openStorm
+            ? stormCamera(found.subject)
+            : { ...found.subject, zoom: Math.max(camera.current.zoom, 2.2) };
+        flyTo.current(target.lon, target.lat, target.zoom, liftForPanel());
       }
     },
     [enterExplore, camera, flyTo, setMarkId, setSelected],

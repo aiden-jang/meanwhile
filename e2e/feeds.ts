@@ -361,6 +361,7 @@ async function installHazards(page: Page, auroraAt?: number): Promise<void> {
       TC: [
         hazardEvent("TC", 9001, 132, 14, {
           eventname: "FIXTURE",
+          episodeid: 23,
           severitydata: { severity: 185 },
         }),
       ],

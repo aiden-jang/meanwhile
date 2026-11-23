@@ -1,3 +1,4 @@
+import { RadarReading, StormRadarCoverage } from "./RadarReading";
 import { PlaybackButton } from "../PlaybackButton";
 import { radarScanDate, radarScanStatus } from "./radarScanStatus";
 import { layerTime } from "../layerTime";
@@ -16,9 +17,7 @@ import { TimelineTrack } from "../observations/TimelineTrack";
 import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
-  globalRadarRegions,
   globalRadarName,
-  currentRadarRegion,
   radarCamera,
   regionCamera,
   strongestRegion,
@@ -28,6 +27,8 @@ import {
 import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 import { radarFeedHealth } from "./radarFeedHealth";
+
+export type RadarScope = { id: string; lon: number; lat: number };
 
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
@@ -42,6 +43,7 @@ export function RadarStage({
   dock,
   suspended = false,
   rewind = false,
+  storm,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
@@ -53,16 +55,22 @@ export function RadarStage({
   dock?: KeyboardEventHandler<HTMLElement> | undefined;
   suspended?: boolean;
   rewind?: boolean;
+  storm?: RadarScope | undefined;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
   const { scans, images, status, checkedAt, lastSuccess, covers, retry } = useRadarScans(
     held,
     global,
-    !layer || Boolean(dock),
+    !layer || Boolean(dock) || (!!storm && !suspended),
     initialAt,
+    storm,
   );
-  const [chosen, setChosen] = useState<RadarScan | null>(null);
+  const [baseScan, setChosen] = useState<RadarScan | null>(null);
+  const [stormScan, setStormScan] = useState<{ id: string; scan: RadarScan | null }>();
+  const chosen = storm ? (stormScan?.id === storm.id ? stormScan.scan : null) : baseScan;
+  const coverage = storm && covers?.(storm);
+  const stormId = storm?.id;
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [regionId, setRegionId] = useState(initialRegion ?? (global ? "world" : "auto"));
@@ -101,6 +109,7 @@ export function RadarStage({
   }, [image, selected]);
   const shown = image ? selected : previousScan.current;
   const shownImage = shown && images.get(shown.id);
+  const worldImage = !storm || coverage === true ? shownImage : null;
   const showingEarlier = !!shownImage && shown?.at !== selected?.at;
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const autoFocus = useMemo(
@@ -125,8 +134,8 @@ export function RadarStage({
         kind: "radar",
         region: regionId,
         target,
-        image: shownImage ?? null,
-        at: shownImage ? shown?.at : undefined,
+        image: worldImage ?? null,
+        at: worldImage ? shown?.at : undefined,
         selectedAt: restored ? selected?.at : initialAt,
         scan: restored ? selected : undefined,
         canRewind,
@@ -134,7 +143,7 @@ export function RadarStage({
         feed,
       }),
     [
-      shownImage,
+      worldImage,
       shown?.at,
       lightning,
       onView,
@@ -150,42 +159,58 @@ export function RadarStage({
 
   const seek = useCallback(
     (scan: RadarScan | null) => {
+      if (stormId) {
+        setStormScan({ id: stormId, scan });
+        return;
+      }
       held.current = scan;
       setChosen(scan);
       setExpired(false);
       onSelect?.(scan?.at ?? null);
     },
-    [onSelect],
+    [onSelect, stormId],
   );
 
+  useLayoutEffect(() => {
+    setPlaying(false);
+    setStormScan(undefined);
+  }, [stormId]);
   const wasRewinding = useRef(rewind);
   useLayoutEffect(() => {
-    if (wasRewinding.current && !rewind) seek(null);
-    if (!wasRewinding.current && rewind && image && selected) {
+    if (!stormId && wasRewinding.current && !rewind) seek(null);
+    if (!stormId && !wasRewinding.current && rewind && image && selected) {
       seek(selected);
       setPlaying(false);
     }
     if ((wasRewinding.current && !rewind) || (rewind && suspended)) setPlaying(false);
     wasRewinding.current = rewind;
-  }, [rewind, seek, suspended, image, selected]);
+  }, [rewind, seek, suspended, image, selected, stormId]);
 
   useEffect(() => {
     if (focus === undefined && autoFocus !== undefined) setFocus(autoFocus);
   }, [focus, autoFocus]);
 
   useEffect(() => {
-    if (suspended || !playing || !selected || image === undefined || document.hidden) return;
+    if (
+      suspended ||
+      (stormId && coverage !== true) ||
+      !playing ||
+      !selected ||
+      image === undefined ||
+      document.hidden
+    )
+      return;
     const next = scans[index + 1];
     const timer = window.setTimeout(
       () => {
         if (next) seek(next);
-        else if (!rewind) seek(null);
+        else if (!rewind || stormId) seek(null);
         if (!next) setPlaying(false);
       },
       index === scans.length - 1 ? 820 : 510,
     );
     return () => window.clearTimeout(timer);
-  }, [image, index, playing, rewind, scans, selected, seek, suspended]);
+  }, [image, index, playing, rewind, scans, selected, seek, suspended, stormId, coverage]);
 
   useEffect(() => {
     function visibility() {
@@ -240,89 +265,92 @@ export function RadarStage({
 
   return (
     <div className="radar-stage-controls">
-      {expired && (
+      {expired && !storm && (
         <p role="status" aria-label="Saved radar scan status">
           The saved scan has expired. Showing the latest available scan.
         </p>
       )}
       <div className="radar-transport">
-        {problem && (
+        {problem && coverage !== false && (
           <p className="radar-warning" role="status" aria-label="Radar status">
             {statusMessage}
           </p>
         )}
-        {showingEarlier && (
+        {storm && <StormRadarCoverage {...{ coverage, problem }} />}
+        {showingEarlier && (!storm || coverage) && (
           <p className="radar-reading-date">
             Still showing <time dateTime={new Date(shown!.at).toISOString()}>{layerTime(shown!.at)}</time>.
           </p>
         )}
-        <RadarTransport layer={layer} dock={dock}>
-          <div className="radar-clock">
-            <div className="radar-scan-reading">
-              {selected && (
-                <time
-                  dateTime={new Date(selected.at).toISOString()}
-                  data-radar-displayed={!!image || undefined}
+        {(!storm || coverage === true) && (
+          <RadarTransport layer={layer} dock={dock}>
+            <div className="radar-clock">
+              <div className="radar-scan-reading">
+                {selected && (
+                  <time
+                    dateTime={new Date(selected.at).toISOString()}
+                    data-radar-displayed={!!image || undefined}
+                  >
+                    <strong>{shortTime(selected.at)} UTC</strong>
+                    <span className="radar-reading-date">{radarScanDate(selected.at)}</span>
+                  </time>
+                )}
+                {scans[0] && latest && (
+                  <span className="radar-window">
+                    <span className="sr-only">Available scans </span>
+                    {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
+                  </span>
+                )}
+              </div>
+              {(!rewind || !!storm) && (
+                <button
+                  type="button"
+                  className="radar-latest"
+                  title="Jump to the latest scan"
+                  aria-pressed={atLatest}
+                  disabled={!selected}
+                  onClick={() => {
+                    setPlaying(false);
+                    seek(null);
+                  }}
                 >
-                  <strong>{shortTime(selected.at)} UTC</strong>
-                  <span className="radar-reading-date">{radarScanDate(selected.at)}</span>
-                </time>
-              )}
-              {scans[0] && latest && (
-                <span className="radar-window">
-                  <span className="sr-only">Available scans </span>
-                  {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
-                </span>
+                  Latest
+                </button>
               )}
             </div>
-            {!rewind && (
+            {timeline}
+            <div className="observatory-actions radar-actions radar-playback">
               <button
                 type="button"
-                className="radar-latest"
-                title="Jump to the latest scan"
-                aria-pressed={atLatest}
-                disabled={!selected}
+                aria-label="Previous radar scan"
+                disabled={index === 0 || scans.length < 2}
                 onClick={() => {
                   setPlaying(false);
-                  seek(null);
+                  seek(scans[index - 1] ?? null);
                 }}
               >
-                Latest
+                Previous
               </button>
-            )}
-          </div>
-          {timeline}
-          <div className="observatory-actions radar-actions radar-playback">
-            <button
-              type="button"
-              aria-label="Previous radar scan"
-              disabled={index === 0 || scans.length < 2}
-              onClick={() => {
-                setPlaying(false);
-                seek(scans[index - 1] ?? null);
-              }}
-            >
-              Previous
-            </button>
-            <PlaybackButton
-              playing={playing}
-              ended={index === scans.length - 1}
-              disabled={scans.length < 2}
-              onClick={togglePlay}
-            />
-            <button
-              type="button"
-              aria-label="Next radar scan"
-              disabled={index >= scans.length - 1 || scans.length < 2}
-              onClick={() => {
-                setPlaying(false);
-                seek(scans[index + 1] ?? null);
-              }}
-            >
-              Next
-            </button>
-          </div>
-        </RadarTransport>
+              <PlaybackButton
+                playing={playing}
+                ended={index === scans.length - 1}
+                disabled={scans.length < 2}
+                onClick={togglePlay}
+              />
+              <button
+                type="button"
+                aria-label="Next radar scan"
+                disabled={index >= scans.length - 1 || scans.length < 2}
+                onClick={() => {
+                  setPlaying(false);
+                  seek(scans[index + 1] ?? null);
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </RadarTransport>
+        )}
         <div className="observatory-actions radar-actions">
           {!layer && !global && (
             <button
@@ -347,36 +375,21 @@ export function RadarStage({
           )}
         </div>
       </div>
-      <div className="radar-reading">
-        {!layer && (
-          <div className="radar-place">
-            <h3>{place}</h3>
-            <label>
-              <span className="sr-only">Radar region</span>
-              <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
-                {global && initialPose && <option value={currentRadarRegion}>Current view</option>}
-                {!global && <option value="auto">Auto focus</option>}
-                {!global && <option value="national">United States</option>}
-                {(global ? globalRadarRegions : radarRegions).map(({ id, name }) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-        {!layer && !problem && (
-          <p role="status" aria-label="Radar status">
-            {statusMessage}
-          </p>
-        )}
-        {canRetry && (
-          <button type="button" className="radar-retry" onClick={retry}>
-            Retry {provider}
-          </button>
-        )}
-      </div>
+      <RadarReading
+        initialPose={!!initialPose}
+        {...{
+          layer,
+          place,
+          regionId,
+          setRegionId,
+          global,
+          problem,
+          statusMessage,
+          canRetry,
+          provider,
+          retry,
+        }}
+      />
     </div>
   );
 }

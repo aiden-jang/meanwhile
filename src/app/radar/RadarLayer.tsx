@@ -1,3 +1,4 @@
+import type { RadarScope } from "./RadarStage";
 import { RadarStage } from "./RadarStage";
 import type { RadarView } from "./radarCamera";
 import "./radar.css";
@@ -11,6 +12,7 @@ export function RadarLayer({
   rewind = false,
   hidden = false,
   dock,
+  storm,
 }: {
   onView: (view: RadarView) => void;
   initialAt: number | null;
@@ -18,6 +20,7 @@ export function RadarLayer({
   rewind?: boolean;
   hidden?: boolean;
   dock?: KeyboardEventHandler<HTMLElement> | undefined;
+  storm?: RadarScope | undefined;
   onSelect: (id: "radar", at: number | null) => void;
 }): JSX.Element {
   const select = useCallback((at: number | null) => onSelect("radar", at), [onSelect]);
@@ -33,12 +36,13 @@ export function RadarLayer({
         layer
         suspended={suspended}
         rewind={rewind}
+        storm={storm}
         dock={dock}
         onView={onView}
         initialAt={initialAt ?? undefined}
         onSelect={select}
       />
-      {rewind && <p className="radar-layer-note">Stripes mark areas with no listed coverage.</p>}
+      {rewind && !storm && <p className="radar-layer-note">Stripes mark areas with no listed coverage.</p>}
     </section>
   );
 }

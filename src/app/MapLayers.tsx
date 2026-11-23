@@ -1,8 +1,5 @@
 import { LayerStoryLink } from "./LayerStoryLink";
-import { CopyLink } from "./CopyLink";
-import { rewindLink } from "./radar/rewindLink";
 import { useRadarRewind } from "./useRadarRewind";
-import { geographicCoordinates } from "../globe/orbitReadout";
 import type { CameraState } from "../globe/controls";
 import { quietLayer } from "./layerQuiet";
 import { matches } from "../data/filter";
@@ -33,11 +30,11 @@ import { LayerExample, hasLayerExample } from "./LayerExample";
 import { LayerIcon } from "./LayerIcon";
 import { CutawayReports } from "./CutawayReports";
 import type { DepthRecord } from "../data/depthRecords";
+import { LayerRadar } from "./radar/LayerRadar";
+import { LiveStormReading, LiveStormSources } from "./storm/LiveStormReading";
+import type { LiveStorm } from "./storm/useLiveStorm";
 import "./map-layers.css";
 import "./discovery/discovery.css";
-const RadarLayer = lazy(() =>
-  import("./radar/RadarLayer").then(({ RadarLayer }) => ({ default: RadarLayer })),
-);
 const WeatherLayer = lazy(() =>
   import("./WeatherLayer").then(({ WeatherLayer }) => ({ default: WeatherLayer })),
 );
@@ -60,6 +57,8 @@ export function MapLayers({
   flat,
   canDismiss,
   cityWeather,
+  storm,
+  onCloseStorm,
 }: {
   controls: ReturnType<typeof useMapLayers>;
   places: PlaceContextProps;
@@ -83,10 +82,12 @@ export function MapLayers({
   flat: boolean;
   canDismiss: boolean;
   cityWeather: boolean;
+  storm: LiveStorm | null;
+  onCloseStorm: () => void;
 }) {
   const navigation = useStoryNavigation();
-  const rewindPoint = controls.radar && !cityWeather ? controls.rewindPoint : undefined;
-  const layer = rewindPoint || cityWeather ? null : controls.inspector;
+  const rewindPoint = controls.radar && !cityWeather && !storm ? controls.rewindPoint : undefined;
+  const layer = rewindPoint || cityWeather || storm ? null : controls.inspector;
   const destination =
     layer === "aurora" ? "aurora" : layer === "wind" ? "wind" : layer === "lightning" ? "lightning" : null;
   const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
@@ -104,7 +105,17 @@ export function MapLayers({
     },
   };
   const inspectingPlace = !!place.point;
-  useReadingArrival(panel, rewindPoint ? "rewind" : inspectingPlace ? "place" : (layer ?? "overview"));
+  const stormId = storm?.storm.id;
+  useReadingArrival(
+    panel,
+    stormId ?? (rewindPoint ? "rewind" : inspectingPlace ? "place" : (layer ?? "overview")),
+  );
+  useLayoutEffect(() => {
+    if (stormId && panelVisible) {
+      document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
+      document.getElementById("live-storm-title")?.focus({ preventScroll: true });
+    }
+  }, [stormId, panelVisible]);
   useLayoutEffect(() => {
     if (inspectingPlace || rewindPoint) document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
   }, [inspectingPlace, rewindPoint]);
@@ -183,7 +194,8 @@ export function MapLayers({
       aria-label="Map layers"
       onKeyDown={dismissReading}
     >
-      {place.point && !rewindPoint && (
+      {storm && <LiveStormReading {...storm} back={onCloseStorm} />}
+      {place.point && !rewindPoint && !storm && (
         <PlaceInspection
           {...reports}
           point={place.point}
@@ -199,7 +211,7 @@ export function MapLayers({
           }
         />
       )}
-      {!rewindPoint && controls.isolated && (
+      {!rewindPoint && !storm && controls.isolated && (
         <div className="layer-isolation" role="status">
           <span>Only {mapLayerNames[controls.isolated].toLowerCase()}</span>
           <button type="button" onClick={() => controls.isolate(null)}>
@@ -241,63 +253,25 @@ export function MapLayers({
             hasLayerExample(layer) && <LayerExample key={layer} layer={layer} />}
         </div>
       )}
-      <div
-        className={rewindPoint ? "layer-player place-context place-inspection radar-rewind" : "layer-player"}
-        hidden={layer !== "radar" && !rewindPoint}
-      >
-        {rewindPoint && (
-          <header>
-            <div>
-              <h2 id="radar-rewind-title" tabIndex={-1}>
-                Radar rewind
-              </h2>
-              <p className="place-coordinates">{geographicCoordinates(rewindPoint)}</p>
-            </div>
-            <button type="button" onClick={closeRewind}>
-              Back to live
-            </button>
-          </header>
-        )}
-        {reveal && (
-          <p role="status" className="radar-layer-note">
-            Revealing radar…
-          </p>
-        )}
-        {controls.radar && (
-          <Suspense fallback={reveal ? null : <p role="status">Loading radar controls…</p>}>
-            <RadarLayer
-              suspended={controls.suspended || (!!rewindPoint && !panelVisible)}
-              rewind={!!rewindPoint}
-              dock={
-                panelVisible && !controls.suspended && !reveal && (layer === "radar" || rewindPoint)
-                  ? dismissReading
-                  : undefined
-              }
-              hidden={!!reveal}
-              onView={controls.updateRadar}
-              initialAt={controls.selectedTimes.radar}
-              onSelect={controls.selectTime}
-            />
-          </Suspense>
-        )}
-        {rewindPoint && !reveal && rewindAt !== undefined && (
-          <CopyLink
-            label="Copy radar link"
-            format={(url) => rewindLink(url, readCamera(), rewindPoint, rewindAt, flat)}
-          />
-        )}
-        {layer === "radar" && !archived && (
-          <button
-            type="button"
-            id="open-explorer-radar"
-            className="layer-story-link"
-            onClick={() => navigation?.openRadar(controls.radarAt, flat)}
-          >
-            Follow a radar region <span>Guided view · same available scans</span>
-          </button>
-        )}
-      </div>
-      <div hidden={!!rewindPoint}>
+      <LayerRadar
+        {...{
+          controls,
+          rewindPoint,
+          rewindAt,
+          closeRewind,
+          reveal,
+          layer,
+          flat,
+          archived,
+          panelVisible,
+          readCamera,
+          dismissReading,
+          navigation,
+        }}
+        storm={storm?.storm}
+      />
+      {storm && <LiveStormSources storm={storm.storm} />}
+      <div hidden={!!rewindPoint || !!storm}>
         {layer === null && Object.values(controls.enabled).every((on) => !on) && (
           <div className="layer-note">
             <p role="status">All layers are off.</p>

@@ -22,9 +22,13 @@ export function HazardList({
                   <button
                     key={row.id}
                     type="button"
+                    id={`hazard-${row.id}`}
                     data-hazard-row={row.id}
                     aria-current={markId === row.id || undefined}
-                    onClick={() => onHazard(row.id)}
+                    onClick={(event) => {
+                      if (group.kind === "cyclone") event.currentTarget.focus({ preventScroll: true });
+                      onHazard(row.id);
+                    }}
                     className={`-mx-1 flex min-h-11 w-[calc(100%+0.5rem)] cursor-pointer items-center gap-2 rounded-[2px] px-1 py-2 text-left transition-colors hover:bg-raised ${
                       markId === row.id ? "bg-raised" : ""
                     }`}

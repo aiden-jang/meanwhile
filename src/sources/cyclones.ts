@@ -14,6 +14,7 @@ const WRAP_DEG = 170;
 
 export interface Cyclone {
   id: string;
+  episode?: string;
   /** The agency that reported it, or null when the feed did not say. */
   source: string | null;
   name: string;
@@ -59,7 +60,7 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
       startedAt: parseUtc(p["fromdate"]),
       endedAt: parseUtc(p["todate"]),
       // Carried so the geometry request can be built without guessing at it.
-      ...({ episode: String(p["episodeid"] ?? "") } as Record<string, string>),
+      episode: String(p["episodeid"] ?? ""),
     });
   }
   return out;
@@ -72,7 +73,8 @@ export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
 
   const segments: [number, number][][] = [];
   for (const raw of features as Feature[]) {
-    if (raw.geometry?.type !== "LineString") continue;
+    if (raw.geometry?.type !== "LineString" || String(raw.properties?.["forecast"]).toLowerCase() === "true")
+      continue;
     const coords = raw.geometry.coordinates;
     if (!Array.isArray(coords) || coords.length < 2) continue;
     const points = coords.filter(
@@ -82,18 +84,22 @@ export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
   }
   if (segments.length === 0) return [];
 
-  // Every distinct point, in the order the segments chain them. A set keyed on the coordinate pair is
-  // enough: the track is tens of points and the segments overlap end to end.
-  const seen = new Set<string>();
-  const chained: { lon: number; lat: number }[] = [];
-  const push = (p: [number, number]): void => {
-    const key = `${p[0]},${p[1]}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    chained.push({ lon: p[0], lat: p[1] });
-  };
-  // Reversed, because GDACS lists the newest segment first and a track reads oldest to newest.
-  for (const segment of [...segments].reverse()) for (const p of segment) push(p);
+  const startAt = new Map(segments.map((segment) => [String(segment[0]), segment]));
+  const ends = new Set(segments.map((segment) => String(segment.at(-1))));
+  const starts = segments.filter((segment) => !ends.has(String(segment[0])));
+  let longest: [number, number][] = [];
+  for (const start of starts.length ? starts : segments.slice(0, 1)) {
+    const chain = [...start];
+    const visited = new Set([start]);
+    let next = startAt.get(String(chain.at(-1)));
+    while (next && !visited.has(next)) {
+      visited.add(next);
+      chain.push(...next.slice(1));
+      next = startAt.get(String(next.at(-1)));
+    }
+    if (chain.length > longest.length) longest = chain;
+  }
+  const chained = longest.map(([lon, lat]) => ({ lon, lat }));
 
   return chained.filter((p, i, all) => {
     if (i === 0) return true;
@@ -135,7 +141,7 @@ export async function fetchCyclones(
     onAnswer?.(true);
     return await Promise.all(
       current.map(async (storm) => {
-        const episode = (storm as unknown as { episode?: string }).episode ?? "";
+        const episode = storm.episode ?? "";
         try {
           const geo = await get(`${GEOMETRY}?eventtype=TC&eventid=${storm.id}&episodeid=${episode}`);
           if (!geo.ok) return { ...storm, track: [] };

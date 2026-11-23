@@ -66,6 +66,8 @@ export function createScenePresentation(
   let held: AuroraRun | null = null;
   let oval: AuroraRun["route"] | null = null;
   let radar: ReturnType<typeof createRadarSurface> | undefined;
+  let stormKey: string | undefined;
+  let stormArrival = 0;
   let observationTarget: ObservationView["target"] | undefined;
   let observationCrossing: string | undefined;
   let radarTarget: RadarView["target"] | undefined;
@@ -110,8 +112,14 @@ export function createScenePresentation(
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
+    stormArrival = cameraMoving && !reduced ? Math.max(0, stormArrival - elapsed) : 0;
     const tracing =
-      observations?.step(dt, reduced, observationTarget ? 1 : emphasis.weather(), elapsed) ?? false;
+      observations?.step(
+        stormArrival ? 0 : dt,
+        reduced,
+        observationTarget ? 1 : emphasis.weather(),
+        elapsed,
+      ) ?? false;
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const guided = controls.guidance.following();
@@ -178,7 +186,12 @@ export function createScenePresentation(
     const observation = local?.kind === "observation" ? local : null;
     const hold = observation?.holdGeography === true;
     if (hold && !holdingGeography) controls.setView(controls.state());
-    picking.set(observation);
+    const nextStorm = mapLayers?.storm?.cameraKey;
+    if (nextStorm !== stormKey) {
+      stormKey = nextStorm;
+      stormArrival = nextStorm ? 1.4 : 0;
+    }
+    picking.set(observation ?? mapLayers?.storm ?? null);
     const weather = local?.kind === "radar" ? local : null;
     const float = local?.kind === "float-dive" ? local : null;
     const overflight = mode && typeof mode === "object" && "route" in mode ? mode : null;
@@ -254,6 +267,7 @@ export function createScenePresentation(
     dive?.set(float, mode === "dayline", mode === "dayline" || mode === null);
     const overlay =
       observation ??
+      mapLayers?.storm ??
       mapLayers?.observation ??
       (weather?.lightning
         ? { kind: "observation" as const, frame: weather.lightning, image: null, target: weather.target }

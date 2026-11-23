@@ -30,6 +30,7 @@ export function explorerReadings(
     inspect: layers.inspect,
     openRadar: layers.openRadar,
     locate: place.restore,
+    selectHazard,
     closeQuake: () => selectQuake(null),
   };
 }

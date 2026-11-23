@@ -299,7 +299,7 @@
 .radar-layer .radar-transport {
   padding-top: 18px;
 }
-.radar-layer .radar-transport:not(:has(.radar-clock, .radar-warning)),
+.radar-layer .radar-transport:not(:has(.radar-clock, .radar-warning, .radar-coverage)),
 .radar-layer .radar-reading:empty {
   display: none;
 }

@@ -1,3 +1,4 @@
+import { sharedEarthquakeNotice, sharedHazardNotice } from "./linkNotices";
 import type { SourceId } from "../data/types";
 import type { SourceStatus } from "../sources/types";
 import { clock, SOURCE_NAMES } from "./format";
@@ -11,7 +12,7 @@ interface Props {
   hazardNotice: string | null;
 }
 
-export function ViewNotices({
+function ViewNotices({
   statuses,
   archiveDay,
   cursor,
@@ -57,6 +58,51 @@ export function ViewNotices({
           {message}
         </p>
       ))}
+    </>
+  );
+}
+
+export function ExploreNotices({
+  archived,
+  loadedDay,
+  archiveBusy,
+  staleCursor,
+  snapshot,
+  archiveHazards,
+  answered,
+  silent,
+  cursor,
+  missingQuake,
+  missingMark,
+}: {
+  archived: boolean;
+  loadedDay: Parameters<typeof sharedEarthquakeNotice>[2];
+  archiveBusy: boolean;
+  staleCursor: boolean;
+  snapshot: Parameters<typeof sharedEarthquakeNotice>[1];
+  archiveHazards: Parameters<typeof sharedHazardNotice>[2];
+  answered: Parameters<typeof sharedHazardNotice>[3];
+  silent: string | null;
+  cursor: number | null;
+  missingQuake: Parameters<typeof sharedEarthquakeNotice>[0];
+  missingMark: string | null;
+}) {
+  return (
+    <>
+      {!archived && silent && (
+        <div className="tb-notes">
+          <span className="label">Feeds</span>
+          <p className="text-[11px] leading-relaxed text-faint">{silent}</p>
+        </div>
+      )}
+      <ViewNotices
+        statuses={snapshot.statuses}
+        archiveDay={archived ? loadedDay : null}
+        cursor={cursor}
+        staleCursor={!archiveBusy && staleCursor}
+        earthquakeNotice={sharedEarthquakeNotice(missingQuake, snapshot, loadedDay, archiveBusy)}
+        hazardNotice={sharedHazardNotice(missingMark, archived, archiveHazards, answered)}
+      />
     </>
   );
 }
