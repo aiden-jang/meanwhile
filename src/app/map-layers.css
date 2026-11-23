@@ -318,6 +318,9 @@
     .canvas-information:has(> .explore-world-controls):has(.radar-canvas-credit) {
     min-height: calc(88px + var(--explore-control-clearance));
   }
+  .frame[data-presentation="explore"] .canvas-information:has(> .explore-world-controls) > .layer-readout {
+    align-self: end;
+  }
   .frame[data-presentation="explore"]
     .canvas-information:has(> .explore-world-controls)
     .radar-canvas-credit {

@@ -436,6 +436,10 @@ test("the radar footer clears the pinned credit when Explore folds and reflows",
     await expect(dock).toBeInViewport({ ratio: 1 });
     if (viewport.width < 768) {
       const dockBox = (await dock.boundingBox())!;
+      const sourcesBox = (await sources.boundingBox())!;
+      expect(
+        Math.abs(sourcesBox.y + sourcesBox.height / 2 - dockBox.y - dockBox.height / 2),
+      ).toBeLessThanOrEqual(2);
       for (const item of [radar, sources]) {
         const box = (await item.boundingBox())!;
         expect(
