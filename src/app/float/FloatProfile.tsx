@@ -4,6 +4,7 @@ import type { FloatDiveView } from "./floatPlayback";
 import { PROFILE_CHART, profileGeometry } from "./profileGeometry";
 import { updateFloatTether } from "../../globe/floatPlacement";
 import { useMedia } from "../useNarrow";
+import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { ShareMoment } from "../observations/StorySession";
 import { floatMoment } from "./floatMoment";
 
@@ -158,9 +159,12 @@ export function FloatProfile({ view, map }: { view: FloatDiveView; map: boolean 
         Drag the chart or move the slider. Each selection is a measured sample.
       </p>
       {compact && (
-        <div className="float-profile-share">
-          <ShareMoment current={() => floatMoment(view, map)} />
-        </div>
+        <>
+          <ConnectedJourney compact />
+          <div className="float-profile-share">
+            <ShareMoment current={() => floatMoment(view, map)} />
+          </div>
+        </>
       )}
     </section>
   );

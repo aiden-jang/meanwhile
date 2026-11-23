@@ -240,6 +240,7 @@
   .float-profile-heading,
   .float-profile-inspect,
   .float-profile > p,
+  .float-profile > .connected-journey-steps,
   .float-profile-share {
     grid-column: 1 / -1;
   }

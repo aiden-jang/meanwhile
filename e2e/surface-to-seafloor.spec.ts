@@ -38,6 +38,9 @@ test("Surface to Seafloor returns to the exact readings on the same canvas", asy
   await button("Salinity").click();
   await sample.press("ArrowRight");
   const floatSample = await sample.inputValue();
+  await expect(page.getByRole("region", { name: "Measured float profile" })).toContainText(
+    "Next: Seafloor Flight",
+  );
   await next("Seafloor Flight").click();
   await expect(journey).toContainText("3 of 3");
   await button("Across Challenger Deep").click();
