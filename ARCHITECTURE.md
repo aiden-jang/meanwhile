@@ -3522,7 +3522,8 @@ reading, and playback keys only act when the globe or page has focus.
 
 ### src/sources/cycloneAdvisories.ts
 
-Selecting a live cyclone opens its reading in Explore on the existing canvas. Other layers pause
+Cyclones stay visible when their reported dates overlap the selected window. Opening a cyclone
+shows its reading in Explore on the existing canvas. Other layers pause
 visually while the track and radar share that canvas. Back restores the previous camera, projection,
 panel and layer choices. Only the storm view uses its own radar playhead.
 

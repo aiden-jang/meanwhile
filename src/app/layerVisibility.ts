@@ -14,7 +14,11 @@ export function hazardsInWindow(
     });
   const started = (h: { startedAt: number | null }) => h.startedAt;
   return {
-    cyclones: shown(data.cyclones, started),
+    cyclones: data.cyclones.filter(
+      ({ startedAt, endedAt }) =>
+        withinWindow(endedAt ?? startedAt, now, windowMs) &&
+        (revealAt === null || startedAt === null || startedAt <= revealAt),
+    ),
     volcanoes: shown(data.volcanoes, (v) => v.endedAt),
     fires: shown(data.fires, started),
     floods: shown(data.floods, started),

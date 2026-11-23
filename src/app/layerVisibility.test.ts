@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultMapLayers,
+  hazardsInWindow,
   isolateLayer,
   markBelongsToLayer,
   readMapLayers,
@@ -45,4 +46,24 @@ it("temporary isolation restores the exact saved selection without mutating it",
   ).toEqual(["radar"]);
   expect(saved).toEqual(before);
   expect(isolateLayer(saved, null)).toBe(saved);
+});
+
+it("includes a long-running cyclone with a report inside the window", () => {
+  const day = 86_400_000;
+  const now = 12 * day;
+  const ongoing = {
+    id: "1",
+    name: "Continuing storm",
+    source: "JTWC",
+    lon: 132,
+    lat: 14,
+    peakKmh: null,
+    track: [],
+    startedAt: 2 * day,
+    endedAt: 11 * day,
+  };
+  const finished = { ...ongoing, id: "2", endedAt: 4 * day };
+  const data = { cyclones: [ongoing, finished], fires: [], floods: [], volcanoes: [] };
+  expect(hazardsInWindow(data, now, 7 * day, null).cyclones).toEqual([ongoing]);
+  expect(hazardsInWindow(data, now, 7 * day, day).cyclones).toEqual([]);
 });
