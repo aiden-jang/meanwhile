@@ -32,11 +32,12 @@ export function ExperienceEnding({
   id,
   showFinding = true,
   showSave = true,
-}: { id?: string; showFinding?: boolean; showSave?: boolean } = {}) {
+  evidenceOpen = false,
+}: { id?: string; showFinding?: boolean; showSave?: boolean; evidenceOpen?: boolean } = {}) {
   const navigation = useStoryNavigation();
   const details = useRef<HTMLDetailsElement>(null);
   const active = id ?? navigation?.active;
-  const completed = navigation?.completed ?? false;
+  const completed = evidenceOpen || (navigation?.completed ?? false);
   useEffect(() => {
     if (details.current) details.current.open = completed;
   }, [active, completed, navigation?.route]);

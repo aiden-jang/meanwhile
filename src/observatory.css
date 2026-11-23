@@ -417,6 +417,30 @@
   }
 }
 
+.frame button.reading-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: start;
+  gap: 6px;
+  min-height: 44px;
+  border-radius: 6px;
+}
+
+.reading-back::before {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border: solid currentColor;
+  border-width: 0 0 1px 1px;
+  transform: rotate(45deg);
+  content: "";
+}
+
+.frame button.reading-back:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
 .frame[data-presentation="observe"] .zone-head {
   background: transparent;
   backdrop-filter: none;

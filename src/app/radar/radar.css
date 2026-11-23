@@ -88,6 +88,20 @@
   min-width: 0;
 }
 
+.radar-clock [data-radar-displayed] strong,
+.radar-world-reading time,
+.canvas-information .radar-canvas-time time {
+  color: #b8ebda;
+}
+
+.radar-world-reading {
+  gap: 4px 12px;
+}
+
+.radar-world-reading time {
+  font-variant-numeric: tabular-nums;
+}
+
 .radar-scan-reading {
   display: grid;
   min-width: 0;
@@ -323,12 +337,11 @@
     scroll-padding-bottom: 12px;
   }
 
-  .frame:has(.mobile-navigation button[aria-expanded="false"]) > .radar-dock {
+  .frame:has(.sheet-most-world) > .radar-dock {
     display: none;
   }
 
-  .frame[data-presentation="explore"]:has(> .radar-dock):has(.mobile-navigation button[aria-expanded="false"])
-    #chrome-rail {
+  .frame[data-presentation="explore"]:has(> .radar-dock):has(.sheet-most-world) #chrome-rail {
     margin-bottom: var(--credit-space);
   }
 

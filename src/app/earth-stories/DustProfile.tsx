@@ -1,7 +1,7 @@
 import type { PointerEvent } from "react";
 
 export type LidarCursor = readonly [along: number, altitude: number];
-const center: LidarCursor = [50, 50];
+export const middleLidarSample: LidarCursor = [50, 50];
 const percent = (value: number) => Math.max(0, Math.min(100, Math.round(value * 100)));
 const distance = (along: number) => `${along}% along the recorded track`;
 const height = (altitude: number) => `${((15 * altitude) / 100).toFixed(1)} km altitude`;
@@ -22,7 +22,7 @@ export function DustProfile({
   cursor: LidarCursor | null;
   select: (next: LidarCursor | null) => void;
 }) {
-  const [along, altitude] = cursor ?? center;
+  const [along, altitude] = cursor ?? middleLidarSample;
   function scrub(event: PointerEvent<HTMLDivElement>) {
     const box = event.currentTarget.getBoundingClientRect();
     select([
@@ -35,13 +35,14 @@ export function DustProfile({
       <summary
         onClick={(event) => {
           event.preventDefault();
-          select(cursor ? null : center);
+          select(cursor ? null : middleLidarSample);
         }}
       >
         Read the lidar profile
       </summary>
       <div
         className="lidar-plot"
+        style={{ "--lidar-along": `${along}%` } as React.CSSProperties}
         onPointerDown={(event) => {
           if (event.button !== 0 || !event.isPrimary) return;
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -56,15 +57,13 @@ export function DustProfile({
           draggable={false}
           alt="CALIPSO laser backscatter from the surface to 15 km along the Caribbean track"
         />
-        <span
-          aria-hidden="true"
-          className="lidar-cursor"
-          style={{ left: `${along}%`, bottom: `${altitude}%` }}
-        />
+        <span aria-hidden="true" className="lidar-cursor" style={{ bottom: `${altitude}%` }} />
       </div>
+      <p className="lidar-reading">
+        <strong>{height(altitude)}</strong> <span>{distance(along)}</span>
+      </p>
       <label className="lidar-altitude">
         <span>Profile altitude</span>
-        <output>{height(altitude)}</output>
         <input
           className="scrub-slider"
           type="range"
@@ -78,7 +77,6 @@ export function DustProfile({
       </label>
       <label className="lidar-altitude">
         <span>Along the track</span>
-        <output>{along}%</output>
         <input
           className="scrub-slider"
           type="range"

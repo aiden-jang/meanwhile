@@ -17,6 +17,39 @@
   font: 500 var(--text-control) var(--font-sans);
 }
 
+.cutaway-guide-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cutaway-guide-scale button {
+  min-width: 44px;
+  min-height: 30px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cutaway-guide-scale button:is(:hover, :focus-visible, [aria-pressed="true"]) {
+  color: var(--entry-ink);
+  background: var(--color-raised);
+}
+
+.depth-reading .depth-reading-value:has([data-evidence-point]) > strong {
+  justify-self: start;
+  color: #ffd1a7;
+}
+
+.depth-reading ~ .world-evidence-connector {
+  color: #ffd1a7;
+}
+
+@media (pointer: coarse) {
+  .cutaway-guide-scale button {
+    min-height: 44px;
+  }
+}
+
 .depth-reading-value time,
 .depth-reading-source {
   color: var(--color-dim);

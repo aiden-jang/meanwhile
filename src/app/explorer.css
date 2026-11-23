@@ -609,9 +609,12 @@
 @media (max-width: 767px) {
   .frame[data-presentation="explore"] .globe-scene {
     position: absolute;
-    inset: var(--head-h) 0 12px;
+    inset: var(--head-h) 0 var(--world-tools-space, 12px);
     height: auto;
     --scene-hud-top: 8px;
+  }
+  .frame[data-presentation="explore"] .zone-canvas:has(.canvas-information > .explore-world-controls) {
+    --world-tools-space: 80px;
   }
   .projection-switch {
     gap: 2px;

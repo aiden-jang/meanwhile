@@ -3079,7 +3079,8 @@ skips only fragments beyond the screen. Compositor travel, synchronous stills an
 render the complete source. `GlobeHeader` owns the one viewport-anchored `CreatorCredit`, outside
 the moving canvas and scrolling readers. Rails and phone sheets reserve its footer space.
 `ExploreSheet` reads the resolved footer margin, including safe-area space, on mounting and resizing.
-`sheetStops` supplies one bounded set of positions to CSS, the separator and `MobileNavigation`.
+`sheetStops` supplies one bounded set of positions to CSS and to the touch and keyboard grip. The grip
+toggles between more world and more controls when tapped. Dragging or keyboard sizing keeps all three stops.
 The layout owner stays mounted while a pinned card hides its controls. Phone detail cards end above
 the same footer reservation; the camera lift uses that future panel edge before the card mounts.
 The visible panel width remains the stored resize value; its desktop inset and gap contribute

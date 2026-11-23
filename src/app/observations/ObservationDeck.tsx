@@ -164,7 +164,13 @@ export function ObservationDeck({
             <div className="observation-heading">
               <h2>{title}</h2>
               <div className="observatory-actions">
-                <button type="button" ref={back} onClick={onClose} aria-label={closeLabel}>
+                <button
+                  className="reading-back"
+                  type="button"
+                  ref={back}
+                  onClick={onClose}
+                  aria-label={closeLabel}
+                >
                   <span className="observation-back-full">{closeLabel}</span>
                   <span className="observation-back-compact">Back</span>
                 </button>

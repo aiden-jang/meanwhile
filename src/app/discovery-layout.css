@@ -236,10 +236,6 @@
     min-height: 44px;
     font-size: var(--text-body);
   }
-  .mobile-navigation button {
-    gap: 5px;
-    font-size: var(--text-caption);
-  }
 }
 
 .shared-story {

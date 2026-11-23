@@ -260,7 +260,10 @@ export function RadarStage({
           <div className="radar-clock">
             <div className="radar-scan-reading">
               {selected && (
-                <time dateTime={new Date(selected.at).toISOString()}>
+                <time
+                  dateTime={new Date(selected.at).toISOString()}
+                  data-radar-displayed={!!image || undefined}
+                >
                   <strong>{shortTime(selected.at)} UTC</strong>
                   <span className="radar-reading-date">{radarScanDate(selected.at)}</span>
                 </time>

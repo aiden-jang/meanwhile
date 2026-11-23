@@ -27,8 +27,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await installFeeds(page);
   await page.goto("/#v=explore&at=15,25,1.5");
   const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
-  const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
-  await expect(navigation.getByRole("button")).toHaveCount(1);
+  await expect(sheet).toHaveCount(1);
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const header = (await page.locator("#chrome-head").boundingBox())!;
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
@@ -43,6 +42,14 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const sourceControl = (await sources.boundingBox())!;
   expect(mapControl.y).toBeCloseTo(sourceControl.y);
   expect((await sheet.boundingBox())!.y - mapControl.y - mapControl.height).toBeGreaterThanOrEqual(8);
+  for (const control of [projection, sources]) {
+    expect(
+      await control.evaluate((element) => {
+        const r = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+      }),
+    ).toBe(true);
+  }
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
@@ -55,9 +62,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   ).toBeLessThanOrEqual(1);
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
-  await navigation.getByRole("button", { name: "More globe", exact: true }).click();
+  await sheet.click();
   const collapsed = Number(await size());
-  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
+  await sheet.press("Enter");
   const half = Number(await size());
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/sheet-390.png` });
@@ -96,7 +103,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await sheet.press("End");
   await page.setViewportSize({ width: 667, height: 375 });
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82) - 60));
-  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
+  await sheet.press("Enter");
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/sheet-667.png` });

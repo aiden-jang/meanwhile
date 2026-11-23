@@ -32,7 +32,7 @@ for (const width of [1440, 390, 320]) {
     expect(caption!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
     expect(caption!.x + caption!.width).toBeLessThanOrEqual(width);
     await feeds.click();
-    if (width < 768) await page.getByRole("button", { name: "More globe", exact: true }).click();
+    if (width < 768) await page.getByRole("separator", { name: "Sheet height" }).press("End");
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`cutaway-${width}.png`) });
     await page.locator("body").click({ position: { x: width - 20, y: 140 } });

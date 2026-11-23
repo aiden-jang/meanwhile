@@ -54,7 +54,13 @@ export function FloatDivePanel({
       <div className="float-heading">
         {view && !guided ? <FloatTitle view={view} /> : <h2>Float Dive</h2>}
         <div className="observatory-actions float-actions">
-          <button type="button" ref={back} onClick={onClose} aria-label={returnLabel}>
+          <button
+            className="reading-back"
+            type="button"
+            ref={back}
+            onClick={onClose}
+            aria-label={returnLabel}
+          >
             {returnLabel}
           </button>
         </div>

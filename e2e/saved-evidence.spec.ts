@@ -74,6 +74,9 @@ test("a kept pressure reading exports its source card and reopens the same stati
   );
   await expect(story.locator(".tonga-chart-meta").first()).toContainText("1017.75 hPa");
   await expect(story.locator(".tonga-chart-dot[data-kept-reading]")).toBeVisible();
+  const evidence = story.getByRole("region", { name: "Honolulu pressure evidence" });
+  await expect(evidence.getByRole("button", { name: /Megaflash/ })).toBeVisible();
+  await expect(evidence).toContainText("a separate event");
   await expect(story.getByRole("button", { name: "Kept", exact: true })).toHaveAttribute(
     "aria-disabled",
     "true",

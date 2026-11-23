@@ -1,4 +1,5 @@
 import type { Controls } from "./controls";
+import { EARTH_RADIUS_KM } from "../geo/sphere";
 
 export function positionEvidenceConnector(
   canvas: HTMLCanvasElement,
@@ -10,8 +11,14 @@ export function positionEvidenceConnector(
   if (!svg) return;
   const source = root?.querySelector<HTMLElement>("[data-evidence-source=true]");
   const target = root?.querySelector("[data-evidence-point]");
+  const depth = source?.dataset["depthKm"];
   const point =
-    source && controls.project(Number(source.dataset["lon"]), Number(source.dataset["lat"]), 1.01);
+    source &&
+    controls.project(
+      Number(source.dataset["lon"]),
+      Number(source.dataset["lat"]),
+      depth === undefined ? 1.01 : 1 - Number(depth) / EARTH_RADIUS_KM,
+    );
   const parent = source?.parentElement ? parents.get(source.parentElement) : undefined;
   const end = target?.getBoundingClientRect();
   const body = target?.closest("[data-evidence-body]")?.getBoundingClientRect();

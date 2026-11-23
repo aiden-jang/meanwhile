@@ -113,6 +113,15 @@
   stroke-dasharray: 3 5;
   opacity: 0.5;
 }
+.float-reading-layer[data-field="temperature"] {
+  --float-linked-ink: #e8bc8e;
+}
+.float-reading-layer[data-field="salinity"] {
+  --float-linked-ink: #8bd7cf;
+}
+.float-reading-layer[data-field] .float-tether path {
+  stroke: var(--float-linked-ink);
+}
 .float-profile-sample {
   fill: var(--color-ink);
   stroke: var(--color-deck);

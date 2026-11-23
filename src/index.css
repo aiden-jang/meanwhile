@@ -952,29 +952,26 @@
 }
 
 @media (width < 768px) {
-  .mobile-navigation {
-    position: absolute;
-    top: calc(var(--sheet-position) + 8px);
-    right: 16px;
-    z-index: 3;
-    display: flex;
-    gap: 4px;
-    pointer-events: none;
+  .mobile-sheet-grip {
+    inset-inline: calc(50% - 57px) auto;
+    width: 114px;
+    height: 44px;
+    transform: none;
   }
-  .mobile-navigation button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    width: 108px;
-    min-height: 44px;
-    padding: 0 9px;
-    border: 1px solid var(--color-hairline);
-    border-radius: 7px;
-    background: var(--color-deck);
-    color: var(--color-ink);
-    font-size: 12px;
-    pointer-events: auto;
+  .mobile-sheet-grip > :first-child {
+    display: none;
+  }
+  .mobile-sheet-grip > :last-child {
+    top: 20px;
+  }
+  .resizer-visible-label {
+    position: absolute;
+    inset: 27px 0 auto;
+    color: var(--color-dim);
+    font-size: 11px;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
   }
   .zone-rail {
     padding-top: 28px;
@@ -1091,10 +1088,6 @@ textarea::selection {
 .view-mode {
   font-size: 0.75rem;
   color: var(--color-dim);
-}
-
-.mobile-navigation button[aria-expanded="true"] {
-  background: var(--color-raised);
 }
 
 @media (max-width: 767px) {

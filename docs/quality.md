@@ -59,6 +59,8 @@ coverage checks playback labels and reachable onward links. Audio checks establi
 is required, pitch follows the measured value and leaving the view closes the voice; unit checks
 cover finite inputs, throttling, hidden-tab silence and voice cleanup. Catalogue and preview checks keep story
 destinations and recorded thumbnail coverage aligned with the available views.
+The [story interaction inventory](story-interactions.md) identifies the first action, visible result,
+and return path to check for each published story.
 Explore checks retain three initial recommendations, the Library disclosure, search and return context,
 the shared renderer across projection changes, and reachable Sources & times with Escape dismissal,
 compact radar player identity,

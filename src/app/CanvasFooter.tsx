@@ -15,23 +15,30 @@ export function KeyboardHelp({
   playing,
   archived,
   clearable,
+  localSky = false,
 }: {
   flat: boolean;
   playing: boolean;
   archived: boolean;
   clearable: boolean;
+  localSky?: boolean;
 }) {
-  const shortcuts = [
-    ["Arrows", flat ? "Pan the map" : "Orbit the globe"],
-    ["+ / −", "Zoom"],
-    ["0", "Reset camera"],
-    ["Space", playing ? "Pause playback" : "Start playback"],
-    [", / .", "Step through time"],
-    ...(archived ? [["[ / ]", "Change archive day"]] : []),
-    ...(flat ? [["Shift + drag", "Draw a cross-section"]] : []),
-    ["F", "Fullscreen"],
-    ...(clearable ? [["Esc", "Clear the current selection"]] : []),
-  ];
+  const shortcuts = localSky
+    ? [
+        ["Arrows", "Look around the local sky"],
+        ["Esc", "Return to the previous view"],
+      ]
+    : [
+        ["Arrows", flat ? "Pan the map" : "Orbit the globe"],
+        ["+ / −", "Zoom"],
+        ["0", "Reset camera"],
+        ["Space", playing ? "Pause playback" : "Start playback"],
+        [", / .", "Step through time"],
+        ...(archived ? [["[ / ]", "Change archive day"]] : []),
+        ...(flat ? [["Shift + drag", "Draw a cross-section"]] : []),
+        ["F", "Fullscreen"],
+        ...(clearable ? [["Esc", "Clear the current selection"]] : []),
+      ];
   return (
     <details className="view-keyboard-help">
       <summary>Keyboard shortcuts</summary>
@@ -54,13 +61,18 @@ export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): 
   return radar ? (
     <p className="radar-canvas-credit">
       <span className="radar-canvas-time">
-        <span aria-hidden="true">Radar · 00:00 UTC</span>
+        <span aria-hidden="true">
+          <b className="radar-canvas-prefix">Radar · </b>00:00 UTC
+        </span>
         {scan && radar.at !== undefined ? (
           <time dateTime={scan} title={layerTime(radar.at)}>
-            Radar · {scan.slice(11, 16)} UTC
+            <b className="radar-canvas-prefix">Radar · </b>
+            {scan.slice(11, 16)} UTC
           </time>
         ) : (
-          <span>Radar · No scan</span>
+          <span>
+            <b className="radar-canvas-prefix">Radar · </b>No scan
+          </span>
         )}
       </span>
       <span aria-hidden="true">·</span>

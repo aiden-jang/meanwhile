@@ -36,7 +36,7 @@ export const onward: Record<string, readonly [string, string]> = {
   water: ["river", "Return to current USGS river gauges."],
   rupture: ["tsunami", "Compare Tōhoku’s fault with the separately recorded 2010 Chile tsunami."],
   katrina: ["lights", "See a different hurricane’s aftermath: Maria in Puerto Rico, 2017."],
-  tonga: ["megaflash", "Explore another rapid atmospheric event through satellite detections."],
+  tonga: ["megaflash", "How fast can lightning spread? Follow a separate event recorded from orbit."],
   megaflash: ["lightning", "Return to recent GOES lightning detections."],
   kilauea: ["tide", "Compare permanent coastal change with a harbor’s changing water level."],
   lights: ["katrina", "Follow an independent hurricane track: Katrina in 2005."],

@@ -306,8 +306,8 @@ tint behind labels to a clear edge without an outer stroke. The tabs and story f
 panel surface at rest and take on a solid tint while content moves beneath them. Explore's keyboard
 focus uses a softer two-pixel outline, padded around tab labels and inset on category buttons, search
 fields and story rows.
-The phone sheet keeps a deeper tint with a soft top edge,
-and its globe controls share a baseline above the drag handle.
+The phone sheet keeps a deeper tint with a soft top edge. Its instrument strip gives attribution,
+sources, panel visibility and projection their own space at the lower edge of the world.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
 visibility switches and details controls. Coverage descriptions live in the inspector; loading and
@@ -351,19 +351,19 @@ The wordmark stays anchored when entering Explore. Explore, Find, Saved, feed st
 have dedicated header controls at every width. Hover and focus strengthen the fill and text without changing
 button dimensions. Feed status keeps a fixed slot as its label changes. Privacy and Terms sit beside the
 author credit, with location privacy also linked from the device-location control. On narrow phones,
-projection sits just beneath the header beside the world. Capture, fullscreen,
-rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
-the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
-other shortcut names the current pane rather than assuming earthquake activity. The handle and
+projection sits on the instrument strip. View options starts with the available controls for the
+current scene, then capture and fullscreen. Rotation is a landing preference. Phone layouts keep
+the subject above a draggable, keyboard-operable sheet. Tapping the grip alternates between more
+world and more controls. The separate panel toggle names the current pane. The handle and
 interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
 a 280px floor bounded by 72% on very short screens. Layers and Stories share that starting height.
 A manually adjusted
 height takes precedence in either pane. The baseline lower stop is 20%, with a 180px floor
 bounded by 60%; its upper stop is 82%. Phone stops subtract the credit reservation, with a
 150px minimum globe allocation bounded by 40% on short screens. One shared calculation drives
-the sheet, navigation and accessible resize values. Browsing expands the sheet by reducing the globe row;
-expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 60px header and safe-area inset
-and leaves 12px below, keeping the default globe complete above the sheet.
+the sheet and accessible resize values. Browsing expands the sheet by reducing the globe row;
+expanding the globe reduces the sheet. Within that row, the Explore canvas clears the header,
+safe-area inset and instrument strip, keeping the default globe above the sheet.
 The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
 Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,
 with enough canvas clearance for the header and legend on short screens.

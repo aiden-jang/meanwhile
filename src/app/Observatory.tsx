@@ -164,7 +164,7 @@ function ObservatoryContent({
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} projection={observations} />
       ) : radar.active ? (
-        <RadarReadout map={observations.map} onMap={observations.setMap} region={radar.view?.region} />
+        <RadarReadout map={observations.map} onMap={observations.setMap} view={radar.view} />
       ) : tonight.view?.moonfall ? (
         <MoonfallReadout
           view={tonight.view.moonfall}

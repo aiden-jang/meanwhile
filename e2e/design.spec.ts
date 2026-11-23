@@ -315,7 +315,7 @@ test("the globe keeps a generous desktop and expanded phone canvas", async ({ pa
     [390, 844],
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
-    if (w < 768) await page.getByRole("button", { name: "More globe", exact: true }).click();
+    if (w < 768) await page.getByRole("separator", { name: "Sheet height" }).press("End");
     await page.waitForTimeout(500);
     const share = await page.evaluate(
       () =>

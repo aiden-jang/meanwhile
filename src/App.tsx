@@ -1053,6 +1053,9 @@ export function App(): JSX.Element {
         }}
       />
     ) : null;
+  const { tonight } = observatory;
+  const localSky =
+    tonight.active && !tonight.orbit && !observatory.observations.map && !tonight.view?.moonfall;
   return (
     <StoryNavigation {...observatoryProps}>
       <main
@@ -1067,6 +1070,7 @@ export function App(): JSX.Element {
           keyboard={
             <KeyboardHelp
               flat={flat}
+              localSky={localSky}
               playing={view.playing}
               archived={archived}
               clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
@@ -1077,6 +1081,8 @@ export function App(): JSX.Element {
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
           observing={observatory.observing}
+          landing={observatory.landing}
+          localSky={localSky}
           onHome={returnHome}
           home={home}
           onReset={resetView}
@@ -1113,13 +1119,6 @@ export function App(): JSX.Element {
               height={sheetCanvas}
               onResize={setSheetCanvas}
               visible={railShown && !markSubject && !quakeOverlay}
-              panel={
-                observatory.browser.pane === "stories"
-                  ? "Stories"
-                  : mapLayers.inspector
-                    ? "Layer details"
-                    : "Layers"
-              }
             />
           )}
           <aside

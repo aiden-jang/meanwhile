@@ -209,7 +209,7 @@ export function MapLayers({
       )}
       {layer && (
         <div className="layer-inspector-heading">
-          <button type="button" onClick={back}>
+          <button className="reading-back" type="button" onClick={back}>
             Back to layers
           </button>
           <div>

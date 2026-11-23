@@ -345,6 +345,9 @@ test("Earth shares radar playback with Layers and scene tabs restore each positi
   await scan.press("Home");
   await expect(scan).toHaveValue("0");
   await expect(radar).toBeVisible();
+  await expect(
+    page.locator(".radar-clock time[data-radar-displayed]").filter({ visible: true }),
+  ).toHaveAttribute("datetime", new Date(scans[0]!).toISOString());
   await openLayers.click();
   await page.getByRole("button", { name: "Storm radar details", exact: true }).click();
   await expect(scan).toHaveValue("0");
@@ -357,6 +360,14 @@ test("Earth shares radar playback with Layers and scene tabs restore each positi
   await handle.press("End");
   await expect(handle).toHaveAttribute("aria-valuetext", "900 km");
   await expect(depth.getByText("670.8 km deep", { exact: true })).toBeVisible();
+  await expect(depth.getByRole("button", { name: "900 km", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(depth.getByRole("button", { name: "Read South of Levuka, Fiji · 670.8 km" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await depth.getByText("Quake readings & sources", { exact: true }).click();
   await expect(depth.getByRole("link", { name: "USGS event record" })).toHaveAttribute("href", /us2000h9e2$/);
   await tab("After Dark").click();
@@ -375,6 +386,49 @@ test("Earth shares radar playback with Layers and scene tabs restore each positi
   await expect(handle).toHaveAttribute("aria-valuetext", "900 km");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!).radar)).toBe(true);
+});
+
+test("the phone sky exposes the selected object and returns from the Moon on the same canvas", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.setFixedTime(new Date("2026-11-12T16:00:00Z"));
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.addInitScript(() => localStorage.setItem("eif.sky-city", "Tokyo"));
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  const object = page.getByRole("combobox", { name: "Sky object" });
+  const moonfall = page.getByRole("button", { name: "Moonfall", exact: true });
+  await expect(object).toBeInViewport({ ratio: 1 });
+  await object.selectOption("Moon");
+  await expect(moonfall).toBeInViewport({ ratio: 1 });
+  await object.selectOption("Saturn");
+  await expect(moonfall).toBeHidden();
+  await object.selectOption("Moon");
+  const time = page.getByRole("slider", { name: "City local time" });
+  await time.press("End");
+  const held = await time.getAttribute("aria-valuetext");
+  await expect(moonfall).toBeInViewport({ ratio: 1 });
+  const hit = await moonfall.evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    return button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+  });
+  expect(hit).toBe(true);
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  const options = page.getByRole("region", { name: "View options", exact: true });
+  await expect(options.getByRole("heading").first()).toHaveText("Local sky controls");
+  await expect(options.getByRole("heading", { name: "Globe controls", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(options).toBeHidden();
+  await moonfall.click();
+  await expect(page.getByRole("group", { name: "Lunar view" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Tonight’s Sky", exact: true }).click();
+  await expect(moonfall).toBeFocused();
+  await expect(object).toHaveValue("Moon");
+  await expect(time).toHaveAttribute("aria-valuetext", held!);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
 test("Explore opens Layers and nearby Fiji reports keep the same world and reading", async ({ page }) => {

@@ -22,7 +22,7 @@ import { traceSkyBody } from "./traceSkyBody";
 import { StoryDock } from "../observations/StoryDock";
 import { SkyCityPicker, type SkyCityPreference } from "./SkyCityPicker";
 import { MeteorNights } from "./MeteorNights";
-import { SkyObjects } from "./SkyObjects";
+import { SkyFocus, SkyObjects } from "./SkyObjects";
 import { skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
 import { lunarFlight, TonightMoonfall } from "./TonightMoonfall";
@@ -281,13 +281,22 @@ export function TonightSky({
     return (
       <>
         <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} compact />
+        <SkyFocus
+          current={current}
+          onSelect={(targetName) => onView({ ...current, targetName, nightTrail: undefined })}
+          onFind={findBody}
+          moonfall={
+            <button type="button" id="open-moonfall" onClick={approachMoon}>
+              Moonfall
+            </button>
+          }
+        />
         {timeline}
         <div className="entry-sky-city">{cityControls}</div>
         {tabs}
         <details className="scene-entry-details">
           <summary>Sky details</summary>
           {objects}
-          {moonfallEntry}
           <button
             type="button"
             onClick={() => {

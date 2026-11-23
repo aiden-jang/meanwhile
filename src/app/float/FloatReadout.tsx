@@ -5,7 +5,7 @@ import { StoryProjection } from "../observations/StoryProjection";
 
 type Projection = { map: boolean; setMap: (map: boolean) => void };
 function Reading({ view, projection }: { view: FloatDiveView; projection: Projection }) {
-  const { index, stage } = useSyncExternalStore(view.subscribe, view.read);
+  const { index, stage, inspecting, field } = useSyncExternalStore(view.subscribe, view.read);
   const sample = view.profile.samples[index]!;
   return (
     <>
@@ -23,12 +23,19 @@ function Reading({ view, projection }: { view: FloatDiveView; projection: Projec
           </span>
         </>
       )}
-      <div className="float-reading-layer" aria-hidden="true">
+      <div className="float-reading-layer" data-field={inspecting ? field : undefined} aria-hidden="true">
         <svg className="float-tether">
           <path fill="none" />
         </svg>
         <div className="float-instrument-reading" data-float-instrument>
           <span>{Math.round(sample.depth).toLocaleString()} m</span>
+          {inspecting && (
+            <small>
+              {field === "temperature"
+                ? `${sample.temperature.toFixed(2)} °C`
+                : `${sample.salinity.toFixed(3)} salinity`}
+            </small>
+          )}
         </div>
       </div>
     </>

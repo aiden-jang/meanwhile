@@ -1,19 +1,16 @@
 import { useLayoutEffect, useState } from "react";
 import { Resizer } from "./Resizer";
-import { MobileNavigation } from "./MobileNavigation";
 import { sheetStops } from "./sheetLayout";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 
 export function ExploreSheet({
   height,
   onResize,
-  panel,
   visible,
   flat,
 }: {
   height: number;
   onResize: (height: number) => void;
-  panel: string;
   visible: boolean;
   flat: boolean;
 }) {
@@ -59,30 +56,28 @@ export function ExploreSheet({
     };
   }, [preview, current]);
   const resizeSheet = preview ? setPreviewHeight : onResize;
+  const moreWorld = current < last;
+  const action = moreWorld ? (flat ? "More map" : "More globe") : "More controls";
   return (
-    <>
-      <Resizer
-        axis="y"
-        label="Sheet height"
-        value={current}
-        min={stops[0]!}
-        max={stops[2]!}
-        snap={stops}
-        measure={(event) => event.clientY}
-        onChange={resizeSheet}
-        grip
-        className={visible ? "absolute inset-x-0 z-[2] md:hidden" : "hidden"}
-        style={{ top: "calc(var(--sheet-position) - 6px)" }}
-      />
-      {visible && (
-        <MobileNavigation
-          canvasHeight={current}
-          stops={stops}
-          onResize={resizeSheet}
-          panel={panel}
-          flat={flat}
-        />
-      )}
-    </>
+    <Resizer
+      axis="y"
+      label="Sheet height"
+      value={current}
+      min={stops[0]!}
+      max={stops[2]!}
+      snap={stops}
+      measure={(event) => event.clientY}
+      onChange={resizeSheet}
+      onTap={() => resizeSheet(moreWorld ? last : half)}
+      valueText={`${Math.round(current)} pixels of world. Tap or press Enter for ${action.toLowerCase()}.`}
+      caption={action}
+      grip
+      className={
+        visible
+          ? `mobile-sheet-grip absolute z-[2] md:hidden${moreWorld ? "" : " sheet-most-world"}`
+          : "hidden"
+      }
+      style={{ top: "calc(var(--sheet-position) - 22px)" }}
+    />
   );
 }

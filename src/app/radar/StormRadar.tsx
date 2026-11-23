@@ -3,6 +3,7 @@ import { RADAR_SERVICE } from "../../sources/radar";
 import { isGlobalRadar, type RadarEntry, type RadarView } from "./radarCamera";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { StoryProjection } from "../observations/StoryProjection";
+import { layerTime } from "../layerTime";
 import "./radar.css";
 
 const RadarStage = lazy(() => import("./RadarStage").then(({ RadarStage }) => ({ default: RadarStage })));
@@ -10,13 +11,13 @@ const RadarStage = lazy(() => import("./RadarStage").then(({ RadarStage }) => ({
 export function RadarReadout({
   map,
   onMap,
-  region,
+  view,
 }: {
   map: boolean;
   onMap: (map: boolean) => void;
-  region?: string | undefined;
+  view: RadarView | null;
 }): JSX.Element {
-  const global = isGlobalRadar(region);
+  const global = isGlobalRadar(view?.region);
   return (
     <div
       className="observatory-stage replay-stage"
@@ -46,8 +47,13 @@ export function RadarReadout({
           <span>NOAA MRMS · Base reflectivity</span>
         )}
       </div>
-      <div className="stage-readout">
-        {global ? "International radar network" : "Contiguous United States"}
+      <div className="stage-readout radar-world-reading" data-world-inset="">
+        <span>{global ? "International radar network" : "Contiguous United States"}</span>
+        {view?.at !== undefined && (
+          <time dateTime={new Date(view.at).toISOString()} title={layerTime(view.at)}>
+            {new Date(view.at).toISOString().slice(11, 16)} UTC
+          </time>
+        )}
       </div>
       <StoryProjection map={map} onMap={onMap} label="Radar projection" />
     </div>
@@ -80,7 +86,7 @@ export function StormRadar({
       <div className="radar-heading">
         <h2>Storm Radar</h2>
         <div className="observatory-actions radar-actions">
-          <button type="button" ref={back} onClick={onClose} aria-label={backLabel}>
+          <button className="reading-back" type="button" ref={back} onClick={onClose} aria-label={backLabel}>
             <span className="observation-back-full">{backLabel}</span>
             <span className="observation-back-compact">Back</span>
           </button>

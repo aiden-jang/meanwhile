@@ -109,6 +109,9 @@
   position: relative;
   white-space: nowrap;
 }
+.radar-canvas-prefix {
+  font-weight: inherit;
+}
 .radar-canvas-time > :not([aria-hidden="true"]) {
   position: absolute;
   inset: 0;
@@ -203,8 +206,7 @@
     background: var(--color-deck);
   }
   .canvas-information:has(> .explore-world-controls) {
-    min-height: 68px;
-    padding-inline-end: 180px;
+    justify-content: space-between;
   }
   .frame[data-presentation="explore"] .canvas-information {
     --explore-control-clearance: 32px;
@@ -212,7 +214,8 @@
     padding-bottom: var(--explore-control-clearance);
   }
   .frame[data-presentation="explore"] .canvas-information:has(> .explore-world-controls) {
-    min-height: calc(44px + var(--explore-control-clearance));
+    --explore-control-clearance: 30px;
+    background: linear-gradient(0deg, var(--color-void) 60%, transparent);
   }
   .frame[data-presentation="explore"] .canvas-information > .layer-readout {
     gap: 0 8px;
@@ -223,6 +226,23 @@
   .radar-credit-prefix,
   .radar-canvas-credit > span {
     display: none;
+  }
+  .canvas-information:has(> .explore-world-controls) .radar-canvas-credit {
+    position: relative;
+    min-inline-size: 64px;
+  }
+  .canvas-information:has(> .explore-world-controls) .radar-canvas-time {
+    position: absolute;
+    display: block;
+    inset: 5px auto auto 0;
+    font-size: 10px;
+    pointer-events: none;
+  }
+  .canvas-information:has(> .explore-world-controls) .radar-canvas-prefix {
+    display: none;
+  }
+  .canvas-information:has(> .explore-world-controls) .radar-canvas-credit a {
+    padding-block-start: 14px;
   }
 }
 
@@ -310,21 +330,5 @@
 
   .canvas-information .layer-times-suffix {
     display: none;
-  }
-}
-
-@media (max-width: 359px) {
-  .frame[data-presentation="explore"]
-    .canvas-information:has(> .explore-world-controls):has(.radar-canvas-credit) {
-    min-height: calc(88px + var(--explore-control-clearance));
-  }
-  .frame[data-presentation="explore"] .canvas-information:has(> .explore-world-controls) > .layer-readout {
-    align-self: end;
-  }
-  .frame[data-presentation="explore"]
-    .canvas-information:has(> .explore-world-controls)
-    .radar-canvas-credit {
-    position: absolute;
-    inset: auto auto calc(var(--explore-control-clearance) + 44px) 12px;
   }
 }

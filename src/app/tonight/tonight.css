@@ -411,6 +411,57 @@
   display: block;
 }
 
+.sky-focus {
+  display: grid;
+  grid-template-columns: minmax(75px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 2px 0;
+  border-block: 1px solid var(--color-hairline);
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.sky-focus p {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sky-focus :is(select, button) {
+  min-height: 44px;
+  max-width: 100%;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.sky-focus select {
+  width: 100%;
+  padding-inline: 5px;
+  background: var(--color-deck);
+}
+
+.sky-focus button {
+  padding-inline: 7px;
+  border-radius: 4px;
+}
+
+.sky-focus button:enabled:is(:hover, :focus-visible),
+.sky-focus #open-moonfall {
+  background: var(--color-raised);
+}
+
+.sky-focus button:disabled {
+  color: var(--color-faint);
+  cursor: default;
+}
+
+@media (max-width: 359px) {
+  .sky-focus {
+    gap: 4px;
+    font-size: 12px;
+  }
+}
+
 .tonight-moonfall-entry button {
   display: grid;
   gap: 3px;

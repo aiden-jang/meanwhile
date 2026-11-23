@@ -1,5 +1,6 @@
 import { PressureChart } from "./PressureChart";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { KeepPressure } from "./KeepPressure";
 import { stations, timeIso, timeLabel, pressureAt } from "./tongaTimeline";
@@ -116,17 +117,20 @@ export function TongaPressure({
         )}
       </div>
       {!shared && (
-        <ShareMoment
-          label="Share finding"
-          share={pressureShare}
-          current={() => ({
-            id: "tonga",
-            at: Date.parse(timeIso(minute)),
-            choice: station.id,
-            chapter: "pressure",
-            map,
-          })}
-        />
+        <>
+          <ShareMoment
+            label="Share finding"
+            share={pressureShare}
+            current={() => ({
+              id: "tonga",
+              at: Date.parse(timeIso(minute)),
+              choice: station.id,
+              chapter: "pressure",
+              map,
+            })}
+          />
+          {!guided && <ExperienceEnding id="tonga" showFinding={false} showSave={false} evidenceOpen />}
+        </>
       )}
     </section>
   );

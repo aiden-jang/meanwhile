@@ -44,11 +44,11 @@
     display: inline;
   }
   .zone-head .header-navigation-action {
-    width: 44px;
-    padding-inline: 0;
+    min-width: 44px;
+    padding-inline: 4px;
     flex: none;
   }
-  .zone-head .header-navigation-action > span {
+  .zone-head .header-navigation-action:not(.header-explore) > svg {
     display: none;
   }
   .zone-head .observatory-header-actions {
@@ -72,7 +72,7 @@
 }
 @media (max-width: 359px) {
   .frame .zone-head {
-    gap: 4px;
+    gap: 2px;
     padding-inline: 7px;
   }
   .zone-head .wordmark-name {
@@ -101,8 +101,8 @@
 
 @media (max-width: 767px) {
   .canvas-information > .explore-world-controls {
-    position: absolute;
-    inset: auto 12px calc(var(--explore-control-clearance, 24px) - 3px) auto;
+    position: relative;
+    margin-inline-start: auto;
     pointer-events: auto;
   }
   .canvas-information .projection-switch button {
@@ -115,6 +115,10 @@
   }
 }
 @media (max-width: 359px) {
+  .canvas-information .projection-current {
+    position: absolute;
+    clip-path: inset(50%);
+  }
   .layer-times-suffix {
     display: none;
   }

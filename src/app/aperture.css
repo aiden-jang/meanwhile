@@ -203,9 +203,9 @@
   }
 }
 .frame[data-presentation="explore"] #chrome-rail {
-  --explorer-surface: color-mix(in srgb, var(--color-deck) 82%, var(--color-void));
-  --explorer-edge: color-mix(in srgb, var(--explorer-surface) 64%, transparent);
-  background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 64px), var(--explorer-edge));
+  --explorer-surface: color-mix(in srgb, var(--color-deck) 85%, var(--color-void));
+  --explorer-edge: color-mix(in srgb, var(--explorer-surface) 60%, transparent);
+  background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 40px), var(--explorer-edge));
   --explore-scroll-thumb: color-mix(in srgb, var(--color-faint) 16%, transparent);
   scrollbar-color: var(--explore-scroll-thumb) transparent;
 }

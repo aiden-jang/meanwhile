@@ -1,8 +1,9 @@
 import { useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { depthRecords, type DepthRecord } from "../data/depthRecords";
-import { CUTAWAY_DEPTH_KM } from "../globe/cutawayScale";
+import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { SLAB_FROM, SLAB_TO } from "../geo/slab";
 import { StoryProjection } from "./observations/StoryProjection";
+import { EvidenceConnector } from "./observations/EvidenceConnector";
 import { useObservatoryEscape } from "./useObservatoryEscape";
 import "./depth-reading.css";
 
@@ -35,6 +36,7 @@ export function DepthReading({
   const title = useRef<HTMLHeadingElement>(null);
   const depth = useId();
   const reading = useRef<HTMLDetailsElement>(null);
+  const reached = !tabs || sweepKm >= record.depthKm;
   useLayoutEffect(() => title.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onHome);
 
@@ -60,16 +62,21 @@ export function DepthReading({
                 aria-label={`Read ${event.title} · ${event.depthKm} km`}
                 data-observation-anchor=""
                 data-compact-anchor=""
+                data-evidence-source={event.id === record.id ? "true" : undefined}
+                aria-pressed={event.id === record.id}
                 data-lon={event.lon}
                 data-lat={event.lat}
-                data-depth-km={event.depthKm}
+                data-depth-km={projection.map ? undefined : event.depthKm}
                 onClick={() => {
                   select(event);
                   if (reading.current) reading.current.open = true;
                   reading.current?.querySelector("summary")?.focus({ preventScroll: true });
                 }}
-              />
+              >
+                {event.id === record.id && <span aria-hidden="true">{event.depthKm} km</span>}
+              </button>
             ))}
+        {!!tabs && reached && <EvidenceConnector />}
         <StoryProjection map={projection.map} onMap={projection.setMap} label="Cutaway projection" />
       </div>
       <div className="observatory-sidebar replay-sidebar">
@@ -79,7 +86,12 @@ export function DepthReading({
               Below the Surface
             </h2>
             <div className="observatory-actions">
-              <button type="button" onClick={onHome} aria-label="Back to the Observatory">
+              <button
+                className="reading-back"
+                type="button"
+                onClick={onHome}
+                aria-label="Back to the Observatory"
+              >
                 <span className="observation-back-full">Back to the Observatory</span>
                 <span className="observation-back-compact">Back</span>
               </button>
@@ -101,19 +113,25 @@ export function DepthReading({
                 aria-valuetext={`${sweepKm} km`}
                 onChange={(event) => onSweep(event.currentTarget.valueAsNumber)}
               />
-              <div className="entry-scrub-ends">
-                <span>Surface</span>
-                <span>{CUTAWAY_DEPTH_KM} km</span>
+              <div
+                className="cutaway-guide-scale"
+                role="group"
+                aria-label={projection.map ? "Recorded depths" : "Depth guide rings"}
+              >
+                {CUTAWAY_GUIDES_KM.map((km) => (
+                  <button type="button" key={km} onClick={() => onSweep(km)} aria-pressed={sweepKm === km}>
+                    {km ? `${km} km` : "Surface"}
+                  </button>
+                ))}
               </div>
             </div>
           )}
-          {tabs}
-          <div className="depth-reading-value" aria-live="polite" aria-atomic="true">
-            {tabs && sweepKm < record.depthKm ? (
+          <div className="depth-reading-value" aria-live="polite" aria-atomic="true" data-evidence-body="">
+            {!reached ? (
               <span>Move past {record.depthKm} km to reach the first recorded quake.</span>
             ) : (
               <>
-                <strong>
+                <strong data-evidence-point="">
                   {record.depthKm} <small>km deep</small>
                 </strong>
                 <span>
@@ -122,6 +140,7 @@ export function DepthReading({
               </>
             )}
           </div>
+          {tabs}
           <details className="scene-entry-details" open={!tabs} ref={reading}>
             <summary>Quake readings &amp; sources</summary>
             <p className="observation-note">

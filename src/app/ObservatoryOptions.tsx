@@ -1,6 +1,6 @@
 import { RecordButton } from "./capture/ClipControls";
 import type { Clip } from "./capture/useClip";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Children, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { FullscreenButton } from "./FullscreenButton";
 import "./observatory-options.css";
 
@@ -11,6 +11,8 @@ export function ObservatoryOptions({
   saving,
   saveStill,
   rotation,
+  landing,
+  controlsLabel,
 }: {
   children?: ReactNode;
   clip: Clip;
@@ -18,6 +20,8 @@ export function ObservatoryOptions({
   saving: boolean;
   saveStill: () => void;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
+  landing: boolean;
+  controlsLabel: string;
 }): JSX.Element {
   const id = `view-options-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
@@ -29,6 +33,25 @@ export function ObservatoryOptions({
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
+  const hasControls = Children.toArray(children).length > 0;
+  const preferences = (
+    <section className="view-option-group" aria-label={landing ? "Motion" : "Landing preferences"}>
+      <h2>{landing ? "Motion" : "Landing preferences"}</h2>
+      <button
+        autoFocus={landing}
+        type="button"
+        aria-pressed={rotation.enabled}
+        onClick={() => rotation.set(!rotation.enabled)}
+      >
+        Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
+      </button>
+      <p>
+        {rotation.enabled && reduced
+          ? "Enabled for the landing page. Paused by reduced motion."
+          : "Landing page only. Drag to pause rotation."}
+      </p>
+    </section>
+  );
   return (
     <>
       <button
@@ -75,22 +98,20 @@ export function ObservatoryOptions({
             panel.current?.hidePopover();
         }}
       >
-        <section className="view-option-group" aria-label="Motion">
-          <h2>Motion</h2>
-          <button
-            autoFocus
-            type="button"
-            aria-pressed={rotation.enabled}
-            onClick={() => rotation.set(!rotation.enabled)}
-          >
-            Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
-          </button>
-          <p>
-            {rotation.enabled && reduced
-              ? "Enabled for the landing page. Paused by reduced motion."
-              : "Landing page only. Drag to pause rotation."}
-          </p>
-        </section>
+        {landing && preferences}
+        {hasControls && (
+          <section className="view-option-group" aria-label={controlsLabel}>
+            <h2>{controlsLabel}</h2>
+            <div
+              className="explorer-view-options"
+              onClick={(event) => {
+                if ((event.target as Element).closest("button")) panel.current?.hidePopover();
+              }}
+            >
+              {children}
+            </div>
+          </section>
+        )}
         <section className="view-option-group" aria-label="Capture">
           <h2>Capture</h2>
           <button
@@ -114,17 +135,7 @@ export function ObservatoryOptions({
           {!ready && <p id={`${id}-capture-note`}>Image and video capture are unavailable for this view.</p>}
           <FullscreenButton />
         </section>
-        <section className="view-option-group" aria-label="Globe controls">
-          <h2>Globe controls</h2>
-          <div
-            className="explorer-view-options"
-            onClick={(event) => {
-              if ((event.target as Element).closest("button")) panel.current?.hidePopover();
-            }}
-          >
-            {children}
-          </div>
-        </section>
+        {!landing && preferences}
       </div>
     </>
   );

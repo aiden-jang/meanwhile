@@ -144,9 +144,9 @@ for (const width of [1440, 390, 320]) {
     await page.goto("/#v=explore");
     await expect(page.getByRole("tab", { name: "Stories", exact: true })).toBeVisible();
     if (width < 768) {
-      const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
-      await expect(navigation.getByRole("button")).toHaveCount(1);
-      await expect(navigation.getByRole("button", { name: "More globe" })).toBeInViewport({ ratio: 1 });
+      const handle = page.getByRole("separator", { name: "Sheet height" });
+      await expect(handle).toHaveCount(1);
+      await expect(handle).toBeInViewport({ ratio: 1 });
       if (process.env["EIF_CAPTURE_UI"])
         await page.screenshot({ path: test.info().outputPath(`panel-${width}.png`) });
     }

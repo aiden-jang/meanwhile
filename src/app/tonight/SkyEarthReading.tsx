@@ -32,7 +32,13 @@ export function SkyHeading({
     <div className="tonight-heading">
       <h2 id="local-sky-title">{title}</h2>
       <div className="observatory-actions tonight-back">
-        <button type="button" ref={back} onClick={onBack} aria-label={compact ? label : undefined}>
+        <button
+          className="reading-back"
+          type="button"
+          ref={back}
+          onClick={onBack}
+          aria-label={compact ? label : undefined}
+        >
           {compact ? "Back" : label}
         </button>
       </div>

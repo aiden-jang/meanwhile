@@ -86,7 +86,9 @@ test("mobile utilities dismiss with Escape and return keyboard focus", async ({ 
   await toggle.focus();
   await page.keyboard.press("Enter");
   const colors = page.getByRole("button", { name: /Auto-rotate globe/ });
-  await expect(colors).toBeFocused();
+  const focusedControl = page.getByRole("button", { name: "Reset camera", exact: true });
+  await expect(focusedControl).toBeFocused();
+  await expect(colors).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(colors).toBeHidden();
   await expect(toggle).toBeFocused();

@@ -1951,8 +1951,10 @@ test("the bar's own fold does not make the bar taller", async ({ page }) => {
   await expect(page.getByText("7/7", { exact: true })).toBeVisible();
   await more.press("Enter");
   const rotation = page.getByRole("button", { name: /Auto-rotate globe/ });
-  await expect(rotation).toBeFocused();
-  await rotation.press("Escape");
+  const reset = page.getByRole("button", { name: "Reset camera", exact: true });
+  await expect(reset).toBeFocused();
+  await expect(rotation).toBeVisible();
+  await reset.press("Escape");
   await expect(more).toBeFocused();
   await more.click();
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeVisible();
@@ -2233,12 +2235,12 @@ test("mobile exploration switches between globe space and the current inspector"
   await page.goto("/");
   await waitForData(page);
   await openLayer(page);
-  const navigation = page.getByRole("navigation", { name: "Explore" });
-  await navigation.getByRole("button", { name: "More globe", exact: true }).click();
+  const sheet = page.getByRole("separator", { name: "Sheet height" });
+  await sheet.click();
   const globeHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");
-  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
+  await sheet.press("Enter");
   const recentHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");

@@ -51,13 +51,35 @@
 
 .lidar-cursor {
   position: absolute;
+  left: var(--lidar-along);
   width: 11px;
   height: 11px;
-  border: 1px solid var(--color-ink);
+  border: 1px solid #f1d4a2;
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--color-deck);
   transform: translate(-50%, 50%);
   pointer-events: none;
+}
+
+.lidar-plot::before {
+  position: absolute;
+  inset: 0 auto 0 var(--lidar-along);
+  border-inline-start: 1px solid #f1d4a280;
+  content: "";
+  pointer-events: none;
+}
+
+.lidar-reading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-block-start: 6px;
+  color: var(--color-dim);
+  font: var(--text-caption) / 1.5 var(--font-mono);
+}
+
+.lidar-reading strong {
+  color: #f1d4a2;
 }
 
 .lidar-altitude {

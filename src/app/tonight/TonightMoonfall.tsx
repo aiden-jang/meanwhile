@@ -31,7 +31,7 @@ export function TonightMoonfall({
       <div className="tonight-heading" data-moonfall-panel="">
         <h2 id="local-sky-title">Moonfall</h2>
         <div className="observatory-actions tonight-back">
-          <button type="button" id="moonfall-back" onClick={onReturn}>
+          <button className="reading-back" type="button" id="moonfall-back" onClick={onReturn}>
             {label}
           </button>
         </div>

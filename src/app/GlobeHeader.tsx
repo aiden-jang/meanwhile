@@ -19,6 +19,8 @@ interface Props {
   dismiss: () => void;
   ready: boolean;
   observing: boolean;
+  landing: boolean;
+  localSky: boolean;
   onHome: () => void;
   home: { readonly current: { lon: number; lat: number; zoom: number } };
   onReset: () => void;
@@ -65,6 +67,8 @@ export function GlobeHeader({
   download,
   dismiss,
   observing,
+  landing,
+  localSky,
   ready,
   onHome,
   home,
@@ -100,10 +104,13 @@ export function GlobeHeader({
             saving={saving}
             saveStill={saveStill}
             rotation={rotation}
+            landing={landing}
+            controlsLabel={observing ? "Local sky controls" : flat ? "Map controls" : "Globe controls"}
           >
             {!observing && (
               <>
                 <button
+                  autoFocus
                   type="button"
                   onClick={() => refreshAnnotations({ camera: "reset", home: home.current })}
                   aria-description="Recenter the camera without changing layers, filters or time"
@@ -130,6 +137,7 @@ export function GlobeHeader({
                 )}
               </>
             )}
+            {!!localSky && keyboard}
           </ObservatoryOptions>
         </div>
         <StillNotice message={notice} download={download} dismiss={dismiss} />

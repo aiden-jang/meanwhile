@@ -1,5 +1,49 @@
 import { bearingLabel, type TonightView } from "../../geo/tonight";
+import type { ReactNode } from "react";
 import { skyTargets } from "./skyTargets";
+
+export function SkyFocus({
+  current,
+  onSelect,
+  onFind,
+  moonfall,
+}: {
+  current: TonightView;
+  onSelect: (name: TonightView["bodies"][number]["name"]) => void;
+  onFind: (body: TonightView["bodies"][number]) => void;
+  moonfall: ReactNode;
+}) {
+  const body = current.bodies.find(({ name }) => name === current.targetName) ?? current.bodies[0]!;
+  const visible = body.altitude > 0;
+  return (
+    <section className="sky-focus" aria-label="Selected sky object">
+      <label>
+        <span className="sr-only">Sky object</span>
+        <select
+          value={body.name}
+          onChange={(event) => {
+            const selected = current.bodies.find(({ name }) => name === event.currentTarget.value);
+            if (selected) onSelect(selected.name);
+          }}
+        >
+          {current.bodies.map(({ name }) => (
+            <option key={name}>{name}</option>
+          ))}
+        </select>
+      </label>
+      <p>{visible ? `${Math.round(body.altitude)}° up · ${bearingLabel(body.azimuth)}` : "Below horizon"}</p>
+      <button
+        type="button"
+        disabled={!visible}
+        onClick={() => onFind(body)}
+        aria-label={`Trace ${body.name} in the sky`}
+      >
+        Trace
+      </button>
+      {body.name === "Moon" && moonfall}
+    </section>
+  );
+}
 
 export function SkyObjects({
   current,

@@ -4,7 +4,7 @@ import transect from "../../sources/earth-stories/dust-transect.json";
 import type { GeoPoint, ObservationView } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { DustSliceControls } from "./DustSliceControls";
-import { readLidarCursor } from "./DustProfile";
+import { middleLidarSample, readLidarCursor } from "./DustProfile";
 import { nearestFrame } from "./nearestFrame";
 import { asset, date, point, type EarthStoryData } from "./types";
 import type { useStoryClock } from "./useStoryClock";
@@ -65,6 +65,7 @@ export function useDustSlice(
             if (!open) {
               refreshAnnotations({ camera: "resume" });
               clock.seek(nearestFrame(data, observation));
+              setCursor((current) => current ?? middleLidarSample);
             }
             setOpen(!open);
           }}

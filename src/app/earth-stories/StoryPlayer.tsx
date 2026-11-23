@@ -315,6 +315,7 @@ export function StoryPlayer({
     setChoice(value);
   };
   const choices = <StoryChoices id={id} city={city} choice={choice} select={chooseReading} />;
+  const actions = !orbitStory && <StorySideActions {...{ id, data, onRadar, clock, sky }} />;
   return (
     <ReplayPanel
       {...panel}
@@ -335,7 +336,7 @@ export function StoryPlayer({
       sharedMoment={
         initial?.at !== undefined && id === "aral" ? { ...initial, at: data.frames[start]!.at } : undefined
       }
-      primaryAction={dust.action}
+      primaryAction={dust.action || section.controls || actions}
       sources={<StorySources id={id} />}
       inset={
         <>
@@ -346,11 +347,9 @@ export function StoryPlayer({
       }
     >
       {id !== "north" && choices}
-      {section.controls}
       {section.chart}
       {moorings.controls}
       {dust.control}
-      {!orbitStory && <StorySideActions {...panel} {...{ id, data, onRadar, clock, sky }} />}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       {shoreline.reading}
       {fault && (

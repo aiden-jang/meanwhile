@@ -15,6 +15,9 @@ export interface ResizerProps {
    * the hairline only appears on reach, and a touch never reaches. */
   grip?: boolean;
   snap?: number[];
+  onTap?: () => void;
+  valueText?: string;
+  caption?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -29,32 +32,40 @@ export function Resizer({
   onChange,
   grip = false,
   snap,
+  onTap,
+  valueText,
+  caption,
   className,
   style,
 }: ResizerProps): JSX.Element {
-  const dragging = useRef(false);
+  const dragging = useRef<{ id: number; origin: number } | null>(null);
   const lastValue = useRef<number | null>(null);
-  const latest = useRef({ measure, onChange, snap });
-  latest.current = { measure, onChange, snap };
+  const latest = useRef({ measure, onChange, snap, onTap });
+  latest.current = { measure, onChange, snap, onTap };
 
   useEffect(() => {
     const onMove = (e: PointerEvent): void => {
-      if (!dragging.current) return;
+      const pointer = dragging.current;
+      if (!pointer || e.pointerId !== pointer.id) return;
       e.preventDefault();
       const { measure: m, onChange: change } = latest.current;
-      lastValue.current = Math.max(min, Math.min(max, m(e)));
+      const position = m(e);
+      if (lastValue.current === null && latest.current.onTap && Math.abs(position - pointer.origin) < 4)
+        return;
+      lastValue.current = Math.max(min, Math.min(max, position));
       change(lastValue.current);
     };
-    const onUp = (): void => {
-      if (!dragging.current) return;
-      dragging.current = false;
+    const onUp = (event?: Event): void => {
+      const pointer = dragging.current;
+      if (!pointer || (event instanceof PointerEvent && event.pointerId !== pointer.id)) return;
+      dragging.current = null;
       const stops = latest.current.snap;
       if (lastValue.current !== null && stops?.length) {
         const current = lastValue.current;
         latest.current.onChange(
           stops.reduce((a, b) => (Math.abs(a - current) < Math.abs(b - current) ? a : b)),
         );
-      }
+      } else if (lastValue.current === null && event?.type === "pointerup") latest.current.onTap?.();
       lastValue.current = null;
       document.body.style.cursor = "";
       // Text selection is off during a drag, because dragging across a list of place names otherwise
@@ -89,15 +100,23 @@ export function Resizer({
       aria-valuenow={Math.round(value)}
       aria-valuemin={min}
       aria-valuemax={max}
+      aria-valuetext={valueText}
+      title={valueText}
       tabIndex={0}
       onPointerDown={(e) => {
+        if (e.button !== 0 || !e.isPrimary || dragging.current) return;
         e.preventDefault();
-        dragging.current = true;
+        dragging.current = { id: e.pointerId, origin: measure(e.nativeEvent) };
         lastValue.current = null;
         document.body.style.cursor = horizontal ? "row-resize" : "col-resize";
         document.body.style.userSelect = "none";
       }}
       onKeyDown={(e) => {
+        if (onTap && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onTap();
+          return;
+        }
         if (e.key === "Home" || e.key === "End") {
           e.preventDefault();
           onChange(e.key === "Home" ? min : max);
@@ -121,6 +140,11 @@ export function Resizer({
           horizontal ? "inset-x-0 top-[6px] h-px" : "inset-y-0 left-[6px] w-px"
         }`}
       />
+      {caption && (
+        <span className="resizer-visible-label" aria-hidden="true">
+          {caption}
+        </span>
+      )}
       {/* The bar, where hovering is not a thing that happens. Short and centred, which is what a sheet
           edge looks like everywhere else, so it reads as a handle without a label saying so. */}
       {grip ? (

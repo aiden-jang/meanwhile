@@ -26,7 +26,10 @@ test("Through the Air restores the lidar cursor, smoke scan, and Tonga station o
   await expect(button("Open lidar slice")).toBeInViewport({ ratio: 1 });
   await button("Map").click();
   await button("Open lidar slice").click();
-  await page.getByText("Read the lidar profile", { exact: true }).click();
+  await expect(page.getByText("Read the lidar profile", { exact: true }).locator("..")).toHaveAttribute(
+    "open",
+    "",
+  );
   await altitude.press("ArrowUp");
   await along.press("End");
   const heldAlong = await along.inputValue();
