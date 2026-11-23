@@ -1864,7 +1864,7 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   // The bar floats here, transparent, over a canvas that is the full height either way. Nothing to fold.
   await expect(page.getByLabel("Hide the top bar")).toHaveCount(0);
 
-  await page.getByLabel("Hide the panel").click();
+  await page.getByLabel("Hide Layers").click();
   await page.waitForTimeout(400);
   const folded = await chrome();
   expect(folded.rail, "the panel folds").toBe(false);
@@ -1877,7 +1877,7 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   await waitForData(page);
   expect((await chrome()).rail, "the panel is still folded").toBe(false);
 
-  await page.getByLabel("Show the panel").click();
+  await page.getByLabel("Layers").click();
   await page.waitForTimeout(400);
   const back = await chrome();
   expect(back.rail).toBe(true);
@@ -1910,8 +1910,8 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
     });
 
   expect(await bar()).toBe(true);
-  // The rail is a sheet under the globe here, not a column over it, so it has no fold of its own.
-  await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
+  // The sheet toggle lives with the projection controls on phones.
+  await expect(page.getByRole("button", { name: "Hide Layers", exact: true })).toBeVisible();
 
   // The fold lives in the overflow menu at this width: as a button of its own it wrapped the header.
   await page.getByRole("button", { name: "View options" }).click();

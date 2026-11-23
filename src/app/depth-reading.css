@@ -76,6 +76,24 @@
   border-block-start: 1px solid var(--color-hairline);
 }
 
+.cutaway-report-nav {
+  position: sticky;
+  top: var(--explorer-tabs-height);
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  background: var(--color-deck);
+}
+
+.cutaway-report-detail {
+  min-width: 0;
+}
+
+.cutaway-report-detail :is(button, summary, a) {
+  min-height: 44px;
+}
+
 .depth-reading-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

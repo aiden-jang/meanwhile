@@ -1,6 +1,8 @@
 import { searchStories } from "./app/storyIndex";
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
+import { useWorldSelection } from "./app/useWorldSelection";
+import { CityWeatherReading } from "./app/tonight/CityWeatherReading";
 import { ExplorerFold, ExplorerSidebar } from "./app/ExplorerSidebar";
 import { StoryNavigation } from "./app/journeys/StoryNavigation";
 import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
@@ -30,7 +32,6 @@ import { GlobeHeader, SkipControls } from "./app/GlobeHeader";
 import { earthSceneTarget, useObservatory, type EarthScene } from "./app/useObservatory";
 import { useAuroraOverflight } from "./app/useAuroraOverflight";
 import { useCutaway } from "./app/useCutaway";
-import { liftForPanel } from "./app/panelLift";
 import { useReplayAnalytics } from "./app/useReplayAnalytics";
 import { reportAnalytics } from "../analytics/browser";
 import { useGlobeResources } from "./app/useGlobeResources";
@@ -86,7 +87,6 @@ import { diurnal } from "./app/diurnal";
 import { decode } from "./app/permalink";
 import { replaceViewLocation } from "./app/viewLocation";
 import { versusReference } from "./app/versus";
-import { tick } from "./app/touch";
 import { superlativeFor } from "./app/superlative";
 import { type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -215,6 +215,7 @@ export function App(): JSX.Element {
     archived || archiveBusy,
     shared,
     observatory.browsingStories && !observatory.localReadings ? "catalogue" : observatory.localReadings,
+    explorerView.nearby ? "nearby" : explorerView.city?.layers,
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.rendered), [inWindow, mapLayers.rendered]);
   const hazardTally = useMemo(() => {
@@ -532,6 +533,7 @@ export function App(): JSX.Element {
   const lastPinned = useRef(pinned);
   if (pinned) lastPinned.current = pinned;
   const shownQuake = mapLayers.suspended ? undefined : (pinned ?? lastPinned.current);
+  const quakeOverlay = !!(shownQuake && pinned && !explorerView.nearby);
   /* Must stay below the selection: the far-side figure is one of these marks and needs the pinned
   event's position, and it is gated on that event still being pinned - the toggle is in the panel, so
   dismissed, the arcs would have no explanation and no way off. */
@@ -555,40 +557,18 @@ export function App(): JSX.Element {
     [onGlobe, archived, minuteClock],
   );
   const markSubject = !observatory.observing ? findSubject(markId, onGlobe) : null;
-  const onGlobeRef = useRef(onGlobe);
-  onGlobeRef.current = onGlobe;
-  const observingRef = useRef(observatory.observing);
-  observingRef.current = observatory.observing;
-  const selectMark = useCallback(
-    (id: string | null) => {
-      setMarkId(id);
-      // A quake hit clears the mark without clearing the quake.
-      if (id === null) return;
-      if (observingRef.current) enterExplore();
-      setSelected(null);
-      const where = findSubject(id, onGlobeRef.current)?.subject;
-      if (where) {
-        reportAnalytics({ name: "event_opened" });
-        flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
-      }
-    },
-    [enterExplore, camera, flyTo],
-  );
-  const selectQuake = useCallback(
-    (key: string | null) => {
-      if (key !== null) tick();
-      setMarkId(null);
-      setSelected(key);
-      /* `Math.max`, so pinning never zooms somebody out of the view they chose. */
-      if (key === null) return;
-      const quake = feed.store.get(key);
-      if (!quake) return;
-      if (observingRef.current) enterExplore();
-      reportAnalytics({ name: "event_opened" });
-      flyTo.current(quake.primary.lon, quake.primary.lat, Math.max(camera.current.zoom, 1.9), liftForPanel());
-    },
-    [enterExplore, camera, flyTo],
-  );
+  const nearbyOrigin = explorerView.nearby?.record;
+  const { selectMark, selectQuake } = useWorldSelection({
+    onGlobe,
+    observing: observatory.observing,
+    enterExplore,
+    camera,
+    flyTo,
+    nearbyOrigin,
+    setMarkId,
+    setSelected,
+    feed,
+  });
   const marks = useMemo(
     () =>
       marksFor({
@@ -792,7 +772,7 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const railShown = !observatory.observing && railOpen;
   useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
-  const placePin = explorerView.nearby?.record ?? place.point;
+  const placePin = nearbyOrigin ?? explorerView.city?.city ?? place.point;
   const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
@@ -877,7 +857,7 @@ export function App(): JSX.Element {
     hasLegendMarks(mapLayers.visible.earthquakes, onGlobe) &&
     !section &&
     !markSubject &&
-    !(shownQuake && pinned)
+    !quakeOverlay
       ? cloneElement(marksFilter, { part: "embedded-key", earthquakeMarks: mapLayers.visible.earthquakes })
       : null;
 
@@ -1034,6 +1014,46 @@ export function App(): JSX.Element {
     },
   };
 
+  const quakeDetail =
+    shownQuake && !observatory.observing ? (
+      <DetailPanel
+        open={pinned !== undefined && !inspection.run}
+        inline={!!nearbyOrigin}
+        quake={shownQuake}
+        store={feed.store}
+        filters={filters}
+        ramp={ramp}
+        excluded={!matches(shownQuake, filters, now)}
+        revision={snapshot.revision}
+        now={now}
+        archived={archived}
+        onClose={() => closeReading("quake")}
+        onRupture={() => observatory.openRecordedStory("rupture", "event-story-rupture")}
+        onInspect={
+          observatory.ready
+            ? (run, opener) => {
+                setFlat(false);
+                onCutaway(false);
+                setFarSideOf(null);
+                setScrub((current) => (current.playing ? { ...current, playing: false } : current));
+                inspection.start(run, opener);
+              }
+            : null
+        }
+        onSection={(line) => {
+          setSectionLine(line);
+          setFlat(true);
+          flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
+        }}
+        boundaryKm={boundaryKmOf(shownQuake)}
+        onSelect={selectQuake}
+        farSide={farSideOf === shownQuake.key}
+        onFarSide={(on) => {
+          setFarSideOf(on ? shownQuake.key : null);
+          if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
+        }}
+      />
+    ) : null;
   return (
     <StoryNavigation {...observatoryProps}>
       <main
@@ -1053,6 +1073,7 @@ export function App(): JSX.Element {
               clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
             />
           }
+          layers={<ExplorerFold open={railOpen} onChange={setRailOpen} />}
           clip={clip}
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
@@ -1092,7 +1113,7 @@ export function App(): JSX.Element {
               flat={flat}
               height={sheetCanvas}
               onResize={setSheetCanvas}
-              visible={railShown && !markSubject && !(shownQuake && pinned)}
+              visible={railShown && !markSubject && !quakeOverlay}
               panel={
                 observatory.browser.pane === "stories"
                   ? "Stories"
@@ -1141,7 +1162,16 @@ export function App(): JSX.Element {
               }
             >
               {archived && mapLayers.inspector !== "earthquakes" && archiveControls}
+              {explorerView.city && (
+                <CityWeatherReading
+                  visit={explorerView.city}
+                  controls={mapLayers}
+                  change={explorerView.changeCityLayer}
+                  back={entrances.backToSky}
+                />
+              )}
               <MapLayers
+                cityWeather={!!explorerView.city}
                 places={{
                   ready: observatory.ready,
                   feed,
@@ -1152,7 +1182,13 @@ export function App(): JSX.Element {
                   hazards,
                   feeds,
                 }}
-                place={{ ...place, cutaway: explorerView.nearby?.record, backToCutaway: entrances.back }}
+                place={{
+                  ...place,
+                  cutaway: nearbyOrigin,
+                  backToCutaway: entrances.back,
+                  reading: nearbyOrigin && pinned && !inspection.run ? quakeDetail : null,
+                  closeReading: readings.closeQuake,
+                }}
                 readCamera={readCamera.current}
                 panelVisible={railShown}
                 onQuake={selectQuake}
@@ -1298,10 +1334,6 @@ export function App(): JSX.Element {
             </ExplorerSidebar>
           </aside>
 
-          {!observatory.observing && (chromeFloats || !railOpen) && (
-            <ExplorerFold open={railOpen} onChange={setRailOpen} labelLayers={explorerView.foldedByEntry} />
-          )}
-
           <Resizer
             axis="x"
             label="Rail width"
@@ -1361,6 +1393,7 @@ export function App(): JSX.Element {
                   !mapLayers.suspended &&
                   !mapLayers.rewindPoint &&
                   !explorerView.nearby &&
+                  !explorerView.city &&
                   !selected &&
                   !markId
                     ? place.open
@@ -1383,7 +1416,7 @@ export function App(): JSX.Element {
                 <CrossSection
                   data={section}
                   hinge={sectionLine?.hinge}
-                  inset={Boolean(markSubject || (shownQuake && pinned))}
+                  inset={Boolean(markSubject || quakeOverlay)}
                   ramp={ramp}
                   store={feed.store}
                   selected={selected}
@@ -1403,44 +1436,9 @@ export function App(): JSX.Element {
               archived={archived}
               onClose={() => closeReading("hazard")}
             />
-          ) : shownQuake && !observatory.observing ? (
-            <DetailPanel
-              open={pinned !== undefined && !inspection.run}
-              quake={shownQuake}
-              store={feed.store}
-              filters={filters}
-              ramp={ramp}
-              excluded={!matches(shownQuake, filters, now)}
-              revision={snapshot.revision}
-              now={now}
-              archived={archived}
-              onClose={() => closeReading("quake")}
-              onRupture={() => observatory.openRecordedStory("rupture", "event-story-rupture")}
-              onInspect={
-                observatory.ready
-                  ? (run, opener) => {
-                      setFlat(false);
-                      onCutaway(false);
-                      setFarSideOf(null);
-                      setScrub((current) => (current.playing ? { ...current, playing: false } : current));
-                      inspection.start(run, opener);
-                    }
-                  : null
-              }
-              onSection={(line) => {
-                setSectionLine(line);
-                setFlat(true);
-                flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
-              }}
-              boundaryKm={boundaryKmOf(shownQuake)}
-              onSelect={selectQuake}
-              farSide={farSideOf === shownQuake.key}
-              onFarSide={(on) => {
-                setFarSideOf(on ? shownQuake.key : null);
-                if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
-              }}
-            />
-          ) : null}
+          ) : explorerView.nearby ? null : (
+            quakeDetail
+          )}
         </div>
       </main>
     </StoryNavigation>

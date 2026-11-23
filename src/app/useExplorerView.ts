@@ -13,9 +13,16 @@ import type { useGlobeCamera } from "./useGlobeCamera";
 import type { explorerReadings } from "./explorerReadings";
 import type { ExploreTarget } from "./visitor/observatorySearch";
 import { restorePanel } from "./panelReturn";
+import type { SkyCity } from "../geo/tonight";
+import type { CityWeatherLayers, CityWeatherVisit } from "./tonight/cityWeather";
 
 type Nearby = { record: DepthRecord; camera: CameraState; originMap: boolean; map: boolean };
-type Visit = { panel?: boolean | undefined; nearby?: Nearby; destination?: string | undefined };
+type Visit = {
+  panel?: boolean | undefined;
+  nearby?: Nearby;
+  city?: CityWeatherVisit;
+  destination?: string | undefined;
+};
 type Camera = Pick<ReturnType<typeof useGlobeCamera>, "read" | "flyTo">;
 type Readings = ReturnType<typeof explorerReadings>;
 type ExploreSnapshot = {
@@ -33,28 +40,28 @@ export function useExplorerView(shared: Partial<Permalink>) {
   const lastFree = useRef<ExploreSnapshot>();
   const chromeFloats = useFloatingChrome();
   const nearby = visit.nearby;
+  const city = visit.city;
   return {
     nearby,
+    city,
     destination: visit.destination,
     lastFree,
     chromeFloats,
-    railOpen: visit.panel ?? (railOpen || !chromeFloats),
-    foldedByEntry: visit.panel === false,
-    mapOn: nearby?.map ?? preferredMap,
+    railOpen: visit.panel ?? railOpen,
+    mapOn: nearby?.map ?? city?.map ?? preferredMap,
     setFlat(map: SetStateAction<boolean>) {
-      if (nearby) {
-        setVisit((current) =>
-          current.nearby
-            ? {
-                ...current,
-                nearby: { ...current.nearby, map: typeof map === "function" ? map(current.nearby.map) : map },
-              }
-            : current,
-        );
+      if (nearby || city) {
+        setVisit((current) => {
+          const key = current.nearby ? "nearby" : "city";
+          const scope = current[key];
+          return scope
+            ? { ...current, [key]: { ...scope, map: typeof map === "function" ? map(scope.map) : map } }
+            : current;
+        });
       } else setPreferredMap(map);
     },
     setRailOpen(open: boolean) {
-      if (visit.panel !== undefined || nearby) setVisit((current) => ({ ...current, panel: open }));
+      if (visit.panel !== undefined) setVisit((current) => ({ ...current, panel: open }));
       else saveRailOpen(open);
     },
     open(panel: boolean | undefined, destination?: string) {
@@ -62,6 +69,16 @@ export function useExplorerView(shared: Partial<Permalink>) {
     },
     openNearby(record: DepthRecord, camera: CameraState, map: boolean) {
       setVisit({ panel: true, nearby: { record, camera, originMap: map, map } });
+    },
+    openCity(city: CityWeatherVisit) {
+      setVisit({ panel: true, city });
+    },
+    changeCityLayer(layer: keyof CityWeatherLayers, on: boolean) {
+      setVisit((current) =>
+        current.city
+          ? { ...current, city: { ...current.city, layers: { ...current.city.layers, [layer]: on } } }
+          : current,
+      );
     },
     capture: () => ({ preferredMap, visit }),
     restore(saved: { preferredMap: boolean; visit: Visit }) {
@@ -90,7 +107,8 @@ export function explorerEntrances(
   }
   const open = (panel?: boolean) => present(panel);
   function resume() {
-    if (!observatory.observing && observatory.browser.pane === "layers" && !explorer.nearby) return;
+    if (!observatory.observing && observatory.browser.pane === "layers" && !explorer.nearby && !explorer.city)
+      return;
     const previous = explorer.lastFree.current;
     const panel = previous ? previous.visit.panel : !observatory.landing;
     observatory.navigation.requestExploreFocus("explorer-layers-tab");
@@ -136,6 +154,33 @@ export function explorerEntrances(
       document.querySelector<HTMLElement>("#archive-day, #archive-return")?.focus(),
     );
   }
+  function cityWeather(city: SkyCity, at: number) {
+    const pose = { ...camera.read.current() };
+    const from = observatory.navigation.capture(pose);
+    observatory.navigation.requestExploreFocus("city-weather-title");
+    observatory.browser.show("layers");
+    present(true, () => {
+      readings.clear();
+      readings.inspect(null);
+      returnToLive();
+      explorer.openCity({ city, at, from, map: from.deck.map, layers: { radar: true, wind: true } });
+    });
+    camera.flyTo.current(pose.lon, pose.lat, pose.zoom);
+  }
+  function backToSky() {
+    const city = explorer.city;
+    if (!city) return;
+    const { from } = city;
+    observatory.navigation.restore({
+      ...from,
+      sky: { ...from.sky, orbit: false },
+      deck: { ...from.deck, map: false },
+    });
+    explorer.open(undefined);
+    requestAnimationFrame(() =>
+      document.getElementById("see-observing-city")?.focus({ preventScroll: true }),
+    );
+  }
   function nearby(record: DepthRecord) {
     const pose = { ...camera.read.current() };
     const map = observatory.observations.map;
@@ -163,7 +208,7 @@ export function explorerEntrances(
       document.getElementById("explore-nearby-earthquakes")?.focus({ preventScroll: true }),
     );
   }
-  return { open, resume, find, nearby, back, pickDate };
+  return { open, resume, find, nearby, back, pickDate, cityWeather, backToSky };
 }
 
 export function useExplorerHistory(
@@ -178,12 +223,17 @@ export function useExplorerHistory(
   useSceneHistory({
     route: {
       ...observatory.navigation,
-      key: `${observatory.navigation.key}:${explorer.nearby?.record.id ?? explorer.destination ?? ""}`,
+      key: `${observatory.navigation.key}:${explorer.nearby?.record.id ?? explorer.city?.city.name ?? explorer.destination ?? ""}`,
       capture: () => {
         const camera = { ...readCamera.current() };
         const reading = readings.capture();
         const state = explorer.capture();
-        if (!observatory.observing && observatory.browser.pane === "layers" && !explorer.nearby)
+        if (
+          !observatory.observing &&
+          observatory.browser.pane === "layers" &&
+          !explorer.nearby &&
+          !explorer.city
+        )
           explorer.lastFree.current = {
             ...state,
             camera,

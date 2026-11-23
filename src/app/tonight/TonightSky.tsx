@@ -11,7 +11,7 @@ import {
   skyBodies,
   type TonightView,
 } from "../../geo/tonight";
-import type { LunarDeparture, TonightPresentation } from "../../globe/scenePresentation";
+import type { TonightPresentation } from "../../globe/scenePresentation";
 import { nightTrail } from "../../geo/nightTrail";
 import { skyLight } from "./nightfall";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -23,20 +23,9 @@ import { MeteorNights } from "./MeteorNights";
 import { SkyObjects } from "./SkyObjects";
 import { skyDirection, skyTargets } from "./skyTargets";
 import { skyCities } from "./cities";
-import { TonightMoonfall } from "./TonightMoonfall";
+import { lunarFlight, TonightMoonfall } from "./TonightMoonfall";
 import { SkyEarthEntry, SkyEarthReading, SkyHeading, skyTimeFormats } from "./SkyEarthReading";
 const MINUTE = 60_000;
-function depart(view: TonightView, camera?: CameraState) {
-  const moon = view.bodies[0]!;
-  const origin: LunarDeparture = {
-    previous: view,
-    camera,
-    scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
-  };
-  const aim = moon.altitude > 0 ? { ...view, look: aimAt(moon), targetName: moon.name } : view;
-  return { ...origin, aim: { ...aim, nightTrail: undefined, lunarDeparture: origin } };
-}
-
 export function TonightSky({
   view,
   onView,
@@ -49,6 +38,7 @@ export function TonightSky({
   initialPosition,
   nightfall = false,
   orbit,
+  onCityWeather,
   returnLabel,
   projection,
   readCamera,
@@ -64,6 +54,7 @@ export function TonightSky({
   initialPosition: SkyPosition | undefined;
   nightfall?: boolean | undefined;
   orbit: boolean;
+  onCityWeather: (city: SkyCityPreference["city"], at: number) => void;
   returnLabel: string;
   readCamera: () => CameraState;
   projection: { map: boolean; setMap: (map: boolean) => void };
@@ -124,7 +115,7 @@ export function TonightSky({
     view?.lunarDeparture
       ? { ...view.lunarDeparture, aim: view }
       : initialMode === "moonfall" || initial?.lunar
-        ? depart(current, projection.map ? readCamera() : undefined)
+        ? lunarFlight(current, projection.map ? readCamera() : undefined)
         : null,
   );
   const at = current.at;
@@ -182,7 +173,7 @@ export function TonightSky({
   };
   useObservatoryEscape(departure ? returnToSky : fromEarth ? returnFromEarth : onClose);
   function approachMoon() {
-    const flight = depart(current, projection.map ? readCamera() : undefined);
+    const flight = lunarFlight(current, projection.map ? readCamera() : undefined);
     setDeparture(flight);
     onJourney(flight.aim);
   }
@@ -204,7 +195,15 @@ export function TonightSky({
       />
     );
   if (fromEarth)
-    return <SkyEarthReading city={city} at={at} time={format.local.format(at)} onBack={returnFromEarth} />;
+    return (
+      <SkyEarthReading
+        city={city}
+        at={at}
+        time={format.local.format(at)}
+        onBack={returnFromEarth}
+        onWeather={() => onCityWeather(city, at)}
+      />
+    );
   const title = mode === "sky" ? "Tonight’s Sky" : "Meteor Nights";
   return (
     <>

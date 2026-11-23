@@ -14,18 +14,15 @@ import { reportAnalytics } from "../../analytics/browser";
 import { layerTime } from "./layerTime";
 import "./explore-panel.css";
 
-export function ExplorerFold({
-  open,
-  onChange,
-  labelLayers,
-}: {
-  open: boolean;
-  onChange: (open: boolean) => void;
-  labelLayers: boolean;
-}) {
+export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
   function change() {
     onChange(!open);
-    if (labelLayers) requestAnimationFrame(() => document.getElementById("explorer-layers-tab")?.focus());
+    if (!open)
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(".explorer-tabs [aria-selected=true]")
+          ?.focus({ preventScroll: true }),
+      );
   }
   function fold() {
     const scene = document.querySelector<HTMLElement>("#globe-view .globe-scene");
@@ -46,25 +43,11 @@ export function ExplorerFold({
       type="button"
       id="explorer-fold"
       className="explorer-fold"
-      data-label-layers={labelLayers || undefined}
       onClick={fold}
-      aria-label={labelLayers ? "Layers" : open ? "Hide the panel" : "Show the panel"}
       aria-expanded={open}
       aria-controls="chrome-rail"
     >
-      {labelLayers ? (
-        "Layers"
-      ) : (
-        <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-          <path
-            d="m12 6-4 4 4 4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
+      {open ? "Hide Layers" : "Layers"}
     </button>
   );
 }

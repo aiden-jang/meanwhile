@@ -1,5 +1,7 @@
+import { aimAt, type TonightView } from "../../geo/tonight";
+import type { CameraState } from "../../globe/controlsTypes";
 import { lazy, Suspense } from "react";
-import type { TonightPresentation } from "../../globe/scenePresentation";
+import type { LunarDeparture, TonightPresentation } from "../../globe/scenePresentation";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { moonfallShare } from "../moonfall/moonfallShare";
 import { ShareMoment } from "../observations/StorySession";
@@ -51,4 +53,15 @@ export function TonightMoonfall({
       <ExperienceEnding id="moonfall" />
     </>
   );
+}
+
+export function lunarFlight(view: TonightView, camera?: CameraState) {
+  const moon = view.bodies[0]!;
+  const origin: LunarDeparture = {
+    previous: view,
+    camera,
+    scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
+  };
+  const aim = moon.altitude > 0 ? { ...view, look: aimAt(moon), targetName: moon.name } : view;
+  return { ...origin, aim: { ...aim, nightTrail: undefined, lunarDeparture: origin } };
 }

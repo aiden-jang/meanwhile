@@ -250,6 +250,7 @@ function ObservatoryContent({
                   initialPosition={tonight.entry.position}
                   nightfall={tonight.entry.nightfall}
                   orbit={tonight.orbit}
+                  onCityWeather={explorePaths.cityWeather}
                   returnLabel={fromAfterDark.label ?? navigationContext?.returnLabel ?? "Back to After Dark"}
                   onClose={
                     fromAfterDark.close ??

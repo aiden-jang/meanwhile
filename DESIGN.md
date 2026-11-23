@@ -435,12 +435,17 @@ Older catalogue links also resolve to Explore. Its Earth, Below the Surface and 
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
 The landing diagrams are direct entrances. Earth opens the live Layers panel with the current
 camera and layer preferences. Explore the globe gives the canvas the full space and keeps Layers
-one action away. Below the Surface reveals a fixed Fiji–Tonga cutaway and three
+one action away beside Globe and Map. On phones, collapsing Layers gives the canvas the sheet’s space.
+Below the Surface reveals a fixed Fiji–Tonga cutaway and three
 USGS readings. The highlighted earthquake moves to its reported depth on the globe and to its
-epicentre in Map. Nearby reports use the selected epicentre and current projection. Returning
-restores the reading, projection and camera. After Dark opens the saved city’s calculated sky and
+epicentre in Map. Nearby reports use the selected epicentre and current projection. Reports open
+in that panel, keeping the recorded epicentre pinned. The camera moves only for an offscreen report.
+Back to nearby earthquakes restores the list row and scroll. Back to cutaway restores the recorded
+reading, projection and camera. After Dark opens the saved city’s calculated sky and
 time scrubber immediately, at the current local night or the next sunset. The city reference opens
-on the same map. Back to local sky returns to the held time and direction. On short phones, the
+on the same map. From there, Explore live layers here shows radar and forecast wind with their own
+source times, alongside the held local sky time. Those switches apply to the city visit.
+Back to local sky returns to the held night, time and direction. On short phones, the
 day–night cue clears source attribution and the sky's place label has its own line.
 The scene previews within the Story catalogue
 retain their historical entry paths.

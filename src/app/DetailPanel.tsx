@@ -1,3 +1,4 @@
+import { feltNote, shakingWord } from "./felt";
 import { EventScience } from "./EventScience";
 import type { StartInspection } from "./useEventInspection";
 import { CopyLink } from "./CopyLink";
@@ -19,6 +20,7 @@ import { ago, boundaryNote, coordinates, depth, farSideNote, magnitude, place, S
 export interface DetailPanelProps {
   /** False while the panel is leaving. It stays mounted, holding its last event, to animate out. */
   open: boolean;
+  inline?: boolean;
   quake: Quake;
   ramp: RampName;
   /** True when the current filters exclude this event, so the globe is not drawing it. */
@@ -52,35 +54,6 @@ export interface DetailPanelProps {
   onSelect: (key: string) => void;
 }
 
-/* How many people said they felt it, and how hard. The only human number in this app. See ARCHITECTURE.md#srcappdetailpaneltsx. */
-const SHAKING = [
-  // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
-  // and inventing a word the scale does not use is how a borrowed scale stops being the scale.
-  "not felt",
-  "weak",
-  "weak",
-  "light",
-  "moderate",
-  "strong",
-  "very strong",
-  "severe",
-  "violent",
-  "extreme",
-];
-
-/** One point on the intensity scale, in the scale's own word. */
-export function shakingWord(intensity: number): string | null {
-  if (!Number.isFinite(intensity) || intensity <= 0) return null;
-  return SHAKING[Math.min(SHAKING.length - 1, Math.max(0, Math.round(intensity) - 1))] ?? null;
-}
-
-export function feltNote(felt: { reports: number; intensity?: number } | undefined): string | null {
-  if (!felt || felt.reports < 1) return null;
-  const who = felt.reports === 1 ? "1 person" : `${felt.reports.toLocaleString("en-GB")} people`;
-  const step = felt.intensity === undefined ? null : shakingWord(felt.intensity);
-  return step ? `${who}, ${step}` : who;
-}
-
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-3 py-[5px]">
@@ -92,6 +65,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 
 export function DetailPanel({
   open,
+  inline = false,
   quake,
   store,
   filters,
@@ -137,18 +111,24 @@ export function DetailPanel({
       data-open={open}
       // Leave the reading order before the exit transition finishes.
       aria-hidden={!open}
-      className="zone-panel flex w-[var(--panel-w)] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
+      className={
+        inline
+          ? "cutaway-report-detail"
+          : "zone-panel flex w-[var(--panel-w)] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
+      }
     >
-      <div className="flex items-start justify-between">
-        <div className="label">Pinned event</div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex cursor-pointer items-center justify-center text-[12px] text-dim transition-colors hover:text-ink"
-        >
-          Close
-        </button>
-      </div>
+      {!inline && (
+        <div className="flex items-start justify-between">
+          <div className="label">Pinned event</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex cursor-pointer items-center justify-center text-[12px] text-dim transition-colors hover:text-ink"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       <div className="mt-2 flex items-baseline gap-2">
         {/* The panel's own display figure, one step under the rail's headline: this answers "which event"

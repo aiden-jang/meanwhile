@@ -6,6 +6,7 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import type { DepthRecord } from "../data/depthRecords";
 import type { ExploreTarget } from "./visitor/observatorySearch";
+import type { SkyCity } from "../geo/tonight";
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
@@ -52,6 +53,7 @@ export interface ObservatoryProps {
     resume: () => void;
     find: (target: ExploreTarget) => void;
     nearby: (record: DepthRecord) => void;
+    cityWeather: (city: SkyCity, at: number) => void;
   };
   onPickDate: () => void;
   tour: {

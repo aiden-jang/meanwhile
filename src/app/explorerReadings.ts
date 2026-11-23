@@ -29,5 +29,6 @@ export function explorerReadings(
     },
     inspect: layers.inspect,
     locate: place.restore,
+    closeQuake: () => selectQuake(null),
   };
 }

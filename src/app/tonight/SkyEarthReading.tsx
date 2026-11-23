@@ -51,23 +51,26 @@ export function SkyEarthReading({
   at,
   time,
   onBack,
+  onWeather,
 }: {
   city: SkyCity;
   at: number;
   time: string;
   onBack: () => void;
+  onWeather: () => void;
 }) {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   return (
     <>
       <SkyHeading title={`${city.name} on Earth`} label="Back to local sky" back={back} onBack={onBack} />
-      <p className="observation-note">Your observing city is marked on Earth.</p>
+      <button className="sky-earth-entry" type="button" onClick={onWeather}>
+        Explore live layers here
+      </button>
       <div className="sky-held-reading">
         <span>Local sky held at</span>
         <time dateTime={new Date(at).toISOString()}>{time}</time>
       </div>
-      <p className="observation-note">Return to the same night, minute and direction.</p>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { feltNote, shakingWord } from "./DetailPanel";
+import { feltNote, shakingWord } from "./felt";
 
 describe("what the felt row says", () => {
   it("counts people, and one person is not one people", () => {

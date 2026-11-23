@@ -531,7 +531,7 @@ held: how deep, what else happened around it, how far apart the two agencies put
 How many people said they felt it, and how hard. The only human number in this app.
 
 Say "reported", never "felt". "Did You Feel It" is self-selected, so it counts where people live and
-whether they went online afterwards.
+whether they went online afterwards. `felt.ts` keeps the wording and intensity bands together.
 
 Round the intensity to a whole step. A community-determined 3.9 is an average of what people ticked on a
 form, not a measurement to a tenth.
@@ -3096,6 +3096,10 @@ and category belong to `useObservatory` navigation snapshots. `MapLayers` separa
 from one transient inspector; inspecting never starts a feed or changes the camera. Its hidden
 player containers remain mounted while another inspector is open. `EarthquakeInspector` owns the
 quake-specific reading hierarchy, while `LayerSources` explains each source's independent check time.
+`ProjectionSwitch` places the panel toggle beside the projection controls and moves both to the
+canvas footer on phones. `CutawayReports` embeds the same `DetailPanel` and returns focus to the
+selected row. `useWorldSelection` asks the shared camera to fit the recorded and nearby epicentres
+only when the report is outside the visible scene.
 `storyBrowse.ts` selects a short initial catalogue without duplicating the featured story.
 
 `StoryNavigation` wraps both Explore and Observe. An Explore entry records the navigation snapshot,
@@ -3140,6 +3144,8 @@ background weather; entering Explore only reveals the existing controls, without
 `useMapLayers` owns selected weather timestamps independently of mounted players. A null timestamp
 means follow the current forecast or latest scan. Scene detours release images and requests while
 retaining this intent; returning pauses playback and resolves the saved time against the new catalogue.
+`CityWeatherReading` shows current radar and wind source times alongside the held local sky time.
+The city visit owns its layer settings and returns to the sky snapshot through `useExplorerView`.
 The visibility switches filter base events in every scene category. Story-specific observations remain
 independent, so turning off a background layer does not erase the subject of an explicitly opened story.
 

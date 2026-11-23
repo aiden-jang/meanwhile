@@ -26,7 +26,12 @@
 .header-explore > svg {
   display: none;
 }
-.projection-switch[hidden] {
+.explore-world-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.explore-world-controls[hidden] {
   display: none;
 }
 
@@ -95,13 +100,12 @@
 }
 
 @media (max-width: 767px) {
-  .canvas-information > .projection-switch {
+  .canvas-information > .explore-world-controls {
     position: absolute;
     inset: auto 12px calc(var(--explore-control-clearance, 24px) - 3px) auto;
     pointer-events: auto;
-    background: var(--color-deck);
   }
-  .canvas-information > .projection-switch button {
+  .canvas-information .projection-switch button {
     width: 44px;
     height: 44px;
     padding-inline: 3px;

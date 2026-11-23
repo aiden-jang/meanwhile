@@ -1,0 +1,39 @@
+.city-weather-reading {
+  display: grid;
+  gap: 10px;
+  padding-block-end: 12px;
+}
+
+.city-weather-reading > button {
+  justify-self: start;
+}
+
+.city-weather-reading h2 {
+  font:
+    600 clamp(30px, 4vw, 48px) / 1 "Alumni Sans",
+    var(--font-sans);
+}
+
+.city-weather-rows {
+  border-block-start: 1px solid var(--color-hairline);
+}
+
+.city-weather-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+  align-items: center;
+  padding-block: 6px;
+  border-block-end: 1px solid var(--color-hairline);
+}
+
+.city-weather-row p {
+  margin-top: 3px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.city-weather-reading .sky-held-reading {
+  margin-block: 0;
+  border: 0;
+}

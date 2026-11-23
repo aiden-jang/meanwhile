@@ -32,6 +32,7 @@ interface Props {
   saveStill: () => void;
   feeds: FeedStatus;
   keyboard: ReactNode;
+  layers: ReactNode;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
@@ -79,13 +80,18 @@ export function GlobeHeader({
   feeds,
   rotation,
   keyboard,
+  layers,
 }: Props): JSX.Element {
   return (
     <>
       <header id="chrome-head" className="zone-head flex items-center" hidden={!headShown}>
         <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
-          {!observing && <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown} />}
+          {!observing && (
+            <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown}>
+              {layers}
+            </ProjectionSwitch>
+          )}
           <HeaderNavigation exploring={!observing} />
           <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
           <ObservatoryOptions

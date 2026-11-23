@@ -1,8 +1,7 @@
 import { LayerStoryLink } from "./LayerStoryLink";
 import { CopyLink } from "./CopyLink";
-import { RADAR_REVEAL_TIMEOUT } from "./radar/radarCamera";
 import { rewindLink } from "./radar/rewindLink";
-import { refreshAnnotations } from "../globe/annotationInput";
+import { useRadarRewind } from "./useRadarRewind";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import type { CameraState } from "../globe/controls";
 import { quietLayer } from "./layerQuiet";
@@ -11,7 +10,6 @@ import { useReadingArrival } from "./useReadingArrival";
 import {
   lazy,
   Suspense,
-  useEffect,
   useLayoutEffect,
   useRef,
   useMemo,
@@ -61,12 +59,15 @@ export function MapLayers({
   onHazard,
   flat,
   canDismiss,
+  cityWeather,
 }: {
   controls: ReturnType<typeof useMapLayers>;
   places: PlaceContextProps;
   place: ReturnType<typeof usePlaceInspection> & {
     cutaway?: DepthRecord | undefined;
     backToCutaway: () => void;
+    reading?: ReactNode;
+    closeReading: () => void;
   };
   readCamera: () => CameraState;
   panelVisible: boolean;
@@ -80,38 +81,15 @@ export function MapLayers({
   onHazard: (id: string) => void;
   flat: boolean;
   canDismiss: boolean;
+  cityWeather: boolean;
 }) {
   const navigation = useStoryNavigation();
-  const rewindPoint = controls.radar ? controls.rewindPoint : undefined;
-  const layer = rewindPoint ? null : controls.inspector;
+  const rewindPoint = controls.radar && !cityWeather ? controls.rewindPoint : undefined;
+  const layer = rewindPoint || cityWeather ? null : controls.inspector;
   const destination =
     layer === "aurora" ? "aurora" : layer === "wind" ? "wind" : layer === "lightning" ? "lightning" : null;
   const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
-  const reveal = controls.radar?.reveal;
-  useEffect(() => {
-    if (!reveal) return;
-    // Keep playback available if the rendering loop cannot run.
-    const timeout = setTimeout(reveal.finish, RADAR_REVEAL_TIMEOUT);
-    return () => clearTimeout(timeout);
-  }, [reveal]);
-
-  function openRewind(point: NonNullable<typeof place.point>) {
-    const target = { ...point, zoom: Math.max(2.2, readCamera().zoom) };
-    const cinematic = !globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    controls.openRewind(point, cinematic ? target : undefined);
-    if (!cinematic) refreshAnnotations(target);
-    requestAnimationFrame(() =>
-      document.getElementById("radar-rewind-title")?.focus({ preventScroll: true }),
-    );
-  }
-
-  function closeRewind() {
-    controls.closeRewind();
-    controls.selectTime("radar", null);
-    requestAnimationFrame(() =>
-      (document.getElementById("rewind-place-radar") ?? document.getElementById("globe-view"))?.focus(),
-    );
-  }
+  const { reveal, openRewind, closeRewind } = useRadarRewind(controls, readCamera);
   const panel = useRef<HTMLElement>(null);
   const reports = {
     ...places,
@@ -182,9 +160,24 @@ export function MapLayers({
   };
 
   if (place.cutaway)
-    return <CutawayReports {...reports} record={place.cutaway} back={place.backToCutaway} select={onQuake} />;
+    return (
+      <CutawayReports
+        {...reports}
+        record={place.cutaway}
+        back={place.backToCutaway}
+        select={onQuake}
+        reading={place.reading}
+        onClose={place.closeReading}
+      />
+    );
   return (
-    <section ref={panel} className="map-layers" aria-label="Map layers" onKeyDown={dismissReading}>
+    <section
+      ref={panel}
+      hidden={cityWeather}
+      className="map-layers"
+      aria-label="Map layers"
+      onKeyDown={dismissReading}
+    >
       {place.point && !rewindPoint && (
         <PlaceInspection
           {...reports}

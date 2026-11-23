@@ -202,16 +202,16 @@
     border-radius: 6px;
     background: var(--color-deck);
   }
-  .canvas-information:has(> .projection-switch) {
+  .canvas-information:has(> .explore-world-controls) {
     min-height: 68px;
-    padding-inline-end: 84px;
+    padding-inline-end: 180px;
   }
   .frame[data-presentation="explore"] .canvas-information {
     --explore-control-clearance: 32px;
     align-items: center;
     padding-bottom: var(--explore-control-clearance);
   }
-  .frame[data-presentation="explore"] .canvas-information:has(> .projection-switch) {
+  .frame[data-presentation="explore"] .canvas-information:has(> .explore-world-controls) {
     min-height: calc(44px + var(--explore-control-clearance));
   }
   .frame[data-presentation="explore"] .canvas-information > .layer-readout {
@@ -308,11 +308,20 @@
     border-inline: 0;
   }
 
-  .canvas-information:has(> .projection-switch) {
-    padding-inline-end: 110px;
-  }
-
   .canvas-information .layer-times-suffix {
     display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .frame[data-presentation="explore"]
+    .canvas-information:has(> .explore-world-controls):has(.radar-canvas-credit) {
+    min-height: calc(88px + var(--explore-control-clearance));
+  }
+  .frame[data-presentation="explore"]
+    .canvas-information:has(> .explore-world-controls)
+    .radar-canvas-credit {
+    position: absolute;
+    inset: auto auto calc(var(--explore-control-clearance) + 44px) 12px;
   }
 }

@@ -406,7 +406,7 @@ test("the radar footer clears the pinned credit when Explore folds and reflows",
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   const original = await credit.boundingBox();
   const originalSources = await sources.boundingBox();
-  await page.getByRole("button", { name: "Hide the panel" }).click();
+  await page.getByRole("button", { name: "Hide Layers" }).click();
   await expect(page.locator("#chrome-rail")).toBeHidden();
   for (const viewport of [
     { width: 1440, height: 900 },
@@ -431,6 +431,18 @@ test("the radar footer clears the pinned credit when Explore folds and reflows",
         box.x >= footer.x + footer.width + 8 || box.y + box.height <= footer.y - 8,
         `footer clearance at ${viewport.width}px`,
       ).toBe(true);
+    }
+    const dock = page.locator(".explore-world-controls");
+    await expect(dock).toBeInViewport({ ratio: 1 });
+    if (viewport.width < 768) {
+      const dockBox = (await dock.boundingBox())!;
+      for (const item of [radar, sources]) {
+        const box = (await item.boundingBox())!;
+        expect(
+          box.x + box.width <= dockBox.x || box.y + box.height <= dockBox.y,
+          `weather and view controls clear each other at ${viewport.width}px`,
+        ).toBe(true);
+      }
     }
     await sources.click();
     const legend = page.getByRole("region", { name: "Sources & legend" });

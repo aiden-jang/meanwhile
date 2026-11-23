@@ -4,6 +4,7 @@ import { stored, store } from "./stored";
 import { isolateLayer, mapLayerNames, readMapLayers, type MapLayer } from "./layerVisibility";
 import { layerTime } from "./layerTime";
 import type { RadarLayerView, RadarReveal, RadarView } from "./radar/radarCamera";
+import type { CityWeatherLayers } from "./tonight/cityWeather";
 import type { FeedRow } from "./feedStatus";
 import { latestLayerTimes, type LayerTimes, type SharedLayers } from "./layerLink";
 import {
@@ -24,7 +25,10 @@ export function useMapLayers(
   archived = false,
   shared: SharedLayers = {},
   cover: boolean | "catalogue" = false,
+  scope?: "nearby" | CityWeatherLayers,
 ) {
+  const nearby = scope === "nearby";
+  const cityLayers = nearby ? undefined : scope;
   const suspended = !!cover;
   const catalogue = cover === "catalogue";
   const [catalogueSettled, setCatalogueSettled] = useState(catalogue);
@@ -42,8 +46,11 @@ export function useMapLayers(
   );
   const [isolated, setIsolated] = useState<MapLayer | null>(null);
   const enabled = useMemo(
-    () => isolateLayer(savedLayers, archived ? null : isolated),
-    [savedLayers, archived, isolated],
+    () =>
+      cityLayers
+        ? { ...isolateLayer(savedLayers, "radar"), ...cityLayers }
+        : isolateLayer(savedLayers, nearby ? "earthquakes" : archived ? null : isolated),
+    [savedLayers, archived, isolated, cityLayers, nearby],
   );
   const [rewind, setRewind] = useState<{
     point: NonNullable<SharedLayers["radarPlace"]>;
@@ -63,9 +70,10 @@ export function useMapLayers(
   const [inspector, inspect] = useState<MapLayer | null>(() =>
     archived || target?.startsWith("quake:") ? "earthquakes" : null,
   );
-  const [selectedTimes, setSelectedTimes] = useState<LayerTimes>(
+  const [savedTimes, setSelectedTimes] = useState<LayerTimes>(
     () => shared.layerTimes ?? { ...latestLayerTimes },
   );
+  const selectedTimes = cityLayers ? latestLayerTimes : savedTimes;
   const selectTime = useCallback((id: PlaybackLayer, at: number | null) => {
     setSelectedTimes((previous) => ({ ...previous, [id]: at }));
   }, []);
@@ -92,8 +100,8 @@ export function useMapLayers(
   const radarActive = enabled.radar && active;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
-    if (archived || !enabled.radar) setRewind(null);
-  }, [radarActive, archived, enabled.radar]);
+    if (!scope && (archived || !enabled.radar)) setRewind(null);
+  }, [radarActive, archived, enabled.radar, scope]);
   const radar = useMemo<RadarLayerView | null>(
     () =>
       radarActive
@@ -102,10 +110,10 @@ export function useMapLayers(
             region: "world",
             image: radarView?.image ?? null,
             at: radarView?.at,
-            reveal: rewind?.reveal,
+            reveal: cityLayers ? undefined : rewind?.reveal,
           }
         : null,
-    [radarActive, radarView, rewind?.reveal],
+    [radarActive, radarView, rewind?.reveal, cityLayers],
   );
   const latest = useRef(savedLayers);
   const change = useCallback((layer: MapLayer, on: boolean) => {
@@ -127,7 +135,7 @@ export function useMapLayers(
     () => weatherOverlay(wind?.frame, lightning?.frame),
     [wind?.frame, lightning?.frame],
   );
-  const subject = emphasisLayer(rewind ? "radar" : inspector);
+  const subject = scope ? null : emphasisLayer(rewind ? "radar" : inspector);
   const emphasis = active && subject && enabled[subject] ? subject : null;
   const presentation = useMemo<MapLayerPresentation | null>(
     () =>
@@ -178,7 +186,7 @@ export function useMapLayers(
     change,
     globeFilters,
     radar,
-    rewindPoint: rewind?.point,
+    rewindPoint: scope ? undefined : rewind?.point,
     openRewind,
     closeRewind: () => setRewind(null),
     canRewind: radarView?.canRewind,

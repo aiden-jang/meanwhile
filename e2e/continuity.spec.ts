@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
@@ -349,9 +350,20 @@ test("the three landing entrances open live layers, a measured cutaway and the s
   await expect(entries.getByRole("button", { name: "After Dark", exact: true })).toBeFocused();
 });
 
-test("globe-first entry and geographic detours keep the same world and reading", async ({ page }) => {
+test("globe-first entry and nearby Fiji reports keep the same world and reading", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await installFeeds(page, { presentation: "fresh", empty: true });
+  const now = Date.now();
+  await installFeeds(page, {
+    presentation: "fresh",
+    empty: true,
+    usgs: [
+      {
+        id: "usfiji01",
+        properties: { mag: 5.1, place: "Fiji test report", time: now - 120_000, type: "earthquake" },
+        geometry: { coordinates: [-175.96, -18.33, 586] },
+      },
+    ],
+  });
   await page.addInitScript(() => localStorage.setItem("eif.sky-city", "Tokyo"));
   await page.goto("/#v=observe&at=-74,40,1");
   const globe = page.locator("#globe-view");
@@ -370,6 +382,16 @@ test("globe-first entry and geographic detours keep the same world and reading",
   await expect(button("Layers")).toBeFocused();
   await button("Layers").click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+  const fold = button("Hide Layers");
+  await expect(fold).toHaveAttribute("aria-expanded", "true");
+  const opened = (await globe.boundingBox())!;
+  const dock = page.locator(".explore-world-controls");
+  await expect(dock.getByRole("group", { name: "Projection" })).toBeInViewport({ ratio: 1 });
+  await expect(dock.getByRole("button", { name: "Hide Layers" })).toBeInViewport({ ratio: 1 });
+  await fold.click();
+  await expect(rail).toBeHidden();
+  if (viewport.width < 768)
+    await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
   await home.click();
   await entrances.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(rail).toBeVisible();
@@ -393,6 +415,15 @@ test("globe-first entry and geographic detours keep the same world and reading",
   await expect(page.getByRole("region", { name: "Nearby earthquake reports" })).toContainText(
     "670.8 km deep",
   );
+  const report = page.getByRole("button", { name: /Fiji test report/ });
+  await report.click();
+  const inlineReading = rail.locator(".cutaway-report-detail");
+  await expect(inlineReading).toContainText("Fiji test report");
+  await expect(inlineReading).toContainText("586");
+  await expect(button("Back to cutaway")).toBeInViewport({ ratio: 1 });
+  await expect.poll(pose).toBe("-176,-18.3,1.95");
+  await button("Back to nearby earthquakes").click();
+  await expect(report).toBeFocused();
   await button("Globe").click();
   await expect(globe).toHaveAttribute("aria-label", "Globe");
   await button("Back to cutaway").click();
@@ -401,8 +432,27 @@ test("globe-first entry and geographic detours keep the same world and reading",
   await expect(globe).toHaveAttribute("aria-label", "Map");
   await expect.poll(pose).toBe("-176,-18.3,1.95");
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBeNull();
-  await home.click();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
 
+test("Tokyo weather stays on the shared world and returns to the exact local sky", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const now = new Date("2026-11-12T16:00:00Z");
+  await page.clock.setFixedTime(now);
+  await page.route("**/api/observations/wind", (route) =>
+    route.fulfill({
+      contentType: "application/x-netcdf",
+      body: readFileSync(new URL("./fixtures/weather-wind.nc", import.meta.url)),
+    }),
+  );
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.addInitScript(() => localStorage.setItem("eif.sky-city", "Tokyo"));
+  await page.goto("/#v=observe&at=-74,40,1");
+  const globe = page.locator("#globe-view");
+  const canvas = await globe.locator("canvas").elementHandle();
+  const rail = page.locator("#chrome-rail");
+  const button = (name: string) => page.getByRole("button", { name, exact: true });
+  const entrances = page.getByRole("group", { name: "Explore by subject" });
   await entrances.getByRole("button", { name: "After Dark", exact: true }).click();
   const scrubber = page.getByRole("slider", { name: "City local time" });
   const facing = page.getByRole("group", { name: "Look around the local sky" });
@@ -415,8 +465,28 @@ test("globe-first entry and geographic detours keep the same world and reading",
   await seeCity.click();
   await expect(page.getByRole("heading", { name: "Tokyo on Earth" })).toBeVisible();
   await expect(globe).toHaveAttribute("aria-label", "Map");
-  await expect(page.locator(".sky-held-reading time")).toHaveText(minute!);
-  await button("Back to local sky").click();
+  const held = page.locator(".sky-held-reading time");
+  await expect(held).toHaveText(minute!);
+  const heldInstant = await held.getAttribute("datetime");
+  const preferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
+  const cityLayers = button("Explore live layers here");
+  await expect(cityLayers).toBeInViewport({ ratio: 1 });
+  await cityLayers.click();
+  const weather = rail.getByRole("region", { name: "Live layers near Tokyo" });
+  await expect(weather.getByRole("heading")).toBeFocused();
+  await expect(weather).toContainText("RainViewer");
+  await expect(weather).toContainText("NOAA GFS forecast");
+  await expect(weather.locator(".city-weather-rows time")).toHaveAttribute("datetime", now.toISOString());
+  await expect(weather.locator(".sky-held-reading time")).toHaveAttribute("datetime", heldInstant!);
+  await expect(globe).toHaveAttribute("aria-label", "Map");
+  const wind = weather.getByRole("button", { name: "Surface wind", exact: true });
+  await expect(wind).toHaveAttribute("aria-pressed", "true");
+  await wind.click();
+  await expect(wind).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBe(preferences);
+  await button("Globe").click();
+  await expect(globe).toHaveAttribute("aria-label", "Globe");
+  await weather.getByRole("button", { name: "Back to local sky" }).click();
   await expect(seeCity).toBeFocused();
   await expect(seeCity).toBeInViewport({ ratio: 1 });
   await expect(scrubber).toHaveAttribute("aria-valuetext", minute!);
