@@ -1864,7 +1864,7 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   // The bar floats here, transparent, over a canvas that is the full height either way. Nothing to fold.
   await expect(page.getByLabel("Hide the top bar")).toHaveCount(0);
 
-  await page.getByLabel("Hide Layers").click();
+  await page.getByRole("button", { name: "Hide Layers", exact: true }).click();
   await page.waitForTimeout(400);
   const folded = await chrome();
   expect(folded.rail, "the panel folds").toBe(false);
@@ -1877,7 +1877,7 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   await waitForData(page);
   expect((await chrome()).rail, "the panel is still folded").toBe(false);
 
-  await page.getByLabel("Layers").click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.waitForTimeout(400);
   const back = await chrome();
   expect(back.rail).toBe(true);
