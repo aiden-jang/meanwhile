@@ -639,3 +639,21 @@
     inset-block-start: calc(var(--stage-inset) + 64px);
   }
 }
+
+@media (max-width: 599px) and (max-height: 700px) {
+  .zones:has(.fixed-journey[data-storm-step="0"]) .radar-window {
+    display: none;
+  }
+
+  .zones:has(.fixed-journey[data-storm-step="0"]) .radar-reading-date {
+    white-space: nowrap;
+  }
+
+  .zones:has(.fixed-journey[data-storm-step="2"]) .replay-sidebar > .observation-panel {
+    padding-block-start: 6px;
+  }
+
+  .zones:has(.fixed-journey[data-storm-step="2"]) .story-dock {
+    padding-block: 4px;
+  }
+}
