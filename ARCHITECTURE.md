@@ -3533,6 +3533,12 @@ the existing GDACS geometry still supplies track coordinates. RainViewer provide
 and a coverage mask. A location outside that mask, a covered scan without any echoes and a request
 failure represent distinct states.
 
+The cyclone panel opens nearby radar wherever the coverage mask includes the reported position. Its
+scan selection stays separate from the live advisory and the general radar layer. The Katrina handoff starts
+at the first recorded fix. It uses the shared camera crossing and enables playback after arrival.
+The story’s Back control returns through scene history so it restores the same Explore entry, including
+its active projection, reading, scroll position and focus.
+
 ### src/sources/emsc.live.test.ts
 
 **The second and last test that touches the real internet. Excluded from the default run and**

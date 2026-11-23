@@ -213,9 +213,8 @@ export function App(): JSX.Element {
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
   const followEnabled = !archived && !archiveBusy && !explorerView.nearby && !explorerView.city;
   const storm = useLiveStorm(
-    followEnabled && !observatory.observing && observatory.browser.pane === "layers"
-      ? cyclones.find(({ id }) => markId === `cyclone:${id}`)
-      : undefined,
+    followEnabled ? cyclones.find(({ id }) => markId === `cyclone:${id}`) : undefined,
+    !observatory.observing && observatory.browser.pane === "layers",
   );
   const mapLayers = useMapLayers(
     filters,

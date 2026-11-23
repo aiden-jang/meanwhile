@@ -22,12 +22,14 @@ import { currentRadarRegion, isGlobalRadar } from "../radar/radarCamera";
 import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
-import { captureCollection, type CollectionPosition } from "../visitor/collectionReturn";
+import type { CollectionPosition } from "../visitor/collectionReturn";
 import { openSkyStory } from "./openSkyStory";
 import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
+import { captureBrowseOrigin } from "./storyBrowseOrigin";
+import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
 
@@ -111,32 +113,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     };
   });
   function rememberOrigin(trigger: string) {
-    const collection = captureCollection(trigger);
-    const fromStory = trigger.startsWith("related-story-") || trigger === "open-observatory-find";
-    if (!collection && !fromStory && (active !== null || origin.current)) return;
-    const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
-    origin.current = {
-      route: props.views.navigation.capture(props.explorer.read()),
-      camera: previewOrigin.current?.camera ?? props.explorer.read(),
-      scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
-      scrollTarget,
-      flat: previewOrigin.current?.flat ?? props.explorer.flat,
-      ...(collection ? { collection } : {}),
-      ...(origin.current ? { previous: origin.current } : {}),
-      label:
-        trigger === auroraHandoff
-          ? "Back to the ISS finding"
-          : collection
-            ? "Back to Saved"
-            : fromStory && active
-              ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
-              : (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
-                ? "Back to stories"
-                : props.views.observing
-                  ? "Back to home"
-                  : "Back to layers",
-      trigger,
-    };
+    origin.current = captureBrowseOrigin(props, trigger, active, origin.current, previewOrigin.current);
   }
   function navigate(
     id: string,
@@ -163,6 +140,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     setPreviewOpen(false);
     reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
+    if (id === "katrina" && isKatrinaHandoff(trigger)) {
+      fresh = true;
+      arrival = { map: props.explorer.flat, crossing: true };
+    }
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
     const map = arrival?.map ?? (!resuming && !props.views.observing ? props.explorer.flat : undefined);
@@ -234,6 +215,11 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       showCatalogue(false, focus);
       return true;
     }
+    if (weatherOrigin(saved.trigger)) {
+      props.views.visitCheckpoint.current();
+      history.back();
+      return true;
+    }
     journey.leave();
     origin.current = saved.previous ?? null;
     props.views.visitCheckpoint.current();
@@ -298,6 +284,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         active,
         hasReturnOrigin: origin.current !== null,
         auroraFromPass: origin.current?.trigger === auroraHandoff,
+        katrinaFromWeather: isKatrinaHandoff(deck.trigger),
         restoredCollection,
         dismissRestoration: () => setRestoredCollection(null),
         completed: completion?.id === active && completion.complete,

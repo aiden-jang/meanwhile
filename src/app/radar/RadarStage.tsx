@@ -1,6 +1,6 @@
 import { RadarReading, StormRadarCoverage } from "./RadarReading";
-import { PlaybackButton } from "../PlaybackButton";
-import { radarScanDate, radarScanStatus } from "./radarScanStatus";
+import { RadarPlayer, shortRadarTime } from "./RadarPlayer";
+import { radarScanStatus } from "./radarScanStatus";
 import { layerTime } from "../layerTime";
 import {
   type KeyboardEventHandler,
@@ -12,7 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { RadarTransport } from "./RadarTransport";
+import type { StormRadarVisit } from "../storm/useStormRadarVisit";
 import { TimelineTrack } from "../observations/TimelineTrack";
 import type { RadarScan } from "../../sources/radar";
 import {
@@ -28,9 +28,7 @@ import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 import { radarFeedHealth } from "./radarFeedHealth";
 
-export type RadarScope = { id: string; lon: number; lat: number };
-
-const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
+export type RadarScope = { id: string; lon: number; lat: number; visit: StormRadarVisit };
 
 export function RadarStage({
   onView,
@@ -59,16 +57,16 @@ export function RadarStage({
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
+  const { at: stormAt, open: stormOpen, select: selectStorm } = storm?.visit ?? {};
   const { scans, images, status, checkedAt, lastSuccess, covers, retry } = useRadarScans(
     held,
     global,
-    !layer || Boolean(dock) || (!!storm && !suspended),
-    initialAt,
+    !layer || Boolean(dock) || (!!stormOpen && !suspended),
+    stormAt ?? initialAt,
     storm,
   );
   const [baseScan, setChosen] = useState<RadarScan | null>(null);
-  const [stormScan, setStormScan] = useState<{ id: string; scan: RadarScan | null }>();
-  const chosen = storm ? (stormScan?.id === storm.id ? stormScan.scan : null) : baseScan;
+  const chosen = storm ? (scans.find(({ at }) => at === stormAt) ?? null) : baseScan;
   const coverage = storm && covers?.(storm);
   const stormId = storm?.id;
   const [showLightning, setShowLightning] = useState(false);
@@ -159,22 +157,18 @@ export function RadarStage({
 
   const seek = useCallback(
     (scan: RadarScan | null) => {
-      if (stormId) {
-        setStormScan({ id: stormId, scan });
-        return;
-      }
+      if (selectStorm) return selectStorm(scan?.at ?? null);
       held.current = scan;
       setChosen(scan);
       setExpired(false);
       onSelect?.(scan?.at ?? null);
     },
-    [onSelect, stormId],
+    [onSelect, selectStorm],
   );
 
   useLayoutEffect(() => {
-    setPlaying(false);
-    setStormScan(undefined);
-  }, [stormId]);
+    if (!stormOpen || suspended) setPlaying(false);
+  }, [stormId, stormOpen, suspended]);
   const wasRewinding = useRef(rewind);
   useLayoutEffect(() => {
     if (!stormId && wasRewinding.current && !rewind) seek(null);
@@ -193,7 +187,7 @@ export function RadarStage({
   useEffect(() => {
     if (
       suspended ||
-      (stormId && coverage !== true) ||
+      (stormId && (coverage !== true || !stormOpen)) ||
       !playing ||
       !selected ||
       image === undefined ||
@@ -210,7 +204,7 @@ export function RadarStage({
       index === scans.length - 1 ? 820 : 510,
     );
     return () => window.clearTimeout(timer);
-  }, [image, index, playing, rewind, scans, selected, seek, suspended, stormId, coverage]);
+  }, [image, index, playing, rewind, scans, selected, seek, suspended, stormId, stormOpen, coverage]);
 
   useEffect(() => {
     function visibility() {
@@ -239,7 +233,7 @@ export function RadarStage({
     <TimelineTrack
       max={Math.max(0, scans.length - 1)}
       current={index}
-      valueLabel={selected && (!layer || rewind) ? `${shortTime(selected.at)} UTC` : undefined}
+      valueLabel={selected && (!layer || rewind) ? `${shortRadarTime(selected.at)} UTC` : undefined}
     >
       <input
         id={id}
@@ -265,7 +259,7 @@ export function RadarStage({
 
   return (
     <div className="radar-stage-controls">
-      {expired && !storm && (
+      {((expired && !storm) || (stormOpen && stormAt != null && status === "ready" && !chosen)) && (
         <p role="status" aria-label="Saved radar scan status">
           The saved scan has expired. Showing the latest available scan.
         </p>
@@ -282,74 +276,34 @@ export function RadarStage({
             Still showing <time dateTime={new Date(shown!.at).toISOString()}>{layerTime(shown!.at)}</time>.
           </p>
         )}
-        {(!storm || coverage === true) && (
-          <RadarTransport layer={layer} dock={dock}>
-            <div className="radar-clock">
-              <div className="radar-scan-reading">
-                {selected && (
-                  <time
-                    dateTime={new Date(selected.at).toISOString()}
-                    data-radar-displayed={!!image || undefined}
-                  >
-                    <strong>{shortTime(selected.at)} UTC</strong>
-                    <span className="radar-reading-date">{radarScanDate(selected.at)}</span>
-                  </time>
-                )}
-                {scans[0] && latest && (
-                  <span className="radar-window">
-                    <span className="sr-only">Available scans </span>
-                    {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
-                  </span>
-                )}
-              </div>
-              {(!rewind || !!storm) && (
-                <button
-                  type="button"
-                  className="radar-latest"
-                  title="Jump to the latest scan"
-                  aria-pressed={atLatest}
-                  disabled={!selected}
-                  onClick={() => {
-                    setPlaying(false);
-                    seek(null);
-                  }}
-                >
-                  Latest
-                </button>
-              )}
-            </div>
+        {storm && !stormOpen && coverage === true && selected && (
+          <div className="radar-coverage storm-radar-launch">
+            <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>
+            <button
+              className="layer-story-link"
+              type="button"
+              id="replay-nearby-radar"
+              onClick={() => {
+                storm.visit.start();
+                if (scans.length > 1 && !matchMedia("(prefers-reduced-motion: reduce)").matches) togglePlay();
+              }}
+            >
+              {scans.length > 1 ? "Replay nearby radar" : "View nearby radar"}
+            </button>
+          </div>
+        )}
+        {(!storm || (stormOpen && coverage === true)) && (
+          <RadarPlayer
+            {...{ layer, dock, scans, index, atLatest, playing, togglePlay }}
+            displayed={!!image}
+            showLatest={!rewind || !!storm}
+            seek={(scan) => {
+              setPlaying(false);
+              seek(scan);
+            }}
+          >
             {timeline}
-            <div className="observatory-actions radar-actions radar-playback">
-              <button
-                type="button"
-                aria-label="Previous radar scan"
-                disabled={index === 0 || scans.length < 2}
-                onClick={() => {
-                  setPlaying(false);
-                  seek(scans[index - 1] ?? null);
-                }}
-              >
-                Previous
-              </button>
-              <PlaybackButton
-                playing={playing}
-                ended={index === scans.length - 1}
-                disabled={scans.length < 2}
-                onClick={togglePlay}
-              />
-              <button
-                type="button"
-                aria-label="Next radar scan"
-                disabled={index >= scans.length - 1 || scans.length < 2}
-                onClick={() => {
-                  setPlaying(false);
-                  seek(scans[index + 1] ?? null);
-                }}
-              >
-                Next
-              </button>
-            </div>
-          </RadarTransport>
+          </RadarPlayer>
         )}
         <div className="observatory-actions radar-actions">
           {!layer && !global && (
@@ -370,7 +324,7 @@ export function RadarStage({
                   ? "Couldn’t load lightning data."
                   : !lightning.frame
                     ? "No lightning scan matches this radar time."
-                    : `GOES-East · ${lightning.frame.measurements?.[0]?.value ?? "Unknown"} detections · ${shortTime(lightning.frame.at)} UTC`}
+                    : `GOES-East · ${lightning.frame.measurements?.[0]?.value ?? "Unknown"} detections · ${shortRadarTime(lightning.frame.at)} UTC`}
             </p>
           )}
         </div>

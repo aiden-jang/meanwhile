@@ -20,7 +20,7 @@ import { useStorySession } from "../observations/StorySession";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import terra from "./terra-2005-08-28.webp?url";
-import { StormFinding, StormInvitation } from "./StormNarrative";
+import { StormFinding, StormInvitation, StormSources } from "./StormNarrative";
 import { StormTransport } from "./StormTransport";
 import { stormJourney } from "../journeys/stormJourney";
 
@@ -54,10 +54,13 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
   const navigation = useStoryNavigation();
   const guided = navigation?.route?.id === stormJourney;
+  const fromWeather = navigation?.katrinaFromWeather === true;
   const [view, setView] = useState<Playback>(() =>
     initial && initial.chapter !== "intro" && (!guided || initial.at !== undefined)
       ? initialPlayback(initial.at ?? START, initial.chapter === "compare")
-      : { elapsed: 0, survey: matchMedia(MOTION).matches, playing: false, phase: "intro" },
+      : fromWeather
+        ? seekTo(0)
+        : { elapsed: 0, survey: matchMedia(MOTION).matches, playing: false, phase: "intro" },
   );
   const clock = useRef(view);
   const playback = useRef<HTMLButtonElement>(null);
@@ -155,9 +158,14 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const visibleArchive = archiveOpacity > 0;
   useLayoutEffect(() => {
     const frame = stormFrame(view.elapsed, view.survey);
+    const arriving = fromWeather && !ready;
+    const firstTrack = fromWeather && ready && !comparing && !view.playing && view.elapsed === 0;
+    const geography = stormGeography(frame, !view.survey, comparing, firstTrack || (guided && invited));
     onView({
       kind: "observation",
-      ...stormGeography(frame, !view.survey, comparing, guided && invited),
+      ...geography,
+      ...(arriving ? { frame: { at: geography.frame.at }, follow: undefined } : {}),
+      ...(firstTrack ? { follow: undefined } : {}),
       ...(hold.current ? { holdGeography: true, follow: undefined } : {}),
       ...(guided && !view.playing ? { follow: undefined } : {}),
       capture: !visibleArchive,
@@ -165,10 +173,23 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       target: comparing ? comparisonTarget : stormTarget,
       lens: stormLens,
       ...(hold.current ? {} : { arrive }),
-      pickMarks: invited || visibleArchive ? undefined : { points: FIXES, select: inspectFix },
+      pickMarks: invited || visibleArchive || arriving ? undefined : { points: FIXES, select: inspectFix },
     });
     remember?.({ chapter: guided && invited ? "intro" : comparing ? "compare" : "" });
-  }, [view, onView, arrive, coast, comparing, remember, visibleArchive, invited, inspectFix, guided]);
+  }, [
+    view,
+    onView,
+    arrive,
+    coast,
+    comparing,
+    remember,
+    visibleArchive,
+    invited,
+    inspectFix,
+    guided,
+    fromWeather,
+    ready,
+  ]);
   const storm = stormFrame(view.elapsed, view.survey).storm;
   const { fix } = storm;
   const minute = Math.floor((storm.at - START) / 60_000);
@@ -267,13 +288,15 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       location="Gulf of Mexico"
       subtitle="Hurricane Katrina · NOAA best track · 28–29 Aug 2005"
       status={
-        visibleArchive
-          ? "NASA Terra MODIS · 28 Aug 2005 · 17:00 UTC"
-          : invited || comparing
-            ? "NOAA best track"
-            : view.survey || ended
-              ? "Track overview"
-              : "Camera follows storm center"
+        fromWeather
+          ? "Recorded · August 2005"
+          : visibleArchive
+            ? "NASA Terra MODIS · 28 Aug 2005 · 17:00 UTC"
+            : invited || comparing
+              ? "NOAA best track"
+              : view.survey || ended
+                ? "Track overview"
+                : "Camera follows storm center"
       }
       inset={
         <>
@@ -313,26 +336,13 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           </time>
         )
       }
-      sources={
-        <>
-          <a href="https://www.nhc.noaa.gov/data/" target="_blank" rel="noreferrer">
-            NOAA HURDAT2
-          </a>
-          <a href="https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf" target="_blank" rel="noreferrer">
-            NHC Katrina report
-          </a>
-          <a
-            href="https://science.nasa.gov/earth/earth-observatory/hurricane-katrina-15395/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            NASA Earth Observatory · Terra MODIS
-          </a>
-          <span>Coastlines by Natural Earth</span>
-        </>
-      }
+      sources={<StormSources />}
     >
-      {invited ? (
+      {fromWeather && !ready ? (
+        <p className="observation-note" role="status">
+          Approaching the Gulf of Mexico…
+        </p>
+      ) : invited ? (
         <StormInvitation onFollow={follow} onInspect={() => inspectFix(0)} />
       ) : (
         <div className="archive-scene-console" data-storm-phase={comparing ? "compare" : view.phase}>

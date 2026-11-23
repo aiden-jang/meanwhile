@@ -1,7 +1,7 @@
 import { lazy, Suspense, type KeyboardEventHandler } from "react";
 import type { CameraState } from "../../globe/controls";
 import { geographicCoordinates } from "../../globe/orbitReadout";
-import type { Cyclone } from "../../sources/cyclones";
+import type { RadarScope } from "./RadarStage";
 import { CopyLink } from "../CopyLink";
 import type { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { useMapLayers } from "../useMapLayers";
@@ -39,7 +39,7 @@ export function LayerRadar({
   readCamera: () => CameraState;
   dismissReading: KeyboardEventHandler<HTMLElement>;
   navigation: ReturnType<typeof useStoryNavigation>;
-  storm: Cyclone | undefined;
+  storm: RadarScope | undefined;
 }) {
   return (
     <div
@@ -66,7 +66,19 @@ export function LayerRadar({
           </button>
         </header>
       )}
-      {storm && <h3 id="storm-radar-title">Recent radar</h3>}
+      {storm?.visit.open ? (
+        <header className="storm-radar-header">
+          <button className="reading-back" type="button" onClick={storm.visit.back}>
+            Back to live storm
+          </button>
+          <h2 id="storm-radar-title" tabIndex={-1}>
+            Storm radar
+          </h2>
+          <p>RainViewer scans use a separate clock from storm advisories.</p>
+        </header>
+      ) : (
+        storm && <h3 id="storm-radar-title">Recent radar</h3>
+      )}
       {reveal && (
         <p role="status" className="radar-layer-note">
           Revealing radar…
@@ -79,7 +91,10 @@ export function LayerRadar({
             rewind={!!controls.rewindPoint}
             storm={storm}
             dock={
-              panelVisible && !controls.suspended && !reveal && (layer === "radar" || rewindPoint)
+              panelVisible &&
+              !controls.suspended &&
+              !reveal &&
+              (layer === "radar" || rewindPoint || storm?.visit.open)
                 ? dismissReading
                 : undefined
             }

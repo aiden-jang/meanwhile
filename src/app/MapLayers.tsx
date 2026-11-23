@@ -31,6 +31,8 @@ import { LayerIcon } from "./LayerIcon";
 import { CutawayReports } from "./CutawayReports";
 import type { DepthRecord } from "../data/depthRecords";
 import { LayerRadar } from "./radar/LayerRadar";
+import { QuietCycloneLinks, StormStoryLink } from "./storm/StormLinks";
+import { useStormRadarVisit } from "./storm/useStormRadarVisit";
 import { LiveStormReading, LiveStormSources } from "./storm/LiveStormReading";
 import type { LiveStorm } from "./storm/useLiveStorm";
 import "./map-layers.css";
@@ -106,6 +108,7 @@ export function MapLayers({
   };
   const inspectingPlace = !!place.point;
   const stormId = storm?.storm.id;
+  const stormRadar = useStormRadarVisit(stormId);
   useReadingArrival(
     panel,
     stormId ?? (rewindPoint ? "rewind" : inspectingPlace ? "place" : (layer ?? "overview")),
@@ -142,6 +145,11 @@ export function MapLayers({
   const health = layer && !archived ? layerHealth(layer, feeds.rows) : null;
   const hazardKind = layer && layer in hazardKinds ? hazardKinds[layer as keyof typeof hazardKinds] : null;
   const groups = places.hazards.filter((group) => group.kind === hazardKind);
+  const quietCyclones =
+    layer === "cyclones" &&
+    !archived &&
+    controls.enabled.cyclones &&
+    feeds.rows.some(({ id, state }) => id === "cyclones" && state === "ok");
   const quakeCount = useMemo(() => {
     void places.revision;
     let count = 0;
@@ -160,7 +168,14 @@ export function MapLayers({
   const quiet = (id: MapLayer) => quietLayer(id, feeds.rows, counts[id], archived);
 
   const dismissReading: KeyboardEventHandler<HTMLElement> = (event) => {
-    if (event.key !== "Escape" || !canDismiss || document.querySelector(":popover-open")) return;
+    if (event.key !== "Escape" || document.querySelector(":popover-open")) return;
+    if (stormRadar?.open) {
+      event.preventDefault();
+      event.stopPropagation();
+      stormRadar.back();
+      return;
+    }
+    if (!canDismiss) return;
     if (!rewindPoint && !inspectingPlace && !layer) return;
     event.preventDefault();
     event.stopPropagation();
@@ -194,7 +209,7 @@ export function MapLayers({
       aria-label="Map layers"
       onKeyDown={dismissReading}
     >
-      {storm && <LiveStormReading {...storm} back={onCloseStorm} />}
+      {storm && !stormRadar?.open && <LiveStormReading {...storm} back={onCloseStorm} />}
       {place.point && !rewindPoint && !storm && (
         <PlaceInspection
           {...reports}
@@ -243,7 +258,7 @@ export function MapLayers({
             </p>
           ) : !controls.enabled[layer] ? (
             <p>This layer is hidden. Turn it on to show its observations.</p>
-          ) : layer !== "radar" && quiet(layer) ? (
+          ) : layer !== "radar" && !(quietCyclones && !groups.length) && quiet(layer) ? (
             <p role="status">{quiet(layer)}</p>
           ) : null}
           {exampleLayer.current === layer &&
@@ -268,9 +283,14 @@ export function MapLayers({
           dismissReading,
           navigation,
         }}
-        storm={storm?.storm}
+        storm={storm && stormRadar ? { ...storm.storm, visit: stormRadar } : undefined}
       />
-      {storm && <LiveStormSources storm={storm.storm} />}
+      {storm && (
+        <>
+          <StormStoryLink trigger={stormRadar?.open ? "storm-radar-katrina" : "live-storm-katrina"} />
+          <LiveStormSources storm={storm.storm} />
+        </>
+      )}
       <div hidden={!!rewindPoint || !!storm}>
         {layer === null && Object.values(controls.enabled).every((on) => !on) && (
           <div className="layer-note">
@@ -299,6 +319,8 @@ export function MapLayers({
             <p>Reported events in the selected window. This window is shared with the earthquake reports.</p>
             {groups.length ? (
               <HazardList hazards={groups} markId={markId} onHazard={onHazard} inline />
+            ) : quietCyclones ? (
+              <QuietCycloneLinks at={controls.radarAt} map={flat} />
             ) : (
               <p role="status">
                 {!controls.enabled[layer!]

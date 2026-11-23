@@ -22,6 +22,7 @@ export type StoryNavigationValue = {
   returnLabel: string | undefined;
   hasReturnOrigin: boolean;
   auroraFromPass: boolean;
+  katrinaFromWeather: boolean;
   restoredCollection: CollectionPosition | null;
   dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;

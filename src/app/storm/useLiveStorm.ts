@@ -7,7 +7,7 @@ type Load = { id: string; episode: string; fixes: CycloneFix[]; failed: boolean 
 type Point = Pick<CycloneFix, "lon" | "lat">;
 const amber = 0xf5ce93;
 
-export function useLiveStorm(storm: Cyclone | undefined) {
+export function useLiveStorm(storm: Cyclone | undefined, visible: boolean) {
   const id = storm?.id;
   const episode = storm?.episode;
   const source = storm?.source ?? null;
@@ -93,7 +93,7 @@ export function useLiveStorm(storm: Cyclone | undefined) {
       },
     };
   }, [storm, point, fixes, select, paths, index]);
-  if (!storm || !point) return null;
+  if (!visible || !storm || !point) return null;
   return {
     storm,
     point,

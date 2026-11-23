@@ -136,10 +136,7 @@ export async function fetchCyclones(
     const payload = await res.json();
     if (!hasGdacsFeatures(payload)) throw new Error("Unexpected GDACS cyclone list");
     const current = parseCycloneList(payload);
-    // The list answered, which is what this reports. A storm whose track request fails is still a storm and
-    // still drawn where it is, so a missing tail is not a dead feed.
-    onAnswer?.(true);
-    return await Promise.all(
+    const storms = await Promise.all(
       current.map(async (storm) => {
         const episode = storm.episode ?? "";
         try {
@@ -152,6 +149,9 @@ export async function fetchCyclones(
         }
       }),
     );
+    // Publish the list and its status together so a storm with a pending track cannot look like a quiet day.
+    onAnswer?.(true);
+    return storms;
   } catch {
     onAnswer?.(false);
     return [];

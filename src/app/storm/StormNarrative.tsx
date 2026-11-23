@@ -134,3 +134,24 @@ export function StormFinding({
     </section>
   );
 }
+
+export function StormSources() {
+  return (
+    <>
+      <a href="https://www.nhc.noaa.gov/data/" target="_blank" rel="noreferrer">
+        NOAA HURDAT2
+      </a>
+      <a href="https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf" target="_blank" rel="noreferrer">
+        NHC Katrina report
+      </a>
+      <a
+        href="https://science.nasa.gov/earth/earth-observatory/hurricane-katrina-15395/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        NASA Earth Observatory · Terra MODIS
+      </a>
+      <span>Coastlines by Natural Earth</span>
+    </>
+  );
+}
