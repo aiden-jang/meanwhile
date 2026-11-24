@@ -445,6 +445,9 @@ The landing diagrams open interactive views on the shared canvas. Earth opens th
 list from the landing, cutaway and local sky. Each row opens the selected layer’s controls,
 including Storm radar’s scan player. The list preserves the chosen layer visibility.
 On phones, collapsing Layers gives the canvas the sheet’s space.
+The cutaway and local sky extend the existing canvas under the faded edge of their side panels
+while keeping the framed view centered in the open area. In stacked layouts, the sheet overlaps
+the world at its top edge and keeps the reading and touch controls below that overlap.
 Below the Surface opens a Fiji–Tonga cutaway. The depth sweep reveals three recorded USGS earthquakes
 at their reported depths. Map pins the selected epicentre. Nearby reports use that epicentre and
 the current projection. The Earthquakes inspector opens with these local reports in Layers.

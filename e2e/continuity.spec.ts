@@ -400,6 +400,37 @@ test("Layers holds the radar scan and scene tabs restore each position", async (
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!).radar)).toBe(true);
 });
 
+test("the cutaway and sky panels show the shared world through their edge", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const { width, height } = page.viewportSize()!;
+  const stacked = width < 600 || (width < 900 && height >= 621);
+  const panelOverlap = () =>
+    page.locator(".observatory-sidebar:visible").evaluate((panel, vertical) => {
+      const rail = panel.getBoundingClientRect();
+      const world = document.querySelector("#globe-view canvas")!.getBoundingClientRect();
+      return vertical ? world.bottom - rail.top : rail.right - world.left;
+    }, stacked);
+  const subjects = page.getByRole("group", { name: "Explore by subject" });
+  await subjects.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  const cutaway = page.getByRole("region", { name: "Earthquake cutaway" });
+  await expect.poll(panelOverlap).toBeGreaterThan(stacked ? 12 : 128);
+  await expect(cutaway.getByRole("slider", { name: "Drag to change depth" })).toBeInViewport();
+  await cutaway
+    .getByRole("group", { name: "Cutaway projection" })
+    .getByRole("button", { name: "Map" })
+    .click();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  await expect.poll(panelOverlap).toBeGreaterThan(stacked ? 12 : 128);
+  await subjects.getByRole("button", { name: "After Dark", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeVisible();
+  await expect.poll(panelOverlap).toBeGreaterThan(stacked ? 12 : 128);
+  await expect(page.getByRole("slider", { name: "City local time", exact: true })).toBeInViewport();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
+
 test("the phone sky exposes the selected object and returns from the Moon on the same canvas", async ({
   page,
 }) => {

@@ -69,7 +69,7 @@
   cursor: pointer;
 }
 .regional-stories {
-  inset-inline-start: var(--explore-scene-bleed, 0px);
+  inset-inline-start: var(--scene-left-bleed, 0px);
 }
 .zones:has([data-journey-route]) .regional-stories {
   display: none;

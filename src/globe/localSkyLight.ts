@@ -1,10 +1,10 @@
-import { Mesh, PlaneGeometry, ShaderMaterial, type PerspectiveCamera, type Vector3 } from "three";
-import { DEG } from "../geo/sphere";
+import { Mesh, PlaneGeometry, ShaderMaterial, Vector4, type PerspectiveCamera, type Vector3 } from "three";
 import type { TonightView } from "../geo/tonight";
 import { createLocalSkyLabels } from "./localSkyLabels";
 
 export function createLocalSkyLight(sun: Vector3, up: Vector3, canvas: HTMLCanvasElement) {
   const labels = createLocalSkyLabels(canvas, up);
+  const lens = new Vector4();
   const material = new ShaderMaterial({
     vertexShader: /* glsl */ `
       varying vec2 vScreen;
@@ -16,9 +16,10 @@ export function createLocalSkyLight(sun: Vector3, up: Vector3, canvas: HTMLCanva
     fragmentShader: /* glsl */ `
       varying vec2 vScreen;
       uniform vec3 uSun, uLocalUp;
-      uniform float uSlope, uAspect, uReveal, uSolarLight;
+      uniform vec4 uLens;
+      uniform float uReveal, uSolarLight;
       void main() {
-        vec3 eye = vec3(vScreen.x * uAspect * uSlope, vScreen.y * uSlope, -1.0);
+        vec3 eye = vec3((vScreen + uLens.zw) * uLens.xy, -1.0);
         vec3 ray = normalize(vec3(dot(eye, viewMatrix[0].xyz),
           dot(eye, viewMatrix[1].xyz), dot(eye, viewMatrix[2].xyz)));
         float elevation = dot(ray, uLocalUp);
@@ -37,8 +38,7 @@ export function createLocalSkyLight(sun: Vector3, up: Vector3, canvas: HTMLCanva
     uniforms: {
       uSun: { value: sun },
       uLocalUp: { value: up },
-      uSlope: { value: 0 },
-      uAspect: { value: 1 },
+      uLens: { value: lens },
       uReveal: { value: 0 },
       uSolarLight: { value: 1 },
     },
@@ -57,8 +57,9 @@ export function createLocalSkyLight(sun: Vector3, up: Vector3, canvas: HTMLCanva
       const reveal = Math.min(1, Math.max(0, (amount - 0.68) / 0.32));
       object.visible = reveal > 0;
       material.uniforms["uReveal"]!.value = reveal;
-      material.uniforms["uSlope"]!.value = Math.tan(camera.fov * DEG * 0.5);
-      material.uniforms["uAspect"]!.value = camera.aspect;
+      // Use the same lens shift as the stars so the horizon stays aligned behind the panel.
+      const matrix = camera.projectionMatrix.elements;
+      lens.set(1 / matrix[0]!, 1 / matrix[5]!, matrix[8]!, matrix[9]!);
       const solarLight = 1 - (view?.sunCover ?? 0) ** 6;
       material.uniforms["uSolarLight"]!.value = solarLight;
       const daylight = Math.min(1, Math.max(0, (sun.dot(up) + 0.26) / 0.24)) * solarLight;

@@ -25,7 +25,10 @@ export function createLocalSkyLabels(canvas: HTMLCanvasElement, up: Vector3) {
       .addScaledVector(up, Math.sin(altitude));
     if (ray.dot(forward) < 0.1) return null;
     point.copy(camera.position).addScaledVector(ray, 70).project(camera);
-    return { x: (point.x + 1) * 50, y: (1 - point.y) * 50 };
+    // Labels and trails use the open stage, while the renderer also draws under the panel.
+    const view = camera.view;
+    const left = view?.enabled ? (-2 * view.offsetX) / view.fullWidth : 0;
+    return { x: (((point.x + 1) / 2 - left) / (1 - left)) * 100, y: (1 - point.y) * 50 };
   }
 
   return (camera: PerspectiveCamera, view: TonightView | null) => {

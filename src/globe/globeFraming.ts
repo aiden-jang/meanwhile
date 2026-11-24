@@ -4,8 +4,8 @@ import { visibleCopies } from "./morph";
 function sceneBleed(element: HTMLElement): number {
   const style = getComputedStyle(element);
   const landing = Number(style.getPropertyValue("--landing-sky-bleed"));
-  const explore = parseFloat(style.getPropertyValue("--explore-scene-bleed"));
-  return explore || (landing * document.documentElement.clientWidth) / 100 || 0;
+  const panel = parseFloat(style.getPropertyValue("--scene-left-bleed"));
+  return panel || (landing * document.documentElement.clientWidth) / 100 || 0;
 }
 
 export function fitGlobeCamera(
