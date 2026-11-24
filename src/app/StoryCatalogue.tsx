@@ -60,31 +60,30 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
           const buttonId = storyButtonId(id);
           const unavailable = navigation?.unavailable(id);
           return (
-            <button
-              key={id}
-              type="button"
-              className="catalogue-pick"
-              id={buttonId}
-              aria-labelledby={`${buttonId}-title`}
-              aria-describedby={`${buttonId}-note`}
-              disabled={!ready || !!unavailable}
-              onClick={(event) => {
-                event.currentTarget.focus({ preventScroll: true });
-                navigation?.resume(
-                  { id, seen: Date.now(), position: opening(id, navigation.previewMap) },
-                  buttonId,
-                );
-              }}
-            >
+            <div className="catalogue-pick" key={id}>
               <StoryThumbnail id={id} />
               <span>
-                <strong id={`${buttonId}-title`}>{title}</strong>
+                <button
+                  type="button"
+                  id={buttonId}
+                  aria-describedby={`${buttonId}-note`}
+                  disabled={!ready || !!unavailable}
+                  onClick={(event) => {
+                    event.currentTarget.focus({ preventScroll: true });
+                    navigation?.resume(
+                      { id, seen: Date.now(), position: opening(id, navigation.previewMap) },
+                      buttonId,
+                    );
+                  }}
+                >
+                  {title}
+                </button>
                 <small id={`${buttonId}-note`}>{unavailable ?? promise}</small>
               </span>
               <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
                 <path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" fill="none" strokeWidth="1.5" />
               </svg>
-            </button>
+            </div>
           );
         })}
       </section>

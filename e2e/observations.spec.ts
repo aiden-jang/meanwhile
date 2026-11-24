@@ -75,8 +75,12 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await expect(tideRow.locator("..").getByText("Compare measured and predicted tides.")).toBeVisible();
   await tideRow.evaluate((row) => row.scrollIntoView({ block: "center" }));
   const sidebar = page.locator("#chrome-rail");
-  const scroll = await sidebar.evaluate((panel) => panel.scrollTop);
-  expect(scroll).toBeGreaterThan(0);
+  const offset = () =>
+    tideRow.evaluate(
+      (row) => row.getBoundingClientRect().top - row.closest("#chrome-rail")!.getBoundingClientRect().top,
+    );
+  expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBeGreaterThan(0);
+  const departure = await offset();
   await tideRow.click();
   const tide = page.getByRole("region", { name: "Tide Watch", exact: true });
   await expect(tide.getByText(/Couldn’t load Tide Watch data from NOAA/)).toBeVisible();
@@ -128,7 +132,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await tide.getByRole("button", { name: "Back to stories", exact: true }).click();
   await Promise.all(delayed.map((route) => route.fulfill({ status: 503 })));
   await expect(tideRow).toBeFocused();
-  expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBe(scroll);
+  await expect.poll(async () => Math.abs((await offset()) - departure)).toBeLessThanOrEqual(1);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
   await feedToggle.click();
