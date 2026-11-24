@@ -110,36 +110,37 @@ export function explorerEntrances(
     });
   }
   const open = (panel?: boolean) => present(panel);
-  function resume() {
+  function resume(panel = true) {
     if (
       !observatory.observing &&
       observatory.browser.pane === "layers" &&
       !explorer.nearby &&
       !explorer.city
     ) {
-      explorer.setRailOpen(true);
+      explorer.setRailOpen(panel);
       return;
     }
     const previous = explorer.lastFree.current;
-    observatory.navigation.requestExploreFocus("explorer-layers-tab");
+    if (panel) observatory.navigation.requestExploreFocus("explorer-layers-tab");
     observatory.browser.show("layers");
-    present(true, () => {
+    present(panel, () => {
       if (previous) {
-        explorer.restore({ ...previous, visit: { ...previous.visit, panel: true } });
+        explorer.restore({ ...previous, visit: { ...previous.visit, panel } });
         readings.restore(previous.readings);
-      } else explorer.open(true);
+      } else explorer.open(panel);
     });
     if (previous) {
       const { lon, lat, zoom } = previous.camera;
       camera.flyTo.current(lon, lat, zoom);
-      requestAnimationFrame(() =>
-        restorePanel({
-          scrollTarget: "chrome-rail",
-          scroll: previous.scroll,
-          focus: "explorer-layers-tab",
-          fallback: "globe-view",
-        }),
-      );
+      if (panel)
+        requestAnimationFrame(() =>
+          restorePanel({
+            scrollTarget: "chrome-rail",
+            scroll: previous.scroll,
+            focus: "explorer-layers-tab",
+            fallback: "globe-view",
+          }),
+        );
     }
   }
   function radar() {

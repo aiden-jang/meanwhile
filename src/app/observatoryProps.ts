@@ -52,7 +52,7 @@ export interface ObservatoryProps {
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
   explorePaths: {
-    resume: () => void;
+    resume: (showPanel?: boolean) => void;
     find: (target: ExploreTarget) => void;
     radar: () => void;
     nearby: (record: DepthRecord) => void;
