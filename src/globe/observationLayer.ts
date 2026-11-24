@@ -23,7 +23,6 @@ import {
 import type { GeoPoint, ObservationFrame, ObservationView } from "../app/observations/types";
 import { DEG, toVec3 } from "../geo/sphere";
 import { MORPH_GLSL, morphable } from "./morph";
-
 import { createObservationCurtain } from "./observationCurtain";
 import { createObservationTerrain } from "./observationTerrain";
 import { createObservationFault } from "./observationFault";
@@ -275,14 +274,13 @@ export function createObservationLayer(morph: { value: number }) {
   dot.onBeforeRender = (renderer) => {
     dot.material.uniforms["pixelRatio"]!.value = renderer.getPixelRatio();
   };
-  raster.visible = object.visible = false;
+  raster.visible = line.visible = dot.visible = object.visible = false;
   object.add(raster, line, dot);
   let prior: ObservationView | null = null;
-  let reveal = 0;
-  let travel = 0;
-  let departure = 0;
+  let reveal = 0,
+    travel = 0,
+    departure = 0;
   let rasterPrepared = false;
-
   function set(view: ObservationView | null) {
     if (view === prior) return;
     if (!view?.departing) departure = 0;
@@ -309,6 +307,7 @@ export function createObservationLayer(morph: { value: number }) {
       }
       line.geometry.dispose();
       line.geometry = paths.geometry();
+      line.visible = line.geometry.getAttribute("position").count > 0;
     }
     const window = view?.frame.markWindow;
     if (window) markWindow.value.set(window.from, window.to, Number(window.showAhead));
@@ -319,6 +318,7 @@ export function createObservationLayer(morph: { value: number }) {
         marks.push(mark, mark.color ?? PALE, mark.size ?? 13, mark.elapsed);
       dot.geometry.dispose();
       dot.geometry = marks.geometry();
+      dot.visible = dot.geometry.getAttribute("position").count > 0;
     }
     divider.value = view?.surveyDivider ?? -1;
     feather.value = view?.frame.raster?.feather ?? 0;

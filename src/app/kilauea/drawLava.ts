@@ -199,25 +199,34 @@ function surveyFrame(
   place(ctx, projection.point(bay), "Kapoho Bay", width, height, true);
 }
 
-export function drawLavaSurface(canvas: HTMLCanvasElement, index: number, relief: HTMLImageElement | null) {
+export function drawLavaSurface(
+  canvas: HTMLCanvasElement,
+  index: number,
+  relief: HTMLImageElement | null,
+  scale: number,
+) {
   const context = canvas.getContext("2d");
-  if (context) surveyFrame(context, canvas.width, canvas.height, index, relief, "dated");
+  if (!context) return;
+  context.setTransform(scale, 0, 0, scale, 0, 0);
+  surveyFrame(context, canvas.width / scale, canvas.height / scale, index, relief, "dated");
 }
 
-export function drawLavaComparison(relief: HTMLImageElement | null) {
+export function drawLavaComparison(relief: HTMLImageElement | null, scale: number) {
   const atlas = document.createElement("canvas");
-  atlas.width = 1120;
-  atlas.height = 1792;
+  const width = 1120,
+    height = 896;
+  atlas.width = width * scale;
+  atlas.height = height * 2 * scale;
   const ctx = atlas.getContext("2d");
   if (ctx) {
-    const height = atlas.height / 2;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.save();
     for (const mode of ["before", "after"] as const) {
       ctx.save();
       ctx.beginPath();
-      ctx.rect(0, 0, atlas.width, height);
+      ctx.rect(0, 0, width, height);
       ctx.clip();
-      surveyFrame(ctx, atlas.width, height, LAST, relief, mode);
+      surveyFrame(ctx, width, height, LAST, relief, mode);
       ctx.restore();
       ctx.translate(0, height);
     }

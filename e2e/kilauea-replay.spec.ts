@@ -72,6 +72,40 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
 });
 
+test("a short-phone Kīlauea opening uploads one survey after relief is ready", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  let release!: () => void;
+  const delayed = new Promise<void>((resolve) => (release = resolve));
+  await page.route(/\/a\/relief-phone-[^/]+\.webp$/, async (route) => {
+    const response = await route.fetch();
+    await delayed;
+    await route.fulfill({ response });
+  });
+  await page.addInitScript(() => {
+    const uploads: number[] = [];
+    Object.assign(window, { surveyUploads: uploads });
+    const upload = WebGL2RenderingContext.prototype.texSubImage2D;
+    WebGL2RenderingContext.prototype.texSubImage2D = function (...args: unknown[]) {
+      const source = args.at(-1);
+      if (source instanceof HTMLCanvasElement && source.width * 1150 === source.height * 1300)
+        uploads.push(source.width);
+      Reflect.apply(upload, this, args);
+    };
+  });
+  const uploads = () => page.evaluate(() => (window as Window & { surveyUploads?: number[] }).surveyUploads);
+  try {
+    const { panel, canvas, original } = await openKilauea(page);
+    await expect(panel.getByText("Preparing the USGS survey")).toBeVisible();
+    expect(await uploads()).toEqual([]);
+    release();
+    await expect(panel.getByText("USGS · Mapped lava extent")).toBeVisible();
+    await expect.poll(uploads).toEqual([650]);
+    expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+  } finally {
+    release();
+  }
+});
+
 test("the projected shoreline handle and the slider change the same comparison", async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
   await page.emulateMedia({ reducedMotion: "reduce" });

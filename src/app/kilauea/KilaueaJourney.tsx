@@ -2,7 +2,6 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useObservationImage } from "../observations/useObservationData";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { revealReading } from "../observations/revealReading";
 import { StoryDock } from "../observations/StoryDock";
@@ -20,7 +19,7 @@ import {
   shorelineTime,
   snapshots,
 } from "./lavaTimeline";
-import relief from "./relief.webp?url";
+import { smallLavaSurvey, useLavaRelief } from "./lavaRelief";
 import { useStorySession } from "../observations/StorySession";
 import { nearest } from "../../sources/observations/common";
 
@@ -56,18 +55,19 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   const playButton = useRef<HTMLButtonElement>(null);
   const timeline = useRef<HTMLInputElement>(null);
   const id = useId();
+  const [surveyScale] = useState(() => (smallLavaSurvey() ? 0.5 : 1));
   const [surface] = useState(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 1300;
-    canvas.height = 1150;
+    canvas.width = 1300 * surveyScale;
+    canvas.height = 1150 * surveyScale;
     return canvas;
   });
-  const { element, status } = useObservationImage(relief);
+  const relief = useLavaRelief(surveyScale < 1);
   const arrive = useCallback(() => setArrived(true), []);
   const comparing = split !== null;
   const atlas = useMemo(
-    () => (comparing && status !== "loading" ? drawLavaComparison(element) : null),
-    [comparing, element, status],
+    () => (comparing && relief !== undefined ? drawLavaComparison(relief, surveyScale) : null),
+    [comparing, relief, surveyScale],
   );
   const target = comparing || index >= OCEAN_ENTRY ? coastalSurvey : fissure;
   const at = snapshots[comparing ? LAST : index]!.at;
@@ -88,8 +88,8 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   const time = split === null ? mapDate(at) : shorelineTime(split);
 
   useLayoutEffect(() => {
-    if (!comparing || !atlas) drawLavaSurface(surface, index, element);
-  }, [index, element, surface, comparing, atlas]);
+    if (!comparing && relief !== undefined) drawLavaSurface(surface, index, relief, surveyScale);
+  }, [index, relief, surface, comparing, surveyScale]);
 
   useLayoutEffect(() => {
     onView({
@@ -98,7 +98,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       frame: { at: Date.parse(at), raster },
       target,
       image: null,
-      surface: atlas ?? surface,
+      ...(relief !== undefined ? { surface: atlas ?? surface } : {}),
       ...(split !== null && atlas
         ? { surveyDivider: coastlineDivider(split), surveyHandle: { ...coastHandle, fraction: split / 100 } }
         : {}),
@@ -106,10 +106,10 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       arrive,
     });
     remember?.({ chapter: comparing ? "compare" : "", choice: String(split ?? "") });
-  }, [arrive, atlas, at, comparing, element, footage, onView, panel.map, remember, split, surface, target]);
+  }, [arrive, atlas, at, comparing, relief, footage, onView, panel.map, remember, split, surface, target]);
 
   useEffect(() => {
-    if (!playing || !arrived) return;
+    if (!playing || !arrived || relief === undefined) return;
     let timer = 0;
     function schedule() {
       window.clearTimeout(timer);
@@ -129,7 +129,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", schedule);
     };
-  }, [playing, arrived, index]);
+  }, [playing, arrived, index, relief]);
 
   useEffect(() => {
     const motion = matchMedia(MOTION);
@@ -210,7 +210,9 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           : comparing
             ? "USGS · Registered shoreline survey"
             : arrived
-              ? "USGS · Mapped lava extent"
+              ? relief === undefined
+                ? "Preparing the USGS survey"
+                : "USGS · Mapped lava extent"
               : "Approaching Hawaiʻi Island"
       }
       at={
@@ -328,7 +330,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
             </button>
           </div>
         )}
-        {status === "failed" && (
+        {relief === null && (
           <p className="observation-note" role="status">
             Shaded relief is unavailable. The mapped outlines are visible.
           </p>

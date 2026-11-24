@@ -8,6 +8,7 @@ import { LayerIcon } from "../LayerIcon";
 import { findObservatory, type ExploreTarget } from "./observatorySearch";
 import type { FindPosition } from "./findPosition";
 import { loadKilauea } from "../kilauea/loadKilauea";
+import { prepareLavaRelief } from "../kilauea/lavaRelief";
 
 export function FindObservatory({
   onClose,
@@ -51,6 +52,7 @@ export function FindObservatory({
   useEffect(() => {
     if (!offersKilauea) return;
     void loadKilauea().catch(() => {});
+    void prepareLavaRelief();
     document.querySelector("#globe-view canvas")?.dispatchEvent(new Event("prepare-observation-raster"));
   }, [offersKilauea]);
   const typing = !!query.trim();
