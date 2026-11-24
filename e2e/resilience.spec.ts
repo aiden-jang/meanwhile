@@ -169,8 +169,12 @@ test("a phone tap leaves the crowded marker picker open for a second tap", async
   const globe = page.getByRole("button", { name: "Explore visible observations" });
   const picker = page.getByRole("group", { name: "Nearby observations" });
   await expect(globe).toBeVisible();
+  const canvas = (await globe.boundingBox())!;
+  const header = (await page.locator("#chrome-head").boundingBox())!;
+  const headerOverlap = Math.max(0, header.y + header.height - canvas.y);
+  const center = { x: canvas.width / 2, y: (canvas.height + headerOverlap) / 2 };
   await expect(async () => {
-    if (!(await picker.isVisible())) await globe.tap();
+    if (!(await picker.isVisible())) await globe.tap({ position: center });
     await expect(picker).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
   const observation = picker.getByRole("button", { name: /East of Guam.*UTC/ });
