@@ -26,7 +26,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 6px;
-  margin-block-end: 20px;
+  margin-block-end: 12px;
   color: var(--pressure-dim);
   font: 10px/1.5 var(--font-mono);
 }
@@ -46,7 +46,7 @@
   font-size: 14px;
 }
 .tonga-evidence h2 {
-  margin-block: 18px 10px;
+  margin-block: 12px 8px;
   font:
     500 42px/1 "Alumni Sans",
     var(--font-sans);
@@ -74,6 +74,9 @@
   color: var(--pressure-dim);
   font-size: 11px;
   line-height: 1.55;
+}
+.tonga-evidence-time {
+  margin-block: 8px;
 }
 .tonga-evidence .tonga-chart-meta,
 .tonga-evidence .tonga-chart-meta :is(time, span:last-child) {

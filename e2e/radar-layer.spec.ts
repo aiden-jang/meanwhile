@@ -337,7 +337,7 @@ for (const width of [1440, 390]) {
   test(`story browsing hides layers and restores the held layer view at ${width}px @dev`, async ({
     page,
   }) => {
-    const { queries } = await prepareRadar(page, width, false);
+    const { queries, times } = await prepareRadar(page, width, false);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/#v=explore&at=15,25,1.5${width === 390 ? "&p=map" : ""}`);
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1.5);
@@ -353,7 +353,8 @@ for (const width of [1440, 390]) {
     await expect(controls.locator(".radar-warning")).toHaveCount(0);
     await expect(transport.getByRole("slider", { name: "Radar scan time" })).toBeEnabled();
     await transport.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
-    const held = await time.getAttribute("datetime");
+    const held = new Date(times[1]!).toISOString();
+    await expect(time).toHaveAttribute("datetime", held);
     const player = await controls.elementHandle();
     await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     const counts = () =>
@@ -389,7 +390,7 @@ for (const width of [1440, 390]) {
     await storiesTab.focus();
     await storiesTab.press("ArrowLeft");
     await expect.poll(() => camera(page)).toEqual(pose);
-    await expect(time).toHaveAttribute("datetime", held!);
+    await expect(time).toHaveAttribute("datetime", held);
     await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -402,12 +403,18 @@ for (const width of [1440, 390]) {
       true,
     );
     await openLayer(page, "Storm radar");
+    // Keep the replay on its middle scan while clicking into Stories, even on a slow renderer.
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + test.info().timeout + 1000));
     await transport.getByRole("button", { name: "Play", exact: true }).click();
-    await page.getByRole("tab", { name: "Stories", exact: true }).click();
-    const pausedAt = await time.getAttribute("datetime");
-    await page.waitForTimeout(1200);
-    expect(await time.getAttribute("datetime")).toBe(pausedAt);
+    await expect(transport.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await storiesTab.click();
+    await page.clock.runFor(50);
+    await page.clock.fastForward(1200);
+    await expect(time).toHaveAttribute("datetime", held);
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
-    await expect(time).not.toHaveAttribute("datetime", pausedAt!);
+    await page.clock.runFor(50);
+    await page.clock.fastForward(1200);
+    await expect(time).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
   });
 }

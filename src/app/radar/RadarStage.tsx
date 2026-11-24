@@ -167,7 +167,10 @@ export function RadarStage({
   );
 
   useLayoutEffect(() => {
-    if (!stormOpen || suspended) setPlaying(false);
+    setPlaying(false);
+  }, [stormId]);
+  useLayoutEffect(() => {
+    if (stormId && (!stormOpen || suspended)) setPlaying(false);
   }, [stormId, stormOpen, suspended]);
   const wasRewinding = useRef(rewind);
   useLayoutEffect(() => {

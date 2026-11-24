@@ -1,5 +1,5 @@
 import { EvidenceConnector } from "../observations/EvidenceConnector";
-import { ORIGIN, stations, timeIso, timeLabel } from "./tongaTimeline";
+import { ORIGIN, pressureAt, stations, timeIso, timeLabel } from "./tongaTimeline";
 import { PressureChart } from "./PressureChart";
 import type { TongaStation } from "./useTongaPlayback";
 
@@ -10,13 +10,15 @@ export function TongaWorld({
   station,
   signal,
   reading,
+  minute,
   onInspect,
 }: {
   phase: TongaPhase;
   station: TongaStation;
   signal: TongaStation | undefined;
   reading: boolean;
-  onInspect: (station: TongaStation) => void;
+  minute: number;
+  onInspect: (minute: number, station: TongaStation, trigger: HTMLButtonElement) => void;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
   return (
@@ -48,7 +50,13 @@ export function TongaWorld({
             aria-current={reading && item.id === station.id ? "true" : undefined}
             data-compact-anchor=""
             data-projection-anchor={station.id === item.id || undefined}
-            onClick={() => onInspect(item)}
+            onClick={(event) =>
+              onInspect(
+                pressureAt(item, minute) === null ? item.peak : Math.floor(minute),
+                item,
+                event.currentTarget,
+              )
+            }
             aria-label={`Inspect ${item.name} pressure`}
           >
             <span className="tonga-station-point" aria-hidden="true" />

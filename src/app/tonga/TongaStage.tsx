@@ -180,9 +180,10 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       ? "Brightness-temperature change from the previous 10-minute scan."
       : "False-color infrared shows the eruption cloud expanding over the Pacific.";
 
-  function inspect(next: number, selected = station) {
+  function inspect(next: number, selected = station, trigger?: HTMLButtonElement) {
     if (phase !== "inspect" && phase !== "shared") {
-      previous.current = captureReplayFrame(panel);
+      const frame = captureReplayFrame(panel);
+      previous.current = { ...frame, focus: trigger ?? frame.focus };
       setHeld(true);
       focus.current = "sample";
     } else if (phase === "shared") focus.current = "sample";
@@ -270,9 +271,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             station={station}
             signal={signal}
             reading={showReading}
-            onInspect={(selected) =>
-              inspect(pressureAt(selected, minute) === null ? selected.peak : Math.floor(minute), selected)
-            }
+            minute={minute}
+            onInspect={inspect}
           />
         </>
       }
