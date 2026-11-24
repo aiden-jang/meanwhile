@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type RefObject } from "react";
 import type { SkyCity } from "../../geo/tonight";
+import { DetailPanelHeading } from "../DetailPanelHeading";
 
 export function skyTimeFormats(timeZone: string) {
   return {
@@ -20,26 +21,30 @@ export function SkyHeading({
   label,
   back,
   onBack,
-  compact,
+  detail,
 }: {
   title: string;
   label: string;
   back: RefObject<HTMLButtonElement>;
   onBack: () => void;
-  compact?: boolean;
+  detail?: boolean;
 }) {
+  if (detail)
+    return (
+      <DetailPanelHeading
+        id="local-sky-title"
+        title={title}
+        backLabel={label}
+        backRef={back}
+        onBack={onBack}
+      />
+    );
   return (
     <div className="tonight-heading">
       <h2 id="local-sky-title">{title}</h2>
       <div className="observatory-actions tonight-back">
-        <button
-          className="reading-back"
-          type="button"
-          ref={back}
-          onClick={onBack}
-          aria-label={compact ? label : undefined}
-        >
-          {compact ? "Back" : label}
+        <button className="reading-back" type="button" ref={back} onClick={onBack}>
+          {label}
         </button>
       </div>
     </div>

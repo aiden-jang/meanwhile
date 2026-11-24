@@ -318,6 +318,9 @@ opens initially except for an archived or shared earthquake target.
 One inspector shows readings, source meaning, coverage and contextual controls. Enabled players
 stay mounted when another inspector opens. Source failures are visible beside the affected layer.
 Temporary isolation restores the chosen combination without changing stored preferences.
+Tonight’s Sky and the Storm radar inspector share the quiet panel edge, heading scale and trailing
+Back control. Their primary instruments come before supporting links and sources. The sky and
+radar retain distinct measurement accents and their existing mobile playback placement.
 
 Earthquake counts, filters, timeline, search, archive, display choices, sound and tour controls belong
 together in the earthquake inspector. The radar row includes its compact scan player while enabled. The

@@ -277,10 +277,19 @@ export function TonightSky({
       }
     />
   );
+  const heading = (
+    <SkyHeading
+      title={title}
+      label={returnLabel}
+      back={back}
+      onBack={onClose}
+      detail={mode === "sky" && (!!tabs || (observing && !guided))}
+    />
+  );
   if (tabs && mode === "sky")
     return (
       <>
-        <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} compact />
+        {heading}
         <SkyFocus
           current={current}
           onSelect={(targetName) => onView({ ...current, targetName, nightTrail: undefined })}
@@ -320,7 +329,7 @@ export function TonightSky({
     );
   return (
     <>
-      <SkyHeading title={title} label={returnLabel} back={back} onBack={onClose} />
+      {heading}
       {mode === "sky" && !observing && !guided && (
         <SkyInvitation
           arrivalCity={!!arrivalCity}

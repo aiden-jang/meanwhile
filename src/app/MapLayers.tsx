@@ -19,15 +19,15 @@ import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
 import type { FeedStatus } from "./feedStatus";
 import { weatherLayers, type WeatherLayerId } from "./weatherLayers";
-import { layerHealth, layerMetadata } from "./layerMetadata";
+import { layerHealth } from "./layerMetadata";
 import type { Aurora } from "../sources/aurora";
 import { layerTime } from "./layerTime";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
-import { LayerCatalogue, LayerVisibility } from "./LayerCatalogue";
+import { LayerCatalogue } from "./LayerCatalogue";
+import { LayerInspectorHeading } from "./LayerInspectorHeading";
 import { LayerSources } from "./LayerSources";
 import { HazardList } from "./HazardList";
 import { LayerExample, hasLayerExample } from "./LayerExample";
-import { LayerIcon } from "./LayerIcon";
 import { CutawayReports } from "./CutawayReports";
 import type { DepthRecord } from "../data/depthRecords";
 import { LayerRadar } from "./radar/LayerRadar";
@@ -236,22 +236,13 @@ export function MapLayers({
       )}
       {layer && (
         <div className="layer-inspector-heading">
-          <button className="reading-back" type="button" onClick={back}>
-            Back to layers
-          </button>
-          <div>
-            <h2 id="layer-inspector-title" tabIndex={-1}>
-              {hasLayerExample(layer) && <LayerIcon layer={layer} />}
-              {mapLayerNames[layer]}
-            </h2>
-            <LayerVisibility
-              layer={layer}
-              on={controls.enabled[layer]}
-              disabled={disabled(layer)}
-              onChange={(on) => controls.change(layer, on)}
-            />
-          </div>
-          <p>{layerMetadata[layer].coverage}</p>
+          <LayerInspectorHeading
+            layer={layer}
+            onBack={back}
+            enabled={controls.enabled[layer]}
+            disabled={disabled(layer)}
+            onToggle={(on) => controls.change(layer, on)}
+          />
           {disabled(layer) ? (
             <p role="status">
               Return to live to view this layer. This source has no data for the selected archive.

@@ -192,7 +192,8 @@
     border-radius: 10px;
   }
 }
-.frame[data-presentation="explore"] #chrome-rail {
+.frame[data-presentation="explore"] #chrome-rail,
+.observatory-intro:has(> .detail-panel-heading) {
   --explorer-surface: color-mix(in srgb, var(--color-deck) 85%, var(--color-void));
   --explorer-edge: color-mix(in srgb, var(--explorer-surface) 60%, transparent);
   background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 40px), var(--explorer-edge));
@@ -230,7 +231,8 @@
   background: var(--explorer-surface);
 }
 @media (min-width: 900px) {
-  .frame[data-presentation="explore"] #chrome-rail {
+  .frame[data-presentation="explore"] #chrome-rail,
+  .observatory-intro:has(> .detail-panel-heading) {
     mask-image: linear-gradient(#000 calc(100% - 10px), transparent);
     background: linear-gradient(
       90deg,
@@ -242,7 +244,8 @@
   }
 }
 @media (max-width: 767px) {
-  .frame[data-presentation="explore"] #chrome-rail {
+  .frame[data-presentation="explore"] #chrome-rail,
+  .observatory-intro:has(> .detail-panel-heading) {
     background: linear-gradient(
       color-mix(in srgb, var(--explorer-surface) 90%, transparent),
       var(--color-void) 52%

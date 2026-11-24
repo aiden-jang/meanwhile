@@ -1,0 +1,170 @@
+.detail-panel-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.detail-panel-heading h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font:
+    550 clamp(34px, 3vw, 44px)/1.08 "Alumni Sans",
+    var(--font-sans);
+  letter-spacing: -0.03em;
+}
+
+.frame .detail-panel-heading > .reading-back {
+  min-width: 44px;
+  justify-content: center;
+  padding-inline: 8px;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.frame .detail-panel-heading > .reading-back:is(:hover, :focus-visible) {
+  color: var(--color-ink);
+}
+
+.map-layers[data-layer="radar"] .layer-inspector-heading {
+  margin-bottom: 6px;
+}
+
+.detail-panel-heading > p {
+  margin: 0;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+}
+
+.detail-panel-heading > .layer-visibility {
+  justify-self: end;
+}
+
+.observatory-intro:has(> .detail-panel-heading) {
+  --detail-accent: #c7d4ff;
+  align-content: start;
+  gap: 8px;
+}
+
+.observatory-intro:has(> .detail-panel-heading) :is(.sky-focus, .entry-sky-city) select,
+.observatory-intro:has(> .detail-panel-heading) :is(.sky-focus button, .sky-earth-entry),
+:is(.map-layers[data-layer="radar"], .frame:has(.map-layers[data-layer="radar"]) > .radar-dock)
+  :is(.radar-latest, .radar-playback button) {
+  min-height: 44px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font-size: var(--text-caption);
+}
+
+.observatory-intro:has(> .detail-panel-heading) :is(.sky-focus button, .sky-earth-entry):enabled:hover,
+:is(.map-layers[data-layer="radar"], .frame:has(.map-layers[data-layer="radar"]) > .radar-dock)
+  :is(.radar-latest, .radar-playback button):enabled:hover {
+  background: var(--color-raised);
+}
+
+:is(.map-layers[data-layer="radar"], .frame:has(.map-layers[data-layer="radar"]) > .radar-dock)
+  :is(.radar-latest[aria-pressed="true"], .radar-playback .story-playback),
+.observatory-intro:has(> .detail-panel-heading) .sky-focus #open-moonfall {
+  background: var(--color-raised);
+}
+
+.observatory-intro:has(> .detail-panel-heading) .sky-focus button:disabled,
+:is(.map-layers[data-layer="radar"], .frame:has(.map-layers[data-layer="radar"]) > .radar-dock)
+  .radar-playback
+  button:disabled {
+  opacity: 0.54;
+}
+
+:is(.map-layers[data-layer="radar"], .frame:has(.map-layers[data-layer="radar"]) > .radar-dock) {
+  --detail-accent: #b8ebda;
+}
+
+:is(
+    .observatory-intro:has(> .detail-panel-heading),
+    .map-layers[data-layer="radar"],
+    .frame:has(.map-layers[data-layer="radar"]) > .radar-dock
+  )
+  .scrub-slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid var(--color-deck);
+  border-radius: 50%;
+  background: var(--detail-accent);
+  box-shadow: 0 0 0 1px var(--detail-accent);
+}
+
+:is(
+    .observatory-intro:has(> .detail-panel-heading),
+    .map-layers[data-layer="radar"],
+    .frame:has(.map-layers[data-layer="radar"]) > .radar-dock
+  )
+  .scrub-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-deck);
+  border-radius: 50%;
+  background: var(--detail-accent);
+  box-shadow: 0 0 0 1px var(--detail-accent);
+}
+
+.observatory-intro:has(> .detail-panel-heading) .sky-focus {
+  border-block: 0;
+}
+
+.observatory-intro:has(> .detail-panel-heading) :is(.sky-focus, .entry-sky-city) select {
+  appearance: none;
+  padding-inline: 8px 28px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-dim) 50%) right 12px center / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--color-dim) 50%, transparent 50%) right 7px center / 5px 5px no-repeat,
+    var(--color-deck);
+}
+
+@media (forced-colors: active) {
+  .observatory-intro:has(> .detail-panel-heading) :is(.sky-focus, .entry-sky-city) select {
+    appearance: auto;
+    background: Canvas;
+  }
+}
+
+.observatory-intro:has(> .detail-panel-heading) .tonight-clock time {
+  color: var(--detail-accent);
+  font-size: 16px;
+}
+
+.map-layers[data-layer="radar"] .radar-layer {
+  margin-top: 0;
+}
+
+.map-layers[data-layer="radar"] .radar-layer .radar-transport {
+  padding-top: 8px;
+}
+
+@media (min-width: 900px) {
+  .observatory-intro:has(> .detail-panel-heading) {
+    --explorer-pad: 22px;
+    margin: 20px 0 6px 24px;
+    padding: 16px var(--explorer-pad) 24px;
+    border-radius: 10px;
+    scrollbar-color: color-mix(in srgb, var(--color-faint) 16%, transparent) transparent;
+  }
+}
+
+@media (max-width: 767px) {
+  .detail-panel-heading h2 {
+    font-size: clamp(28px, 7vw, 34px);
+  }
+
+  .observatory-sidebar:has(> .observatory-intro > .detail-panel-heading) {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .observatory-intro:has(> .detail-panel-heading) {
+    padding-inline: 20px;
+  }
+}

@@ -158,10 +158,6 @@
   min-height: 44px;
   margin: 0;
 }
-[data-entry-scene="night"] .tonight-heading > .tonight-back button {
-  min-width: 44px;
-  text-align: center;
-}
 [data-entry-scene] .depth-reading-value {
   margin-block: 1px;
   padding-block: 6px;
@@ -261,9 +257,6 @@
   }
   [data-entry-scene="night"] .tonight-compass:not([data-open-compass]) .tonight-drag-hint {
     display: block;
-  }
-  [data-entry-scene="night"] .tonight-heading:has(+ .sky-focus) {
-    flex-flow: row nowrap;
   }
   .entry-sky-city {
     gap: 0 6px;
