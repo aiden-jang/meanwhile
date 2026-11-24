@@ -72,7 +72,6 @@ export function StoriesDrawer({
         ref={container}
         id="stories-panel"
         className="stories-drawer"
-        data-full={scene === null || all || undefined}
         aria-label="Story catalogue"
         role="region"
         onClickCapture={onSelect}

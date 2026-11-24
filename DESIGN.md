@@ -460,7 +460,7 @@ one-action entry to the rise controls, the Apollo 17 valley, and the shoreline c
 More stories jumps directly to the compact catalogue below. Each story appears once in the catalogue.
 Filtering keeps the query, camera and filter controls in place.
 On taller panels, search and categories stay visible above the scrolling results. The sticky controls
-shield text behind them while the outer rail edge remains translucent. Short full catalogues keep a
+shield text behind them while the outer rail edge remains translucent. Short panels keep a
 compact search row with a return to topics. The native scroll thumb stays quiet at rest and becomes
 clearer while scrolling.
 Switching between Layers
