@@ -11,8 +11,7 @@ const warmCollection = () => {
 };
 const SavedCollection = lazy(() => loadCollection().then((module) => ({ default: module.SavedCollection })));
 
-const playingSelector =
-  ".replay-region .story-playback:not([data-playback-start]), .sun-transport [data-story-playing], #radar-layer-controls:not([hidden]) .story-playback:not([data-playback-start])";
+const playingSelector = ".story-playback:not([data-playback-start]), .sun-transport [data-story-playing]";
 
 export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
@@ -26,17 +25,31 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   if (!navigation) return null;
   const find = finding || !!navigation.restoredFind;
   const saved = opened || !!navigation.restoredCollection;
-  const closeFind = () => {
+  const holdPlayback = () => {
+    heldPlayback.current = [...document.querySelectorAll<HTMLButtonElement>(playingSelector)].find(
+      (button) =>
+        !button.disabled &&
+        button.getClientRects().length > 0 &&
+        getComputedStyle(button).visibility === "visible",
+    );
+    heldPlayback.current?.click();
+  };
+  const resumePlayback = () => {
     const playback = heldPlayback.current;
     heldPlayback.current = undefined;
+    if (playback?.isConnected && !playback.disabled && !playback.matches(playingSelector)) playback.click();
+  };
+  const closeFind = () => {
     setFind(false);
     navigation.dismissFind();
     requestAnimationFrame(() => {
-      if (playback?.isConnected && !playback.disabled && !playback.matches(playingSelector)) playback.click();
+      resumePlayback();
       findTrigger.current?.focus({ preventScroll: true });
     });
   };
-  const close = () => {
+  const close = (departing = false) => {
+    if (departing) heldPlayback.current = undefined;
+    else resumePlayback();
     document.querySelector<HTMLDialogElement>("#saved-observations")?.close();
     navigation.dismissRestoration();
     setSaved(false);
@@ -81,10 +94,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();
-          heldPlayback.current = Array.from(
-            document.querySelectorAll<HTMLButtonElement>(playingSelector),
-          ).find((button) => !button.disabled && !!button.getClientRects().length);
-          heldPlayback.current?.click();
+          holdPlayback();
           setFind(true);
         }}
       >
@@ -110,6 +120,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
             document.getElementById("open-catalogue-saved") === document.activeElement
               ? (document.activeElement as HTMLElement)
               : trigger.current;
+          holdPlayback();
           setSaved(true);
         }}
       >
@@ -124,6 +135,11 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
           launch={navigation.launchFromFind}
           unavailable={navigation.unavailable}
           library={navigation.library}
+          openEntrance={(id) => {
+            heldPlayback.current = undefined;
+            setFind(false);
+            navigation.openEntrance(id);
+          }}
           openJourney={(id) => {
             heldPlayback.current = undefined;
             setFind(false);
@@ -151,7 +167,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         />
       )}
       {saved && (
-        <SavedPanel count={navigation.library.saved.length} onClose={close}>
+        <SavedPanel count={navigation.library.saved.length} onClose={() => close()}>
           <SavedBoundary>
             <Suspense
               fallback={
@@ -160,7 +176,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
                 </div>
               }
             >
-              <SavedCollection onClose={close} />
+              <SavedCollection onClose={() => close(true)} />
             </Suspense>
           </SavedBoundary>
         </SavedPanel>

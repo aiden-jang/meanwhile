@@ -17,6 +17,8 @@ export function StorySearch({
   scene,
   filter,
   onSearchAll,
+  onSearch,
+  showJourneys,
   results,
   journeyControl,
   children,
@@ -24,6 +26,8 @@ export function StorySearch({
   filter?: ReactNode;
   scene: import("./useObservatory").EarthScene | null;
   onSearchAll: () => void;
+  onSearch: () => void;
+  showJourneys: boolean;
   deck: Observatory["observations"];
   ready: boolean;
   results: RefObject<HTMLDivElement>;
@@ -42,6 +46,7 @@ export function StorySearch({
     : "all stories";
   const clear = () => {
     if (input.current) resetStoryResults(input.current);
+    onSearch();
     deck.setQuery("");
     input.current?.focus({ preventScroll: true });
   };
@@ -67,6 +72,7 @@ export function StorySearch({
               placeholder="Find a story…"
               onInput={(e) => {
                 resetStoryResults(e.currentTarget);
+                onSearch();
                 deck.setQuery(e.currentTarget.value);
               }}
             />
@@ -79,7 +85,7 @@ export function StorySearch({
             )}
           </div>
           {journeyControl}
-          {filter && (
+          {filter && !showJourneys && (
             <button
               type="button"
               className="story-topic-jump"
@@ -105,7 +111,7 @@ export function StorySearch({
         </div>
         <div
           id="story-topic-options"
-          hidden={shortPhone && !topicsOpen}
+          hidden={showJourneys || (shortPhone && !topicsOpen)}
           onClick={(event) => {
             if (shortPhone && (event.target as Element).closest("button")) {
               setTopicsOpen(false);
@@ -124,7 +130,7 @@ export function StorySearch({
         </div>
       </div>
       <div className="story-results" ref={results}>
-        {deck.query.trim() && (
+        {!showJourneys && deck.query.trim() && (
           <section className="stories-group" aria-label="Search results">
             <p role="status" className="observation-note">
               {matches.length

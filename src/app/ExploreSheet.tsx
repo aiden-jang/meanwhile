@@ -8,11 +8,13 @@ export function ExploreSheet({
   onResize,
   visible,
   flat,
+  layersOverview,
 }: {
   height: number;
   onResize: (height: number) => void;
   visible: boolean;
   flat: boolean;
+  layersOverview: boolean;
 }) {
   const [viewport, setViewport] = useState({ height: window.innerHeight, footer: 0 });
   const preview = useStoryNavigation()?.previewOpen;
@@ -31,19 +33,21 @@ export function ExploreSheet({
   }, []);
   const stops = sheetStops(viewport.height, viewport.footer);
   const [first, half, last] = stops;
+  const overviewHeight = Math.min(last, half + 52);
+  const initial = layersOverview && viewport.height >= 600 ? overviewHeight : half;
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");
     if (!zones) return;
     zones.style.setProperty("--sheet-min", `${first}px`);
-    zones.style.setProperty("--sheet-default", `${half}px`);
+    zones.style.setProperty("--sheet-default", `${initial}px`);
     zones.style.setProperty("--sheet-max", `${last}px`);
     return () => {
       for (const name of ["--sheet-min", "--sheet-default", "--sheet-max"]) zones.style.removeProperty(name);
     };
-  }, [first, half, last]);
+  }, [first, initial, last]);
   const current = preview
-    ? (previewHeight ?? Math.min(last, Math.max(height || half, Math.min(half + 100, last - 56))))
-    : Math.min(last, Math.max(first, height || half));
+    ? (previewHeight ?? Math.min(last, Math.max(height || initial, Math.min(half + 100, last - 56))))
+    : Math.min(last, Math.max(first, height || initial));
   useLayoutEffect(() => {
     if (!preview) {
       setPreviewHeight(undefined);
@@ -68,7 +72,7 @@ export function ExploreSheet({
       snap={stops}
       measure={(event) => event.clientY}
       onChange={resizeSheet}
-      onTap={() => resizeSheet(moreWorld ? last : half)}
+      onTap={() => resizeSheet(moreWorld ? last : initial)}
       valueText={`${Math.round(current)} pixels of world. Tap or press Enter for ${action.toLowerCase()}.`}
       caption={action}
       grip

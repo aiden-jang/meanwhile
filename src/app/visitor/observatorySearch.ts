@@ -8,6 +8,17 @@ import { skyCities } from "../tonight/cities";
 export type ExploreTarget =
   { kind: "place"; name: string; lon: number; lat: number } | { kind: "layer"; id: MapLayer; name: string };
 
+export const findEntrances = [
+  { id: "live", name: "Earth", detail: "Live layers", terms: ["earth", "live layers"] },
+  {
+    id: "depth",
+    name: "Below the Surface",
+    detail: "Quake depths · Fiji and Tonga",
+    terms: ["below the surface", "quake depths", "fiji"],
+  },
+  { id: "night", name: "After Dark", detail: "Tonight’s Sky", terms: ["after dark", "local sky"] },
+] as const;
+
 const layers = (Object.keys(mapLayerNames) as MapLayer[]).map((id) => ({
   kind: "layer" as const,
   id,
@@ -26,6 +37,9 @@ export function findObservatory(query: string, library?: Library) {
     return matches(`${visit.id} ${story?.title ?? ""} ${visitNote(visit)} ${visit.note ?? ""}`);
   };
   return {
+    entrances: findEntrances.filter(({ terms: aliases }) =>
+      aliases.some((alias) => alias === terms.join(" ")),
+    ),
     places: skyCities
       .filter(({ name }) => matches(normalizeStoryQuery(name)))
       .map(({ name, lon, lat }) => ({ kind: "place" as const, name, lon, lat })),

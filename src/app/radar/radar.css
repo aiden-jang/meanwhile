@@ -384,3 +384,38 @@
   color: var(--color-dim);
   font-size: 11px;
 }
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .radar-layer {
+    margin-top: 4px;
+  }
+
+  .radar-layer .radar-transport {
+    padding-top: 4px;
+  }
+
+  .radar-inline {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    gap: 4px 8px;
+    align-items: center;
+  }
+
+  .radar-inline .radar-clock {
+    grid-column: 1 / -1;
+  }
+
+  .radar-inline .timeline-track {
+    grid-column: 1 / 3;
+    grid-row: 2;
+  }
+
+  .radar-inline .radar-playback {
+    display: contents;
+  }
+
+  .radar-inline .story-playback {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}

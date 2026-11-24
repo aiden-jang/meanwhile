@@ -4,7 +4,7 @@ import { captureCollection } from "../visitor/collectionReturn";
 import { weatherOrigin } from "../storm/weatherHandoff";
 import { auroraHandoff } from "./auroraJourney";
 import type { BrowseOrigin } from "./storyNavigationTypes";
-import { catalogueRowOffset } from "../panelReturn";
+import { catalogueRowOffset, type PanelReturn } from "../panelReturn";
 
 export function captureBrowseOrigin(
   { explorer, views }: ObservatoryProps,
@@ -44,4 +44,27 @@ export function captureBrowseOrigin(
                 : "Back to layers"),
     trigger,
   };
+}
+
+export function openStoryCatalogue(
+  { views, onExplore }: ObservatoryProps,
+  restore: (position: PanelReturn) => void,
+  focusSearch: boolean,
+  entry?: string,
+) {
+  const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
+  views.navigation.requestExploreFocus(focus);
+  if (focusSearch) {
+    views.browser.scroll.current = 0;
+    views.browser.select(null);
+  }
+  views.browser.fold("journeys", false);
+  views.browser.show("stories");
+  onExplore(true);
+  restore({
+    scrollTarget: "chrome-rail",
+    scroll: views.browser.scroll.current,
+    focus,
+    fallback: "explorer-stories-tab",
+  });
 }

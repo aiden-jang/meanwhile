@@ -1,5 +1,5 @@
 import { useReadingArrival } from "./useReadingArrival";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { ContinueVisit } from "./visitor/ContinueVisit";
 import { JourneyPicker } from "./journeys/JourneyPicker";
@@ -42,8 +42,7 @@ export function StoriesDrawer({
   const key = scene ?? "all";
   const all = scene !== null && expanded === key;
   const featured = featuredStoryId(scene);
-  const [journeysOpen, setJourneysOpen] = useState<boolean>();
-  const showJourneys = !scene && !deck.query.trim() && (journeysOpen ?? !!navigation?.journeyProgress);
+  const showJourneys = browse.sections.includes("journeys");
   const journeyStops = scene ? undefined : navigation?.journeyProgress?.stops;
   const recent = all
     ? undefined
@@ -57,11 +56,17 @@ export function StoriesDrawer({
     recent && recent.id !== featured ? searchStories.find(({ id }) => id === featured) : null;
   if (featuredRow) entries.unshift(featuredRow);
   const selectionScroll = useRef(0);
+  const journeyScroll = useRef(0);
   const container = useRef<HTMLDivElement>(null);
   const results = useRef<HTMLDivElement>(null);
   const fullHeading = useRef<HTMLHeadingElement>(null);
   useReadingArrival(results, `${key}:${all}`, "fade");
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
+  const toggleJourneys = () => {
+    if (!showJourneys) journeyScroll.current = rail()?.scrollTop ?? 0;
+    browse.fold("journeys", !showJourneys);
+    requestAnimationFrame(() => rail()?.scrollTo({ top: showJourneys ? journeyScroll.current : 0 }));
+  };
   if (!visible) return null;
   return (
     <StoryPreview
@@ -79,7 +84,10 @@ export function StoriesDrawer({
           if (event.key !== "Escape") return;
           event.preventDefault();
           event.stopPropagation();
-          if (deck.query) {
+          if (showJourneys) {
+            toggleJourneys();
+            document.getElementById("journeys-toggle")?.focus({ preventScroll: true });
+          } else if (deck.query) {
             resetStoryResults(event.currentTarget);
             deck.setQuery("");
             container.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus({
@@ -119,6 +127,8 @@ export function StoriesDrawer({
           filter={filter}
           results={results}
           onSearchAll={() => browse.select(null)}
+          showJourneys={showJourneys}
+          onSearch={() => browse.fold("journeys", false)}
           journeyControl={
             <button
               type="button"
@@ -127,11 +137,7 @@ export function StoriesDrawer({
               className="story-journey-toggle"
               aria-expanded={showJourneys}
               aria-controls="journeys-panel"
-              onClick={() => {
-                if (scene) browse.select(null);
-                if (deck.query) deck.setQuery("");
-                setJourneysOpen(!showJourneys);
-              }}
+              onClick={toggleJourneys}
             >
               Journeys
             </button>
@@ -144,7 +150,7 @@ export function StoriesDrawer({
             <>
               {sceneEntry}
               {scene === null ? (
-                <StoryCatalogue ready={ready} recent={recent} />
+                <StoryCatalogue ready={ready} recent={recent} showJourneys={toggleJourneys} />
               ) : (
                 <>
                   {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}

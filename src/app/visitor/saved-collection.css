@@ -180,10 +180,6 @@
   gap: 4px 16px;
   margin-top: 14px;
 }
-.kept-actions button:first-child {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
 .kept-note {
   margin-top: 14px;
 }
@@ -321,4 +317,29 @@
   font-size: 13px;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.kept-evidence .kept-reopen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+}
+
+.kept-reopen small {
+  color: var(--evidence-dim);
+  font: 550 12px var(--font-sans);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.kept-reopen:hover small {
+  color: var(--evidence-ink);
+}
+
+.kept-reopen:focus-visible {
+  outline-color: var(--evidence-ink);
 }

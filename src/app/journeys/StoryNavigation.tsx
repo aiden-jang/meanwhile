@@ -29,7 +29,7 @@ import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
-import { captureBrowseOrigin } from "./storyBrowseOrigin";
+import { captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
 import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
@@ -218,7 +218,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         : featuredStoryId(category) === active
           ? `open-featured-${active}`
           : storyButtonId(active);
-      showCatalogue(false, focus);
+      leaveStory();
+      openStoryCatalogue(props, panelReturn.restore, false, focus);
       return true;
     }
     if (weatherOrigin(saved.trigger)) {
@@ -234,14 +235,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (active === "float") floatDive.view?.depart(saved.camera);
     props.views.navigation.restore(saved.route);
     props.explorer.restore(saved.camera, saved.flat);
-    if (saved.collection) {
-      setRestoredCollection(saved.collection);
-      requestAnimationFrame(() => document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll));
-      return true;
-    }
-    if (saved.find) {
+    if (saved.collection || saved.find) {
       panelReturn.restore({ scrollTarget: saved.scrollTarget, scroll: saved.scroll, focus: "" });
-      find.restore(saved.find);
+      if (saved.collection) setRestoredCollection(saved.collection);
+      else find.restore(saved.find ?? null);
       return true;
     }
     panelReturn.restore({
@@ -256,23 +253,6 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           : saved.scrollTarget,
     });
     return true;
-  }
-  function showCatalogue(focusSearch = false, entry?: string) {
-    leaveStory();
-    const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
-    props.views.navigation.requestExploreFocus(focus);
-    if (focusSearch) {
-      props.views.browser.scroll.current = 0;
-      props.views.browser.select(null);
-    }
-    props.views.browser.show("stories");
-    props.onExplore(true);
-    panelReturn.restore({
-      scrollTarget: "chrome-rail",
-      scroll: props.views.browser.scroll.current,
-      focus,
-      fallback: "explorer-stories-tab",
-    });
   }
   function leaveStory() {
     panelReturn.cancel();
@@ -339,10 +319,29 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           (active && !deck.trigger?.startsWith("event-story-") && !deck.trigger?.startsWith("archive-story-")
             ? "Back to stories"
             : undefined),
-        browse: showCatalogue,
+        browse(focusSearch) {
+          leaveStory();
+          openStoryCatalogue(props, panelReturn.restore, !!focusSearch);
+        },
         explore() {
           props.explorePaths.resume();
           leaveStory();
+        },
+        openEntrance(id) {
+          const trigger = "open-observatory-find";
+          journey.leave();
+          if (id === "live") {
+            props.explorePaths.resume();
+            leaveStory();
+          } else if (id === "night") {
+            navigate("sky", trigger, undefined, false, true);
+          } else {
+            rememberOrigin(trigger);
+            props.views.navigation.prepareStory("depth", false, () => {
+              props.onScene("depth", true);
+              deck.setTrigger("observatory-entry-depth");
+            });
+          }
         },
         findTarget(target) {
           props.explorePaths.find(target);

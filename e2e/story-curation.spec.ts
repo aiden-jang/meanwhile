@@ -148,3 +148,89 @@ test("native sharing has a story title and cancellation stays quiet @dev", async
   await expect(panel.getByRole("status", { name: "Sharing status" })).toBeEmpty();
   await expect(panel.getByRole("textbox", { name: "Story link" })).toBeHidden();
 });
+
+test("catalogue entry and Find keep their purpose after a journey", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const find = page.getByRole("button", { name: "Find", exact: true });
+  const globalSearch = page.getByRole("searchbox", { name: "Search places, stories and layers" });
+  await find.click();
+  await globalSearch.fill("radar");
+  await expect(page.locator("[data-find-primary]")).toContainText("Storm radar");
+  await globalSearch.press("Enter");
+  await expect(page.locator("#layer-inspector-title")).toHaveText("Storm radar");
+  await page.getByRole("button", { name: "Back to Find", exact: true }).click();
+  await globalSearch.fill("Fiji");
+  await globalSearch.press("Enter");
+  await expect(page.getByRole("region", { name: "Earthquake cutaway" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Find", exact: true }).click();
+  await expect(globalSearch).toHaveValue("Fiji");
+  await globalSearch.fill("Ice in Motion");
+  await globalSearch.press("Enter");
+  await expect(page.getByRole("region", { name: "Current journey", exact: true })).toContainText(
+    "Ice in Motion",
+  );
+  await page.reload();
+  await page.locator(".zone-head .wordmark").click();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
+  const search = page.getByRole("searchbox", { name: "Find a story" });
+  await expect(page.locator(".catalogue-picks")).toBeVisible();
+  await search.fill("ice");
+  const journeys = page.getByRole("button", { name: "Journeys", exact: true });
+  await journeys.click();
+  await expect(page.locator("#journeys-panel")).toBeVisible();
+  await journeys.click();
+  await expect(search).toHaveValue("ice");
+  await expect(page.getByRole("region", { name: "Search results" })).toContainText("Ice Line");
+});
+
+test("Saved holds a playing story and resumes it on dismissal", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=observe&story=seafloor");
+  const slider = page.getByRole("slider", { name: "Flight progress" });
+  const transport = page.locator(".story-dock .story-playback");
+  await expect(slider).toBeVisible();
+  if ((await transport.innerText()).trim() !== "Pause") await transport.click();
+  await expect(transport).toHaveText("Pause");
+  await page.locator("#open-saved-observations").click();
+  const saved = page.getByRole("dialog", { name: "Saved observations" });
+  await expect(saved).toBeVisible();
+  await expect(transport).toHaveAttribute("data-playback-start", "true");
+  const held = await slider.inputValue();
+  await expect(saved.getByRole("button", { name: "Browse stories" })).toBeVisible();
+  expect(await slider.inputValue()).toBe(held);
+  await saved.getByRole("button", { name: "Close saved observations" }).click();
+  await expect(transport).toHaveText("Pause");
+  await expect(slider).not.toHaveValue(held);
+});
+
+test("Dust Curtain restores the catalogue row through story Back and browser Back", async ({
+  page,
+  hasTouch,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/");
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
+  const row = page.getByRole("button", { name: "Dust Curtain", exact: true });
+  const position = () => row.evaluate((el) => el.getBoundingClientRect().top);
+  await row.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+  for (const back of [
+    () => page.getByRole("button", { name: "Back to stories" }).click(),
+    () => page.goBack(),
+  ]) {
+    const before = await position();
+    const point = await row.evaluate((button) => {
+      const { x, y, width, height } = button.getBoundingClientRect();
+      const center = { x: x + width / 2, y: y + height / 2 };
+      return button.contains(document.elementFromPoint(center.x, center.y)) ? center : null;
+    });
+    expect(point).not.toBeNull();
+    if (hasTouch) await page.touchscreen.tap(point!.x, point!.y);
+    else await page.mouse.click(point!.x, point!.y);
+    await expect(page.getByRole("heading", { name: "Dust Curtain", exact: true })).toBeVisible();
+    await back();
+    await expect(row).toBeFocused();
+    await expect.poll(async () => Math.abs((await position()) - before)).toBeLessThanOrEqual(1);
+  }
+});

@@ -898,3 +898,9 @@
     display: none;
   }
 }
+
+@media (min-width: 900px) and (min-height: 550px) {
+  .layer-list:not([data-inspecting]) {
+    padding-top: 16px;
+  }
+}

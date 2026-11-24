@@ -37,6 +37,7 @@ export type StoryNavigationValue = {
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
   explore: () => void;
+  openEntrance: (id: ObservatoryProps["scene"]) => void;
   findTarget: (target: ExploreTarget) => void;
   findReturn?: { destination: string; back: () => void } | undefined;
   active: string | null;

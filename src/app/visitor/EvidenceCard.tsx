@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { VisitEvidence } from "./visitEvidence";
 
 export function evidenceTrace(trace: NonNullable<VisitEvidence["trace"]>, width: number, height: number) {
@@ -13,7 +14,7 @@ export function evidenceTrace(trace: NonNullable<VisitEvidence["trace"]>, width:
   return { points, selected: points[trace.selected], low, high };
 }
 
-export function EvidenceCard({ evidence }: { evidence: VisitEvidence }) {
+export function EvidenceCard({ evidence, title }: { evidence: VisitEvidence; title?: ReactNode }) {
   const chart = evidence.trace ? evidenceTrace(evidence.trace, 320, 100) : null;
   return (
     <article className="kept-evidence" aria-label={`${evidence.title} saved evidence`}>
@@ -21,7 +22,7 @@ export function EvidenceCard({ evidence }: { evidence: VisitEvidence }) {
         <strong>meanwhile.</strong>
         <span>{evidence.kind}</span>
       </div>
-      <h3>{evidence.title}</h3>
+      <h3>{title ?? evidence.title}</h3>
       <p>{evidence.place}</p>
       <strong className="kept-reading">{evidence.reading}</strong>
       <p>{evidence.time}</p>

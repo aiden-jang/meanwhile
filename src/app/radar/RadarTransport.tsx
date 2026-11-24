@@ -32,7 +32,7 @@ export function RadarTransport({
   const controls = (
     <div
       ref={container}
-      className={target ? "radar-dock" : undefined}
+      className={target ? "radar-dock" : "radar-inline"}
       role="group"
       aria-label="Radar scan controls"
       onKeyDown={target ? dock : undefined}

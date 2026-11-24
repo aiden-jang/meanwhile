@@ -146,3 +146,18 @@
     font-size: 11px;
   }
 }
+
+.catalogue-journey-return {
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-hairline);
+  color: var(--color-dim);
+  font-size: var(--text-control);
+  text-align: start;
+  cursor: pointer;
+}
+
+.catalogue-journey-return:hover {
+  color: var(--color-ink);
+}

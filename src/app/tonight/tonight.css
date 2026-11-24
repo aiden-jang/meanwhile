@@ -665,3 +665,19 @@
     display: none;
   }
 }
+
+.tonight-scrub::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -7px;
+  border: 2px solid var(--color-void);
+  border-radius: 50%;
+  background: var(--color-ink);
+}
+.tonight-scrub::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-void);
+  border-radius: 50%;
+  background: var(--color-ink);
+}

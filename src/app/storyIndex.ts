@@ -8,6 +8,7 @@ export interface SearchStory {
   summary: string;
   scene: EarthScene;
   keywords: string;
+  location?: string;
   topics?: readonly EarthScene[];
 }
 export const searchStories: readonly SearchStory[] = [
@@ -28,6 +29,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Rupture Reveal",
     summary: "Explore Tōhoku’s fault and recorded shaking.",
     scene: "depth",
+    location: "Tōhoku, Japan · 2011",
     keywords: "Tohoku Japan earthquake 2011",
   },
   {
@@ -35,6 +37,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Eye of the Storm",
     summary: "Follow Hurricane Katrina from the Gulf to landfall.",
     scene: "live",
+    location: "Hurricane Katrina · Gulf of Mexico",
     keywords: "Katrina hurricane hurricanes Gulf of Mexico 2005 NOAA",
   },
   {
@@ -42,6 +45,7 @@ export const searchStories: readonly SearchStory[] = [
     title: "Tonga’s shockwave",
     summary: "See the eruption and its measured atmospheric pressure wave.",
     scene: "live",
+    location: "Hunga Tonga · Pacific Ocean",
     keywords: "Tonga 2022 Hunga volcano",
   },
   {

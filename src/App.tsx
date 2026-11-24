@@ -1093,8 +1093,8 @@ export function App(): JSX.Element {
           {observatory.observing ? <Observatory {...observatoryProps} /> : null}
           {observatory.observing ? null : (
             <ExploreSheet
-              flat={flat}
-              height={sheetCanvas}
+              {...{ flat, height: sheetCanvas }}
+              layersOverview={observatory.browser.pane === "layers" && !mapLayers.inspector}
               onResize={setSheetCanvas}
               visible={railShown && !markSubject && !quakeOverlay}
             />

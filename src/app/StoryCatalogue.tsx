@@ -3,6 +3,7 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryRow } from "./StoryRow";
 import { StoryThumbnail } from "./StoryThumbnail";
 import { browseStories, storyButtonId, storyKind } from "./storyBrowse";
+import { journeys } from "./journeys/catalogue";
 import { ContinueVisit } from "./visitor/ContinueVisit";
 import type { Visit, VisitPosition } from "./visitor/library";
 import "./story-catalogue.css";
@@ -34,11 +35,35 @@ function opening(id: (typeof picks)[number]["id"], map: boolean): VisitPosition 
   }
 }
 
-export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visit | undefined }) {
+export function StoryCatalogue({
+  ready,
+  recent,
+  showJourneys,
+}: {
+  ready: boolean;
+  recent: Visit | undefined;
+  showJourneys: () => void;
+}) {
   const navigation = useStoryNavigation();
+  const unfinished = journeys.find(({ id }) => id === navigation?.journeyProgress?.id);
   return (
     <>
-      {recent && <ContinueVisit visit={recent} />}
+      {recent ? (
+        <ContinueVisit visit={recent} />
+      ) : (
+        unfinished && (
+          <button
+            type="button"
+            className="catalogue-journey-return"
+            onClick={() => {
+              showJourneys();
+              document.getElementById("journeys-toggle")?.focus({ preventScroll: true });
+            }}
+          >
+            Continue {unfinished.title}
+          </button>
+        )
+      )}
       <section className="catalogue-picks" aria-labelledby="catalogue-picks-title">
         <header className="catalogue-picks-heading">
           <h3 id="catalogue-picks-title">Start here</h3>
@@ -100,7 +125,10 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
               buttonId={id}
               ready={ready}
               unavailable={navigation?.unavailable(story.id)}
-              caption={catalogueLeads[story.id]?.[1] ?? storyKind(story.id)}
+              caption={
+                catalogueLeads[story.id]?.[1] ??
+                (storyKind(story.id) === "Recorded story" ? story.summary : storyKind(story.id))
+              }
               open={() => navigation?.open(story.id, id)}
             />
           );

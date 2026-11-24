@@ -50,7 +50,8 @@ for (const [id, title, action] of stories) {
     if (id === "fault") {
       await page.locator(".story-sites button:visible").first().click();
       await expect(panel.getByRole("combobox", { name: "Survey measurement" })).not.toHaveValue("");
-      await expect(panel.getByText(/m .* horizontal offset · surveyed/)).toBeVisible();
+      await expect(panel.locator(".fault-site-reading strong")).toHaveText(/m (left|right)/);
+      await expect(page.locator(".story-sites button[aria-pressed=true]")).toHaveCount(1);
       const site = await panel.getByRole("combobox", { name: "Survey measurement" }).inputValue();
       const radar = panel.getByRole("button", { name: "Radar displacement", exact: true });
       await radar.dispatchEvent("click");

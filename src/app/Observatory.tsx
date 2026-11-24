@@ -133,7 +133,8 @@ function ObservatoryContent({
         sweepKm={views.depthFocus?.sweepKm}
         onSweep={views.sweepDepth}
         tabs={tabs}
-        onHome={tabs ? entry.home : onHome}
+        onHome={closeView(tabs ? entry.home : onHome)}
+        backLabel={navigationContext?.returnLabel ?? "Back to the Observatory"}
         projection={observations}
         onNearby={() => explorePaths.nearby(depthRecord)}
       />

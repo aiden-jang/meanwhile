@@ -54,7 +54,12 @@ export function StoryReadings({
         />
       )}
       {data.sites && (
-        <StorySitePicker sites={data.sites} site={site} choose={chooseSite} value={selected?.value} />
+        <StorySitePicker
+          sites={data.sites}
+          site={site}
+          choose={chooseSite}
+          value={id === "fault" ? undefined : selected?.value}
+        />
       )}
       {north && chart ? (
         <details className="magnetic-series">

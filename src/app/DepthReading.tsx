@@ -21,6 +21,7 @@ export function DepthReading({
   tabs,
   select,
   onHome,
+  backLabel = "Back to the Observatory",
   onNearby,
   projection,
 }: {
@@ -30,6 +31,7 @@ export function DepthReading({
   tabs?: ReactNode;
   select: (record: DepthRecord) => void;
   onHome: () => void;
+  backLabel?: string;
   onNearby: () => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
 }) {
@@ -84,13 +86,8 @@ export function DepthReading({
               Below the Surface
             </h2>
             <div className="observatory-actions">
-              <button
-                className="reading-back"
-                type="button"
-                onClick={onHome}
-                aria-label="Back to the Observatory"
-              >
-                <span className="observation-back-full">Back to the Observatory</span>
+              <button className="reading-back" type="button" onClick={onHome} aria-label={backLabel}>
+                <span className="observation-back-full">{backLabel}</span>
                 <span className="observation-back-compact">Back</span>
               </button>
             </div>

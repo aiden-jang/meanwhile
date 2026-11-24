@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StoryThumbnail } from "../StoryThumbnail";
-import { searchStories } from "../storyIndex";
+import { searchStories, normalizeStoryQuery } from "../storyIndex";
 import { savedVisitKey, type Library, type Visit } from "./library";
 import { visitNote } from "./VisitShelf";
 import { LayerIcon } from "../LayerIcon";
 import { findObservatory, type ExploreTarget } from "./observatorySearch";
+import type { EarthScene } from "../useObservatory";
 import type { FindPosition } from "./findPosition";
 import { loadKilauea } from "../kilauea/loadKilauea";
 import { prepareLavaRelief } from "../kilauea/lavaRelief";
@@ -17,6 +18,7 @@ export function FindObservatory({
   unavailable,
   library,
   openJourney,
+  openEntrance,
   resume,
   position,
   launch,
@@ -27,6 +29,7 @@ export function FindObservatory({
   unavailable: (id: string) => string | null;
   library: Library;
   openJourney: (id: string) => void;
+  openEntrance: (id: EarthScene) => void;
   resume: (visit: Visit, recent: boolean) => void;
   position: FindPosition | null;
   launch: (position: FindPosition, next: () => void) => void;
@@ -47,7 +50,25 @@ export function FindObservatory({
     return () => panel.close();
   }, []);
   const results = findObservatory(query, library);
-  const { places, stories, layers, journeys } = results;
+  const { entrances, places, stories, layers, journeys } = results;
+  const term = normalizeStoryQuery(query);
+  const ranked = [
+    ...entrances.map(({ id, terms }) => ({ key: `entrance:${id}`, names: terms })),
+    ...layers.map(({ id, name }) => ({ key: `layer:${id}`, names: [id, name] })),
+    ...places.map(({ name }) => ({ key: `place:${name}`, names: [name] })),
+    ...stories
+      .filter(({ id }) => !unavailable(id))
+      .map(({ id, title }) => ({ key: `story:${id}`, names: [title] })),
+    ...journeys.map(({ id, title }) => ({ key: `journey:${id}`, names: [title] })),
+  ];
+  const primary =
+    ranked.find(({ names }) => names.some((name) => normalizeStoryQuery(name) === term))?.key ??
+    ranked[0]?.key ??
+    (["Saved readings", "Recent visits"] as const).flatMap((label) =>
+      (label === "Saved readings" ? results.saved : results.recent)
+        .filter(({ id }) => !unavailable(id))
+        .map((visit) => `${label}:${savedVisitKey(visit)}`),
+    )[0];
   const offersKilauea = stories.some(({ id }) => id === "kilauea");
   useEffect(() => {
     if (!offersKilauea) return;
@@ -57,6 +78,7 @@ export function FindObservatory({
   }, [offersKilauea]);
   const typing = !!query.trim();
   const count =
+    entrances.length +
     places.length +
     stories.length +
     layers.length +
@@ -111,13 +133,11 @@ export function FindObservatory({
               const options = Array.from(
                 dialog.current?.querySelectorAll<HTMLButtonElement>(".find-result:enabled") ?? [],
               );
-              const exact = options.find(
-                (row) => row.dataset["findName"]?.toLowerCase() === query.trim().toLowerCase(),
-              );
-              (exact ?? options[0])?.click();
+              options.find((row) => row.dataset["findResult"] === primary)?.click();
             }}
           />
         </div>
+        {typing && primary && <p className="find-enter-hint">Enter opens the highlighted result</p>}
       </div>
       <p className="sr-only" role="status">
         {query.trim() ? `${count} ${count === 1 ? "result" : "results"}` : ""}
@@ -144,6 +164,27 @@ export function FindObservatory({
           </div>
         </>
       )}
+      {!!entrances.length && (
+        <section className="find-results" aria-label="Explore shortcuts">
+          <h3>Explore</h3>
+          {entrances.map(({ id, name, detail }) => (
+            <button
+              key={id}
+              type="button"
+              className="find-result"
+              data-find-result={`entrance:${id}`}
+              data-find-primary={primary === `entrance:${id}` || undefined}
+              onClick={() => choose(`entrance:${id}`, () => openEntrance(id))}
+            >
+              <span>
+                <strong>{name}</strong>
+                <small>{detail}</small>
+              </span>
+              <span aria-hidden="true">→</span>
+            </button>
+          ))}
+        </section>
+      )}
       {(
         [
           ["Saved readings", results.saved],
@@ -160,6 +201,7 @@ export function FindObservatory({
                   type="button"
                   className="find-result find-story-result"
                   data-find-result={`${label}:${savedVisitKey(visit)}`}
+                  data-find-primary={(typing && primary === `${label}:${savedVisitKey(visit)}`) || undefined}
                   disabled={!!unavailable(visit.id)}
                   onClick={() =>
                     choose(`${label}:${savedVisitKey(visit)}`, () => resume(visit, label === "Recent visits"))
@@ -175,13 +217,32 @@ export function FindObservatory({
             </section>
           ),
       )}
+      {!!layers.length && (
+        <section className="find-results" aria-label="Layers">
+          <h3>Layers</h3>
+          {layers.map((layer) => (
+            <button
+              type="button"
+              className="find-result"
+              key={layer.id}
+              data-find-primary={primary === `layer:${layer.id}` || undefined}
+              data-find-result={`layer:${layer.id}`}
+              onClick={() => choose(`layer:${layer.id}`, () => explore(layer))}
+            >
+              <LayerIcon layer={layer.id} />
+              <span>{layer.name}</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          ))}
+        </section>
+      )}
       {!!journeys.length && (
         <section className="find-results" aria-label="Journeys">
           <h3>Journeys</h3>
           {journeys.map((journey) => (
             <button
               key={journey.id}
-              data-find-name={journey.title}
+              data-find-primary={primary === `journey:${journey.id}` || undefined}
               data-find-result={`journey:${journey.id}`}
               type="button"
               className="find-result find-story-result"
@@ -204,7 +265,7 @@ export function FindObservatory({
               type="button"
               className="find-result"
               key={place.name}
-              data-find-name={place.name}
+              data-find-primary={primary === `place:${place.name}` || undefined}
               data-find-result={`place:${place.name}`}
               onClick={() => choose(`place:${place.name}`, () => explore(place))}
             >
@@ -233,7 +294,9 @@ export function FindObservatory({
             return (
               <button
                 key={story.id}
-                data-find-name={story.title}
+                data-find-primary={primary === `story:${story.id}` || undefined}
+                aria-label={story.title}
+                aria-description={reason ?? story.location ?? story.summary}
                 data-find-result={`story:${story.id}`}
                 type="button"
                 className="find-result find-story-result"
@@ -243,31 +306,12 @@ export function FindObservatory({
                 <StoryThumbnail id={story.id} />
                 <span>
                   {story.title}
-                  {reason && <small>{reason}</small>}
+                  <small>{reason ?? story.location ?? story.summary}</small>
                 </span>
                 <span aria-hidden="true">→</span>
               </button>
             );
           })}
-        </section>
-      )}
-      {!!layers.length && (
-        <section className="find-results" aria-label="Layers">
-          <h3>Layers</h3>
-          {layers.map((layer) => (
-            <button
-              type="button"
-              className="find-result"
-              key={layer.id}
-              data-find-name={layer.name}
-              data-find-result={`layer:${layer.id}`}
-              onClick={() => choose(`layer:${layer.id}`, () => explore(layer))}
-            >
-              <LayerIcon layer={layer.id} />
-              <span>{layer.name}</span>
-              <span aria-hidden="true">→</span>
-            </button>
-          ))}
         </section>
       )}
     </dialog>,

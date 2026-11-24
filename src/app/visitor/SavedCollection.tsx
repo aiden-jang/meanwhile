@@ -21,7 +21,25 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
   const noteId = useId();
   return (
     <div className="kept-item" data-returned={returned || undefined}>
-      <EvidenceCard evidence={evidence} />
+      <EvidenceCard
+        evidence={evidence}
+        title={
+          <button
+            type="button"
+            className="kept-reopen"
+            aria-label="Reopen this moment"
+            id={`saved-entry-${key}`}
+            disabled={!!navigation.unavailable(visit.id)}
+            onClick={() => {
+              navigation.resume(visit, `saved-entry-${key}`);
+              onClose();
+            }}
+          >
+            <span>{evidence.title}</span>
+            <small>Reopen</small>
+          </button>
+        }
+      />
       <details className="kept-note" id={`saved-note-${key}`}>
         <summary>
           {note ? "Your note" : "Add a thought (optional)"}
@@ -63,17 +81,6 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
         <small>Only on this device. Notes are excluded from exported cards.</small>
       </details>
       <div className="kept-actions">
-        <button
-          type="button"
-          id={`saved-entry-${key}`}
-          disabled={!!navigation.unavailable(visit.id)}
-          onClick={() => {
-            navigation.resume(visit, `saved-entry-${key}`);
-            onClose();
-          }}
-        >
-          Reopen this moment
-        </button>
         <button
           type="button"
           disabled={exporting}

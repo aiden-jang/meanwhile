@@ -13,8 +13,9 @@ export function usePanelReturn() {
       restore(saved: PanelReturn) {
         cancel();
         frame = requestAnimationFrame(() => {
-          frame = 0;
-          restorePanel(saved);
+          const align = restorePanel(saved);
+          // WebKit can commit the rail's scroll after the first frame following history navigation.
+          frame = align ? requestAnimationFrame(align) : 0;
         });
       },
     };

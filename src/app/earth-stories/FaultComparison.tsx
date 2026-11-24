@@ -18,6 +18,7 @@ export function FaultComparison({
   const radar = data.frames.length - 1;
   const terrain = selected ? data.frames.findIndex((frame) => frame.at === selected.at) : 1;
   const radarVisible = data.frames[radar]!.at === at;
+  const [measurement, survey] = selected?.value.split(" horizontal offset · ") ?? [];
   const show = (index: number) => {
     refreshAnnotations({ camera: "hold" });
     const camera = readCamera?.();
@@ -41,12 +42,22 @@ export function FaultComparison({
           Radar displacement
         </button>
       </div>
-      {selected && <p className="observation-note">Same survey site in both views · {selected.label}</p>}
-      <p className="observation-note">
-        {radarVisible
-          ? "Each radar color cycle is 11.45 cm of line-of-sight change across both earthquakes."
-          : "Pick a survey site to read the measured horizontal offset."}
-      </p>
+      {selected && (
+        <div className="fault-site-reading" role="status">
+          <strong>{measurement}</strong>
+          <span>
+            {selected.label}
+            {survey && ` · ${survey}`}
+          </span>
+        </div>
+      )}
+      {(radarVisible || !selected) && (
+        <p className="observation-note">
+          {radarVisible
+            ? "Each radar color cycle is 11.45 cm of line-of-sight change across both earthquakes."
+            : "Pick a survey site to read the measured horizontal offset."}
+        </p>
+      )}
     </section>
   );
 }

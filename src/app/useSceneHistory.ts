@@ -35,6 +35,9 @@ export function useSceneHistory<T>({
   latest.current = route;
   useLayoutEffect(() => {
     const current = state;
+    const scrollRestoration = history.scrollRestoration;
+    // The route snapshot owns rail scroll and focus, including after a native Back.
+    history.scrollRestoration = "manual";
     const saveSnapshot = (write: boolean) => {
       panelReturn.cancel();
       if (current.restoring || latest.current.key !== current.key) return;
@@ -66,6 +69,7 @@ export function useSceneHistory<T>({
     window.addEventListener("popstate", back);
     window.addEventListener("pagehide", departing);
     return () => {
+      history.scrollRestoration = scrollRestoration;
       window.removeEventListener("popstate", back);
       window.removeEventListener("pagehide", departing);
       checkpoint.current = () => {};

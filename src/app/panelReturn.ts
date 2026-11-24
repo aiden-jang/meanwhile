@@ -15,13 +15,20 @@ export function catalogueRowOffset(panel: HTMLElement | null, focus: string) {
 export function restorePanel(saved: PanelReturn) {
   const panel = document.getElementById(saved.scrollTarget);
   if (!panel?.getClientRects().length) return;
-  panel.scrollTo(0, saved.scroll);
   const target = [saved.focus, saved.fallback, saved.scrollTarget]
     .map((id) => (id ? document.getElementById(id) : null))
     .find((element) => element?.getClientRects().length && !element.hasAttribute("disabled"));
-  // A newly recorded Continue row can change the height above the selected story.
-  if (target?.id === saved.focus && saved.rowOffset !== undefined && panel.contains(target))
-    panel.scrollTop +=
-      target.getBoundingClientRect().top - panel.getBoundingClientRect().top - saved.rowOffset;
   target?.focus({ preventScroll: true });
+  // A newly recorded Continue row can change the height above the selected story.
+  const offset = saved.rowOffset;
+  if (target?.id === saved.focus && offset !== undefined && panel.contains(target)) {
+    const align = () => {
+      panel.scrollTop += target.getBoundingClientRect().top - panel.getBoundingClientRect().top - offset;
+    };
+    align();
+    return () => {
+      if (document.activeElement === target && panel.contains(target)) align();
+    };
+  }
+  panel.scrollTo(0, saved.scroll);
 }
