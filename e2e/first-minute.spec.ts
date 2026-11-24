@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
-for (const width of [1440, 320]) {
+for (const width of [1440, 844, 320]) {
   test(`the featured Tonga reading opens in one action at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: width === 320 ? 568 : 900 });
+    await page.setViewportSize({ width, height: width === 320 ? 568 : width === 844 ? 390 : 900 });
     await page.emulateMedia({ reducedMotion: width === 320 ? "reduce" : "no-preference" });
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto("/");
@@ -11,6 +11,7 @@ for (const width of [1440, 320]) {
     const original = await canvas.elementHandle();
     const feature = page.getByRole("button", { name: "Tonga’s shockwave", exact: true });
     await expect(feature).toBeInViewport({ ratio: 1 });
+    await expect(feature).toHaveAccessibleDescription("Scrub Honolulu’s pressure trace");
     await expect(page.getByRole("button", { name: "All stories", exact: true })).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole("button", { name: "Follow nightfall", exact: true })).toHaveCount(0);
     await feature.click();
@@ -22,12 +23,42 @@ for (const width of [1440, 320]) {
     await expect(sample).toHaveAttribute("aria-valuetext", "08:59 UTC · 1017.75 hPa");
     await sample.press("ArrowRight");
     await expect(sample).toHaveValue("540");
-    await expect(story.getByRole("button", { name: "Follow the full story", exact: true })).toBeVisible();
+    await expect(
+      reading.getByRole("button", { name: "Follow the full story", exact: true }),
+    ).toBeInViewport();
+    await expect(reading.getByText("Up next", { exact: true })).toHaveCount(0);
     expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
     await story.getByRole("button", { name: "Back to home", exact: true }).click();
     await expect(feature).toBeFocused();
     await page.getByRole("button", { name: "All stories", exact: true }).click();
     await expect(page.getByRole("region", { name: "Story catalogue" })).toBeVisible();
+  });
+}
+
+for (const { width, height } of [
+  { width: 320, height: 568 },
+  { width: 844, height: 390 },
+]) {
+  test(`scene entrances keep their controls in reach at ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page, { presentation: "fresh", empty: true });
+    await page.goto("/");
+    const subjects = page.getByRole("group", { name: "Explore by subject" });
+    for (const [name, title, range] of [
+      ["Below the Surface", "Below the Surface", "Drag to change depth"],
+      ["After Dark", "Tonight’s Sky", "City local time"],
+    ]) {
+      const shortcut = subjects.getByRole("button", { name, exact: true });
+      await shortcut.click();
+      await expect(page.getByRole("heading", { name: title, exact: true })).toBeInViewport({ ratio: 1 });
+      await expect(page.getByRole("slider", { name: range, exact: true })).toBeInViewport({ ratio: 1 });
+      await expect(subjects).toBeInViewport({ ratio: 1 });
+      const back = page.getByRole("button", { name: "Back to the Observatory", exact: true });
+      await expect(back).toBeInViewport({ ratio: 1 });
+      await back.click();
+      await expect(shortcut).toBeFocused();
+    }
   });
 }
 

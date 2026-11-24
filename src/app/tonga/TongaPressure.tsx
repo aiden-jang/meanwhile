@@ -30,7 +30,11 @@ export function TongaPressure({
   const value = pressureAt(station, minute);
   const guided = useStoryNavigation()?.route?.id === "through-the-air";
   return (
-    <section className="tonga-evidence" aria-label={`${station.name} pressure evidence`}>
+    <section
+      className="tonga-evidence"
+      data-first-reading={startFullStory || undefined}
+      aria-label={`${station.name} pressure evidence`}
+    >
       <div className="tonga-evidence-body" data-evidence-body="">
         <div className="tonga-evidence-meta">
           <span>{shared ? "A shared observation" : "15 January 2022"}</span>
@@ -73,7 +77,7 @@ export function TongaPressure({
           {...(!shared ? { onSeek: (next) => onSeek(next, station) } : {})}
         />
         <ConnectedJourney compact />
-        {!shared && !guided && (
+        {!shared && !guided && !startFullStory && (
           <ExperienceEnding id="tonga" showFinding={false} showSave={false} evidenceOpen />
         )}
         <p className="tonga-evidence-source">
@@ -114,14 +118,17 @@ export function TongaPressure({
           </>
         ) : (
           <>
+            {startFullStory && (
+              <button type="button" className="tonga-primary" onClick={() => onJourney(true)}>
+                Follow the full story
+              </button>
+            )}
             <KeepPressure station={station} minute={minute} map={map} onKept={onKeep} />
-            <button type="button" onClick={() => onJourney(startFullStory)}>
-              {guided
-                ? "Back to wave playback"
-                : startFullStory
-                  ? "Follow the full story"
-                  : "Back to journey"}
-            </button>
+            {!startFullStory && (
+              <button type="button" onClick={() => onJourney(false)}>
+                {guided ? "Back to wave playback" : "Back to journey"}
+              </button>
+            )}
           </>
         )}
       </div>

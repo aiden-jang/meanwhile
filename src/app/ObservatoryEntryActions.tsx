@@ -36,7 +36,7 @@ export function LandingStories() {
               <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>
           </strong>
-          <small id="landing-story-summary">Trace the wave across the Pacific</small>
+          <small id="landing-story-summary">Scrub Honolulu’s pressure trace</small>
         </span>
       </button>
       <button type="button" id="browse-stories" onClick={() => navigation?.browse(true)}>

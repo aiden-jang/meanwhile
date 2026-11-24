@@ -271,7 +271,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             reading={showReading}
             minute={minute}
             onInspect={inspect}
-            returnHome={fromLanding ? panel.onClose : undefined}
+            backLabel={panel.closeLabel}
+            onBack={panel.onClose}
           />
         </>
       }

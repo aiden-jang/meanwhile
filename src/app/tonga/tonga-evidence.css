@@ -107,9 +107,10 @@
   opacity: 0;
   cursor: ew-resize;
 }
-.tonga-chart-field:focus-within {
+.tonga-chart-field:has(.pressure-sample-slider:focus-visible) {
   outline: 2px solid currentColor;
   outline-offset: -2px;
+  border-radius: 4px;
 }
 .tonga-evidence-coverage {
   font-size: 11px;
@@ -141,6 +142,10 @@
 .tonga-evidence .visit-save > button {
   background: var(--pressure-ink);
   color: var(--pressure-paper);
+}
+.tonga-evidence[data-first-reading] .visit-save > button {
+  background: transparent;
+  color: var(--pressure-ink);
 }
 .tonga-evidence :focus-visible {
   outline-color: var(--pressure-ink);
@@ -413,18 +418,31 @@
   }
 }
 
-.frame .replay-stage .tonga-reading-home {
+.frame .replay-stage .tonga-reading-back {
   display: none;
 }
-@media (max-width: 899px) and (min-height: 621px), (max-width: 599px) {
-  .frame .replay-stage .tonga-reading-home {
-    position: absolute;
-    inset: 4px 12px auto auto;
-    z-index: 3;
+@media (max-width: 899px), (max-height: 620px) {
+  .frame .replay-stage .tonga-reading-back {
     display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding-inline: 10px;
-    pointer-events: auto;
+  }
+}
+@media (min-width: 900px) and (min-height: 621px) {
+  .frame
+    .zones[data-tonga-handoff]:is([data-tonga-phase="inspect"], [data-tonga-phase="kept"])
+    .tonga-reading-back {
+    display: inline-flex;
+  }
+}
+.frame .replay-stage .tonga-reading-back {
+  position: absolute;
+  inset: 4px 12px auto auto;
+  z-index: 3;
+  align-items: center;
+  padding-inline: 10px;
+  pointer-events: auto;
+}
+@media (min-width: 600px) and (max-height: 620px) {
+  .frame .replay-stage .tonga-reading-back {
+    inset-inline: 16px auto;
   }
 }

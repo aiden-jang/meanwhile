@@ -117,7 +117,9 @@
 }
 @media (max-width: 599px) and (orientation: portrait) and (max-height: 620px) {
   .frame[data-landing] .observatory-stage .stage-readout {
-    inset-block-start: calc(var(--phone-earth-height) - 44px);
+    inset-block-start: calc(var(--phone-earth-height) - 36px);
+    padding: 0;
+    background: transparent;
   }
   .landing-story {
     min-height: 44px;

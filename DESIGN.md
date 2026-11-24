@@ -271,8 +271,8 @@ On large and short landscape screens, the same starfield extends behind the invi
 globe keeps its own right-hand framing at every zoom level.
 The introduction and its actions sit together in a 42% reading track with 34px horizontal and
 64px bottom clearance.
-The Earth diagram is the Explore the globe action. Above the diagrams, one Tonga story row opens a
-recorded pressure reading and All stories opens the searchable catalogue. Category filters
+The Earth diagram opens the live Layers list. Above the diagrams, one Tonga story row opens
+Honolulu’s recorded pressure trace and All stories opens the searchable catalogue. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
@@ -420,7 +420,7 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Earth diagram uses pale ink with Explore the globe as its cue. The featured story row uses
+The landing Earth diagram uses pale ink with Live layers as its cue. The featured story row uses
 the existing satellite thumbnail and a single rule. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Compact Explore tabs use an ink underline. The story category strip sits below search, using matching diagrams, labels and selection rules. The shared focus treatment remains visible across each variant.
@@ -687,8 +687,10 @@ UTC clock. Ordinary scrubbing holds the camera while chapter and station jumps c
 the scene. Reduced motion shows the geographic framing and trace without the authored flight.
 
 Inspecting a station connects its world position to the pale measured-evidence panel. Its trace is
-the only active time control while inspecting; the cinematic clock pauses. The reading panel keeps
-its actions in view and scrolls longer source details internally. A phone gives the world its own
+the only active time control while inspecting; the cinematic clock pauses. The first reading leads
+into the full Tonga story from the trace, with Keep and Share alongside it. Back stays available
+beside the world in compact layouts. The reading panel keeps its actions in view and scrolls
+longer source details internally. A phone gives the world its own
 upper stage and the same evidence panel the lower allocation. Keeping a second station/minute
 preserves the first and its note. Shared findings open as a paused recipient view with the measured
 value, source and date, then offer the full cinematic story.
