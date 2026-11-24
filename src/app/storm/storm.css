@@ -235,6 +235,17 @@
 }
 
 @media (max-width: 599px) and (max-height: 620px) {
+  .zones:has(.storm-journey) [data-scale] {
+    bottom: 12px;
+  }
+
+  .zones:has(.storm-journey) [data-orbit-readout] {
+    top: auto;
+    bottom: 43px;
+  }
+}
+
+@media (max-width: 599px) and (max-height: 620px) {
   .storm-invitation {
     gap: 8px;
   }
@@ -276,15 +287,12 @@
   inset: 0;
 }
 
-.storm-map-labels span {
+.storm-map-labels [data-storm-fix] {
   position: absolute;
   visibility: hidden;
-  padding: 3px 5px;
-  background: var(--color-void);
-  color: var(--color-ink);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  transform: translate(-50%, -135%);
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
 }
 
 .storm-finding-actions {
@@ -330,11 +338,11 @@
 }
 
 @media (max-width: 599px) {
-  .storm-journey:has(.storm-map-labels) .stage-readout {
+  .storm-journey:has([data-storm-phase="compare"]) .stage-readout {
     inset: calc(var(--stage-inset) + 2px) calc(var(--stage-inset) + 12px) auto auto;
   }
 
-  .storm-journey:has(.storm-map-labels) .stage-readout time {
+  .storm-journey:has([data-storm-phase="compare"]) .stage-readout time {
     display: none;
   }
 

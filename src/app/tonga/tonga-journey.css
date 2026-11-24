@@ -76,6 +76,9 @@
   background: var(--color-void);
   box-shadow: 0 0 0 5px #92dcd21c;
 }
+.tonga-experience .reading-label {
+  color: #a9e0df;
+}
 .tonga-origin-label {
   color: var(--color-dim);
   padding-inline: 12px;

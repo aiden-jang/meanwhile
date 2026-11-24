@@ -145,6 +145,49 @@ test("Katrina’s visible track points select their exact readings on the same g
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
 });
 
+test("Katrina’s landfall label clears the controls and caption on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const { panel, canvas, original } = await openStorm(page);
+  await panel.getByRole("button", { name: "Follow the storm", exact: true }).click();
+  const label = panel.locator("[data-reading-label] > span");
+  for (const projection of ["Globe", "Map"]) {
+    await panel.getByRole("button", { name: projection, exact: true }).click();
+    await expect(label).toHaveText("110 kt · 920 hPa");
+    await expect(label).toBeVisible();
+    await expect
+      .poll(() =>
+        label.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          const controls = node
+            .closest(".replay-region")!
+            .querySelectorAll(".stage-ident, .stage-readout, .story-projection, .story-dock");
+          return [...controls].some((control) => {
+            const box = control.getBoundingClientRect();
+            return (
+              getComputedStyle(control).visibility === "visible" &&
+              box.width > 0 &&
+              box.height > 0 &&
+              rect.left < box.right &&
+              rect.right > box.left &&
+              rect.top < box.bottom &&
+              rect.bottom > box.top
+            );
+          });
+        }),
+      )
+      .toBe(false);
+    if (projection === "Map") {
+      const scale = page.locator("[data-scale]");
+      await expect(scale).toHaveCSS("opacity", "1");
+      const caption = await panel.locator(".stage-ident").boundingBox();
+      const ruler = await scale.boundingBox();
+      expect(ruler!.y).toBeGreaterThan(caption!.y + caption!.height);
+    }
+  }
+  expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
+});
+
 for (const width of [320, 390]) {
   test(`Katrina’s ${width}px phone keeps Pause outside the scrolling reading`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });

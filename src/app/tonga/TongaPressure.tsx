@@ -53,7 +53,7 @@ export function TongaPressure({
             </select>
           </label>
         )}
-        <div className="tonga-evidence-reading">
+        <div className="tonga-evidence-reading" data-reading-cue="">
           {!shared && <h2>{station.name}.</h2>}
           <strong>
             {value?.toFixed(2) ?? "—"}

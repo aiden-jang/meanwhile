@@ -2418,6 +2418,12 @@ coordinates, DOM text updates and a single expiry timer; it starts only on user 
 Selection brackets and panel catchlights use finite, neutral CSS effects in `motion.css`.
 Still exports label the reference cutaway when it is enabled, so the exported view retains context.
 
+`readingLabels.ts` places the selected Katrina, Fiji/Tonga depth, and Honolulu annotations beside
+their projected points. It tries nearby positions inside the stage and clears captions, projection
+controls, playback, and evidence panels before showing the label. The reading stays in the panel
+when the map cannot fit the label. A finite point and reading pulse runs after the position settles,
+and is skipped under reduced motion.
+
 ### src/globe/GlobeOverlays.tsx
 
 Screen overlays share the renderer's existing refs. The selected bracket's inner element is keyed

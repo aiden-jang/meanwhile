@@ -1,0 +1,38 @@
+.reading-label {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  color: var(--color-ink);
+}
+
+.reading-label > span {
+  position: absolute;
+  inset: 0 auto auto 0;
+  visibility: hidden;
+  padding: 3px 6px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 4px;
+  background: var(--color-void);
+  font: 11px / 1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reading-label-halo {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  translate: -50% -50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-label-halo {
+    display: none;
+  }
+}

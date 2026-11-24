@@ -474,6 +474,7 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
   await depth.getByRole("button", { name: "600 km", exact: true }).click();
   await expect(depth.getByText("600 km deep", { exact: true })).toBeVisible();
+  await expect(depth.locator("[data-reading-label] > span")).toHaveText("600 km");
   await expect(page.locator("[data-evidence-connector]")).toHaveCount(0);
   await depth.getByText("Quake readings & sources", { exact: true }).click();
   await depth

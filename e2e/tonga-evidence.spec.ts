@@ -180,6 +180,8 @@ for (const [width, height] of [
     await station.click();
     const sample = story.getByRole("slider", { name: "Station pressure time" });
     await expect(sample).toHaveValue("539");
+    await expect(story.locator("[data-reading-label] > span")).toHaveText("Honolulu");
+    await expect(page.locator("[data-evidence-connector]")).toHaveCount(0);
     await sample.press("ArrowRight");
     await expect(sample).toHaveValue("540");
     const plot = (await story.locator(".tonga-chart").boundingBox())!;

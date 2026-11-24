@@ -202,21 +202,8 @@
 .cutaway-reading-anchor[aria-pressed="true"] {
   z-index: 1;
 }
-.cutaway-reading-anchor > span {
-  position: absolute;
-  inset-inline-start: 35px;
-  padding: 3px 6px;
-  border-radius: 3px;
-  background: var(--color-void);
+.depth-reading .reading-label {
   color: #ffd1a7;
-  font: 11px / 1.4 var(--font-mono);
-  white-space: nowrap;
-  pointer-events: none;
-}
-@media (max-width: 599px) {
-  .cutaway-reading-anchor > span {
-    display: none;
-  }
 }
 .tonight-labels button {
   position: absolute;

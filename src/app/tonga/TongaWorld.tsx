@@ -1,4 +1,4 @@
-import { EvidenceConnector } from "../observations/EvidenceConnector";
+import { ReadingLabel } from "../observations/ReadingLabel";
 import { ORIGIN, pressureAt, stations, timeIso, timeLabel } from "./tongaTimeline";
 import { PressureChart } from "./PressureChart";
 import type { TongaStation } from "./useTongaPlayback";
@@ -21,6 +21,7 @@ export function TongaWorld({
   onInspect: (minute: number, station: TongaStation, trigger: HTMLButtonElement) => void;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
+  const inspecting = phase === "inspect" || phase === "shared";
   return (
     <>
       <div className="tonga-world-anchors" aria-label="Recorded pressure stations">
@@ -40,10 +41,7 @@ export function TongaWorld({
             data-lon={item.lon}
             data-lat={item.lat}
             data-evidence-source={
-              signal?.id === item.id ||
-              ((phase === "inspect" || phase === "shared") && item.id === station.id)
-                ? "true"
-                : undefined
+              signal?.id === item.id || (inspecting && item.id === station.id) ? "true" : undefined
             }
             data-station-signal={signal?.id === item.id ? "" : undefined}
             data-station-reading={reading && item.id === station.id ? "" : undefined}
@@ -60,10 +58,12 @@ export function TongaWorld({
             aria-label={`Inspect ${item.name} pressure`}
           >
             <span className="tonga-station-point" aria-hidden="true" />
-            <span>
-              {item.name}
-              <small>{item.id} · station pressure</small>
-            </span>
+            {!(inspecting && item.id === station.id) && (
+              <span>
+                {item.name}
+                <small>{item.id} · station pressure</small>
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -104,7 +104,9 @@ export function TongaWorld({
           )}
         </div>
       )}
-      <EvidenceConnector key={phase === "inspect" ? station.id : phase} trace={phase === "inspect"} />
+      {inspecting && (
+        <ReadingLabel reading={`${station.id}:${Math.floor(minute)}`}>{station.name}</ReadingLabel>
+      )}
     </>
   );
 }

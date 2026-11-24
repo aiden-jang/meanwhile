@@ -2,12 +2,14 @@ import { EARTH_RADIUS_KM } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { positionEvidenceConnector } from "./evidenceConnector";
 import { positionJourneyPreview } from "./journeyPreview";
+import { positionReadingLabel } from "./readingLabels";
 
 export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: Controls, story = false) {
   const root = canvas.closest(".zones");
   positionJourneyPreview(root, canvas, controls);
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
+  const readingLabel = root?.querySelector<HTMLElement>("[data-reading-label]");
   const occupied: { x: number; y: number }[] = [];
   let places = 0;
   let locators = 0;
@@ -51,6 +53,8 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       Number(anchor.dataset["lat"]),
       depth === undefined ? 1.01 : 1 - Number(depth) / EARTH_RADIUS_KM,
     );
+    if (readingLabel && anchor === evidenceSource)
+      positionReadingLabel(readingLabel, point, controls.morph());
     const parent = anchor.parentElement ? parents.get(anchor.parentElement) : undefined;
     const x = (point?.x ?? 0) - (parent?.left ?? 0);
     const y = (point?.y ?? 0) - (parent?.top ?? 0);

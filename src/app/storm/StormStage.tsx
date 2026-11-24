@@ -2,7 +2,7 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
-import { EvidenceConnector } from "../observations/EvidenceConnector";
+import { ReadingLabel } from "../observations/ReadingLabel";
 import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
 import { useObservationImage } from "../observations/useObservationData";
 import {
@@ -230,8 +230,8 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   }
 
   const readings = (
-    <div className="archive-scene-caption storm-reading" data-evidence-body="">
-      <h3 ref={reading} tabIndex={-1} data-evidence-point={comparing || undefined}>
+    <div className="archive-scene-caption storm-reading" data-reading-cue="">
+      <h3 ref={reading} tabIndex={-1}>
         {title}
       </h3>
       <p
@@ -311,9 +311,8 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
               hidden={archiveReady && !visibleArchive}
             />
           )}
-          {comparing && (
+          {(comparing || (view.phase === "inspect" && !view.playing && (!fromWeather || ready))) && (
             <div className="storm-map-labels" aria-hidden="true">
-              <EvidenceConnector key={fix.at} trace />
               <span
                 data-observation-anchor=""
                 data-storm-fix={storm.fixIndex}
@@ -322,9 +321,10 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 data-projection-anchor=""
                 data-lon={fix.lon}
                 data-lat={fix.lat}
-              >
+              />
+              <ReadingLabel reading={fix.at}>
                 {fix.wind} kt · {fix.pressure} hPa
-              </span>
+              </ReadingLabel>
             </div>
           )}
         </>
