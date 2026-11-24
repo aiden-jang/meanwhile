@@ -82,10 +82,12 @@ export function FeedDot({
               <span className="sr-only">{feeds.phrase}</span>
             </>
           ) : (
-            <span>
-              {feeds.arrived}/{feeds.total}
+            <>
+              <span>
+                {feeds.arrived}/{feeds.total}
+              </span>
               <span className="sr-only"> available</span>
-            </span>
+            </>
           )}
           {storyFailed && source && <span className="sr-only">. {source.title} source unavailable</span>}
         </span>
