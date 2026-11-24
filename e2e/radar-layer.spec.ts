@@ -104,10 +104,11 @@ test("a short phone keeps the radar heading and coverage in view when the inspec
   const heading = page.getByRole("heading", { name: "Storm radar", exact: true });
   await expect(heading).toBeFocused();
   await expect(heading).toBeInViewport({ ratio: 1 });
-  await expect(page.locator(".detail-panel-heading > p").first()).toHaveText(
-    "Recent scans · worldwide network",
-  );
-  await expect(page.locator(".detail-panel-heading > p").first()).toBeInViewport({ ratio: 1 });
+  await expect(
+    page
+      .getByRole("region", { name: "Map layers" })
+      .getByText("Recent scans · worldwide network", { exact: true }),
+  ).toBeInViewport({ ratio: 1 });
   const controls = page.getByRole("group", { name: "Radar scan controls" });
   const slider = controls.getByRole("slider", { name: "Radar scan time" });
   await expect(slider).toBeEnabled();
