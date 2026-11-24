@@ -510,7 +510,7 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const exploring = await tab.isVisible();
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   if (!exploring) {
-    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const browse = page.getByRole("button", { name: /^(All|Browse) stories$/ });
     const layers = page.locator("#explorer-fold[aria-expanded=false]");
     if (await page.locator(".frame[data-landing]").isVisible()) await browse.click();
     else {
@@ -541,7 +541,7 @@ export async function startJourney(page: Page, id: string) {
 }
 
 export async function revealStoryTools(page: Page) {
-  const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+  const browse = page.getByRole("button", { name: /^(All|Browse) stories$/ });
   const scenes = page.getByRole("group", { name: "Explore by subject", exact: true });
   if ((await browse.isVisible()) || (await scenes.isVisible())) await openStories(page, "all");
 }

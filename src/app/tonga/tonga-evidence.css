@@ -412,3 +412,19 @@
     animation: none;
   }
 }
+
+.frame .replay-stage .tonga-reading-home {
+  display: none;
+}
+@media (max-width: 899px) and (min-height: 621px), (max-width: 599px) {
+  .frame .replay-stage .tonga-reading-home {
+    position: absolute;
+    inset: 4px 12px auto auto;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 10px;
+    pointer-events: auto;
+  }
+}

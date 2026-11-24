@@ -400,7 +400,7 @@ test("clearing search and dismissing a transient location preview keep keyboard 
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
   const search = page.getByRole("searchbox", { name: "Find a story", exact: true });
   await expect(search).toBeFocused();
   await search.fill("Tonga");

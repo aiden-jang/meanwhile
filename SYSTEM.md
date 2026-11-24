@@ -356,9 +356,8 @@ Tonight’s Sky shares the globe renderer and its displayed moment with the Sun,
 star catalogue. The city’s time zone defines the evening and morning across clock changes. The
 Moon’s altitude includes parallax at the city. The horizon is level and the twilight glow is
 illustrative. The compass holds its direction during scrubbing, and choosing a body points the
-camera at its calculated position at that instant. Follow nightfall opens a featured city at its calculated
-sunset using the visible day–night boundary when available. The landing camera and saved sky city are
-restored independently.
+camera at its calculated position at that instant. After Dark’s Follow nightfall action opens a featured
+city at its calculated sunset. Returning restores the held local sky without changing the saved city.
 
 Moonfall lazily loads the lunar mosaic, a local elevation grid and orthomosaic, and the three Apollo 17
 traverses. The orbit camera hands off to a valley camera in the same renderer.

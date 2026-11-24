@@ -8,7 +8,7 @@ for (const width of [1440, 390]) {
     await page.route(/ovation_aurora_latest\.json/, (route) => route.abort());
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const browse = page.getByRole("button", { name: "All stories", exact: true });
     await expect(browse).toBeVisible();
     await expect(page.getByRole("group", { name: "Explore by subject" })).toBeVisible();
     await expect(page.locator(".story-continue")).toHaveCount(0);

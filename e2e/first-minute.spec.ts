@@ -1,6 +1,36 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+for (const width of [1440, 320]) {
+  test(`the featured Tonga reading opens in one action at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 320 ? 568 : 900 });
+    await page.emulateMedia({ reducedMotion: width === 320 ? "reduce" : "no-preference" });
+    await installFeeds(page, { presentation: "fresh", empty: true });
+    await page.goto("/");
+    const canvas = page.locator("#globe-view canvas");
+    const original = await canvas.elementHandle();
+    const feature = page.getByRole("button", { name: "Tonga’s shockwave", exact: true });
+    await expect(feature).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole("button", { name: "All stories", exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole("button", { name: "Follow nightfall", exact: true })).toHaveCount(0);
+    await feature.click();
+
+    const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+    const reading = story.getByRole("region", { name: "Honolulu pressure evidence" });
+    const sample = reading.getByRole("slider", { name: "Station pressure time" });
+    await expect(sample).toBeInViewport({ ratio: 1 });
+    await expect(sample).toHaveAttribute("aria-valuetext", "08:59 UTC · 1017.75 hPa");
+    await sample.press("ArrowRight");
+    await expect(sample).toHaveValue("540");
+    await expect(story.getByRole("button", { name: "Follow the full story", exact: true })).toBeVisible();
+    expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
+    await story.getByRole("button", { name: "Back to home", exact: true }).click();
+    await expect(feature).toBeFocused();
+    await page.getByRole("button", { name: "All stories", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Story catalogue" })).toBeVisible();
+  });
+}
+
 test("the first Float Dive completes its cinematic rise without stretching playback", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -10,7 +40,7 @@ test("the first Float Dive completes its cinematic rise without stretching playb
   );
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
   await page.locator("#open-story-float").click();
   const panel = page.getByRole("region", { name: "Float Dive", exact: true });
   await panel.getByRole("button", { name: "Follow the rise", exact: true }).click();
@@ -38,7 +68,7 @@ for (const width of [1440, 390]) {
     );
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+    await page.getByRole("button", { name: "All stories", exact: true }).click();
     const entry = page.locator("#open-story-float");
     await entry.click();
     const panel = page.getByRole("region", { name: "Float Dive", exact: true });

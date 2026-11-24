@@ -16,7 +16,6 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
     const idle = createRotationIdle();
     const media = matchMedia(MOTION);
     let camera: Controls | undefined;
-    let nightfall: Element | null = null;
     let wake = () => {};
     let timer: ReturnType<typeof setTimeout> | undefined;
     const schedule = () => {
@@ -43,8 +42,7 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
         }
         const active =
           settings.current && !media.matches && !document.hidden && idle.remaining(performance.now()) === 0;
-        const holding = nightfall?.isConnected && nightfall.matches(":hover, :focus");
-        return camera ? advance(camera, dt, active && !holding, busy) : false;
+        return camera ? advance(camera, dt, active, busy) : false;
       },
       attach(canvas: HTMLCanvasElement, controls: Controls, redraw: () => void) {
         camera = controls;
@@ -74,16 +72,6 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
           )
             defer();
         };
-        const cardInput = new AbortController();
-        const inspectNightfall = (event: Event) => {
-          if (!(event.target instanceof Element)) return;
-          const button = event.target.closest("#follow-nightfall");
-          if (!button) return;
-          nightfall = button;
-          defer();
-        };
-        for (const type of ["pointerover", "pointerout", "pointerdown", "focusin", "focusout"])
-          document.addEventListener(type, inspectNightfall, { passive: true, signal: cardInput.signal });
         canvas.addEventListener("pointerdown", down, { capture: true, passive: true });
         canvas.addEventListener("wheel", defer, { capture: true, passive: true });
         window.addEventListener("pointerup", up, true);
@@ -91,8 +79,6 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
         window.addEventListener("blur", blur);
         window.addEventListener("keydown", key, true);
         return () => {
-          cardInput.abort();
-          nightfall = null;
           camera = undefined;
           wake = () => {};
           clearTimeout(timer);

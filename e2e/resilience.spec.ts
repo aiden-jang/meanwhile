@@ -45,7 +45,7 @@ test("phone story loading, retry and return work when feeds are unavailable", as
   await expect(feeds).toContainText("Unavailable");
   await page.getByRole("button", { name: /Feed status/ }).click();
 
-  await page.getByRole("button", { name: "Browse stories" }).click();
+  await page.getByRole("button", { name: "All stories" }).click();
   const catalogue = page.getByRole("region", { name: "Story catalogue" });
   await expect(catalogue).toHaveCount(1);
   const query = catalogue.getByRole("searchbox", { name: "Find a story" });

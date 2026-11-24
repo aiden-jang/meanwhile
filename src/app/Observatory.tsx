@@ -28,11 +28,10 @@ import "./float/float-journey.css";
 import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
-import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
+import { LandingStories, ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { StoryBoundary } from "./StoryBoundary";
 import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
-import { nightfallPosition } from "./tonight/nightfall";
 import { useAfterDarkSky } from "./tonight/useAfterDarkSky";
 import { auroraJourney } from "./journeys/auroraJourney";
 import { DepthReading } from "./DepthReading";
@@ -193,15 +192,6 @@ function ObservatoryContent({
             aurora={aurora.run}
             layers={layerReadout}
             projection={observations}
-            onNightfall={
-              landing && ready && navigationContext
-                ? (anchor) =>
-                    navigationContext.openNightfall(
-                      nightfallPosition(at, anchor ?? explorer.read()),
-                      "follow-nightfall",
-                    )
-                : undefined
-            }
           />
         )
       )}
@@ -301,14 +291,19 @@ function ObservatoryContent({
                 </div>
                 {guidedAurora && solar && <div className="aurora-solar-panel" ref={setSolarReadings} />}
                 {solar && <SunCredits />}
-                {landing && entrances}
+                {landing && (
+                  <>
+                    <LandingStories />
+                    {entrances}
+                  </>
+                )}
                 {active ? (
                   <ObservatoryTourControls tour={tour} onExplore={onExplore} />
                 ) : (
                   <>
-                    {!solar && !aurora.run && !aurora.requested && (
+                    {!landing && !solar && !aurora.run && !aurora.requested && (
                       <ObservatoryEntryActions
-                        {...(!landing ? { explore: () => explorePaths.resume() } : {})}
+                        explore={() => explorePaths.resume()}
                         browse={() => navigationContext?.browse(true)}
                       />
                     )}

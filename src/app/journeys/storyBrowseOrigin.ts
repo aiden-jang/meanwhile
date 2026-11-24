@@ -13,7 +13,8 @@ export function captureBrowseOrigin(
   preview: Pick<BrowseOrigin, "camera" | "flat"> | null,
 ): BrowseOrigin | null {
   const collection = captureCollection(trigger);
-  const fromStory = trigger.startsWith("related-story-") || trigger === "open-observatory-find";
+  const fromStory =
+    trigger.startsWith("related-story-") || ["open-observatory-find", "follow-nightfall"].includes(trigger);
   if (!collection && !fromStory && (active !== null || previous)) return previous;
   const scrollTarget = views.observing ? "observatory-intro" : "chrome-rail";
   const browsing = views.observing ? views.browser.open : views.browser.pane === "stories";

@@ -10,7 +10,7 @@ for (const width of [320, 390, 1440]) {
     await installFeeds(page, { presentation: "fresh" });
     await page.goto("/");
     const original = await page.locator("#globe-view canvas").elementHandle();
-    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const browse = page.getByRole("button", { name: "All stories", exact: true });
     const wordmark = page.locator(".wordmark");
     await expect(browse).toBeEnabled();
     await page.evaluate(() => document.fonts.ready);

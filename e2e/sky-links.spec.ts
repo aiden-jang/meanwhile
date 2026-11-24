@@ -119,16 +119,19 @@ test("sky links restore the city, night, selected body, bearing, and lunar stop 
   await expect(reopened.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
 });
 
-test("Nightfall connects the landing globe to a shareable Apollo 17 stop and restores the view", async ({
+test("Nightfall connects After Dark to a shareable Apollo 17 stop and restores the view", async ({
   page,
   request,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await configure(page, "2026-11-20T23:50:00Z");
   await page.goto("/#v=observe&at=-74,40,1");
-  const trigger = page.getByRole("button", { name: "Follow nightfall", exact: true });
-  await expect(trigger).toBeInViewport({ ratio: 1 });
   const globe = await page.locator("#globe-view canvas").elementHandle();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  const localTime = page.getByRole("slider", { name: "City local time", exact: true });
+  await localTime.press("End");
+  const localMinute = await localTime.getAttribute("aria-valuetext");
+  const trigger = page.getByRole("button", { name: "Follow nightfall", exact: true });
   await trigger.click();
 
   const sky = page.getByRole("region", { name: "Tonight’s Sky", exact: true });
@@ -154,9 +157,11 @@ test("Nightfall connects the landing globe to a shareable Apollo 17 stop and res
   await expect(sky.getByRole("combobox", { name: "City" })).toHaveValue(city);
   await expect(sky.locator(".tonight-invitation time")).toHaveAttribute("datetime", at!);
   await expect(moonEntry).toBeFocused();
-  await sky.getByRole("button", { name: "Back to home", exact: true }).click();
+  await sky.getByRole("button", { name: "Back to Tonight’s Sky", exact: true }).click();
   await expect(trigger).toBeFocused();
-  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at")).toBe("-74,40,1");
+  await expect(localTime).toHaveAttribute("aria-valuetext", localMinute!);
+  await sky.getByRole("button", { name: "Back to the Observatory", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   expect(await globe!.evaluate((element) => document.querySelector("#globe-view canvas") === element)).toBe(
     true,
   );

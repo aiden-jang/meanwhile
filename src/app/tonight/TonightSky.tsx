@@ -14,7 +14,7 @@ import {
 } from "../../geo/tonight";
 import type { TonightPresentation } from "../../globe/scenePresentation";
 import { nightTrail } from "../../geo/nightTrail";
-import { skyLight } from "./nightfall";
+import { nightfallPosition, skyLight } from "./nightfall";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { SkyTimeline } from "./SkyTimeline";
@@ -294,6 +294,14 @@ export function TonightSky({
         {timeline}
         <div className="entry-sky-city">{cityControls}</div>
         {tabs}
+        <button
+          type="button"
+          className="reading-back"
+          id="follow-nightfall"
+          onClick={() => navigation?.openNightfall(nightfallPosition(Date.now(), city), "follow-nightfall")}
+        >
+          Follow nightfall
+        </button>
         <details className="scene-entry-details">
           <summary>Sky details</summary>
           {objects}

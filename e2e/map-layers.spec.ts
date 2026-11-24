@@ -116,7 +116,7 @@ test("a quiet landing opens the story catalogue and each scene remains available
   await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   await expect(page.locator(".story-continue")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeInViewport();
-  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
   await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
   const canvas = await page.locator("canvas").elementHandle();
   await scenes.getByRole("button", { name: "Earth", exact: true }).click();

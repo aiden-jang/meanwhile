@@ -13,6 +13,7 @@ export function TongaPressure({
   minute,
   map,
   shared,
+  startFullStory,
   onSeek,
   onKeep,
   onJourney,
@@ -21,6 +22,7 @@ export function TongaPressure({
   minute: number;
   map: boolean;
   shared: boolean;
+  startFullStory: boolean;
   onSeek: (minute: number, station: TongaStation) => void;
   onKeep: () => void;
   onJourney: (restart: boolean) => void;
@@ -113,8 +115,12 @@ export function TongaPressure({
         ) : (
           <>
             <KeepPressure station={station} minute={minute} map={map} onKept={onKeep} />
-            <button type="button" onClick={() => onJourney(false)}>
-              {guided ? "Back to wave playback" : "Back to journey"}
+            <button type="button" onClick={() => onJourney(startFullStory)}>
+              {guided
+                ? "Back to wave playback"
+                : startFullStory
+                  ? "Follow the full story"
+                  : "Back to journey"}
             </button>
           </>
         )}

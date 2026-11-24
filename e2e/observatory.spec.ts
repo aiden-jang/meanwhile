@@ -37,7 +37,7 @@ for (const [width, height] of [
     await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     const stage = page.getByRole("group", { name: "Globe readout" });
     const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
-    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const browse = page.getByRole("button", { name: "All stories", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
     const entrances = page.getByRole("group", { name: "Explore by subject" });
     await expect(page.locator("#globe-view canvas")).toBeVisible();
@@ -69,9 +69,7 @@ for (const [width, height] of [
     const creditPosition = await credit.boundingBox();
     expect(height! - (creditPosition!.y + creditPosition!.height)).toBeLessThanOrEqual(24);
     const collisions = await page
-      .locator(
-        ".observatory-story, .observatory-scenes, .observatory-entry-actions > button, .creator-credit a",
-      )
+      .locator(".observatory-story, .observatory-scenes, .landing-stories > button, .creator-credit a")
       .evaluateAll((nodes) => {
         const boxes = nodes.map((node) => ({
           name: node.textContent?.trim(),

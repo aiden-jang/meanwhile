@@ -271,13 +271,14 @@ On large and short landscape screens, the same starfield extends behind the invi
 globe keeps its own right-hand framing at every zoom level.
 The introduction and its actions sit together in a 42% reading track with 34px horizontal and
 64px bottom clearance.
-The Earth diagram is the Explore the globe action. Browse stories sits below the three diagrams. Category filters
+The Earth diagram is the Explore the globe action. Above the diagrams, one Tonga story row opens a
+recorded pressure reading and All stories opens the searchable catalogue. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
 Tall layouts below 900px place the globe above the introduction and cap its height to leave room
 for the invitation on tablets. The introduction owns vertical scrolling and 24px side insets.
-The entry diagrams and Browse stories remain reachable below the headline. Viewports at 620px high or less use the
+The featured story, All stories and the entry diagrams remain reachable below the headline. Viewports at 620px high or less use the
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
 continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset.
 The short landscape footer keeps radar attribution and Sources
@@ -413,7 +414,8 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Earth diagram uses pale ink with Explore the globe as its cue. Browse stories opens the catalogue. Utility buttons use
+The landing Earth diagram uses pale ink with Explore the globe as its cue. The featured story row uses
+the existing satellite thumbnail and a single rule. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Compact Explore tabs use an ink underline. The story category strip sits below search, using matching diagrams, labels and selection rules. The shared focus treatment remains visible across each variant.
 
@@ -425,7 +427,7 @@ The compact two-line wordmark returns to the invitation. The globe stage carries
 and scene-specific reference where space allows. Phone and short-height layouts prioritize the
 reachable controls and source disclosure.
 
-The landing’s Browse stories opens Explore’s Stories catalogue. Find uses the same dialog across the
+The landing’s All stories action opens Explore’s Stories catalogue. Find uses the same dialog across the
 landing, Explore and stories. It groups featured cities, stories, layers, journeys, saved readings and recent visits. City results
 open nearby readings and layer results open their full inspectors. Dismissing Find restores header focus
 and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.

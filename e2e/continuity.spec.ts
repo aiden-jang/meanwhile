@@ -617,7 +617,7 @@ test("Find opens an exact journey and the folded Stories panel keeps its identit
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const button = (name: string) => page.getByRole("button", { name, exact: true });
-  await button("Browse stories").click();
+  await button("All stories").click();
   await button("Hide Stories").click();
   await button("Stories").click();
   await expect(page.getByRole("tab", { name: "Stories" })).toHaveAttribute("aria-selected", "true");

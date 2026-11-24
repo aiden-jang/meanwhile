@@ -69,21 +69,6 @@
   font-size: 14px;
   line-height: 1.7;
 }
-.frame[data-landing] .observatory-entry-actions {
-  grid-column: 1;
-  margin: 0;
-}
-.frame[data-landing] #browse-stories {
-  pointer-events: auto;
-  min-height: 44px;
-  padding-inline: 10px;
-  text-decoration: underline;
-  text-decoration-color: var(--color-hairline);
-  text-underline-offset: 0.24em;
-}
-.frame[data-landing] #browse-stories:is(:hover, :focus-visible) {
-  text-decoration-color: currentColor;
-}
 .frame[data-landing] .observatory-scenes {
   grid-column: 1;
   margin: 0;
@@ -324,10 +309,6 @@
     font-size: 12px;
   }
 
-  .frame[data-landing] #browse-stories {
-    font-size: 12px;
-  }
-
   .frame .creator-credit {
     left: 18px;
   }
@@ -470,7 +451,7 @@
   .frame[data-landing] .observatory-intro {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
-    gap: 10px;
+    gap: 7px;
     padding-inline: 18px;
     padding-bottom: 90px;
   }
@@ -494,7 +475,7 @@
   }
   .frame[data-landing] .observatory-intro {
     padding-top: calc(var(--head-h) + var(--phone-earth-height) + 12px);
-    gap: 10px;
+    gap: 7px;
   }
 }
 

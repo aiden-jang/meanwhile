@@ -88,7 +88,7 @@ for (const [width, height] of [
     if (height === 375) {
       const collisions = await page.locator(".layer-readout").evaluate((readout) => {
         const footer = readout.getBoundingClientRect();
-        return [...document.querySelectorAll(".observatory-entry-actions button, .creator-credit a")]
+        return [...document.querySelectorAll(".landing-stories button, .creator-credit a")]
           .filter((node) => {
             const control = node.getBoundingClientRect();
             return (

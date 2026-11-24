@@ -6,7 +6,7 @@ test("a short phone shows the full featured-story action on arrival", async ({ p
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
   const topics = page.locator(".story-topic-jump");
   await expect(topics).toHaveAttribute("aria-expanded", "false");
   await topics.click();

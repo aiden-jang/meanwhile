@@ -125,7 +125,7 @@ for (const width of [1440, 390]) {
     await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
     await expect(scenes).toHaveCount(0);
     for (const name of ["Earth", "Below the Surface", "After Dark"]) {
-      await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+      await page.getByRole("button", { name: "All stories", exact: true }).click();
       const category = scenes.getByRole("button", { name, exact: true });
       await category.click();
       await expect(category).toHaveAttribute("aria-pressed", "true");

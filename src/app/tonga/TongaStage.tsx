@@ -37,7 +37,9 @@ import {
 const playbackFocus = () => document.querySelector<HTMLElement>(".story-playback");
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
-  const guided = useStoryNavigation()?.route?.id === "through-the-air";
+  const navigation = useStoryNavigation();
+  const guided = navigation?.route?.id === "through-the-air";
+  const fromLanding = navigation?.returnLabel === "Back to home";
   const playback = useTongaPlayback(initial);
   const { assets, view, images, minute, ended, arrive, ready } = playback;
   const [phase, setPhase] = useState<TongaPhase>(() => {
@@ -55,7 +57,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const station = view.station ?? signal ?? stationAt(minute);
   const scanCanvas = useRef<HTMLCanvasElement>(null);
   const scanOrigin = useRef<DOMRect | null>(null);
-  const focus = useRef<"sample" | "playback" | "kept" | null>(null);
+  const focus = useRef<"sample" | "playback" | "kept" | null>(fromLanding ? "sample" : null);
   const previous = useRef<ReturnType<typeof captureReplayFrame>>();
   const [held, setHeld] = useState(initial?.tongaView?.held ?? false);
   const frameHeld = held && !view.playing;
@@ -107,7 +109,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
     };
   }, [phase, held]);
-
   const anchor = view.anchor;
   const framing = ["inspect", "shared", "kept"].includes(phase) ? station.peak : anchor;
   const target = useMemo(() => {
@@ -151,9 +152,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     view,
   ]);
   useStoryCompletion(ended && !view.playing);
-  const hasInfrared = images.infrared !== null,
-    hasVapor = images.vapor !== null;
-  const { vaporMix, orbitMix } = layersAt(minute, hasInfrared, hasVapor, anchor !== undefined);
+  const { vaporMix, orbitMix } = layersAt(minute, !!images.infrared, !!images.vapor, anchor !== undefined);
   const isOrbit = orbitMix >= 0.5,
     isVapor = !isOrbit && vaporMix >= 0.5;
   const scans = isVapor ? vapor : infrared;
@@ -179,7 +178,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     : isVapor
       ? "Brightness-temperature change from the previous 10-minute scan."
       : "False-color infrared shows the eruption cloud expanding over the Pacific.";
-
   function inspect(next: number, selected = station, trigger?: HTMLButtonElement) {
     if (phase !== "inspect" && phase !== "shared") {
       const frame = captureReplayFrame(panel);
@@ -221,11 +219,11 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       paint={(ctx) => paintTongaScan(ctx, minute, images, vaporMix, anchor !== undefined)}
     />
   );
-
   return (
     <ReplayPanel
       {...panel}
       className="tonga-experience"
+      focusOnEntry={!fromLanding}
       sharing={false}
       ending={false}
       journeyControls={!inspecting && phase !== "kept"}
@@ -254,7 +252,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         <>
           {(!overview || ready) &&
             orbitMix < 1 &&
-            (hasInfrared || hasVapor) &&
+            (images.infrared || images.vapor) &&
             (frameScan ? (
               <figure className="tonga-scan-frame">
                 {image}
@@ -273,6 +271,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             reading={showReading}
             minute={minute}
             onInspect={inspect}
+            returnHome={fromLanding ? panel.onClose : undefined}
           />
         </>
       }
@@ -284,6 +283,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
               minute={minute}
               map={panel.map}
               shared={phase === "shared"}
+              startFullStory={fromLanding && !previous.current}
               onSeek={inspect}
               onKeep={kept}
               onJourney={journey}
