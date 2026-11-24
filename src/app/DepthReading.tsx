@@ -3,7 +3,6 @@ import { depthRecords, type DepthRecord } from "../data/depthRecords";
 import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { SLAB_FROM, SLAB_TO } from "../geo/slab";
 import { StoryProjection } from "./observations/StoryProjection";
-import { EvidenceConnector } from "./observations/EvidenceConnector";
 import { useObservatoryEscape } from "./useObservatoryEscape";
 import "./depth-reading.css";
 
@@ -76,7 +75,6 @@ export function DepthReading({
                 {event.id === record.id && <span aria-hidden="true">{event.depthKm} km</span>}
               </button>
             ))}
-        {!!tabs && reached && <EvidenceConnector />}
         <StoryProjection map={projection.map} onMap={projection.setMap} label="Cutaway projection" />
       </div>
       <div className="observatory-sidebar replay-sidebar">
@@ -126,12 +124,12 @@ export function DepthReading({
               </div>
             </div>
           )}
-          <div className="depth-reading-value" aria-live="polite" aria-atomic="true" data-evidence-body="">
+          <div className="depth-reading-value" aria-live="polite" aria-atomic="true">
             {!reached ? (
               <span>Move past {record.depthKm} km to reach the first recorded quake.</span>
             ) : (
               <>
-                <strong data-evidence-point="">
+                <strong>
                   {record.depthKm} <small>km deep</small>
                 </strong>
                 <span>
