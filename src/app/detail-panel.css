@@ -165,6 +165,6 @@
   }
 
   .observatory-intro:has(> .detail-panel-heading) {
-    padding-inline: 20px;
+    padding-inline: var(--explorer-pad, 20px);
   }
 }

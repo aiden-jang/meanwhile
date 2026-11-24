@@ -117,6 +117,17 @@ test("a short phone keeps the radar heading and coverage in view when the inspec
   await slider.press("Escape");
   await expect(layer).toBeFocused();
   await expect(layer).toBeInViewport({ ratio: 1 });
+
+  const inset = await page
+    .locator("#chrome-rail")
+    .evaluate((rail) => getComputedStyle(rail).paddingInlineStart);
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
+  await page
+    .getByRole("group", { name: "Explore by subject" })
+    .getByRole("button", { name: "After Dark" })
+    .click();
+  await expect(page.getByRole("heading", { name: "Tonight’s Sky" })).toBeInViewport({ ratio: 1 });
+  await expect(page.locator("#observatory-intro")).toHaveCSS("padding-inline-start", inset);
 });
 
 for (const width of [1440, 390]) {

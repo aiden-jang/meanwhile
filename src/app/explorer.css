@@ -656,9 +656,12 @@
 }
 
 @media (max-width: 380px) {
+  #chrome-rail,
+  .observatory-intro:has(> .detail-panel-heading) {
+    --explorer-pad: 16px;
+  }
   #chrome-rail {
     --explorer-tabs-height: 52px;
-    --explorer-pad: 16px;
   }
   .explorer-tabs {
     margin-bottom: 4px;
