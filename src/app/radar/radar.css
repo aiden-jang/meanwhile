@@ -386,14 +386,6 @@
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
-  .radar-layer {
-    margin-top: 4px;
-  }
-
-  .radar-layer .radar-transport {
-    padding-top: 4px;
-  }
-
   .radar-inline {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr)) auto;

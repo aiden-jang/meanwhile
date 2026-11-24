@@ -129,6 +129,12 @@
   padding-top: 8px;
 }
 
+@media (orientation: landscape) and (max-height: 480px) {
+  .map-layers[data-layer="radar"] .radar-layer .radar-transport {
+    padding-top: 0;
+  }
+}
+
 @media (min-width: 900px) {
   .observatory-intro:has(> .detail-panel-heading) {
     --explorer-pad: 22px;
