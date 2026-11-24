@@ -71,8 +71,10 @@
     content: none;
   }
 }
-#chrome-rail {
+.zones {
   --explorer-pad: clamp(20px, 2.35vw, 38px);
+}
+#chrome-rail {
   --explorer-tabs-height: 60px;
   display: block;
   padding: 0 var(--explorer-pad) var(--explorer-pad);
@@ -585,7 +587,7 @@
     --scene-hud-top: 8px;
   }
   .frame[data-presentation="explore"] .zone-canvas:has(.canvas-information > .explore-world-controls) {
-    --world-tools-space: 80px;
+    --world-tools-space: calc(80px + var(--explorer-reopen-clearance, 0px));
   }
   .projection-switch {
     gap: 2px;
@@ -796,14 +798,42 @@
   border-width: 0 0 1.5px 1.5px;
   transform: rotate(45deg);
 }
+.zones > .explorer-fold {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 12px;
+}
+@media (min-width: 768px) {
+  .zones > .explorer-fold {
+    inset-block-start: calc(var(--head-h) + var(--explorer-top-gap, 0px) + 12px);
+    inset-inline-start: calc(var(--explorer-left, 0px) + var(--explorer-width) - var(--explorer-pad) - 52px);
+  }
+  .zones > .explorer-fold .explorer-fold-chevron {
+    transform: rotate(225deg);
+  }
+}
 @media (max-width: 767px) {
   .explorer-fold-chevron {
     transform: translateY(-2px) rotate(-45deg);
   }
   .explorer-fold {
     min-width: 68px;
-    padding-inline: 5px;
     font-size: 11px;
+  }
+  .zones:has(> .explorer-fold) {
+    --explorer-reopen-clearance: 24px;
+  }
+  .zones > .explorer-fold {
+    inset: auto 0 calc(var(--credit-space) + 4px);
+    width: max-content;
+    margin-inline: auto;
+  }
+  .zones > .explorer-fold .explorer-fold-chevron {
+    transform: translateY(2px) rotate(135deg);
   }
   .frame[data-presentation="explore"] .zones:has(#chrome-rail[hidden]) {
     grid-template-rows: minmax(0, 1fr) var(--credit-space, 60px);

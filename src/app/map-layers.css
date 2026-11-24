@@ -214,7 +214,7 @@
     padding-bottom: var(--explore-control-clearance);
   }
   .frame[data-presentation="explore"] .canvas-information:has(> .explore-world-controls) {
-    --explore-control-clearance: 30px;
+    --explore-control-clearance: calc(30px + var(--explorer-reopen-clearance, 0px));
     background: linear-gradient(0deg, var(--color-void) 60%, transparent);
   }
   .frame[data-presentation="explore"] .canvas-information > .layer-readout {

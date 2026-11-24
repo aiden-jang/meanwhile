@@ -54,7 +54,8 @@ export function ExplorerFold({
       aria-label={open ? `Hide ${label}` : label}
       title={open ? `Hide ${label}` : `Show ${label}`}
     >
-      {open ? <span className="explorer-fold-chevron" aria-hidden="true" /> : label}
+      <span className="explorer-fold-chevron" aria-hidden="true" />
+      {!open && label}
     </button>
   );
 }

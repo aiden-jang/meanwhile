@@ -34,7 +34,6 @@ interface Props {
   saveStill: () => void;
   feeds: FeedStatus;
   keyboard: ReactNode;
-  layers: ReactNode;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
@@ -47,11 +46,7 @@ export function SkipControls({ observing, railShown }: { observing: boolean; rai
         event.preventDefault();
         document
           .querySelector<HTMLElement>(
-            observing
-              ? "#observatory-intro"
-              : railShown
-                ? "#chrome-rail"
-                : "#show-top-bar, [aria-controls=chrome-rail]",
+            observing ? "#observatory-intro" : railShown ? "#chrome-rail" : "#explorer-fold",
           )
           ?.focus();
       }}
@@ -84,18 +79,13 @@ export function GlobeHeader({
   feeds,
   rotation,
   keyboard,
-  layers,
 }: Props): JSX.Element {
   return (
     <>
       <header id="chrome-head" className="zone-head flex items-center" hidden={!headShown}>
         <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
-          {!observing && (
-            <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown}>
-              {layers}
-            </ProjectionSwitch>
-          )}
+          {!observing && <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown} />}
           <HeaderNavigation exploring={!observing} />
           <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
           <ObservatoryOptions

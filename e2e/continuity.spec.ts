@@ -508,14 +508,39 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect(dock.getByRole("group", { name: "Projection" })).toBeInViewport({ ratio: 1 });
   await expect(fold).toBeInViewport({ ratio: 1 });
   await expect(dock.getByRole("button", { name: "Hide Layers" })).toHaveCount(0);
+  const foldBox = (await fold.boundingBox())!;
   await fold.click();
   await expect(rail).toBeHidden();
-  const reopen = dock.getByRole("button", { name: "Layers", exact: true });
+  const reopen = page.locator(".zones").getByRole("button", { name: "Layers", exact: true });
+  await expect(reopen).toHaveAttribute("aria-expanded", "false");
   await expect(reopen).toBeFocused();
-  if (viewport.width < 768)
+  await expect(reopen).toBeInViewport({ ratio: 1 });
+  const reopenBox = (await reopen.boundingBox())!;
+  if (viewport.width < 768) {
+    const projection = (await dock.boundingBox())!;
+    const credit = (await page.locator(".creator-credit").boundingBox())!;
+    expect(reopenBox.y).toBeGreaterThanOrEqual(projection.y + projection.height);
+    expect(reopenBox.y + reopenBox.height).toBeLessThanOrEqual(credit.y);
     await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
-  await reopen.click();
+  } else {
+    const previousCenter = { x: foldBox.x + foldBox.width / 2, y: foldBox.y + foldBox.height / 2 };
+    expect(
+      await reopen.evaluate(
+        (button, { x, y }) => button.contains(document.elementFromPoint(x, y)),
+        previousCenter,
+      ),
+    ).toBe(true);
+  }
+  await reopen.press("Enter");
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+  const stories = page.getByRole("tab", { name: "Stories", exact: true });
+  await stories.click();
+  await button("Hide Stories").click();
+  const reopenStories = page.locator(".zones").getByRole("button", { name: "Stories", exact: true });
+  await expect(reopenStories).toBeFocused();
+  await reopenStories.click();
+  await expect(stories).toBeFocused();
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await home.click();
 
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();

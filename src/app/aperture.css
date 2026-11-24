@@ -186,9 +186,12 @@
     --scene-left-bleed: 300px;
     --scene-left-mask: linear-gradient(90deg, transparent, #000 92px);
   }
-  .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) {
+  .frame[data-presentation="explore"] .zones {
     --explorer-left: 24px;
     --explorer-top-gap: 20px;
+    --explorer-pad: 22px;
+  }
+  .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) {
     --rail-w: calc(var(--rail-panel-w) + 36px);
   }
   .frame[data-presentation="explore"] #chrome-rail {
@@ -196,7 +199,6 @@
     bottom: 54px;
     left: var(--explorer-left, 24px);
     width: var(--rail-panel-w);
-    --explorer-pad: 22px;
     padding-inline: var(--explorer-pad);
     border: 1px solid transparent;
     border-radius: 10px;

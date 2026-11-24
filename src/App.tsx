@@ -1054,7 +1054,6 @@ export function App(): JSX.Element {
               clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
             />
           }
-          layers={railOpen ? null : fold}
           clip={clip}
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
@@ -1084,7 +1083,8 @@ export function App(): JSX.Element {
           style={
             {
               ...(headShown ? {} : { "--head-h": "0px" }),
-              "--rail-panel-w": railShown ? `${railWidth}px` : "0px",
+              "--explorer-width": `${railWidth}px`,
+              "--rail-panel-w": railShown ? "var(--explorer-width)" : "0px",
               "--regions-h": `${regionsHeight}px`,
               ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
             } as React.CSSProperties
@@ -1285,7 +1285,7 @@ export function App(): JSX.Element {
               </MapLayers>
             </ExplorerSidebar>
           </aside>
-
+          {!observatory.observing && !railShown && fold}
           <Resizer
             axis="x"
             label="Rail width"
