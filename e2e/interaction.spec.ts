@@ -1910,8 +1910,8 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
     });
 
   expect(await bar()).toBe(true);
-  // The sheet toggle lives with the projection controls on phones.
-  await expect(page.getByRole("button", { name: "Hide Layers", exact: true })).toBeVisible();
+  // The fold stays reachable at the edge of the phone sheet.
+  await expect(page.locator(".explorer-tabs").getByRole("button", { name: "Hide Layers" })).toBeVisible();
 
   // The fold lives in the overflow menu at this width: as a button of its own it wrapped the header.
   await page.getByRole("button", { name: "View options" }).click();

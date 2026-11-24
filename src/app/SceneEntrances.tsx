@@ -13,7 +13,7 @@ export const OBSERVATORY_SCENES = [
 ] as const;
 
 const sceneCues: Record<EarthScene, string> = {
-  live: "Explore the globe",
+  live: "Live layers",
   depth: "Quake depths",
   night: "Local sky",
 };
@@ -27,7 +27,6 @@ export function useSceneEntrances({
   onScene,
   onHome,
   scene,
-  ready,
 }: ObservatoryProps) {
   const stories = useStoryNavigation();
   const memory = views.entranceVisits;
@@ -58,8 +57,7 @@ export function useSceneEntrances({
       reportAnalytics({ name: "scene_selected", scene: subject });
       remember();
       if (subject === "live") {
-        if (active && ready) explorePaths.radar();
-        else explorePaths.resume(!views.landing || (!ready && !views.globeStarting));
+        explorePaths.resume();
         return;
       }
       const saved = memory.current[subject];
@@ -107,8 +105,8 @@ export function ObservatoryEntrances({
           id={trigger(id)}
           type="button"
           onClick={() => open(id)}
-          aria-label={landing && id === "live" ? sceneCues.live : name}
-          aria-description={landing && id === "live" ? name : !active ? sceneCues[id] : undefined}
+          aria-label={name}
+          aria-description={!active ? sceneCues[id] : undefined}
           aria-pressed={active ? active === id : undefined}
           disabled={(starting && !(landing && id === "live")) || (!ready && id !== "live")}
         >

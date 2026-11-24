@@ -307,8 +307,9 @@ tint behind labels to a clear edge without an outer stroke. The tabs and story f
 panel surface at rest and take on a solid tint while content moves beneath them. Explore's keyboard
 focus uses a softer two-pixel outline, padded around tab labels and inset on category buttons, search
 fields and story rows.
-The phone sheet keeps a deeper tint with a soft top edge. Its instrument strip gives attribution,
-sources, panel visibility and projection their own space at the lower edge of the world.
+The phone sheet keeps a deeper tint with a soft top edge. Its instrument strip groups attribution,
+sources and projection at the lower edge of the world. A chevron in the panel header collapses
+the sidebar or sheet. The restore button sits beside the projection controls when the panel is folded.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
 visibility switches and details controls. Coverage descriptions live in the inspector; loading and
@@ -434,14 +435,13 @@ The landing’s All stories action opens Explore’s Stories catalogue. Find use
 landing, Explore and stories. It groups featured cities, stories, layers, journeys, saved readings and recent visits. City results
 open nearby readings and layer results open their full inspectors. Dismissing Find restores header focus
 and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.
-Header Explore restores the last free-explore camera, projection and reading in this session. Contextual
+Header Explore restores the last free-explore camera and projection and opens the Layers list. Contextual
 Back returns to the story, panel or reading that opened the current view.
 Older catalogue links also resolve to Explore. Earth, Below the Surface and After Dark filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
-The landing diagrams open interactive views on the shared canvas. Earth opens free Explore with
-Layers folded. Storm radar is available in Layers, and the Earth tab inside the cutaway or local
-sky can open its scan player directly. The radar sweep uses the first available RainViewer image
-at the current framing.
+The landing diagrams open interactive views on the shared canvas. Earth opens the full Layers
+list from the landing, cutaway and local sky. Each row opens the selected layer’s controls,
+including Storm radar’s scan player. The list preserves the chosen layer visibility.
 On phones, collapsing Layers gives the canvas the sheet’s space.
 Below the Surface opens a Fiji–Tonga cutaway. The depth sweep reveals three recorded USGS earthquakes
 at their reported depths. Map pins the selected epicentre. Nearby reports use that epicentre and

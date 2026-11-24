@@ -27,10 +27,7 @@ type Camera = Pick<ReturnType<typeof useGlobeCamera>, "read" | "flyTo">;
 type Readings = ReturnType<typeof explorerReadings>;
 type ExploreSnapshot = {
   preferredMap: boolean;
-  visit: Visit;
   camera: CameraState;
-  scroll: number;
-  readings: ReturnType<Readings["capture"]>;
 };
 
 export function useExplorerView(shared: Partial<Permalink>) {
@@ -71,6 +68,11 @@ export function useExplorerView(shared: Partial<Permalink>) {
     open(panel: boolean | undefined, destination?: string) {
       setVisit({ panel, destination });
     },
+    openLayers(map?: boolean) {
+      if (map !== undefined && map !== preferredMap) setPreferredMap(map);
+      setVisit({});
+      saveRailOpen(true);
+    },
     openNearby(record: DepthRecord, camera: CameraState, from: SceneVisit) {
       setVisit({ panel: true, nearby: { record, camera, from, map: from.deck.map } });
     },
@@ -110,52 +112,23 @@ export function explorerEntrances(
     });
   }
   const open = (panel?: boolean) => present(panel);
-  function resume(panel = true) {
-    if (
-      !observatory.observing &&
-      observatory.browser.pane === "layers" &&
-      !explorer.nearby &&
-      !explorer.city
-    ) {
-      explorer.setRailOpen(panel);
-      return;
-    }
-    const previous = explorer.lastFree.current;
-    if (panel) observatory.navigation.requestExploreFocus("explorer-layers-tab");
+  function resume() {
+    const previous =
+      observatory.observing || explorer.nearby || explorer.city ? explorer.lastFree.current : undefined;
+    const focus = "explorer-layers-tab";
+    observatory.navigation.requestExploreFocus(focus);
     observatory.browser.show("layers");
-    present(panel, () => {
-      if (previous) {
-        explorer.restore({ ...previous, visit: { ...previous.visit, panel } });
-        readings.restore(previous.readings);
-      } else explorer.open(panel);
+    present(true, () => {
+      readings.clear();
+      readings.inspect(null);
+      readings.closeRadarRewind();
+      explorer.openLayers(previous?.preferredMap);
     });
     if (previous) {
       const { lon, lat, zoom } = previous.camera;
       camera.flyTo.current(lon, lat, zoom);
-      if (panel)
-        requestAnimationFrame(() =>
-          restorePanel({
-            scrollTarget: "chrome-rail",
-            scroll: previous.scroll,
-            focus: "explorer-layers-tab",
-            fallback: "globe-view",
-          }),
-        );
     }
-  }
-  function radar() {
-    const target = { ...camera.read.current() };
-    observatory.navigation.requestExploreFocus("layer-inspector-title");
-    observatory.browser.show("layers");
-    present(true, () => {
-      returnToLive();
-      readings.clear();
-      readings.openRadar(target);
-      explorer.open(true, "radar");
-    });
-    requestAnimationFrame(() =>
-      restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "layer-inspector-title" }),
-    );
+    requestAnimationFrame(() => restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus }));
   }
   function storm(id: string) {
     const prepare = () => {
@@ -253,7 +226,7 @@ export function explorerEntrances(
       restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "inspect-earthquakes" }),
     );
   }
-  return { open, resume, find, radar, storm, nearby, back, allLayers, pickDate, cityWeather, backToSky };
+  return { open, resume, find, storm, nearby, back, allLayers, pickDate, cityWeather, backToSky };
 }
 
 export function useExplorerHistory(
@@ -281,10 +254,8 @@ export function useExplorerHistory(
           explorer.destination !== "storm"
         )
           explorer.lastFree.current = {
-            ...state,
+            preferredMap: state.preferredMap,
             camera,
-            scroll: document.getElementById("chrome-rail")?.scrollTop ?? 0,
-            readings: reading,
           };
         return {
           view: observatory.navigation.capture(camera),

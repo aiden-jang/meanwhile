@@ -22,12 +22,11 @@ export function ExplorerFold({
 }) {
   function change() {
     onChange(!open);
-    if (!open)
-      requestAnimationFrame(() =>
-        document
-          .querySelector<HTMLElement>(".explorer-tabs [aria-selected=true]")
-          ?.focus({ preventScroll: true }),
-      );
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(open ? "#explorer-fold" : ".explorer-tabs [aria-selected=true]")
+        ?.focus({ preventScroll: true }),
+    );
   }
   function fold() {
     const scene = document.querySelector<HTMLElement>("#globe-view .globe-scene");
@@ -52,8 +51,10 @@ export function ExplorerFold({
       onClick={fold}
       aria-expanded={open}
       aria-controls="chrome-rail"
+      aria-label={open ? `Hide ${label}` : label}
+      title={open ? `Hide ${label}` : `Show ${label}`}
     >
-      {open ? `Hide ${label}` : label}
+      {open ? <span className="explorer-fold-chevron" aria-hidden="true" /> : label}
     </button>
   );
 }
@@ -62,10 +63,12 @@ export function ExplorerSidebar({
   context,
   children,
   notices,
+  fold,
 }: {
   context: ObservatoryProps;
   children: ReactNode;
   notices: ReactNode;
+  fold: ReactNode;
 }) {
   const { browser, observations } = context.views;
   const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
@@ -110,8 +113,13 @@ export function ExplorerSidebar({
   };
   return (
     <>
-      <div className="explorer-tabs" role="tablist" aria-label="Explore panel">
-        <div className="explorer-tab-options" data-pane={browser.pane} role="presentation">
+      <div className="explorer-tabs">
+        <div
+          className="explorer-tab-options"
+          data-pane={browser.pane}
+          role="tablist"
+          aria-label="Explore panel"
+        >
           {(["layers", "stories"] as const).map((pane) => (
             <button
               key={pane}
@@ -141,6 +149,7 @@ export function ExplorerSidebar({
             </button>
           ))}
         </div>
+        {fold}
       </div>
       <div
         ref={browser.pane === "layers" ? panel : undefined}

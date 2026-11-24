@@ -55,7 +55,7 @@ for (const [width, height] of [
       await selectScene(page, "After Dark");
       expect((await earthPosition(page)).y).toBeGreaterThan(0.98);
       expect((await earthPosition(page)).ready).toBe(true);
-      await page.getByRole("button", { name: "Explore the globe" }).click();
+      await page.getByRole("button", { name: "Explore", exact: true }).click();
       await expect.poll(async () => Math.abs((await earthPosition(page)).y - 0.5)).toBeLessThan(0.01);
       await expect(page.locator("#chrome-rail")).toBeVisible();
       expect(await page.evaluate(() => localStorage.getItem("eif.figures"))).toBeNull();
@@ -82,7 +82,7 @@ test("the reveal survives a saved map and restores its flat framing", { tag: "@d
   await expect.poll(morph).toBe(0);
   await expect.poll(async () => (await earthPosition(page)).y).toBeGreaterThan(0.98);
   await expect.poll(async () => (await earthPosition(page)).ready).toBe(true);
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect.poll(morph).toBe(1);
   expect((await earthPosition(page)).ready).toBe(true);
   expect(

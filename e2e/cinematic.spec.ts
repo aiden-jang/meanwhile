@@ -91,7 +91,7 @@ for (const [width, height] of [
       await expect(page.locator(".cutaway-note")).toHaveCount(0);
       await page.waitForTimeout(1050);
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
-      await page.getByRole("button", { name: "Explore the globe" }).click();
+      await page.getByRole("button", { name: "Explore", exact: true }).click();
       await expect(page.locator("#chrome-rail")).toBeVisible();
       if (width < 768) await page.getByRole("button", { name: "View options", exact: true }).click();
       await viewOptions(page);

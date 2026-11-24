@@ -138,8 +138,7 @@ for (const width of [1440, 390]) {
     await page.goto("/");
     await expect.poll(queries).toBe(1);
     await expect(page.locator("#radar-layer-controls")).toBeHidden();
-    await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
-    await page.locator("#explorer-fold[aria-expanded=false]").click();
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();

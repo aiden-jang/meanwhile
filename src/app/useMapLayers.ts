@@ -73,10 +73,6 @@ export function useMapLayers(
   const [inspector, inspect] = useState<MapLayer | null>(() =>
     archived || target?.startsWith("quake:") ? "earthquakes" : null,
   );
-  const [radarArrival, setRadarArrival] = useState<RadarReveal>();
-  useEffect(() => {
-    if (inspector !== "radar" || suspended || !enabled.radar) setRadarArrival(undefined);
-  }, [enabled.radar, inspector, suspended]);
   const [savedTimes, setSelectedTimes] = useState<LayerTimes>(
     () => shared.layerTimes ?? { ...latestLayerTimes },
   );
@@ -119,13 +115,10 @@ export function useMapLayers(
             region: "world",
             image: radarView?.image ?? null,
             at: radarView?.at,
-            reveal:
-              cityLayers || followingStorm
-                ? undefined
-                : (rewind?.reveal ?? (radarView?.image && inspector === "radar" ? radarArrival : undefined)),
+            reveal: cityLayers || followingStorm ? undefined : rewind?.reveal,
           }
         : null,
-    [radarActive, radarView, rewind?.reveal, cityLayers, followingStorm, inspector, radarArrival],
+    [radarActive, radarView, rewind?.reveal, cityLayers, followingStorm],
   );
   const latest = useRef(savedLayers);
   const change = useCallback((layer: MapLayer, on: boolean) => {
@@ -201,18 +194,6 @@ export function useMapLayers(
     radar,
     rewindPoint: scope ? undefined : rewind?.point,
     openRewind,
-    openRadar(target: RadarReveal["target"]) {
-      if (savedLayers.radar) setIsolated(null);
-      else change("radar", true);
-      setRewind(null);
-      inspect("radar");
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      const reveal: RadarReveal = {
-        target,
-        finish: () => setRadarArrival((current) => (current === reveal ? undefined : current)),
-      };
-      setRadarArrival(reveal);
-    },
     closeRewind: () => setRewind(null),
     canRewind: radarView?.canRewind,
     updateRadar,

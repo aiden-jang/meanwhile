@@ -121,7 +121,7 @@ test("phone radar loads history on demand and stops the queue when a connection 
   const credit = page.locator(".radar-canvas-credit time");
   await expect(credit).toHaveAttribute("datetime", new Date(latest).toISOString());
   await expect.poll(() => [...requested]).toEqual([4, 3]);
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await openLayer(page, "Storm radar");
   const scans = page.getByRole("group", { name: "Radar scan controls" });
   const slider = scans.getByRole("slider", { name: "Radar scan time" });

@@ -51,7 +51,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
       : route.fulfill({ contentType: "image/png", body: pixel });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await openLayer(page, "Storm radar");
   const trigger = page.locator("#open-explorer-radar");
   const canvas = page.locator("#globe-view canvas");

@@ -113,7 +113,7 @@ for (const [width, height] of [
     }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/landing-radar-${width}.png` });
-    await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
     await openLayer(page, "Storm radar");
     const controls = page.getByRole("region", { name: "Storm radar playback" });
     const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
@@ -152,7 +152,7 @@ test("the landing radar rotates with the globe and stops in Explore @dev", async
   const texture = await radarTexture(page);
   const before = await longitude(page);
   await expect.poll(async () => (await longitude(page)) - before).toBeGreaterThan(0.3);
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
   expect(await radarTexture(page)).toBe(texture);
   const settled = await page.evaluate(async () => {
@@ -170,7 +170,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   const source = await radarSource(page);
   await page.goto("/");
   await expect.poll(() => radarTexture(page)).not.toBeNull();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await openLayer(page, "Storm radar");
   await page.getByRole("region", { name: "Storm radar playback" }).getByRole("slider").press("Home");
   await page
@@ -201,8 +201,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
     "datetime",
     new Date(source.at - 600_000).toISOString(),
   );
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
-  await page.locator("#explorer-fold[aria-expanded=false]").click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await page.getByRole("button", { name: "Storm radar", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
   await page
@@ -214,9 +213,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await expect(page.locator(".radar-canvas-credit")).toHaveCount(0);
   const before = source.calls();
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }),
-  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Explore", exact: true })).toBeEnabled();
   expect(await radarTexture(page)).toBeNull();
   expect(source.calls()).toBe(before);
 });

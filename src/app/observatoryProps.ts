@@ -52,9 +52,8 @@ export interface ObservatoryProps {
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
   explorePaths: {
-    resume: (showPanel?: boolean) => void;
+    resume: () => void;
     find: (target: ExploreTarget) => void;
-    radar: () => void;
     nearby: (record: DepthRecord) => void;
     cityWeather: (city: SkyCity, at: number) => void;
     pickDate: () => void;

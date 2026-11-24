@@ -991,7 +991,6 @@ export function App(): JSX.Element {
           : null,
     },
   };
-
   const quakeDetail =
     shownQuake && !observatory.observing ? (
       <DetailPanel
@@ -1032,9 +1031,9 @@ export function App(): JSX.Element {
         }}
       />
     ) : null;
-  const { tonight } = observatory;
-  const localSky =
-    tonight.active && !tonight.orbit && !observatory.observations.map && !tonight.view?.moonfall;
+  const { tonight, observations, browser } = observatory;
+  const localSky = tonight.active && !tonight.orbit && !observations.map && !tonight.view?.moonfall;
+  const fold = <ExplorerFold open={railOpen} pane={browser.pane} onChange={setRailOpen} />;
   return (
     <StoryNavigation {...observatoryProps}>
       <main
@@ -1055,7 +1054,7 @@ export function App(): JSX.Element {
               clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
             />
           }
-          layers={<ExplorerFold open={railOpen} pane={observatory.browser.pane} onChange={setRailOpen} />}
+          layers={railOpen ? null : fold}
           clip={clip}
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
@@ -1109,6 +1108,7 @@ export function App(): JSX.Element {
           >
             <ExplorerSidebar
               context={observatoryProps}
+              fold={railShown ? fold : null}
               notices={
                 <ExploreNotices
                   {...{ archived, loadedDay, archiveBusy, staleCursor, snapshot, archiveHazards, answered }}

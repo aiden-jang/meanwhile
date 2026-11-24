@@ -98,7 +98,7 @@ test("hidden base layers stay hidden through landing, scene categories and both 
     await selectScene(page, name as "Earth" | "Below the Surface" | "After Dark");
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   }
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(() => (window as unknown as { __globe: { morph: () => number } }).__globe.morph()),
@@ -115,7 +115,7 @@ test("a quiet landing opens the story catalogue and each scene remains available
   await expect(scenes).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   await expect(page.locator(".story-continue")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Explore", exact: true })).toBeInViewport();
   await page.getByRole("button", { name: "All stories", exact: true }).click();
   await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
   const canvas = await page.locator("canvas").elementHandle();

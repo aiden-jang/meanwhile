@@ -56,6 +56,7 @@ test("a shared weather view overrides recipient preferences without saving them 
   await page.goto("/#v=explore&p=map&layers=wind,lightning&windAt=1794502800&lightningAt=1794498600");
   const windPanel = page.getByRole("region", { name: "Surface wind playback" });
   await openLayer(page, "Surface wind");
+  await openLayer(page, "Surface wind");
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await windPanel.getByRole("slider").press("Home");
   const expected = await windPanel.locator("time").getAttribute("datetime");
@@ -169,6 +170,7 @@ for (const width of [1440, 390]) {
     expect(await camera(page)).toEqual(pose);
     await openLayer(page, "Surface wind");
     await windPanel.getByRole("slider").press("End");
+    await openLayer(page, "Surface wind");
     await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
     await page.getByRole("button", { name: "Map", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.morph).toBe(1);
@@ -259,9 +261,7 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   const source = await sources(page);
   source.recover();
   await page.goto("/");
-  await expect(
-    page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Explore", exact: true })).toBeVisible();
   await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
   await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
   await expect(page.getByRole("region", { name: "Lightning playback", includeHidden: true })).toContainText(
@@ -324,8 +324,8 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await expect(windPanel).toHaveCount(0);
   await expect(lightningPanel).toHaveCount(0);
   await selectScene(page, "After Dark");
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
-  await page.locator("#explorer-fold[aria-expanded=false]").click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
+  await openLayer(page, "Surface wind");
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await expect(windPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
   await openLayer(page, "Lightning");

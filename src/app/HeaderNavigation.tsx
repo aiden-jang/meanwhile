@@ -49,7 +49,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         className="header-navigation-action header-explore"
         aria-label="Explore"
         aria-current={exploring && !navigation.browsingStories ? "location" : undefined}
-        aria-description="Return to your last free-explore view"
+        aria-description="Browse live layers on the globe or map"
         onClick={() => {
           setSaved(false);
           navigation.dismissRestoration();

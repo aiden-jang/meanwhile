@@ -23,8 +23,10 @@ for (const width of [320, 390, 1440]) {
       "true",
     );
     expect(await wordmark.boundingBox()).toEqual(markBox);
-    await wordmark.click();
-    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
+    const layers = page.getByRole("region", { name: "Map layers", exact: true });
+    await expect(layers.getByRole("button", { name: / details$/ })).toHaveCount(9);
+    await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     expect(await wordmark.boundingBox()).toEqual(markBox);
     await page.getByRole("button", { name: "View options", exact: true }).click();

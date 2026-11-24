@@ -16,7 +16,7 @@ test("the day–night cue follows the world and clears when opening layers", asy
   await expect.poll(() => cue.evaluate((element) => element.style.transform)).not.toBe(initial);
   if (process.env["EIF_CAPTURE_UI"]) await page.screenshot({ path: test.info().outputPath("boundary.jpg") });
   const world = await canvas.elementHandle();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(cue).toHaveCount(0);
   expect(await world!.evaluate((element) => document.querySelector("#globe-view canvas") === element)).toBe(
     true,

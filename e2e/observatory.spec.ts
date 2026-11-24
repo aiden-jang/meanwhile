@@ -36,7 +36,7 @@ for (const [width, height] of [
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     const stage = page.getByRole("group", { name: "Globe readout" });
-    const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
+    const explore = page.getByRole("button", { name: "Explore", exact: true });
     const browse = page.getByRole("button", { name: "All stories", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
     const entrances = page.getByRole("group", { name: "Explore by subject" });
@@ -49,7 +49,7 @@ for (const [width, height] of [
       expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
       expect(entrances).toBeInViewport({ ratio: 1 }),
-      expect(entrances.getByText("Explore the globe", { exact: true })).toBeVisible(),
+      expect(entrances.getByText("Live layers", { exact: true })).toBeVisible(),
       expect(explore).toHaveCount(1),
       expect(entrances.getByText("Quake depths", { exact: true })).toBeVisible(),
       expect(entrances.getByText("Local sky", { exact: true })).toBeVisible(),
@@ -140,7 +140,7 @@ test("scenes preserve existing preferences and shared event links open the explo
   await expect(page.getByRole("searchbox", { name: "Search places, stories and layers" })).toBeFocused();
   await page.keyboard.press("Escape");
   await selectScene(page, "After Dark");
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Hide Layers", exact: true })).toBeVisible();
   expect(
@@ -150,7 +150,7 @@ test("scenes preserve existing preferences and shared event links open the explo
       figures: localStorage.getItem("eif.figures"),
       rail: localStorage.getItem("eif.railOpen"),
     })),
-  ).toEqual({ depth: "0", ramp: "cividis", figures: null, rail: "0" });
+  ).toEqual({ depth: "0", ramp: "cividis", figures: null, rail: "1" });
   await page.goto("/#e=usgs:missing-shared-event");
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "explore");
 });
@@ -160,7 +160,7 @@ test("tour controls pause, advance, stop and leave the readings accessible", asy
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await openLayer(page);
   const tour = page.getByRole("button", { name: "Earthquake tour" });
   await expect(tour).toBeEnabled();
@@ -221,10 +221,8 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     );
   const original = await contexts();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   const rail = page.locator("#chrome-rail");
-  await expect(rail).toBeHidden();
-  await page.locator("#explorer-fold").click();
   await Promise.all([
     expect(rail).toBeVisible(),
     expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused(),
@@ -259,7 +257,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     )
     .toEqual({ flights: 2, sameCanvas: true });
   const interrupted = await page
-    .getByRole("button", { name: /^Explore (the globe|the layers)$/ })
+    .getByRole("button", { name: "Explore", exact: true })
     .evaluate((button: HTMLButtonElement) => {
       button.click();
       const zone = document.querySelector(".zone-canvas")!;
@@ -272,7 +270,6 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     });
   expect(interrupted).toEqual({ before: true, after: 0 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.locator("#explorer-fold[aria-expanded=false]").click();
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   const [readingMotions, finalContexts] = await Promise.all([
     page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length),
@@ -383,7 +380,7 @@ test("a missing WebGL context still offers the source readings", async ({ page }
   await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await page
     .getByRole("group", { name: "Explore by subject" })
-    .getByRole("button", { name: "Explore the globe", exact: true })
+    .getByRole("button", { name: "Earth", exact: true })
     .click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeVisible();
 });
@@ -403,7 +400,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
   const link = page.url();
   await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "observe");
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(page).toHaveURL(/p=map&v=explore.*&c=/);
   expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("c")).toBe(
     new URLSearchParams(new URL(link).hash.slice(1)).get("c"),

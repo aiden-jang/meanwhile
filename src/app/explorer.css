@@ -1,5 +1,7 @@
 .explorer-tabs {
   display: flex;
+  justify-content: space-between;
+  gap: 8px;
   position: sticky;
   top: 0;
   z-index: 3;
@@ -31,7 +33,7 @@
     transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
-.explorer-tabs button {
+.explorer-tab-options button {
   position: relative;
   isolation: isolate;
   min-height: 44px;
@@ -43,16 +45,16 @@
   letter-spacing: -0.02em;
   cursor: pointer;
 }
-.explorer-tabs button[aria-selected="true"] {
+.explorer-tab-options button[aria-selected="true"] {
   color: var(--color-ink);
 }
-.explorer-tabs button:is(:hover, :focus-visible) {
+.explorer-tab-options button:is(:hover, :focus-visible) {
   color: var(--color-ink);
 }
-.explorer-tabs button:focus-visible {
+.explorer-tab-options button:focus-visible {
   outline: none;
 }
-.explorer-tabs button:focus-visible::before {
+.explorer-tab-options button:focus-visible::before {
   position: absolute;
   inset: 6px -7px 7px;
   z-index: -1;
@@ -65,7 +67,7 @@
   .explorer-tab-options::after {
     background: CanvasText;
   }
-  .explorer-tabs button:focus-visible::before {
+  .explorer-tab-options button:focus-visible::before {
     content: none;
   }
 }
@@ -525,7 +527,6 @@
 @media (max-width: 767px) {
   .explorer-tabs {
     margin-bottom: 8px;
-    padding-right: 112px;
   }
   #chrome-rail {
     --explorer-pad: 20px;
@@ -608,7 +609,7 @@
   .explorer-tabs {
     margin-bottom: 8px;
   }
-  .explorer-tabs button {
+  .explorer-tab-options button {
     font-size: 19px;
   }
   #explorer-stories .featured-story {
@@ -700,7 +701,7 @@
   .explorer-tabs {
     --explorer-tab-gap: 40px;
   }
-  .explorer-tabs button {
+  .explorer-tab-options button {
     padding-bottom: 8px;
     font-size: clamp(22px, 1.65vw, 26px);
   }
@@ -778,7 +779,30 @@
   background: var(--color-raised);
   color: var(--color-ink);
 }
+.explorer-tabs .explorer-fold {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+.explorer-tabs .explorer-fold:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+}
+.explorer-fold-chevron {
+  width: 8px;
+  height: 8px;
+  border: solid currentColor;
+  border-width: 0 0 1.5px 1.5px;
+  transform: rotate(45deg);
+}
 @media (max-width: 767px) {
+  .explorer-fold-chevron {
+    transform: translateY(-2px) rotate(-45deg);
+  }
   .explorer-fold {
     min-width: 68px;
     padding-inline: 5px;

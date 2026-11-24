@@ -158,7 +158,8 @@ test("Find goes directly to places and layers, while Explore and Back restore th
   await expect(catalogue).toHaveValue("Tonga");
   await result.click();
   await button("Explore").click();
-  await expect(place).toBeVisible();
+  await expect(place).toBeHidden();
+  await expect(page.getByRole("button", { name: "Storm radar details" })).toBeVisible();
   await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
   await expect.poll(camera).toBe("139.65,35.68,2.2");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
@@ -290,7 +291,7 @@ test("the landing keeps Explore usable while the globe loads", async ({ page }) 
     await route.continue();
   });
   const entrances = page.getByRole("group", { name: "Explore by subject" });
-  const earth = entrances.getByRole("button", { name: "Explore the globe", exact: true });
+  const earth = entrances.getByRole("button", { name: "Earth", exact: true });
   try {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(earth).toBeEnabled();
@@ -300,9 +301,9 @@ test("the landing keeps Explore usable while the globe loads", async ({ page }) 
     releaseGlobe();
   }
   await expect(page.locator("#globe-view canvas")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Explore", exact: true })).toHaveCount(1);
   await earth.click();
-  await expect(page.locator("#explorer-fold")).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
   await expect(page.getByRole("heading", { name: "Storm radar" })).toBeHidden();
 });
 
@@ -338,8 +339,11 @@ test("Layers holds the radar scan and scene tabs restore each position", async (
   const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
   const tab = (name: string) =>
     page.getByRole("group", { name: "Explore by subject" }).getByRole("button", { name, exact: true });
-  await tab("Explore the globe").click();
-  await page.locator("#explorer-fold").click();
+  await tab("Earth").click();
+  await expect(page.getByRole("button", { name: "Storm radar", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   await page.getByRole("button", { name: "Storm radar", exact: true }).click();
   await openLayer(page, "Storm radar");
   const radar = page.getByRole("region", { name: "Storm radar playback" });
@@ -385,6 +389,8 @@ test("Layers holds the radar scan and scene tabs restore each position", async (
   await sky.press("End");
   const time = await sky.getAttribute("aria-valuetext");
   await tab("Earth").click();
+  await expect(scan).toBeHidden();
+  await openLayer(page, "Storm radar");
   await expect(scan).toHaveValue("0");
   await page.goBack();
   await expect(sky).toHaveAttribute("aria-valuetext", time!);
@@ -459,24 +465,26 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const rail = page.locator("#chrome-rail");
-  await button("Explore the globe").click();
-  await expect(rail).toBeHidden();
-  await expect(page.locator("#explorer-fold")).toBeFocused();
-  await page.locator("#explorer-fold").click();
+  await button("Explore").click();
   await expect(rail).toBeVisible();
   await expect(button("Storm radar details")).toBeInViewport();
   const viewport = page.viewportSize()!;
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
-  const fold = button("Hide Layers");
+  const fold = rail.locator(".explorer-tabs").getByRole("button", { name: "Hide Layers" });
   await expect(fold).toHaveAttribute("aria-expanded", "true");
   const opened = (await globe.boundingBox())!;
   const dock = page.locator(".explore-world-controls");
   await expect(dock.getByRole("group", { name: "Projection" })).toBeInViewport({ ratio: 1 });
-  await expect(dock.getByRole("button", { name: "Hide Layers" })).toBeInViewport({ ratio: 1 });
+  await expect(fold).toBeInViewport({ ratio: 1 });
+  await expect(dock.getByRole("button", { name: "Hide Layers" })).toHaveCount(0);
   await fold.click();
   await expect(rail).toBeHidden();
+  const reopen = dock.getByRole("button", { name: "Layers", exact: true });
+  await expect(reopen).toBeFocused();
   if (viewport.width < 768)
     await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
+  await reopen.click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
   await home.click();
 
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();

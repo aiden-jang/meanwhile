@@ -37,7 +37,7 @@ for (const width of [1440, 390]) {
       route.fulfill({ json: { features: [] } }),
     );
     await page.goto("/");
-    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
     await openLayer(page, "Storm radar");
     const canvas = page.locator("#globe-view canvas");
     const original = await canvas.elementHandle();
