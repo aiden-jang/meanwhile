@@ -68,8 +68,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const header = (await page.locator("#chrome-head").boundingBox())!;
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
-  const defaultSize = String(Math.round(844 * 0.43) - 60);
-  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
+  const catalogueSize = "303";
+  const layersSize = "355";
+  await expect(sheet).toHaveAttribute("aria-valuenow", layersSize);
   const projection = page.getByRole("button", { name: "Map", exact: true });
   const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
   await expect(projection).toBeInViewport();
@@ -87,7 +88,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
     ).toBe(true);
   }
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
+  await expect(sheet).toHaveAttribute("aria-valuenow", catalogueSize);
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
   const firstRow = stories.locator(".catalogue-pick").first();
   await expect(firstRow).toBeInViewport({ ratio: 1 });
@@ -97,7 +98,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
     Math.abs((await page.locator("#chrome-rail").boundingBox())!.y - Number(await size())),
   ).toBeLessThanOrEqual(1);
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
+  await expect(sheet).toHaveAttribute("aria-valuenow", layersSize);
   await sheet.click();
   const collapsed = Number(await size());
   await sheet.press("Enter");

@@ -69,7 +69,7 @@ export function ExploreSheet({
       value={current}
       min={stops[0]!}
       max={stops[2]!}
-      snap={stops}
+      snap={[first, initial, last]}
       measure={(event) => event.clientY}
       onChange={resizeSheet}
       onTap={() => resizeSheet(moreWorld ? last : initial)}

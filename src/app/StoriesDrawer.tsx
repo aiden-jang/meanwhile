@@ -150,7 +150,7 @@ export function StoriesDrawer({
             <>
               {sceneEntry}
               {scene === null ? (
-                <StoryCatalogue ready={ready} recent={recent} showJourneys={toggleJourneys} />
+                <StoryCatalogue ready={ready} recent={recent} />
               ) : (
                 <>
                   {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}

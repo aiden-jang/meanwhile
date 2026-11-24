@@ -35,34 +35,29 @@ function opening(id: (typeof picks)[number]["id"], map: boolean): VisitPosition 
   }
 }
 
-export function StoryCatalogue({
-  ready,
-  recent,
-  showJourneys,
-}: {
-  ready: boolean;
-  recent: Visit | undefined;
-  showJourneys: () => void;
-}) {
+export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visit | undefined }) {
   const navigation = useStoryNavigation();
-  const unfinished = journeys.find(({ id }) => id === navigation?.journeyProgress?.id);
+  const progress = navigation?.journeyProgress;
+  const unfinished = journeys.find(({ id }) => id === progress?.id);
   return (
     <>
-      {recent ? (
-        <ContinueVisit visit={recent} />
-      ) : (
-        unfinished && (
-          <button
-            type="button"
-            className="catalogue-journey-return"
-            onClick={() => {
-              showJourneys();
-              document.getElementById("journeys-toggle")?.focus({ preventScroll: true });
-            }}
-          >
-            Continue {unfinished.title}
-          </button>
-        )
+      {recent && <ContinueVisit visit={recent} />}
+      {progress && unfinished && navigation && (
+        <button
+          type="button"
+          id={`journey-continue-${unfinished.id}`}
+          className="catalogue-journey-return"
+          disabled={!!navigation.unavailable(unfinished.steps[progress.step]!.id)}
+          onClick={(event) => {
+            event.currentTarget.focus({ preventScroll: true });
+            navigation.continueJourney(unfinished.id, event.currentTarget.id);
+          }}
+        >
+          <span>Continue {unfinished.title}</span>
+          <small>
+            {progress.step + 1} of {unfinished.steps.length}
+          </small>
+        </button>
       )}
       <section className="catalogue-picks" aria-labelledby="catalogue-picks-title">
         <header className="catalogue-picks-heading">

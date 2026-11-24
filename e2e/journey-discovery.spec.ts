@@ -53,7 +53,9 @@ test("Ice in Motion previews on the same world and resumes its saved stops after
 
   await page.goto("/");
   await openStories(page, "search");
-  const resume = shelf.getByRole("button", { name: "Continue Ice in Motion 2 of 3" });
+  const catalogue = page.getByRole("region", { name: "Story catalogue", exact: true });
+  await expect(catalogue.getByRole("region", { name: "Start here" })).toBeVisible();
+  const resume = catalogue.getByRole("button", { name: "Continue Ice in Motion 2 of 3", exact: true });
   await expect(resume).toBeVisible();
   await resume.click();
   await expect(location).toHaveValue(savedLocation);

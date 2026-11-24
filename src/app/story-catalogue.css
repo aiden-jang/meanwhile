@@ -148,6 +148,10 @@
 }
 
 .catalogue-journey-return {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-height: 44px;
   width: 100%;
   padding: 8px 0;
@@ -158,6 +162,11 @@
   cursor: pointer;
 }
 
-.catalogue-journey-return:hover {
+.catalogue-journey-return small {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.catalogue-journey-return:hover:enabled {
   color: var(--color-ink);
 }
