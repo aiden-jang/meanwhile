@@ -60,9 +60,17 @@ for (const width of [1440, 320]) {
         entry.evaluate(
           (row) => row.getBoundingClientRect().top - row.closest("#chrome-rail")!.getBoundingClientRect().top,
         );
+      await expect(entry).toBeEnabled();
+      const position = await entry.evaluate((row) => {
+        const { x, y, width, height } = row.getBoundingClientRect();
+        const point = { x: x + width / 2, y: y + height / 2 };
+        return row.contains(document.elementFromPoint(point.x, point.y)) ? point : null;
+      });
+      expect(position).not.toBeNull();
       const before = await rowOffset();
-      if (hasTouch) await entry.tap();
-      else await entry.click();
+      // Use the visible point directly so test-driver scrolling does not alter the departure position.
+      if (hasTouch) await page.touchscreen.tap(position!.x, position!.y);
+      else await page.mouse.click(position!.x, position!.y);
       await expect(control).toBeVisible();
       if (title === "Float Dive") await expect(control).toHaveValue("0");
       if (title === "Kīlauea") {

@@ -466,7 +466,7 @@ clearer while scrolling.
 Switching between Layers
 and Stories preserves the chosen layer settings. Layer switches keep the same alignment as status changes.
 Coverage and availability details are in the layer inspectors and header feed menu. Location lives in Find a place, and playback
-lives within the Storm radar inspector. A recent visit appears in a compact Continue row above All topics.
+lives within the Storm radar inspector. All topics puts a recent visit in a compact Continue row above Start here.
 Back returns focus to the same story row and restores its position in the visible panel, even if the
 Continue row appeared during the visit.
 
