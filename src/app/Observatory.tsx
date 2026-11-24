@@ -115,7 +115,7 @@ function ObservatoryContent({
     deepAvailable,
     landing,
   });
-  const entrances = <ObservatoryEntrances ready={ready} {...entry} />;
+  const entrances = <ObservatoryEntrances ready={ready} landing={landing} {...entry} />;
   const tabs =
     entry.active && !tonight.view?.lunarDeparture && !tonight.view?.moonfall && !tonight.view?.radiantTrail
       ? entrances
@@ -301,13 +301,14 @@ function ObservatoryContent({
                 </div>
                 {guidedAurora && solar && <div className="aurora-solar-panel" ref={setSolarReadings} />}
                 {solar && <SunCredits />}
+                {landing && entrances}
                 {active ? (
                   <ObservatoryTourControls tour={tour} onExplore={onExplore} />
                 ) : (
                   <>
                     {!solar && !aurora.run && !aurora.requested && (
                       <ObservatoryEntryActions
-                        explore={() => explorePaths.resume(!landing)}
+                        {...(!landing ? { explore: () => explorePaths.resume() } : {})}
                         browse={() => navigationContext?.browse(true)}
                       />
                     )}
@@ -321,7 +322,7 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {!active && !solar && !aurora.run && !aurora.requested && entrances}
+                {!landing && !active && !solar && !aurora.run && !aurora.requested && entrances}
                 {scene === "depth" && ready && !deepAvailable && (
                   <p id="depth-availability" className="observatory-depth-note">
                     No earthquake at least 70 km deep in this window. Recorded depth stories are still

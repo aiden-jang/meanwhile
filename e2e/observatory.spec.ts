@@ -49,7 +49,8 @@ for (const [width, height] of [
       expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
       expect(entrances).toBeInViewport({ ratio: 1 }),
-      expect(entrances.getByText("Storm radar", { exact: true })).toBeVisible(),
+      expect(entrances.getByText("Explore the globe", { exact: true })).toBeVisible(),
+      expect(explore).toHaveCount(1),
       expect(entrances.getByText("Quake depths", { exact: true })).toBeVisible(),
       expect(entrances.getByText("Local sky", { exact: true })).toBeVisible(),
     ]);
@@ -68,7 +69,9 @@ for (const [width, height] of [
     const creditPosition = await credit.boundingBox();
     expect(height! - (creditPosition!.y + creditPosition!.height)).toBeLessThanOrEqual(24);
     const collisions = await page
-      .locator(".observatory-story, .observatory-entry-actions > button, .creator-credit a")
+      .locator(
+        ".observatory-story, .observatory-scenes, .observatory-entry-actions > button, .creator-credit a",
+      )
       .evaluateAll((nodes) => {
         const boxes = nodes.map((node) => ({
           name: node.textContent?.trim(),
@@ -382,7 +385,7 @@ test("a missing WebGL context still offers the source readings", async ({ page }
   await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await page
     .getByRole("group", { name: "Explore by subject" })
-    .getByRole("button", { name: "Earth", exact: true })
+    .getByRole("button", { name: "Explore the globe", exact: true })
     .click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeVisible();
 });

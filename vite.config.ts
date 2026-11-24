@@ -39,6 +39,11 @@ export default defineConfig({
   },
   build: {
     assetsDir: "a",
+    // Let import() request the story entry. WebKit can retain a failed modulepreload across reloads.
+    modulePreload: {
+      resolveDependencies: (_entry, dependencies) =>
+        dependencies.filter((dependency) => !/^a\/RuptureStage-[^/]+\.js$/.test(dependency)),
+    },
     /*
      * Four budgets, not one. Per DESIGN.md section 11.
      *

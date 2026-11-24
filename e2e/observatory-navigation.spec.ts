@@ -98,8 +98,9 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await home.dispatchEvent("click");
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).dispatchEvent("click");
   await home.dispatchEvent("click");
-  await entrances.getByRole("button", { name: "Earth", exact: true }).dispatchEvent("click");
-  await expect(page.getByRole("heading", { name: "Storm radar", exact: true })).toBeVisible();
+  await entrances.getByRole("button", { name: "Explore the globe", exact: true }).dispatchEvent("click");
+  await expect(page.locator("#explorer-fold")).toBeVisible();
+  await expect(page.locator("#chrome-rail")).toBeHidden();
   await expect
     .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))
     .toBe(0);

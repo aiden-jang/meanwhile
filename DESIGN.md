@@ -271,16 +271,16 @@ On large and short landscape screens, the same starfield extends behind the invi
 globe keeps its own right-hand framing at every zoom level.
 The introduction and its actions sit together in a 42% reading track with 34px horizontal and
 64px bottom clearance.
-Explore the globe is the pale filled action and Browse stories is secondary. Category filters
+The Earth diagram is the Explore the globe action. Browse stories sits below the three diagrams. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
 Tall layouts below 900px place the globe above the introduction and cap its height to leave room
 for the invitation on tablets. The introduction owns vertical scrolling and 24px side insets.
-The two entry actions remain reachable below the headline. Viewports at 620px high or less use the
+The entry diagrams and Browse stories remain reachable below the headline. Viewports at 620px high or less use the
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
-continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset
-and side-by-side entry actions. The short landscape footer keeps radar attribution and Sources
+continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset.
+The short landscape footer keeps radar attribution and Sources
 beside the creator credit, with detailed times in Sources and auxiliary solar readouts hidden.
 Do not turn the oversized canvas into horizontal page scrolling.
 
@@ -382,8 +382,8 @@ Focus rings and selection brackets are interaction signals, not ambient glows.
 
 ## Shapes
 
-The circle of the globe is the dominant silhouette. The primary Explore the globe action uses the field radius;
-search fields and featured image crops use the field radius. Projection controls use the projection
+The circle of the globe is the dominant silhouette. Search fields and featured image crops use the field radius.
+Projection controls use the projection
 radius, ordinary controls and recommendation thumbnails use the control radius, and the projection
 pair uses the card radius. Phone recommendations use open ruled rows. Explore and Observatory sheets
 use their separate rounded upper-corner roles. Cards remain open reading groups rather than
@@ -413,7 +413,7 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Explore the globe action uses pale ink fill and a directional cue. Browse stories is the secondary action. Utility buttons use
+The landing Earth diagram uses pale ink with Explore the globe as its cue. Browse stories opens the catalogue. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Compact Explore tabs use an ink underline. The story category strip sits below search, using matching diagrams, labels and selection rules. The shared focus treatment remains visible across each variant.
 
@@ -433,9 +433,10 @@ Header Explore restores the last free-explore camera, projection and reading in 
 Back returns to the story, panel or reading that opened the current view.
 Older catalogue links also resolve to Explore. Earth, Below the Surface and After Dark filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
-The landing diagrams open interactive views on the shared canvas. Earth opens Storm radar within
-Layers. The sweep uses the first available RainViewer image at the current framing. The shortcut
-and the Storm radar layer use the same scan player. Explore the globe opens with Layers visible.
+The landing diagrams open interactive views on the shared canvas. Earth opens free Explore with
+Layers folded. Storm radar is available in Layers, and the Earth tab inside the cutaway or local
+sky can open its scan player directly. The radar sweep uses the first available RainViewer image
+at the current framing.
 On phones, collapsing Layers gives the canvas the sheet’s space.
 Below the Surface opens a Fiji–Tonga cutaway. The depth sweep reveals three recorded USGS earthquakes
 at their reported depths. Map pins the selected epicentre. Nearby reports use that epicentre and

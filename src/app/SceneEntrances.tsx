@@ -13,7 +13,7 @@ export const OBSERVATORY_SCENES = [
 ] as const;
 
 const sceneCues: Record<EarthScene, string> = {
-  live: "Storm radar",
+  live: "Explore the globe",
   depth: "Quake depths",
   night: "Local sky",
 };
@@ -54,12 +54,12 @@ export function useSceneEntrances({
       );
     },
     open(subject: EarthScene) {
-      if (active === subject || views.globeStarting) return;
+      if (active === subject || (views.globeStarting && !(views.landing && subject === "live"))) return;
       reportAnalytics({ name: "scene_selected", scene: subject });
       remember();
       if (subject === "live") {
-        if (ready) explorePaths.radar();
-        else explorePaths.resume();
+        if (active && ready) explorePaths.radar();
+        else explorePaths.resume(!views.landing || (!ready && !views.globeStarting));
         return;
       }
       const saved = memory.current[subject];
@@ -84,9 +84,13 @@ export function useSceneEntrances({
 export function ObservatoryEntrances({
   ready,
   active,
+  landing,
   open,
   starting,
-}: { ready: boolean } & Pick<ReturnType<typeof useSceneEntrances>, "active" | "open" | "starting">) {
+}: { ready: boolean; landing: boolean } & Pick<
+  ReturnType<typeof useSceneEntrances>,
+  "active" | "open" | "starting"
+>) {
   return (
     <div
       id="observatory-scenes"
@@ -103,10 +107,10 @@ export function ObservatoryEntrances({
           id={trigger(id)}
           type="button"
           onClick={() => open(id)}
-          aria-label={name}
-          aria-description={!active ? sceneCues[id] : undefined}
-          aria-pressed={active === id}
-          disabled={starting || (!ready && id !== "live")}
+          aria-label={landing && id === "live" ? sceneCues.live : name}
+          aria-description={landing && id === "live" ? name : !active ? sceneCues[id] : undefined}
+          aria-pressed={active ? active === id : undefined}
+          disabled={(starting && !(landing && id === "live")) || (!ready && id !== "live")}
         >
           <SceneDiagram scene={id} />
           <span className="scene-label">

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openLayer, openStories } from "./feeds";
 
 for (const [id, title] of [
   ["aurora", "Aurora Overflight"],
@@ -278,7 +278,7 @@ test("From Radar to Recovery returns to the held scan, Gulf fix and night-light 
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
-test("Earth waits for the globe before offering live radar", async ({ page }) => {
+test("the landing keeps Explore usable while the globe loads", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   let releaseGlobe!: () => void;
@@ -289,21 +289,24 @@ test("Earth waits for the globe before offering live radar", async ({ page }) =>
     await loading;
     await route.continue();
   });
-  const earth = page
-    .getByRole("group", { name: "Explore by subject" })
-    .getByRole("button", { name: "Earth", exact: true });
+  const entrances = page.getByRole("group", { name: "Explore by subject" });
+  const earth = entrances.getByRole("button", { name: "Explore the globe", exact: true });
   try {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await expect(earth).toBeDisabled();
+    await expect(earth).toBeEnabled();
+    await expect(entrances.getByRole("button", { name: "Below the Surface" })).toBeDisabled();
+    await expect(entrances.getByRole("button", { name: "After Dark" })).toBeDisabled();
   } finally {
     releaseGlobe();
   }
-  await expect(earth).toBeEnabled();
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toHaveCount(1);
   await earth.click();
-  await expect(page.getByRole("heading", { name: "Storm radar" })).toBeVisible();
+  await expect(page.locator("#explorer-fold")).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Storm radar" })).toBeHidden();
 });
 
-test("Earth shares radar playback with Layers and scene tabs restore each position", async ({ page }) => {
+test("Layers holds the radar scan and scene tabs restore each position", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   const now = new Date("2026-11-24T09:30:00Z").getTime();
@@ -335,7 +338,10 @@ test("Earth shares radar playback with Layers and scene tabs restore each positi
   const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
   const tab = (name: string) =>
     page.getByRole("group", { name: "Explore by subject" }).getByRole("button", { name, exact: true });
-  await tab("Earth").click();
+  await tab("Explore the globe").click();
+  await page.locator("#explorer-fold").click();
+  await page.getByRole("button", { name: "Storm radar", exact: true }).click();
+  await openLayer(page, "Storm radar");
   const radar = page.getByRole("region", { name: "Storm radar playback" });
   const scan = page.getByRole("slider", { name: "Radar scan time" });
   const openLayers = page.getByRole("button", { name: "Back to layers", exact: true });
@@ -351,7 +357,7 @@ test("Earth shares radar playback with Layers and scene tabs restore each positi
   await openLayers.click();
   await page.getByRole("button", { name: "Storm radar details", exact: true }).click();
   await expect(scan).toHaveValue("0");
-  await page.goBack();
+  await page.getByRole("button", { name: /back to the Observatory/ }).click();
   await tab("Below the Surface").click();
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
   await expect.poll(pose).toBe("-176,-18.3,1.95");

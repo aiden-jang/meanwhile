@@ -72,11 +72,17 @@
 .frame[data-landing] .observatory-entry-actions {
   grid-column: 1;
   margin: 0;
-  align-items: center;
-  gap: 8px 18px;
 }
-.frame[data-landing] .observatory-entry-actions > button {
+.frame[data-landing] #browse-stories {
   pointer-events: auto;
+  min-height: 44px;
+  padding-inline: 10px;
+  text-decoration: underline;
+  text-decoration-color: var(--color-hairline);
+  text-underline-offset: 0.24em;
+}
+.frame[data-landing] #browse-stories:is(:hover, :focus-visible) {
+  text-decoration-color: currentColor;
 }
 .frame[data-landing] .observatory-scenes {
   grid-column: 1;
@@ -85,18 +91,17 @@
 .frame[data-landing] .observatory-scenes button {
   pointer-events: auto;
 }
-.frame[data-landing] .observatory-entry-actions .observatory-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 190px;
-  min-height: 48px;
-  padding: 12px 18px;
-  background: var(--color-ink);
-  color: var(--color-void);
-  border: 0;
-  border-radius: 2px;
-  font-size: 15px;
+.frame[data-landing] #observatory-entry-live {
+  color: var(--color-ink);
+}
+.frame[data-landing] #observatory-entry-live .scene-entrance-cue {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-hairline);
+  text-underline-offset: 0.24em;
+}
+.frame[data-landing] #observatory-entry-live:is(:hover, :focus-visible) .scene-entrance-cue {
+  text-decoration-color: currentColor;
 }
 .frame[data-landing] .observatory-stage {
   position: absolute;
@@ -319,19 +324,7 @@
     font-size: 12px;
   }
 
-  .frame[data-landing] .observatory-entry-actions {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-  .frame[data-landing] .observatory-entry-actions .observatory-primary {
-    min-width: 0;
-    padding-inline: 10px;
-    gap: 8px;
-    font-size: 12px;
-  }
-  .frame[data-landing] .observatory-entry-actions > button:not(.observatory-primary) {
+  .frame[data-landing] #browse-stories {
     font-size: 12px;
   }
 
@@ -349,9 +342,6 @@
   .frame[data-landing] .observatory-description {
     max-width: 34ch;
     margin-top: 16px;
-  }
-  .frame[data-landing] .observatory-entry-actions {
-    gap: 16px;
   }
 }
 @media (max-height: 620px) {
@@ -390,13 +380,6 @@
   }
   .frame[data-landing] .observatory-description {
     max-width: none;
-  }
-  .frame[data-landing] .observatory-entry-actions {
-    gap: 12px;
-  }
-  .frame[data-landing] .observatory-entry-actions .observatory-primary {
-    min-width: 168px;
-    font-size: 13px;
   }
 
   .frame[data-landing] .observatory-stage {
@@ -493,12 +476,6 @@
   }
   .frame[data-landing] .observatory-story h2 {
     font-size: clamp(48px, 16vw, 74px);
-  }
-  .frame[data-landing] .observatory-entry-actions .observatory-primary {
-    min-width: auto;
-    padding-inline: 12px;
-    gap: 8px;
-    font-size: 13px;
   }
   .frame[data-landing] .observatory-stage {
     inset: var(--head-h) 18px auto;

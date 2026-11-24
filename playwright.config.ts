@@ -47,7 +47,7 @@ export default defineConfig({
     ? [
         {
           name: "webkit",
-          testMatch: [resilience, "**/continuity.spec.ts"],
+          testMatch: [resilience, "**/continuity.spec.ts", "**/story-recovery.spec.ts"],
           use: { ...devices["iPhone 13"], deviceScaleFactor: 1 },
         },
       ]
