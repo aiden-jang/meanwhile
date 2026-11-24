@@ -390,11 +390,32 @@
 }
 
 @media (min-width: 900px) and (min-height: 550px) {
-  .replay-stage .story-projection {
-    inset-block: var(--stage-inset) auto;
+  .replay-stage:has(> .story-projection) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: max-content 1fr;
+    column-gap: 12px;
   }
 
-  .replay-stage:has(.story-projection) .stage-ident {
-    max-width: calc(100% - 280px);
+  .replay-stage > .story-projection {
+    position: relative;
+    inset: auto;
+    grid-area: 1 / 2;
+    align-self: start;
+    max-width: none;
+    margin: var(--stage-inset) var(--stage-inset) 0 0;
+  }
+
+  .zones:has(.replay-stage .story-projection) .camera-recenter {
+    top: calc(clamp(16px, 2.3vw, 34px) + 64px);
+    right: clamp(16px, 2.3vw, 34px);
+  }
+
+  .replay-stage:has(> .story-projection) > .stage-ident {
+    position: relative;
+    inset: auto;
+    grid-area: 1 / 1;
+    place-self: start end;
+    margin: calc(var(--stage-inset) + 8px) 0 0 var(--stage-inset);
   }
 }

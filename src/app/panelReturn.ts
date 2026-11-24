@@ -8,7 +8,7 @@ export interface PanelReturn {
 
 export function catalogueRowOffset(panel: HTMLElement | null, focus: string) {
   const row = document.getElementById(focus);
-  if (!panel?.scrollTop || !panel.contains(row) || !row?.closest(".story-results")) return;
+  if (!panel || !panel.contains(row) || !row?.closest(".story-results")) return;
   return row.getBoundingClientRect().top - panel.getBoundingClientRect().top;
 }
 

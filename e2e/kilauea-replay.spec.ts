@@ -50,6 +50,8 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   );
   await compareCoast.click();
   const compare = panel.getByRole("slider", { name: "Compare before and after" });
+  await expect(panel.locator(".kilauea-coast-labels")).toBeVisible();
+  await expect(panel.locator(".stage-ident")).toBeHidden();
   await compare.press("Home");
   await expect(compare).toHaveAttribute("aria-valuetext", "Before the eruption");
   await panel.getByRole("button", { name: "Map", exact: true }).click();

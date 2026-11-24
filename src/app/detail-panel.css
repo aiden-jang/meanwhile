@@ -116,22 +116,6 @@
   border-block: 0;
 }
 
-.observatory-intro:has(> .detail-panel-heading) :is(.sky-focus, .entry-sky-city) select {
-  appearance: none;
-  padding-inline: 8px 28px;
-  background:
-    linear-gradient(45deg, transparent 50%, var(--color-dim) 50%) right 12px center / 5px 5px no-repeat,
-    linear-gradient(135deg, var(--color-dim) 50%, transparent 50%) right 7px center / 5px 5px no-repeat,
-    var(--color-deck);
-}
-
-@media (forced-colors: active) {
-  .observatory-intro:has(> .detail-panel-heading) :is(.sky-focus, .entry-sky-city) select {
-    appearance: auto;
-    background: Canvas;
-  }
-}
-
 .observatory-intro:has(> .detail-panel-heading) .tonight-clock time {
   color: var(--detail-accent);
   font-size: 16px;

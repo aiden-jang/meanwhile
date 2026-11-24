@@ -230,7 +230,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
         <>
           {footage && !panel.map && <KilaueaFootage />}
           {atlas && <ShorelineHandle onAdjust={setSplit} />}
-          {comparing && (!coast || arrived) && split > 0 && split < 100 && (
+          {atlas && arrived && split !== null && split > 0 && split < 100 && (
             <div className="kilauea-coast-labels" aria-hidden="true">
               <span>Before eruption</span>
               <span>Aug 9, 2018</span>

@@ -48,14 +48,16 @@ for (const width of [1440, 320]) {
       if (title === "Kīlauea") {
         await page.getByRole("button", { name: "Map", exact: true }).click();
       }
-      const prep = await entry.evaluate((row) => {
+      const firstVisitAtTop = title === "Float Dive" && width === 1440;
+      const prep = await entry.evaluate((row, atTop) => {
         const panel = row.closest("#chrome-rail")!;
         const tools = panel.querySelector(panel.clientHeight < 360 ? ".story-search-line" : ".story-tools")!;
         const delta = row.getBoundingClientRect().top - tools.getBoundingClientRect().bottom;
-        panel.scrollTop = Math.max(4, panel.scrollTop + delta - 14);
+        panel.scrollTop = atTop ? 0 : Math.max(4, panel.scrollTop + delta - 14);
         return panel.scrollTop;
-      });
-      expect(prep).toBeGreaterThan(0);
+      }, firstVisitAtTop);
+      if (firstVisitAtTop) expect(prep).toBe(0);
+      else expect(prep).toBeGreaterThan(0);
       const rowOffset = () =>
         entry.evaluate(
           (row) => row.getBoundingClientRect().top - row.closest("#chrome-rail")!.getBoundingClientRect().top,
@@ -72,6 +74,7 @@ for (const width of [1440, 320]) {
       if (hasTouch) await page.touchscreen.tap(position!.x, position!.y);
       else await page.mouse.click(position!.x, position!.y);
       await expect(control).toBeVisible();
+      if (title === "Moonfall") expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       if (title === "Float Dive") await expect(control).toHaveValue("0");
       if (title === "Kīlauea") {
         await expect(control).toHaveValue("48");

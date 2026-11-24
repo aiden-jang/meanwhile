@@ -260,7 +260,13 @@ for (const viewport of [
     const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
     await expect(swell.getByText("4.3 m", { exact: true })).toBeVisible();
     await swell.getByRole("button", { name: "Map", exact: true }).click();
-    await expect(page.getByRole("group", { name: "Swell Lines on the map" })).toBeVisible();
+    const stage = page.getByRole("group", { name: "Swell Lines on the map" });
+    await expect(stage).toBeVisible();
+    if (viewport.width === 1440) {
+      const source = (await stage.locator(".stage-ident").boundingBox())!;
+      const projection = (await stage.locator(".story-projection").boundingBox())!;
+      expect(source.x + source.width + 8).toBeLessThanOrEqual(projection.x);
+    }
     const shortcuts = await swell.getByRole("group", { name: "Pacific buoys" }).getByRole("button").all();
     for (const shortcut of shortcuts) {
       const buoy = await shortcut.boundingBox();

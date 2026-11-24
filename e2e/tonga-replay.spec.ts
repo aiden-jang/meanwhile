@@ -6,6 +6,7 @@ for (const [width, height] of [
   [320, 640],
   [390, 844],
   [844, 390],
+  [1440, 900],
 ] as const) {
   test(`Tonga's camera and projection controls stay separate at ${width}×${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
@@ -23,7 +24,8 @@ for (const [width, height] of [
     await expect(control).toBeVisible();
     const camera = (await control.boundingBox())!;
     const projection = (await story.getByRole("group", { name: "Observation projection" }).boundingBox())!;
-    expect(camera.y + camera.height + 8).toBeLessThanOrEqual(projection.y);
+    if (width === 1440) expect(projection.y + projection.height + 8).toBeLessThanOrEqual(camera.y);
+    else expect(camera.y + camera.height + 8).toBeLessThanOrEqual(projection.y);
     const caption = (await story.locator(".stage-readout").boundingBox())!;
     expect(
       camera.x >= caption.x + caption.width + 8 ||
