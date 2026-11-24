@@ -926,9 +926,9 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await expect(shortcuts.getByText("Draw a cross-section", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
 
-  const box = (await page.locator("canvas").boundingBox())!;
+  const box = (await page.locator("#globe-view").boundingBox())!;
   const rail = (await page.locator("#chrome-rail").boundingBox())!;
-  // The translucent panel covers part of the canvas. Draw across the exposed map.
+  // Use the visible map frame to keep the line in the fixture's populated region.
   const cx = (rail.x + rail.width + box.x + box.width) / 2;
   const cy = box.y + box.height * 0.42;
   const before = page.url();
@@ -2116,7 +2116,8 @@ for (const [w, h] of [
       const pick = document.querySelector(".pick")!.getBoundingClientRect();
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();
       const sheet = document.querySelector(".zone-panel")!.getBoundingClientRect();
-      const top = canvas.top;
+      const header = document.querySelector("#chrome-head")!.getBoundingClientRect();
+      const top = Math.max(canvas.top, header.bottom);
       const bottom = Math.min(canvas.bottom, sheet.top);
       return {
         marker: pick.top + pick.height / 2,

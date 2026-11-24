@@ -29,10 +29,10 @@ test("the drawn line becomes the depth chart hinge", async ({ page }) => {
   await page.goto("/#at=140,36,2.6&m=2&w=24");
   await waitForData(page);
   await expect(page.locator("[data-scale]")).toHaveCSS("opacity", "1");
-  const canvas = (await page.locator("canvas").boundingBox())!;
+  const frame = (await page.locator("#globe-view").boundingBox())!;
   const from = [
-    Math.round(canvas.x + canvas.width / 2 - 200),
-    Math.round(canvas.y + canvas.height * 0.42 + 100),
+    Math.round(frame.x + frame.width / 2 - 200),
+    Math.round(frame.y + frame.height * 0.42 + 100),
   ] as const;
   const to = [from[0] + 400, from[1] - 180] as const;
   const draw = async (start: readonly [number, number], end: readonly [number, number]): Promise<void> => {
@@ -69,8 +69,10 @@ test("the drawn line becomes the depth chart hinge", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
   const compact = (await page.locator("canvas").boundingBox())!;
+  const header = (await page.locator("#chrome-head").boundingBox())!;
+  const top = Math.max(compact.y, header.y + header.height);
   const x = compact.x + compact.width / 2;
-  const y = compact.y + compact.height * 0.42;
+  const y = top + (compact.y + compact.height - top) * 0.42;
   await draw([x - 95, y + 45], [x + 95, y - 45]);
   await expect(panel.getByText("Cross-section", { exact: true })).toBeVisible();
   expect(await hinges()).toHaveLength(1);

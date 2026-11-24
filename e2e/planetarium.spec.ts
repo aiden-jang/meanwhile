@@ -20,7 +20,9 @@ const earthPosition = (page: Page) =>
     const at = globe.state(),
       point = globe.project(at.lon, at.lat);
     const rect = document.querySelector("canvas")!.getBoundingClientRect();
-    return { y: point ? (point.y - rect.top) / rect.height : -1, ready: globe.skyReady() };
+    const header = document.querySelector("#chrome-head")!.getBoundingClientRect();
+    const top = Math.max(rect.top, header.bottom);
+    return { y: point ? (point.y - top) / (rect.bottom - top) : -1, ready: globe.skyReady() };
   });
 
 for (const [width, height] of [
