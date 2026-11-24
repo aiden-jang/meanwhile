@@ -22,6 +22,8 @@ type Visit = {
   nearby?: Nearby;
   city?: CityWeatherVisit;
   destination?: string | undefined;
+  findEntry?: number;
+  backToFind?: () => void;
 };
 type Camera = Pick<ReturnType<typeof useGlobeCamera>, "read" | "flyTo">;
 type Readings = ReturnType<typeof explorerReadings>;
@@ -38,6 +40,7 @@ export function useExplorerView(shared: Partial<Permalink>) {
     shared.radarPlace || shared.mark?.startsWith("cyclone:") ? true : undefined,
   );
   const [visit, setVisit] = useState<Visit>({});
+  const findEntries = useRef(0);
   const lastFree = useRef<ExploreSnapshot>();
   const chromeFloats = useFloatingChrome();
   const nearby = visit.nearby;
@@ -46,6 +49,8 @@ export function useExplorerView(shared: Partial<Permalink>) {
     nearby,
     city,
     destination: visit.destination,
+    findEntry: visit.findEntry,
+    backToFind: visit.backToFind,
     lastFree,
     chromeFloats,
     railOpen: visit.panel ?? railOpen,
@@ -67,6 +72,9 @@ export function useExplorerView(shared: Partial<Permalink>) {
     },
     open(panel: boolean | undefined, destination?: string) {
       setVisit({ panel, destination });
+    },
+    openFind(destination: string, backToFind: () => void) {
+      setVisit({ panel: true, destination, findEntry: ++findEntries.current, backToFind });
     },
     openLayers(map?: boolean) {
       if (map !== undefined && map !== preferredMap) setPreferredMap(map);
@@ -146,13 +154,24 @@ export function explorerEntrances(
   function find(target: ExploreTarget) {
     const place = target.kind === "place";
     const focus = place ? "place-title" : "layer-inspector-title";
+    const pose = { ...camera.read.current() };
+    const from = observatory.navigation.capture(pose);
+    const before = explorer.capture();
+    const reading = readings.capture();
+    const backToFind = () => {
+      observatory.checkpoint.current();
+      explorer.restore(before);
+      observatory.navigation.restore(from);
+      readings.restore(reading);
+      camera.flyTo.current(pose.lon, pose.lat, pose.zoom);
+    };
     observatory.navigation.requestExploreFocus(focus);
     observatory.browser.show("layers");
     present(true, () => {
       readings.clear();
       readings.locate(place ? target : null);
       readings.inspect(place ? null : target.id);
-      explorer.open(true, place ? target.name : target.id);
+      explorer.openFind(place ? target.name : target.id, backToFind);
     });
     if (place) camera.flyTo.current(target.lon, target.lat, 2.2);
     requestAnimationFrame(() => restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus }));
@@ -226,7 +245,22 @@ export function explorerEntrances(
       restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "inspect-earthquakes" }),
     );
   }
-  return { open, resume, find, storm, nearby, back, allLayers, pickDate, cityWeather, backToSky };
+  return {
+    open,
+    resume,
+    find,
+    storm,
+    nearby,
+    back,
+    allLayers,
+    pickDate,
+    cityWeather,
+    backToSky,
+    findReturn:
+      explorer.destination && explorer.backToFind
+        ? { destination: explorer.destination, back: explorer.backToFind }
+        : undefined,
+  };
 }
 
 export function useExplorerHistory(
@@ -241,7 +275,7 @@ export function useExplorerHistory(
   useSceneHistory({
     route: {
       ...observatory.navigation,
-      key: `${observatory.navigation.key}:${explorer.nearby?.record.id ?? explorer.city?.city.name ?? explorer.destination ?? ""}`,
+      key: `${observatory.navigation.key}:${explorer.findEntry ?? explorer.nearby?.record.id ?? explorer.city?.city.name ?? explorer.destination ?? ""}`,
       capture: () => {
         const camera = { ...readCamera.current() };
         const reading = readings.capture();

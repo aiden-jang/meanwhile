@@ -227,6 +227,24 @@
 .layer-inspector-heading {
   margin-bottom: 20px;
 }
+.layer-inspector-return {
+  position: sticky;
+  top: var(--explorer-tabs-height);
+  z-index: 2;
+}
+#chrome-rail[data-scrolled] .layer-inspector-return {
+  background: var(--reading-surface);
+}
+.layer-inspector-return .reading-back {
+  white-space: nowrap;
+}
+.layer-inspector-return h2 svg {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-inline-end: 0.3em;
+  color: var(--color-dim);
+}
 .layer-inspector-heading > button:first-child {
   min-height: 44px;
   margin-bottom: 8px;
@@ -239,6 +257,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+.layer-inspector-heading > div > p {
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  line-height: 1.5;
 }
 .layer-inspector-heading > div h2 {
   margin: 0;

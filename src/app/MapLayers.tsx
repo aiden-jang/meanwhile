@@ -107,6 +107,8 @@ export function MapLayers({
     },
   };
   const inspectingPlace = !!place.point;
+  const findReturn = navigation?.findReturn;
+  const findBack = findReturn?.destination === (layer ?? place.point?.name) ? findReturn?.back : undefined;
   const stormId = storm?.storm.id;
   const stormRadar = useStormRadarVisit(stormId);
   useReadingArrival(
@@ -180,6 +182,7 @@ export function MapLayers({
     event.preventDefault();
     event.stopPropagation();
     if (rewindPoint) closeRewind();
+    else if (findBack) findBack();
     else if (inspectingPlace) {
       place.close();
       document.getElementById("globe-view")?.focus({ preventScroll: true });
@@ -214,10 +217,14 @@ export function MapLayers({
         <PlaceInspection
           {...reports}
           point={place.point}
-          close={() => {
-            place.close();
-            document.getElementById("globe-view")?.focus({ preventScroll: true });
-          }}
+          backLabel={!layer && findBack ? "Back to Find" : undefined}
+          close={
+            (!layer && findBack) ||
+            (() => {
+              place.close();
+              document.getElementById("globe-view")?.focus({ preventScroll: true });
+            })
+          }
           selectQuake={onQuake}
           selectHazard={onHazard}
           radarAt={rewindAt}
@@ -235,14 +242,14 @@ export function MapLayers({
         </div>
       )}
       {layer && (
-        <div className="layer-inspector-heading">
-          <LayerInspectorHeading
-            layer={layer}
-            onBack={back}
-            enabled={controls.enabled[layer]}
-            disabled={disabled(layer)}
-            onToggle={(on) => controls.change(layer, on)}
-          />
+        <LayerInspectorHeading
+          layer={layer}
+          onBack={findBack ?? back}
+          backLabel={findBack ? "Back to Find" : "Back to layers"}
+          enabled={controls.enabled[layer]}
+          disabled={disabled(layer)}
+          onToggle={(on) => controls.change(layer, on)}
+        >
           {disabled(layer) ? (
             <p role="status">
               Return to live to view this layer. This source has no data for the selected archive.
@@ -257,7 +264,7 @@ export function MapLayers({
             !inspectingPlace &&
             controls.visible[layer] &&
             hasLayerExample(layer) && <LayerExample key={layer} layer={layer} />}
-        </div>
+        </LayerInspectorHeading>
       )}
       <LayerRadar
         {...{

@@ -125,15 +125,27 @@
 }
 
 #observatory-find {
+  --find-padding: 28px;
   width: min(560px, calc(100vw - 48px));
+  scroll-padding-block-start: 132px;
 }
 
-#observatory-find .saved-collection-heading {
-  flex-wrap: wrap;
+.find-toolbar {
+  position: sticky;
+  top: calc(-1 * var(--find-padding));
+  z-index: 2;
+  margin-inline: calc(-1 * var(--find-padding));
+  padding: 0 var(--find-padding) 8px;
+  background: var(--color-void);
+}
+
+.find-toolbar .saved-collection-heading {
+  position: static;
+  align-items: center;
 }
 
 #observatory-find .story-search {
-  margin-block: 0.75rem;
+  margin: 0;
 }
 
 .find-results {
@@ -186,6 +198,10 @@
 
 @media (max-width: 650px) {
   #observatory-find {
+    --find-padding: 20px;
     width: auto;
+  }
+  .find-toolbar {
+    top: -24px;
   }
 }

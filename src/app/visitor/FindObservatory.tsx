@@ -86,33 +86,38 @@ export function FindObservatory({
         onClose();
       }}
     >
-      <div className="saved-collection-heading">
-        <h2 id="observatory-find-title">Find</h2>
-        <button type="button" aria-label="Close Find" onClick={onClose}>
-          Close
-        </button>
-      </div>
-      <div className="story-search explorer-search">
-        <input
-          ref={search}
-          type="search"
-          autoComplete="off"
-          aria-label="Search places, stories and layers"
-          placeholder="Try Tokyo, Tonga or radar…"
-          value={query}
-          onInput={(event) => setQuery(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
-            event.preventDefault();
-            const options = Array.from(
-              dialog.current?.querySelectorAll<HTMLButtonElement>(".find-result:enabled") ?? [],
-            );
-            const exact = options.find(
-              (row) => row.dataset["findName"]?.toLowerCase() === query.trim().toLowerCase(),
-            );
-            (exact ?? options[0])?.click();
-          }}
-        />
+      <div className="find-toolbar">
+        <div className="saved-collection-heading">
+          <h2 id="observatory-find-title">Find</h2>
+          <button type="button" aria-label="Close Find" onClick={onClose}>
+            Close
+          </button>
+        </div>
+        <div className="story-search explorer-search">
+          <input
+            ref={search}
+            type="search"
+            autoComplete="off"
+            aria-label="Search places, stories and layers"
+            placeholder="Try Tokyo, Tonga or radar…"
+            value={query}
+            onInput={(event) => {
+              setQuery(event.currentTarget.value);
+              dialog.current?.scrollTo(0, 0);
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+              event.preventDefault();
+              const options = Array.from(
+                dialog.current?.querySelectorAll<HTMLButtonElement>(".find-result:enabled") ?? [],
+              );
+              const exact = options.find(
+                (row) => row.dataset["findName"]?.toLowerCase() === query.trim().toLowerCase(),
+              );
+              (exact ?? options[0])?.click();
+            }}
+          />
+        </div>
       </div>
       <p className="sr-only" role="status">
         {query.trim() ? `${count} ${count === 1 ? "result" : "results"}` : ""}
@@ -199,10 +204,9 @@ export function FindObservatory({
               type="button"
               className="find-result"
               key={place.name}
-              onClick={() => {
-                dialog.current?.close();
-                explore(place);
-              }}
+              data-find-name={place.name}
+              data-find-result={`place:${place.name}`}
+              onClick={() => choose(`place:${place.name}`, () => explore(place))}
             >
               <svg
                 viewBox="0 0 20 20"
@@ -256,10 +260,8 @@ export function FindObservatory({
               className="find-result"
               key={layer.id}
               data-find-name={layer.name}
-              onClick={() => {
-                dialog.current?.close();
-                explore(layer);
-              }}
+              data-find-result={`layer:${layer.id}`}
+              onClick={() => choose(`layer:${layer.id}`, () => explore(layer))}
             >
               <LayerIcon layer={layer.id} />
               <span>{layer.name}</span>

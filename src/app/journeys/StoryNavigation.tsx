@@ -348,6 +348,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           props.explorePaths.find(target);
           leaveStory();
         },
+        findReturn: props.explorePaths.findReturn,
         openRadar(at, map, trigger = "open-explorer-radar") {
           rememberOrigin(trigger);
           const pose = props.explorer.read();

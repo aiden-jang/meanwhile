@@ -98,6 +98,7 @@ function PlaceReadings(props: PlaceContextProps) {
 export function PlaceInspection({
   point,
   close,
+  backLabel,
   selectQuake,
   selectHazard,
   radarAt,
@@ -106,6 +107,7 @@ export function PlaceInspection({
 }: PlaceContextProps & {
   point: ExplorePoint;
   close: () => void;
+  backLabel?: string | undefined;
   selectQuake: (id: string) => void;
   selectHazard: (id: string) => void;
   radarAt?: number | undefined;
@@ -125,8 +127,8 @@ export function PlaceInspection({
             {coordinates}
           </p>
         </div>
-        <button type="button" onClick={close} aria-label="Close place readings">
-          Close
+        <button type="button" onClick={close} aria-label={backLabel ?? "Close place readings"}>
+          {backLabel ?? "Close"}
         </button>
       </header>
       <NearbyReports {...props} point={point} selectQuake={selectQuake} selectHazard={selectHazard} />

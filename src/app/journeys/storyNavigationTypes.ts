@@ -38,6 +38,7 @@ export type StoryNavigationValue = {
   browse: (focusSearch?: boolean) => void;
   explore: () => void;
   findTarget: (target: ExploreTarget) => void;
+  findReturn?: { destination: string; back: () => void } | undefined;
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;

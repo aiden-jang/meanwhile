@@ -98,17 +98,16 @@ export function ExplorerSidebar({
   const layerView = useRef<{ camera: ReturnType<typeof context.explorer.read>; flat: boolean } | null>(null);
   useLayoutEffect(() => {
     if (previous.current === browser.pane) return;
-    if (browser.pane === "stories")
+    if (browser.pane === "stories" && !context.views.observing)
       layerView.current = { camera: context.explorer.read(), flat: context.explorer.flat };
-    else if (layerView.current) {
-      context.explorer.restore(layerView.current.camera, layerView.current.flat);
-      layerView.current = null;
-    }
+    else layerView.current = null;
     const rail = document.getElementById("chrome-rail");
     if (rail) rail.scrollTop = scrolls.current[browser.pane];
     previous.current = browser.pane;
-  }, [browser.pane, context.explorer]);
+  }, [browser.pane, context.explorer, context.views.observing]);
   const select = (pane: "layers" | "stories") => {
+    if (pane === "layers" && browser.pane === "stories" && layerView.current)
+      context.explorer.restore(layerView.current.camera, layerView.current.flat);
     scrolls.current[browser.pane] = document.getElementById("chrome-rail")?.scrollTop ?? 0;
     browser.show(pane);
   };

@@ -127,6 +127,10 @@ test("Find goes directly to places and layers, while Explore and Back restore th
   ).toBeVisible();
   await search.press("Enter");
   await expect(place).toBeFocused();
+  await button("Back to Find").click();
+  await expect(search).toHaveValue("Tokyo");
+  await expect(dialog.getByRole("button", { name: "Tokyo", exact: true })).toBeFocused();
+  await dialog.getByRole("button", { name: "Tokyo", exact: true }).click();
   await button("Map").click();
   const camera = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
   await expect.poll(camera).toBe("139.65,35.68,2.2");
@@ -145,6 +149,9 @@ test("Find goes directly to places and layers, while Explore and Back restore th
   await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
   expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBe(layerPreferences);
   await page.goBack();
+  await expect(search).toHaveValue("Storm Radar");
+  await expect(dialog.getByRole("button", { name: "Storm radar", exact: true })).toBeFocused();
+  await button("Close Find").click();
   await expect(place).toBeVisible();
   await expect(find).toBeFocused();
   await expect.poll(camera).toBe("139.65,35.68,2.2");
@@ -163,6 +170,31 @@ test("Find goes directly to places and layers, while Explore and Back restore th
   await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
   await expect.poll(camera).toBe("139.65,35.68,2.2");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
+
+test("Find and layer returns stay in reach while scrolling on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", radar: "default", empty: true });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Find", exact: true }).click();
+  const find = page.getByRole("dialog", { name: "Find", exact: true });
+  const search = find.getByRole("searchbox");
+  await search.fill("earth");
+  await find.evaluate((panel) => (panel.scrollTop = panel.scrollHeight));
+  expect(await find.evaluate((panel) => panel.scrollTop)).toBeGreaterThan(0);
+  await expect(search).toBeInViewport({ ratio: 1 });
+  await find.getByRole("button", { name: "Close Find", exact: true }).click();
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
+  const radar = page.getByRole("button", { name: "Storm radar details", exact: true });
+  await radar.click();
+  const rail = page.locator("#chrome-rail");
+  await rail.evaluate((panel) => (panel.scrollTop = panel.scrollHeight));
+  expect(await rail.evaluate((panel) => panel.scrollTop)).toBeGreaterThan(0);
+  const back = rail.getByRole("button", { name: "Back to layers", exact: true });
+  await expect(back).toBeInViewport({ ratio: 1 });
+  await back.click();
+  await expect(radar).toBeFocused();
 });
 
 test("Comet Return restores the flat map and archive time after a local sky visit", async ({ page }) => {
@@ -540,7 +572,6 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect(reopenStories).toBeFocused();
   await reopenStories.click();
   await expect(stories).toBeFocused();
-  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await home.click();
 
   await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();

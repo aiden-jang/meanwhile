@@ -436,8 +436,10 @@ reachable controls and source disclosure.
 
 The landing’s All stories action opens Explore’s Stories catalogue. Find uses the same dialog across the
 landing, Explore and stories. It groups featured cities, stories, layers, journeys, saved readings and recent visits. City results
-open nearby readings and layer results open their full inspectors. Dismissing Find restores header focus
-and resumes playback if Find paused it. The catalogue’s own search remains scoped to the selected topic.
+open nearby readings and layer results open their full inspectors. Back to Find restores the query,
+selected result and scroll position. The search field and Close stay visible while results scroll.
+Dismissing Find restores header focus and resumes playback if Find paused it. The catalogue’s own
+search remains scoped to the selected topic.
 Header Explore restores the last free-explore camera and projection and opens the Layers list. Contextual
 Back returns to the story, panel or reading that opened the current view.
 Older catalogue links also resolve to Explore. Earth, Below the Surface and After Dark filter

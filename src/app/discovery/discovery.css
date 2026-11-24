@@ -349,10 +349,16 @@
   background: var(--color-deck);
 }
 .place-inspection header {
+  position: sticky;
+  top: var(--explorer-tabs-height);
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: start;
   gap: 8px;
+}
+#chrome-rail[data-scrolled] .place-inspection header {
+  background: var(--color-deck);
 }
 .place-inspection h2 {
   color: var(--color-ink);
@@ -371,6 +377,7 @@
   min-width: 44px;
   margin: -8px -4px 0 0;
   font-size: var(--text-caption);
+  white-space: nowrap;
 }
 .place-inspection :is(li button, .place-sky-link) {
   width: 100%;
