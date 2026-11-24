@@ -310,7 +310,7 @@
 
 @media (min-width: 900px) and (min-height: 550px) {
   .zones:has(.fixed-journey[data-water-step]) .camera-recenter {
-    top: 96px;
+    top: calc(var(--scene-top-bleed) + 96px);
     right: clamp(16px, 2.3vw, 34px);
   }
 }

@@ -758,6 +758,9 @@
   top: calc(-1 * var(--scene-top-bleed));
   height: calc(100% + var(--scene-top-bleed));
 }
+.zone-canvas .globe-unavailable {
+  inset-block-start: var(--scene-top-bleed);
+}
 
 /* Controls stay neutral so the event ramp remains the only signal with hue. */
 .zone-head {

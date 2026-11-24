@@ -315,7 +315,7 @@
   }
 
   .zones:has([data-float-dive]) .camera-recenter {
-    top: 8px;
+    top: calc(var(--scene-top-bleed) + 8px);
   }
   .observatory-stage[data-stage="float"] .stage-ident {
     display: none;
