@@ -800,7 +800,7 @@
 }
 .zones > .explorer-fold {
   position: absolute;
-  z-index: 2;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -834,6 +834,9 @@
   }
   .zones > .explorer-fold .explorer-fold-chevron {
     transform: translateY(2px) rotate(135deg);
+  }
+  .zones:has(> .zone-panel:not([data-open="false"])) > .explorer-fold {
+    visibility: hidden;
   }
   .frame[data-presentation="explore"] .zones:has(#chrome-rail[hidden]) {
     grid-template-rows: minmax(0, 1fr) var(--credit-space, 60px);

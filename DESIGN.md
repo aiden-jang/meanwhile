@@ -312,6 +312,7 @@ category buttons, search fields and story rows.
 The phone instrument strip groups attribution, sources and projection at the lower edge of the world.
 A chevron in the panel header collapses the sidebar or sheet. The labeled restore button stays at
 the former panel edge on desktop and above the footer at the base of the world on phones.
+On phones, a pinned event reading temporarily takes that space. Closing it brings back the button.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
 visibility switches and details controls. Coverage descriptions live in the inspector; loading and

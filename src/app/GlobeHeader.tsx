@@ -44,11 +44,11 @@ export function SkipControls({ observing, railShown }: { observing: boolean; rai
       href={observing ? "#observatory-intro" : "#chrome-rail"}
       onClick={(event) => {
         event.preventDefault();
-        document
-          .querySelector<HTMLElement>(
-            observing ? "#observatory-intro" : railShown ? "#chrome-rail" : "#explorer-fold",
-          )
-          ?.focus();
+        const controls = document.querySelector<HTMLElement>(
+          observing ? "#observatory-intro" : railShown ? "#chrome-rail" : "#explorer-fold",
+        );
+        if (controls && getComputedStyle(controls).visibility !== "hidden") controls.focus();
+        else document.querySelector<HTMLElement>(".zone-panel:not([data-open=false]) button")?.focus();
       }}
     >
       Skip to controls

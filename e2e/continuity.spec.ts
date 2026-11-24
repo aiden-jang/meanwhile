@@ -593,6 +593,35 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
+test("a pinned phone reading leaves room for its own controls while Layers is folded", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, {
+    presentation: "explore",
+    usgs: [
+      {
+        id: "uspinned01",
+        properties: { mag: 4.2, place: "Channel Islands, California", time: Date.now() - 120_000 },
+        geometry: { coordinates: [-119.75, 34, 20] },
+      },
+    ],
+  });
+  await page.addInitScript(() => localStorage.setItem("eif.railOpen", "0"));
+  await page.goto("/#v=explore&at=-119,34,1&m=2&w=24&s=usgs&e=usgs:uspinned01");
+  const reading = page.getByRole("complementary", { name: "Pinned earthquake" });
+  await expect(reading).toBeVisible();
+  const reopen = page.locator("#explorer-fold");
+  await expect(reopen).toBeHidden();
+  const close = reading.getByRole("button", { name: "Close", exact: true });
+  await page.getByRole("link", { name: "Skip to controls" }).press("Enter");
+  await expect(close).toBeFocused();
+  await close.press("Enter");
+  await expect(reading).toBeHidden();
+  await expect(reopen).toBeInViewport({ ratio: 1 });
+  await reopen.click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+});
+
 test("Find restores a selected story result and the exact map on either Back action", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
