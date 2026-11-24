@@ -294,9 +294,6 @@
     }
     .observatory-sidebar {
       --observatory-inline: 24px;
-      border-top: 1px solid var(--color-hairline);
-      border-radius: 20px 20px 0 0;
-      background: var(--color-deck);
     }
     .observatory-intro {
       align-self: stretch;

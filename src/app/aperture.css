@@ -192,11 +192,21 @@
     border-radius: 10px;
   }
 }
-.frame[data-presentation="explore"] #chrome-rail,
-.observatory-intro:has(> .detail-panel-heading) {
-  --explorer-surface: color-mix(in srgb, var(--color-deck) 85%, var(--color-void));
-  --explorer-edge: color-mix(in srgb, var(--explorer-surface) 60%, transparent);
-  background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 40px), var(--explorer-edge));
+.frame:not([data-landing]) :where(#chrome-rail, .observatory-sidebar) {
+  --reading-surface: color-mix(in srgb, var(--color-deck) 85%, var(--color-void));
+  --reading-sheet: linear-gradient(
+    color-mix(in srgb, var(--reading-surface) 90%, transparent),
+    var(--reading-surface) 52%
+  );
+  background: linear-gradient(
+    90deg,
+    var(--reading-surface) 28%,
+    color-mix(in srgb, var(--reading-surface) 72%, transparent) 61%,
+    color-mix(in srgb, var(--reading-surface) 36%, transparent) calc(100% - 22px),
+    transparent
+  );
+}
+.frame[data-presentation="explore"] #chrome-rail {
   --explore-scroll-thumb: color-mix(in srgb, var(--color-faint) 16%, transparent);
   scrollbar-color: var(--explore-scroll-thumb) transparent;
 }
@@ -228,29 +238,29 @@
   }
 }
 .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
-  background: var(--explorer-surface);
+  background: var(--reading-surface);
 }
 @media (min-width: 900px) {
-  .frame[data-presentation="explore"] #chrome-rail,
-  .observatory-intro:has(> .detail-panel-heading) {
+  .frame[data-presentation="explore"] #chrome-rail {
     mask-image: linear-gradient(#000 calc(100% - 10px), transparent);
-    background: linear-gradient(
-      90deg,
-      var(--explorer-surface) 28%,
-      color-mix(in srgb, var(--explorer-surface) 72%, transparent) 61%,
-      color-mix(in srgb, var(--explorer-surface) 36%, transparent) calc(100% - var(--explorer-pad)),
-      transparent
-    );
+  }
+}
+@media (min-width: 900px) and (min-height: 621px) {
+  .frame:not([data-landing]) .observatory-sidebar {
+    background-position: 24px 20px;
+    background-size: calc(100% - 24px) calc(100% - 74px);
+    background-repeat: no-repeat;
   }
 }
 @media (max-width: 767px) {
-  .frame[data-presentation="explore"] #chrome-rail,
-  .observatory-intro:has(> .detail-panel-heading) {
-    background: linear-gradient(
-      color-mix(in srgb, var(--explorer-surface) 90%, transparent),
-      var(--color-void) 52%
-    );
-    border-top-color: var(--color-hairline);
+  .frame:not([data-landing]) :where(#chrome-rail) {
+    background: var(--reading-sheet);
+  }
+}
+@media (max-width: 599px), (max-width: 899px) and (min-height: 621px) {
+  .frame:not([data-landing]) :where(.observatory-sidebar) {
+    background: var(--reading-sheet);
+    border-radius: 16px 16px 0 0;
   }
 }
 

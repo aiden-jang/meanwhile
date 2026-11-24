@@ -150,7 +150,6 @@
     --explorer-pad: 22px;
     margin: 20px 0 6px 24px;
     padding: 16px var(--explorer-pad) 24px;
-    border-radius: 10px;
     scrollbar-color: color-mix(in srgb, var(--color-faint) 16%, transparent) transparent;
   }
 }
@@ -158,10 +157,6 @@
 @media (max-width: 767px) {
   .detail-panel-heading h2 {
     font-size: clamp(28px, 7vw, 34px);
-  }
-
-  .observatory-sidebar:has(> .observatory-intro > .detail-panel-heading) {
-    border-radius: 16px 16px 0 0;
   }
 
   .observatory-intro:has(> .detail-panel-heading) {

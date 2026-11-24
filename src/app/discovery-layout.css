@@ -64,7 +64,7 @@
     inset-inline: 0;
     top: 100%;
     height: 8px;
-    background: linear-gradient(var(--explorer-surface), transparent);
+    background: linear-gradient(var(--reading-surface), transparent);
     pointer-events: none;
     content: "";
   }
@@ -83,7 +83,7 @@
     align-items: center;
     gap: 6px;
     padding-block: 3px 5px;
-    background: var(--explorer-surface);
+    background: var(--reading-surface);
   }
   #explorer-stories .story-search-line:has(.story-journey-toggle) {
     grid-template-columns: minmax(0, 1fr) auto auto;

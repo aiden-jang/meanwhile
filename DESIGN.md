@@ -302,14 +302,16 @@ In Explore, Layers and Stories share the existing rail and canvas. Changing tabs
 projection, camera, playback or visibility. Scene categories filter Stories without taking the visitor
 back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
 The camera reserves room for the rail. At 900px and above, the same canvas extends behind much of
-the rail while its optical centre stays fixed on globe and map. The panel grades from a dark
-tint behind labels to a clear edge without an outer stroke. The tabs and story filters share the
-panel surface at rest and take on a solid tint while content moves beneath them. Explore's keyboard
-focus uses a softer two-pixel outline, padded around tab labels and inset on category buttons, search
-fields and story rows.
-The phone sheet keeps a deeper tint with a soft top edge. Its instrument strip groups attribution,
-sources and projection at the lower edge of the world. A chevron in the panel header collapses
-the sidebar or sheet. The restore button sits beside the projection controls when the panel is folded.
+the rail while its optical centre stays fixed on globe and map. Layers, Stories, their inspectors
+and story readings use one dark surface. Side panels fade toward the world. Stacked sheets soften
+the top edge and keep a stronger tint beneath the controls. Story loading and recovery use the
+same outer surface. The landing introduction stays open over the scene. The tabs and story
+filters share the panel surface at rest and take on a solid tint while content moves beneath them.
+Explore's keyboard focus uses a softer two-pixel outline, padded around tab labels and inset on
+category buttons, search fields and story rows.
+The phone instrument strip groups attribution, sources and projection at the lower edge of the world.
+A chevron in the panel header collapses the sidebar or sheet. The restore button sits beside the
+projection controls when the panel is folded.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
 visibility switches and details controls. Coverage descriptions live in the inspector; loading and

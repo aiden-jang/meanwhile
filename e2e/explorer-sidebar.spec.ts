@@ -2,6 +2,42 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`Explore and story readings share a panel surface at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page, { presentation: "fresh" });
+    await page.goto("/");
+    const reading = page.locator(".observatory-sidebar:visible");
+    await expect(reading).toHaveCSS("background-image", "none");
+
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
+    const rail = page.locator("#chrome-rail");
+    await expect(rail).toHaveCSS("background-image", /^linear-gradient\(/);
+    const surface = await rail.evaluate((node) => getComputedStyle(node).backgroundImage);
+    await rail.getByRole("button", { name: "Storm radar details", exact: true }).click();
+    await expect(rail).toHaveCSS("background-image", surface);
+    await rail.getByRole("tab", { name: "Stories", exact: true }).click();
+    await expect(rail).toHaveCSS("background-image", surface);
+
+    for (const [id, region] of [
+      ["sky", "Tonight’s Sky"],
+      ["float", "Float Dive"],
+      ["tonga", "Tonga’s shockwave"],
+      ["katrina", "Eye of the Storm"],
+    ] as const) {
+      await page.goto(`/#v=observe&story=${id}`);
+      if (id === "sky") await expect(reading.locator("[data-tonight]")).toBeVisible();
+      else await expect(page.getByRole("region", { name: region, exact: true })).toBeVisible();
+      await expect(reading).toHaveCSS("background-image", surface);
+      await expect(reading.locator(".observatory-intro")).toHaveCSS("background-image", "none");
+    }
+  });
+}
+
 test("today’s feed discovery restores its disclosure and trigger after a story", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });

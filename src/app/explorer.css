@@ -74,10 +74,8 @@
 #chrome-rail {
   --explorer-pad: clamp(20px, 2.35vw, 38px);
   --explorer-tabs-height: 60px;
-  --explorer-surface: var(--color-void);
   display: block;
   padding: 0 var(--explorer-pad) var(--explorer-pad);
-  background: var(--explorer-surface);
   scroll-padding-block: 72px 24px;
   scrollbar-gutter: stable;
   overflow-anchor: none;
@@ -530,7 +528,6 @@
   }
   #chrome-rail {
     --explorer-pad: 20px;
-    --explorer-surface: var(--color-deck);
     scroll-padding-top: 88px;
     padding-bottom: max(64px, calc(44px + env(safe-area-inset-bottom)));
     border-radius: 16px 16px 0 0;
