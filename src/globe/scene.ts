@@ -152,10 +152,8 @@ export interface Globe {
 export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setClearAlpha(0);
-
   const scene = new Scene();
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
-
   /* Don't spin the world to move the view; orbit the camera. Every question here is geographic, and a
      spun world means undoing a rotation before any of them can be answered. */
   // Everything with a location, so the flat map can be drawn more than once. Keep the atmosphere out of
@@ -347,6 +345,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const modern = [fill, coast, plateLines, plateEdge];
   const emphasis = createLayerEmphasis(events, marks, rings, night);
   const presentation = createScenePresentation(spin, catalogue, controls, lights, dayline, canvas, emphasis);
+  const prepareRaster = () => presentation.prepareRaster(renderer, camera, scene);
+  canvas.addEventListener("prepare-observation-raster", prepareRaster);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
   const resolution = createRenderResolution(renderer, [events, slab, starfield, planets], canvas);
@@ -547,7 +547,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // `side` is part of the program cache key, so three.js needs telling it changed.
         fillMaterial.needsUpdate = true;
       }
-
       const period = mapRepeatSpacing(morph.value);
       mapBase.visible = morph.value === 1;
       if (!period) {
@@ -569,6 +568,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       world.position.x = 0;
     },
     dispose: () => {
+      canvas.removeEventListener("prepare-observation-raster", prepareRaster);
       presentation.dispose();
       inspection.dispose();
       eclipseTrack.dispose();

@@ -623,7 +623,14 @@ test("Find opens an exact journey and the folded Stories panel keeps its identit
   await expect(page.getByRole("region", { name: "Current journey", exact: true })).toContainText(
     "Ice in Motion",
   );
-  await button("Back to stories").click();
+  await button("Back to Find").click();
+  await expect(search).toHaveValue("Ice in Motion");
+  await expect(
+    page
+      .getByRole("region", { name: "Journeys", exact: true })
+      .getByRole("button", { name: /^Ice in Motion/ }),
+  ).toBeFocused();
+  await button("Close Find").click();
   await expect(button("Find")).toBeFocused();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });

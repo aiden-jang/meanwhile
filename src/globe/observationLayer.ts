@@ -16,6 +16,9 @@ import {
   SRGBColorSpace,
   Texture,
   Vector3,
+  type PerspectiveCamera,
+  type Scene,
+  type WebGLRenderer,
 } from "three";
 import type { GeoPoint, ObservationFrame, ObservationView } from "../app/observations/types";
 import { DEG, toVec3 } from "../geo/sphere";
@@ -73,7 +76,6 @@ function wrapSegment(a: GeoPoint, b: GeoPoint, draw: (p: GeoPoint, q: GeoPoint) 
   draw(a, at);
   draw({ ...at, lon: -edge }, b);
 }
-
 type Raster = NonNullable<ObservationFrame["raster"]>;
 
 export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: Raster["corners"]) {
@@ -219,6 +221,7 @@ export function createObservationLayer(morph: { value: number }) {
     new BufferGeometry(),
     new MeshBasicMaterial({
       side: DoubleSide,
+      forceSinglePass: true,
       transparent: true,
       depthWrite: false,
       toneMapped: false,
@@ -278,6 +281,7 @@ export function createObservationLayer(morph: { value: number }) {
   let reveal = 0;
   let travel = 0;
   let departure = 0;
+  let rasterPrepared = false;
 
   function set(view: ObservationView | null) {
     if (view === prior) return;
@@ -348,10 +352,18 @@ export function createObservationLayer(morph: { value: number }) {
     raster.visible = !!image;
     prior = view;
   }
-
   return {
     object,
     set,
+    prepareRaster(renderer: WebGLRenderer, camera: PerspectiveCamera, scene: Scene) {
+      if (rasterPrepared || raster.material.map || renderer.getContext().isContextLost()) return;
+      rasterPrepared = true;
+      const placeholder = Object.assign(new Texture(), { colorSpace: SRGBColorSpace });
+      raster.material.map = placeholder;
+      renderer.compile(raster, camera, scene);
+      raster.material.map = null;
+      placeholder.dispose();
+    },
     foldCurtain: curtain.fold,
     dispose() {
       set(null);

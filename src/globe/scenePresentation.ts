@@ -72,11 +72,16 @@ export function createScenePresentation(
   let observationCrossing: string | undefined;
   let radarTarget: RadarView["target"] | undefined;
   let returnCamera: ReturnType<Controls["state"]> | undefined;
-
   const projection = { value: 0 };
   const arrival = createObservationArrival(controls, canvas);
   const radarReveal = createRadarReveal(controls, canvas);
   let observations: ReturnType<typeof createObservationLayer> | undefined;
+  function observationLayer() {
+    if (observations) return observations;
+    observations = createObservationLayer(projection);
+    spin.add(observations.object);
+    return observations;
+  }
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
   let shadow: ReturnType<typeof createShadowChase> | undefined;
   let chase: ObservationView["shadow"];
@@ -175,7 +180,6 @@ export function createScenePresentation(
       (!!lens && !holdingGeography && lensReveal < 1)
     );
   }
-
   function set(mode: GlobePresentation, geography: readonly Object3D[], cutawayCamera = false) {
     const mapLayers =
       mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
@@ -272,11 +276,7 @@ export function createScenePresentation(
       (weather?.lightning
         ? { kind: "observation" as const, frame: weather.lightning, image: null, target: weather.target }
         : null);
-    if (overlay && !observations) {
-      observations = createObservationLayer(projection);
-      spin.add(observations.object);
-    }
-    observations?.set(overlay);
+    (overlay ? observationLayer() : observations)?.set(overlay);
     canvas.toggleAttribute("data-observation-curtain", !!overlay?.curtain);
     if (!overlay?.curtain) canvas.removeAttribute("data-curtain-folding");
     chase = observation?.shadow;
@@ -338,8 +338,9 @@ export function createScenePresentation(
     radar?.setImage(radarFrame?.image ?? null, isGlobalRadar(radarFrame?.region));
     dayline.value = showDayline ? lights.reveal.value : 0;
   }
-
   return {
+    prepareRaster: (...params: Parameters<ReturnType<typeof createObservationLayer>["prepareRaster"]>) =>
+      observationLayer().prepareRaster(...params),
     set,
     step,
     foldCurtain(complete: () => void) {

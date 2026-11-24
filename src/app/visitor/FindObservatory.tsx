@@ -49,7 +49,9 @@ export function FindObservatory({
   const { places, stories, layers, journeys } = results;
   const offersKilauea = stories.some(({ id }) => id === "kilauea");
   useEffect(() => {
-    if (offersKilauea) void loadKilauea().catch(() => {});
+    if (!offersKilauea) return;
+    void loadKilauea().catch(() => {});
+    document.querySelector("#globe-view canvas")?.dispatchEvent(new Event("prepare-observation-raster"));
   }, [offersKilauea]);
   const typing = !!query.trim();
   const count =
