@@ -220,7 +220,7 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   const allStories = page
     .getByRole("group", { name: "Story categories", exact: true })
     .getByRole("button", { name: "All topics", exact: true });
-  await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
+  await page.getByRole("button", { name: "More stories", exact: true }).click();
   const entry = page.getByRole("button", { name: "Iceberg Drift", exact: true });
   await entry.click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();

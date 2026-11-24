@@ -43,7 +43,10 @@ test("the first Float Dive completes its cinematic rise without stretching playb
   await page.getByRole("button", { name: "All stories", exact: true }).click();
   await page.locator("#open-story-float").click();
   const panel = page.getByRole("region", { name: "Float Dive", exact: true });
-  await panel.getByRole("button", { name: "Follow the rise", exact: true }).click();
+  const play = page
+    .getByRole("group", { name: "Float Dive playback" })
+    .getByRole("button", { name: "Play", exact: true });
+  await play.press("Enter");
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeFocused();
   await expect(panel.getByRole("region", { name: "What this profile showed" })).toBeVisible({
     timeout: 20_000,
@@ -69,7 +72,8 @@ for (const width of [1440, 390]) {
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await page.getByRole("button", { name: "All stories", exact: true }).click();
-    const entry = page.locator("#open-story-float");
+    await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
+    const entry = page.locator("#search-story-float");
     await entry.click();
     const panel = page.getByRole("region", { name: "Float Dive", exact: true });
     await expect(panel.getByRole("heading", { name: "Below the blue." })).toBeVisible();
@@ -95,8 +99,9 @@ for (const width of [1440, 390]) {
     expect(kept.observation.salinity).toBe(34.928);
     const atDeparture = await page.getByRole("slider", { name: "Ascent depth" }).inputValue();
     await panel.getByRole("button", { name: "Return to your place", exact: true }).click();
-    await expect(page.locator("#open-story-float")).toHaveCount(0);
-    await expect(page.locator(".story-continue")).toBeFocused();
+    await expect(entry).toBeFocused();
+    await page.getByRole("searchbox", { name: "Find a story" }).fill("");
+    await expect(page.locator("#open-story-float")).toHaveCount(1);
     await expect(page.locator(".story-continue")).toContainText("Continue Float Dive");
     await page.locator(".story-continue").click();
     await expect(page.getByRole("slider", { name: "Ascent depth" })).toHaveValue(atDeparture);

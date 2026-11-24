@@ -1,4 +1,4 @@
-import type { PanelReturn } from "./panelReturn";
+import { catalogueRowOffset, type PanelReturn } from "./panelReturn";
 
 interface HistoryPanel extends PanelReturn {
   query: string;
@@ -14,7 +14,13 @@ export function readHistoryPanel(): HistoryPanel | undefined {
     typeof value.focus === "string" &&
     typeof value.query === "string"
   )
-    return { scrollTarget: value.scrollTarget, scroll: value.scroll, focus: value.focus, query: value.query };
+    return {
+      scrollTarget: value.scrollTarget,
+      scroll: value.scroll,
+      focus: value.focus,
+      query: value.query,
+      rowOffset: Number.isFinite(value.rowOffset) ? value.rowOffset : undefined,
+    };
   return undefined;
 }
 
@@ -22,12 +28,15 @@ export function captureHistoryPanel(): HistoryPanel {
   const scrollTarget = document.querySelector('[data-presentation="explore"]')
     ? "chrome-rail"
     : "observatory-intro";
+  const panel = document.getElementById(scrollTarget);
+  const focus = document.activeElement?.closest("#observatory-find")
+    ? "open-observatory-find"
+    : (document.activeElement?.id ?? "");
   return {
     scrollTarget,
-    scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
-    focus: document.activeElement?.closest("#observatory-find")
-      ? "open-observatory-find"
-      : (document.activeElement?.id ?? ""),
+    scroll: panel?.scrollTop ?? 0,
+    focus,
+    rowOffset: catalogueRowOffset(panel, focus),
     query: document.querySelector<HTMLInputElement>("#story-search-input")?.value ?? "",
   };
 }

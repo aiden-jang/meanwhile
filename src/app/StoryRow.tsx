@@ -8,12 +8,14 @@ export function StoryRow({
   buttonId,
   ready,
   unavailable,
+  caption,
   open,
 }: {
   story: SearchStory;
   buttonId: string;
   ready: boolean;
   unavailable: string | null | undefined;
+  caption?: string;
   open: () => void;
 }): JSX.Element {
   return (
@@ -24,13 +26,25 @@ export function StoryRow({
         type="button"
         aria-describedby={`${buttonId}-note`}
         disabled={!ready || !!unavailable}
-        onClick={open}
+        onClick={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
+          open();
+        }}
       >
         {story.title}
       </button>
       <small id={`${buttonId}-note`}>
-        <span className="sr-only">{storyKind(story.id)}</span>
-        <span className="story-promise">{unavailable ?? story.summary}</span>
+        {caption ? (
+          <>
+            <span className="story-promise">{unavailable ?? caption}</span>
+            {!unavailable && <span className="sr-only">{story.summary}</span>}
+          </>
+        ) : (
+          <>
+            <span className="sr-only">{storyKind(story.id)}</span>
+            <span className="story-promise">{unavailable ?? story.summary}</span>
+          </>
+        )}
       </small>
       <div className="story-row-preview">
         <StoryPreviewButton id={story.id} title={story.title} triggerId={buttonId} />

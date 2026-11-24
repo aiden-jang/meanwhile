@@ -181,12 +181,11 @@ test("Float Dive returns through the waterline to the same globe and holds the m
         }
       ).__globe.state(),
     );
-  const feature = page.locator("#open-featured-float,#open-story-float").first();
+  const feature = page.locator("#open-story-float");
   await expect(feature).toBeEnabled();
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const origin = await read();
   await feature.click();
-  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
   const slider = page.getByRole("slider", { name: "Ascent depth" });
   await slider.press("End");
   await slider.press("ArrowLeft");

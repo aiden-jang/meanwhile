@@ -10,6 +10,7 @@ import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
 import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
 import { inStoryTopic, searchStories } from "./storyIndex";
+import { StoryCatalogue } from "./StoryCatalogue";
 import "./stories.css";
 
 type Observatory = ReturnType<typeof useObservatory>;
@@ -39,7 +40,7 @@ export function StoriesDrawer({
   const navigation = useStoryNavigation();
   const { expanded, expand } = browse;
   const key = scene ?? "all";
-  const all = expanded === key;
+  const all = scene !== null && expanded === key;
   const featured = featuredStoryId(scene);
   const [journeysOpen, setJourneysOpen] = useState<boolean>();
   const showJourneys = !scene && !deck.query.trim() && (journeysOpen ?? !!navigation?.journeyProgress);
@@ -63,12 +64,15 @@ export function StoriesDrawer({
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
   if (!visible) return null;
   return (
-    <StoryPreview scope={`${key}:${deck.query}`} region={deck.query.trim() ? undefined : scene}>
+    <StoryPreview
+      scope={`${key}:${deck.query}`}
+      region={deck.query.trim() || (scene === null && !navigation?.previewMap) ? undefined : scene}
+    >
       <div
         ref={container}
         id="stories-panel"
         className="stories-drawer"
-        data-full={all || undefined}
+        data-full={scene === null || all || undefined}
         aria-label="Story catalogue"
         role="region"
         onClickCapture={onSelect}
@@ -140,64 +144,74 @@ export function StoriesDrawer({
           {!deck.query.trim() && !showJourneys && (
             <>
               {sceneEntry}
-              {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
-              <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
-                <h3 className={all ? undefined : "sr-only"} ref={fullHeading} tabIndex={all ? -1 : undefined}>
-                  {all ? "All stories" : "Start exploring"}
-                </h3>
-                <div>
-                  {entries.map((story) => {
-                    const id = storyButtonId(story.id);
-                    return (
-                      <StoryRow
-                        key={story.id}
-                        story={story}
-                        buttonId={id}
-                        ready={ready}
-                        unavailable={navigation?.unavailable(story.id)}
-                        open={() => navigation?.open(story.id, id, !!scene)}
-                      />
-                    );
-                  })}
-                </div>
-                <div className="story-browse-footer">
-                  <button
-                    className="story-browse-all"
-                    type="button"
-                    aria-expanded={all}
-                    onClick={() => {
-                      if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
-                      expand(all ? null : key);
-                      requestAnimationFrame(() => {
-                        rail()?.scrollTo({ top: all ? selectionScroll.current : 0 });
-                        if (!all) fullHeading.current?.focus({ preventScroll: true });
-                      });
-                    }}
-                  >
-                    {all ? "Show highlights" : `View all ${browseStories(scene, true).length} stories`}
-                  </button>
-                  <button
-                    type="button"
-                    className="story-library-toggle"
-                    id="open-catalogue-saved"
-                    aria-haspopup="dialog"
-                    onClick={(event) => {
-                      event.currentTarget.focus({ preventScroll: true });
-                      document.getElementById("open-saved-observations")?.click();
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                      <path
-                        d="M12 5v15m0-15C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                    </svg>
-                    Saved &amp; recent
-                  </button>
-                </div>
-              </section>
+              {scene === null ? (
+                <StoryCatalogue ready={ready} recent={recent} />
+              ) : (
+                <>
+                  {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
+                  <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
+                    <h3
+                      className={all ? undefined : "sr-only"}
+                      ref={fullHeading}
+                      tabIndex={all ? -1 : undefined}
+                    >
+                      {all ? "All stories" : "Start exploring"}
+                    </h3>
+                    <div>
+                      {entries.map((story) => {
+                        const id = storyButtonId(story.id);
+                        return (
+                          <StoryRow
+                            key={story.id}
+                            story={story}
+                            buttonId={id}
+                            ready={ready}
+                            unavailable={navigation?.unavailable(story.id)}
+                            open={() => navigation?.open(story.id, id, !!scene)}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="story-browse-footer">
+                      <button
+                        className="story-browse-all"
+                        type="button"
+                        aria-expanded={all}
+                        onClick={() => {
+                          if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
+                          expand(all ? null : key);
+                          requestAnimationFrame(() => {
+                            rail()?.scrollTo({ top: all ? selectionScroll.current : 0 });
+                            if (!all) fullHeading.current?.focus({ preventScroll: true });
+                          });
+                        }}
+                      >
+                        {all ? "Show highlights" : `View all ${browseStories(scene, true).length} stories`}
+                      </button>
+                      <button
+                        type="button"
+                        className="story-library-toggle"
+                        id="open-catalogue-saved"
+                        aria-haspopup="dialog"
+                        onClick={(event) => {
+                          event.currentTarget.focus({ preventScroll: true });
+                          document.getElementById("open-saved-observations")?.click();
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                          <path
+                            d="M12 5v15m0-15C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                        Saved &amp; recent
+                      </button>
+                    </div>
+                  </section>
+                </>
+              )}
               {discoveries && (
                 <details
                   className="story-today"

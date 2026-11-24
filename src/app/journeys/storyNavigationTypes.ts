@@ -12,6 +12,7 @@ export interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
   camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
   scroll: number;
+  rowOffset?: number | undefined;
   scrollTarget: string;
   collection?: CollectionPosition;
   find?: FindPosition;

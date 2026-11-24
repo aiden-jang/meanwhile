@@ -1,65 +1,91 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds } from "./feeds";
 
-for (const width of [1440, 390]) {
-  test(`the landing and curated catalogue each have one clear goal at ${width}px @dev`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
+for (const width of [1440, 320]) {
+  test(`the story picks open directly and restore the catalogue at ${width}px`, async ({
+    page,
+    hasTouch,
+  }) => {
+    await page.setViewportSize({ width, height: width === 320 ? 568 : 900 });
     await installFeeds(page, { presentation: "fresh", empty: true });
-    await page.route(/ovation_aurora_latest\.json/, (route) => route.abort());
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const browse = page.getByRole("button", { name: "All stories", exact: true });
-    await expect(browse).toBeVisible();
-    await expect(page.getByRole("group", { name: "Explore by subject" })).toBeVisible();
-    await expect(page.locator(".story-continue")).toHaveCount(0);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
-    if (process.env["EIF_CAPTURE_UI"])
-      await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
-    await browse.click();
+    await page.getByRole("button", { name: "All stories", exact: true }).click();
     await expect(page.getByRole("tab", { name: "Stories", exact: true })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(1);
+    const catalogue = page.getByRole("region", { name: "Story catalogue", exact: true });
+    const search = catalogue.getByRole("searchbox", { name: "Find a story" });
+    const picks = catalogue.getByRole("region", { name: "Start here" });
+    const more = catalogue.getByRole("heading", { name: "More stories", exact: true });
+    await expect(catalogue).toBeVisible();
     await expect(page.locator("#observatory-intro")).toHaveCount(0);
-    await expect(page.locator("#open-featured-tonga")).toHaveAccessibleName(
-      "Follow the wave: Tonga’s shockwave",
-    );
-    const entry = page.locator("#open-story-float");
-    await expect(entry).toHaveAccessibleName("Float Dive");
-    await expect(entry).toHaveAccessibleDescription(/Measured profile/);
-    await entry.click();
-    await expect(page.getByRole("button", { name: "Follow the rise", exact: true })).toBeInViewport();
-    await expect(page.getByRole("complementary", { name: "About this shared view" })).toBeHidden();
-    await page.getByRole("button", { name: "Back to stories", exact: true }).click();
-    await expect(entry).toBeHidden();
-    await expect(page.locator(".story-continue")).toContainText("Float Dive");
-    await expect(page.locator(".story-continue")).toBeFocused();
-    await page.getByRole("tab", { name: "Layers", exact: true }).click();
-    await openStories(page, "search");
-    await expect(page.locator(".story-choice > button")).toHaveText([
+    await picks.getByRole("button", { name: "More stories", exact: true }).click();
+    await expect(more).toBeFocused();
+    await expect(more).toBeInViewport();
+    await expect(
+      more.evaluate((heading) => {
+        const rect = heading.getBoundingClientRect();
+        return heading.contains(document.elementFromPoint(rect.left + 6, rect.top + rect.height / 2));
+      }),
+    ).resolves.toBe(true);
+    await expect(catalogue.locator(".catalogue-more .story-choice > button").first()).toHaveText(
       "Tonga’s shockwave",
-      "Tonight’s Sky",
-      "Rupture Reveal",
-    ]);
-    if (width === 390) await page.setViewportSize({ width: 320, height: 568 });
-    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
-    await expect(page.locator(".story-choice > button").first()).toHaveText("Float Dive");
-    await expect(page.getByRole("heading", { name: "All stories", exact: true, level: 3 })).toBeFocused();
-    if (width === 390) {
-      const rail = page.locator("#chrome-rail");
-      await rail.evaluate((node) => node.scrollTo({ top: 600 }));
-      await expect(page.getByRole("searchbox", { name: "Find a story" })).toBeInViewport({ ratio: 1 });
-      await page.getByRole("button", { name: "Topics", exact: true }).click();
-      await expect(page.getByRole("button", { name: "All topics", exact: true })).toBeFocused();
-    }
-    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
-      true,
     );
+    await expect(search).toBeInViewport({ ratio: 1 });
+
+    const rail = page.locator("#chrome-rail");
+    const choices = [
+      { title: "Float Dive", control: page.getByRole("slider", { name: "Ascent depth" }) },
+      { title: "Moonfall", control: page.getByRole("combobox", { name: "Rover traverse" }) },
+      { title: "Kīlauea", control: page.getByRole("slider", { name: "Compare before and after" }) },
+    ];
+    for (const { title, control } of choices) {
+      const entry = picks.getByRole("button", { name: title, exact: true });
+      await expect(catalogue.getByRole("button", { name: title, exact: true })).toHaveCount(1);
+      if (title === "Kīlauea") {
+        await page.getByRole("button", { name: "Map", exact: true }).click();
+      }
+      const prep = await entry.evaluate((row) => {
+        const panel = row.closest("#chrome-rail")!;
+        const tools = panel.querySelector(panel.clientHeight < 360 ? ".story-search-line" : ".story-tools")!;
+        const delta = row.getBoundingClientRect().top - tools.getBoundingClientRect().bottom;
+        panel.scrollTop = Math.max(4, panel.scrollTop + delta - 14);
+        return panel.scrollTop;
+      });
+      expect(prep).toBeGreaterThan(0);
+      const rowOffset = () =>
+        entry.evaluate(
+          (row) => row.getBoundingClientRect().top - row.closest("#chrome-rail")!.getBoundingClientRect().top,
+        );
+      const before = await rowOffset();
+      if (hasTouch) await entry.tap();
+      else await entry.click();
+      await expect(control).toBeVisible();
+      if (title === "Float Dive") await expect(control).toHaveValue("0");
+      if (title === "Kīlauea") {
+        await expect(control).toHaveValue("48");
+        await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
+      }
+      expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+        true,
+      );
+      if (title === "Moonfall") await page.goBack();
+      else await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+      await expect(entry).toBeFocused();
+      await expect.poll(async () => Math.abs((await rowOffset()) - before)).toBeLessThanOrEqual(1);
+    }
+    await expect(rail.locator(".story-continue")).toContainText("Kīlauea");
+    await expect(search).toBeInViewport({ ratio: 1 });
+    await search.fill("Rupture");
+    await expect(
+      page
+        .getByRole("region", { name: "Search results" })
+        .getByRole("button", { name: "Rupture Reveal", exact: true }),
+    ).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (process.env["EIF_CAPTURE_UI"])
-      await page.screenshot({ path: test.info().outputPath(`curated-stories-${width}.png`) });
   });
 }
 

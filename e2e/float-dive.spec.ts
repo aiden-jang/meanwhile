@@ -78,6 +78,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await revealStoryTools(page);
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
   const open = page.getByRole("button", { name: "Float Dive", exact: true });
   await expect(open).toBeEnabled();
   expect(requests).toBe(0);

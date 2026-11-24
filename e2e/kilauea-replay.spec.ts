@@ -4,7 +4,8 @@ import { installFeeds, openStories } from "./feeds";
 async function openKilauea(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "search");
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("Kīlauea");
   const trigger = page.getByRole("button", { name: "Kīlauea", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();

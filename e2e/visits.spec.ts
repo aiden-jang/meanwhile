@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
 
 async function openSaved(page: Page) {
-  await page.getByRole("button", { name: "Saved & recent", exact: true }).click();
+  await page.getByRole("button", { name: "Saved observations and recent visits" }).click();
   const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
   await expect(collection).toBeVisible();
   return collection;
@@ -16,9 +16,7 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page, "search");
-  await expect(page.locator(".featured-story-link")).toHaveAccessibleName(
-    "Follow the wave: Tonga’s shockwave",
-  );
+  await expect(page.locator("#open-story-tonga")).toHaveAccessibleName("Tonga’s shockwave");
   await page.locator(".story-today summary").click();
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
@@ -75,7 +73,8 @@ test("a saved float returns to its measured depth after a new page visit", async
   );
   await page.goto("/");
   await openStories(page, "all");
-  await page.getByRole("button", { name: "Float Dive", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
+  await page.locator("#search-story-float").click();
   await page
     .getByRole("group", { name: "Float projection" })
     .getByRole("button", { name: "Map", exact: true })

@@ -53,7 +53,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
-  const firstRow = stories.locator(".story-choice").first();
+  const firstRow = stories.locator(".catalogue-pick").first();
   await expect(firstRow).toBeInViewport({ ratio: 1 });
   const row = (await firstRow.boundingBox())!;
   expect(row.y + row.height).toBeLessThanOrEqual((await page.locator(".creator-credit").boundingBox())!.y);
@@ -253,24 +253,24 @@ for (const width of [1440, 812, 390]) {
     }
     await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
-    await expect(
-      stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
-    ).toHaveCount(3);
+    await expect(stories.getByRole("region", { name: "Start here" }).locator(".catalogue-pick")).toHaveCount(
+      3,
+    );
     await expect(stories.getByRole("button", { name: "Preview Rupture Reveal", exact: true })).toBeVisible();
     if (width !== 812) {
-      const firstRow = stories.locator(".story-choice").first();
+      const firstRow = stories.locator(".catalogue-pick").first();
       await expect(firstRow).toBeInViewport({ ratio: 1 });
       const row = (await firstRow.boundingBox())!;
       const credit = (await page.locator(".creator-credit").boundingBox())!;
       expect(row.y + row.height).toBeLessThanOrEqual(credit.y);
       if (width === 1440)
-        await expect(stories.getByRole("button", { name: /^View all \d+ stories$/ })).toBeInViewport({
+        await expect(stories.getByRole("button", { name: "More stories", exact: true })).toBeInViewport({
           ratio: 1,
         });
     }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
-    const saved = stories.getByRole("button", { name: "Saved & recent", exact: true });
+    const saved = page.getByRole("button", { name: "Saved observations and recent visits" });
     await saved.click();
     const collection = page.getByRole("dialog", { name: "Saved observations" });
     await expect(collection).toBeVisible();
@@ -336,9 +336,8 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(search).toHaveValue(title);
     await expect(trigger).toBeFocused();
     await search.fill("");
-    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Measured profile Rise with an Argo float through temperature and salinity layers.",
+      "Ride an Argo float to the surface.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveCount(0);
     expect((await new AxeBuilder({ page }).include("#chrome-rail").analyze()).violations).toEqual([]);
@@ -387,7 +386,7 @@ test("panel arrivals work in both directions and settle without replacing the ca
   expect(await stories.evaluate((tab) => getComputedStyle(tab, "::before").borderTopWidth)).toBe("2px");
 
   const rail = page.locator("#chrome-rail");
-  await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
+  await page.getByRole("button", { name: "More stories", exact: true }).click();
   await rail.evaluate((node) => node.scrollTo({ top: 160 }));
   await expect(rail).toHaveAttribute("data-scrolled", "");
   await rail.evaluate((node) => node.scrollTo({ top: 0 }));

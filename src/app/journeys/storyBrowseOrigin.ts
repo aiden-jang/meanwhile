@@ -4,6 +4,7 @@ import { captureCollection } from "../visitor/collectionReturn";
 import { weatherOrigin } from "../storm/weatherHandoff";
 import { auroraHandoff } from "./auroraJourney";
 import type { BrowseOrigin } from "./storyNavigationTypes";
+import { catalogueRowOffset } from "../panelReturn";
 
 export function captureBrowseOrigin(
   { explorer, views }: ObservatoryProps,
@@ -17,11 +18,13 @@ export function captureBrowseOrigin(
     trigger.startsWith("related-story-") || ["open-observatory-find", "follow-nightfall"].includes(trigger);
   if (!collection && !fromStory && (active !== null || previous)) return previous;
   const scrollTarget = views.observing ? "observatory-intro" : "chrome-rail";
+  const panel = document.getElementById(scrollTarget);
   const browsing = views.observing ? views.browser.open : views.browser.pane === "stories";
   return {
     route: views.navigation.capture(explorer.read()),
     camera: preview?.camera ?? explorer.read(),
-    scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
+    scroll: panel?.scrollTop ?? 0,
+    rowOffset: catalogueRowOffset(panel, trigger),
     scrollTarget,
     flat: preview?.flat ?? explorer.flat,
     ...(collection ? { collection } : {}),

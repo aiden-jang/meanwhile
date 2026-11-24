@@ -455,7 +455,9 @@ Back to local sky returns to the held night, time and direction. On short phones
 day–night cue clears source attribution and the sky's place label has its own line.
 The scene previews within the Story catalogue
 retain their historical entry paths.
-All topics clears the topic filter. View all stories expands the highlights into the full catalogue.
+All topics clears the topic filter. Start here gives Float Dive, Moonfall and Kīlauea
+one-action entry to the rise controls, the Apollo 17 valley, and the shoreline comparison.
+More stories jumps directly to the compact catalogue below. Each story appears once in the catalogue.
 Filtering keeps the query, camera and filter controls in place.
 On taller panels, search and categories stay visible above the scrolling results. The sticky controls
 shield text behind them while the outer rail edge remains translucent. Short full catalogues keep a
@@ -464,17 +466,17 @@ clearer while scrolling.
 Switching between Layers
 and Stories preserves the chosen layer settings. Layer switches keep the same alignment as status changes.
 Coverage and availability details are in the layer inspectors and header feed menu. Location lives in Find a place, and playback
-lives within the Storm radar inspector. A recent visit replaces the large feature as the opening
-action in the highlights. The full catalogue keeps each entry in its original position so returning
-from a story restores the same row and scroll position.
+lives within the Storm radar inspector. A recent visit appears in a compact Continue row above All topics.
+Back returns focus to the same story row and restores its position in the visible panel, even if the
+Continue row appeared during the visit.
 
-The feature's actual image sits above its title, source, short
+A topic feature's actual image sits above its title, source, short
 promise and Open story action on desktop; on phones it sits beside the reading text. Text has its
 own plain reading surface rather than sitting over a feature-image gradient. Initial recommendation
 rows keep the title and data type visible while preserving each promise as accessible text; the
 full catalogue shows those promises visibly. Unavailable reasons stay visible in either mode.
-View all and Saved & recent remain reachable beneath the selection, with From today’s feeds directly
-discoverable and guided journeys and archives secondary. Category, search and heading gaps stay compact.
+Topic views keep View all and Saved & recent beneath the selection. The header’s Saved control,
+From today’s feeds, and guided journeys remain available in All topics. Category, search and heading gaps stay compact.
 
 Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
 Moonfall retain native-resolution crops for the large feature; radar and sky previews are bounded

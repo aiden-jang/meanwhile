@@ -247,6 +247,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     panelReturn.restore({
       scrollTarget: saved.scrollTarget,
       scroll: saved.scroll,
+      rowOffset: saved.rowOffset,
       focus: saved.trigger,
       fallback: saved.trigger.startsWith("journey-")
         ? "journeys-toggle"

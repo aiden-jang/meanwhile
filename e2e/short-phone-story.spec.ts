@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
-test("a short phone shows the full featured-story action on arrival", async ({ page }) => {
+test("a short phone shows the first catalogue pick on arrival", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -21,7 +21,7 @@ test("a short phone shows the full featured-story action on arrival", async ({ p
     .getByRole("group", { name: "Story categories" })
     .getByRole("button", { name: "All topics" })
     .click();
-  const action = page.locator("#explorer-stories .featured-story-link");
+  const action = page.locator("#open-story-float");
   await expect(action).toBeInViewport({ ratio: 1 });
   const button = (await action.boundingBox())!;
   const rail = (await page.locator("#chrome-rail").boundingBox())!;

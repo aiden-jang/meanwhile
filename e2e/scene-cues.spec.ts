@@ -61,8 +61,6 @@ test("featured artwork keeps the story’s subject at both crop ratios", async (
   await page.goto("/");
   await openStories(page, "search");
   const art = page.locator(".featured-story-art img");
-  await expect(art).toHaveAttribute("data-art-ready", "");
-  await expect(art).toHaveCSS("object-position", "49% 52%");
   await revealTopics(page);
   await page.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(art).toHaveAttribute("data-story", "float");

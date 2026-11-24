@@ -4,8 +4,9 @@ import { usePanelReturn } from "./usePanelReturn";
 import { flushSync } from "react-dom";
 import type { CameraState } from "../globe/controls";
 import type { FlyTo } from "../globe/cameraTarget";
+import type { PanelReturn } from "./panelReturn";
 
-type Snapshot<T> = { value: T; camera: CameraState; scroll: number; scrollTarget: string; focus: string };
+type Snapshot<T> = { value: T; camera: CameraState } & PanelReturn;
 
 export function useSceneHistory<T>({
   route,
@@ -60,7 +61,7 @@ export function useSceneHistory<T>({
       flushSync(() => latest.current.restore(saved.value));
       current.restoring = false;
       flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
-      panelReturn.restore({ scrollTarget: saved.scrollTarget, scroll: saved.scroll, focus: saved.focus });
+      panelReturn.restore(saved);
     };
     window.addEventListener("popstate", back);
     window.addEventListener("pagehide", departing);
