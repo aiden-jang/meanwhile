@@ -17,18 +17,20 @@ const playingSelector =
 export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
   const [opened, setSaved] = useState(false);
-  const [find, setFind] = useState(false);
+  const [finding, setFind] = useState(false);
   const findTrigger = useRef<HTMLButtonElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const savedTrigger = useRef<HTMLElement | null>(null);
   const heldPlayback = useRef<HTMLButtonElement | undefined>();
   useEffect(() => setSaved(false), [navigation?.active, navigation?.browsingStories]);
   if (!navigation) return null;
+  const find = finding || !!navigation.restoredFind;
   const saved = opened || !!navigation.restoredCollection;
   const closeFind = () => {
     const playback = heldPlayback.current;
     heldPlayback.current = undefined;
     setFind(false);
+    navigation.dismissFind();
     requestAnimationFrame(() => {
       if (playback?.isConnected && !playback.disabled && !playback.matches(playingSelector)) playback.click();
       findTrigger.current?.focus({ preventScroll: true });
@@ -118,6 +120,8 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
       </button>
       {find && (
         <FindObservatory
+          position={navigation.restoredFind}
+          launch={navigation.launchFromFind}
           unavailable={navigation.unavailable}
           library={navigation.library}
           openJourney={(id) => {
@@ -135,6 +139,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
           explore={(target) => {
             heldPlayback.current = undefined;
             setFind(false);
+            navigation.dismissFind();
             navigation.findTarget(target);
           }}
           open={(id) => {

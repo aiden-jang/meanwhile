@@ -17,6 +17,7 @@ async function setup(page: Page, width = 1440) {
 
 async function explore(page: Page) {
   await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.locator("#explorer-fold[aria-expanded=false]").click();
   await expect(page.getByRole("button", { name: "Use device location", exact: true })).toBeHidden();
   await page.getByText("Find a place", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Use device location", exact: true })).toBeVisible();

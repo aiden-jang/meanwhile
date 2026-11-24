@@ -23,6 +23,7 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 import type { SkyPosition } from "../tonight/skyMoment";
 import type { CollectionPosition } from "../visitor/collectionReturn";
+import { useFindReturn } from "../visitor/findPosition";
 import { openSkyStory } from "./openSkyStory";
 import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
@@ -38,6 +39,7 @@ export const useStoryNavigation = () => useContext(Navigation);
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
   const panelReturn = usePanelReturn();
   const [restoredCollection, setRestoredCollection] = useState<CollectionPosition | null>(null);
+  const find = useFindReturn();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
   const reportCompletion = useCallback((id: string, complete: boolean) => {
@@ -103,10 +105,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     props.views.navigation.extension.current = {
       capture() {
         const source = origin.current;
+        const search = find.departure.current ?? find.position;
         const restoreJourney = journey.capture();
         return () => {
           origin.current = source;
           restoreJourney();
+          find.restore(search);
         };
       },
       journey: () => (journey.route ? { id: journey.route.id, step: journey.route.step } : undefined),
@@ -114,6 +118,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   });
   function rememberOrigin(trigger: string) {
     origin.current = captureBrowseOrigin(props, trigger, active, origin.current, previewOrigin.current);
+    const search = find.departure.current;
+    if (search && origin.current) origin.current = { ...origin.current, find: search, label: "Back to Find" };
   }
   function navigate(
     id: string,
@@ -233,6 +239,11 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       requestAnimationFrame(() => document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll));
       return true;
     }
+    if (saved.find) {
+      panelReturn.restore({ scrollTarget: saved.scrollTarget, scroll: saved.scroll, focus: "" });
+      find.restore(saved.find);
+      return true;
+    }
     panelReturn.restore({
       scrollTarget: saved.scrollTarget,
       scroll: saved.scroll,
@@ -286,6 +297,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         auroraFromPass: origin.current?.trigger === auroraHandoff,
         katrinaFromWeather: isKatrinaHandoff(deck.trigger),
         restoredCollection,
+        restoredFind: find.position,
+        launchFromFind: find.launch,
+        dismissFind: () => find.restore(null),
         dismissRestoration: () => setRestoredCollection(null),
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,

@@ -20,7 +20,7 @@ import { useStoryClock } from "./useStoryClock";
 import { storyCamera } from "./motion";
 import { StoryOverlay } from "./StoryOverlay";
 import { StoryReadings } from "./StoryReadings";
-import { StoryImageRecovery, StoryRecovery } from "./StoryRecovery";
+import { StoryImageRecovery, StoryRecovery, storyRecoveryArchive } from "./StoryRecovery";
 import { StorySideActions } from "./StorySideActions";
 import { StoryChoices } from "./StoryChoices";
 import { useMooringInspection } from "./useMooringInspection";
@@ -385,12 +385,7 @@ export function StoryPlayer({
       )}
       {!fault && id !== "north" && readings}
       {failed && (
-        <StoryRecovery
-          reefRecent={id === "reef" && choice === "Recent observations"}
-          retry={retry}
-          archive={() => setChoice("2023 archive")}
-          holding
-        />
+        <StoryRecovery retry={retry} archive={storyRecoveryArchive(id, choice, setChoice)} holding />
       )}
       <StoryImageRecovery assets={[image, curtainImage, lunarImage]} />
     </ReplayPanel>

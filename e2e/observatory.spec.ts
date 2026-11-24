@@ -49,7 +49,7 @@ for (const [width, height] of [
       expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
       expect(entrances).toBeInViewport({ ratio: 1 }),
-      expect(entrances.getByText("Live weather", { exact: true })).toBeVisible(),
+      expect(entrances.getByText("Storm radar", { exact: true })).toBeVisible(),
       expect(entrances.getByText("Quake depths", { exact: true })).toBeVisible(),
       expect(entrances.getByText("Local sky", { exact: true })).toBeVisible(),
     ]);
@@ -222,6 +222,8 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   const rail = page.locator("#chrome-rail");
+  await expect(rail).toBeHidden();
+  await page.locator("#explorer-fold").click();
   await Promise.all([
     expect(rail).toBeVisible(),
     expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused(),
@@ -269,6 +271,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     });
   expect(interrupted).toEqual({ before: true, after: 0 });
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.locator("#explorer-fold[aria-expanded=false]").click();
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   const [readingMotions, finalContexts] = await Promise.all([
     page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length),

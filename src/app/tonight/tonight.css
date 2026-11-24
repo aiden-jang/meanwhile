@@ -303,6 +303,10 @@
   .tonight-clock time {
     font-size: 16px;
   }
+
+  .story-dock-host:has(> .story-dock[aria-label="Tonight’s Sky time"]) {
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
 }
 
 .tonight-labels {

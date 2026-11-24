@@ -6,6 +6,7 @@ import type { SkyPosition } from "../tonight/skyMoment";
 import type { CollectionPosition } from "../visitor/collectionReturn";
 import type { useJourneyNavigation } from "./useJourneyNavigation";
 import type { ExploreTarget } from "../visitor/observatorySearch";
+import type { FindPosition } from "../visitor/findPosition";
 
 export interface BrowseOrigin {
   route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
@@ -13,6 +14,7 @@ export interface BrowseOrigin {
   scroll: number;
   scrollTarget: string;
   collection?: CollectionPosition;
+  find?: FindPosition;
   previous?: BrowseOrigin;
   flat: boolean;
   label: string;
@@ -24,6 +26,9 @@ export type StoryNavigationValue = {
   auroraFromPass: boolean;
   katrinaFromWeather: boolean;
   restoredCollection: CollectionPosition | null;
+  restoredFind: FindPosition | null;
+  launchFromFind: (position: FindPosition, next: () => void) => void;
+  dismissFind: () => void;
   dismissRestoration: () => void;
   openSkyAt: (city: string, trigger: string) => void;
   openNightfall: (position: SkyPosition, trigger: string) => void;

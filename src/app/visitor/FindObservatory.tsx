@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StoryThumbnail } from "../StoryThumbnail";
 import { searchStories } from "../storyIndex";
@@ -6,6 +6,8 @@ import { savedVisitKey, type Library, type Visit } from "./library";
 import { visitNote } from "./VisitShelf";
 import { LayerIcon } from "../LayerIcon";
 import { findObservatory, type ExploreTarget } from "./observatorySearch";
+import type { FindPosition } from "./findPosition";
+import { loadKilauea } from "../kilauea/loadKilauea";
 
 export function FindObservatory({
   onClose,
@@ -15,6 +17,8 @@ export function FindObservatory({
   library,
   openJourney,
   resume,
+  position,
+  launch,
 }: {
   onClose: () => void;
   open: (id: string) => void;
@@ -23,18 +27,30 @@ export function FindObservatory({
   library: Library;
   openJourney: (id: string) => void;
   resume: (visit: Visit, recent: boolean) => void;
+  position: FindPosition | null;
+  launch: (position: FindPosition, next: () => void) => void;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(position?.query ?? "");
+  const arrival = useRef(position);
   const dialog = useRef<HTMLDialogElement>(null);
   const search = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
     const panel = dialog.current!;
     panel.showModal();
-    search.current?.focus();
+    const restored = arrival.current;
+    const selected = [...panel.querySelectorAll<HTMLButtonElement>("[data-find-result]")].find(
+      (button) => button.dataset["findResult"] === restored?.result && !button.disabled,
+    );
+    (selected ?? search.current)?.focus({ preventScroll: true });
+    panel.scrollTop = restored?.scroll ?? 0;
     return () => panel.close();
   }, []);
   const results = findObservatory(query, library);
   const { places, stories, layers, journeys } = results;
+  const offersKilauea = stories.some(({ id }) => id === "kilauea");
+  useEffect(() => {
+    if (offersKilauea) void loadKilauea().catch(() => {});
+  }, [offersKilauea]);
   const typing = !!query.trim();
   const count =
     places.length +
@@ -43,9 +59,11 @@ export function FindObservatory({
     journeys.length +
     results.saved.length +
     results.recent.length;
-  const choose = (next: () => void) => {
-    dialog.current?.close();
-    next();
+  const choose = (result: string, next: () => void) => {
+    const panel = dialog.current!;
+    const scroll = panel.scrollTop;
+    panel.close();
+    launch({ query, result, scroll }, next);
   };
   return createPortal(
     <dialog
@@ -132,8 +150,11 @@ export function FindObservatory({
                   key={savedVisitKey(visit)}
                   type="button"
                   className="find-result find-story-result"
+                  data-find-result={`${label}:${savedVisitKey(visit)}`}
                   disabled={!!unavailable(visit.id)}
-                  onClick={() => choose(() => resume(visit, label === "Recent visits"))}
+                  onClick={() =>
+                    choose(`${label}:${savedVisitKey(visit)}`, () => resume(visit, label === "Recent visits"))
+                  }
                 >
                   <StoryThumbnail id={visit.id} />
                   <span>
@@ -152,9 +173,10 @@ export function FindObservatory({
             <button
               key={journey.id}
               data-find-name={journey.title}
+              data-find-result={`journey:${journey.id}`}
               type="button"
               className="find-result find-story-result"
-              onClick={() => choose(() => openJourney(journey.id))}
+              onClick={() => choose(`journey:${journey.id}`, () => openJourney(journey.id))}
             >
               <StoryThumbnail id={journey.steps[0]!.id} />
               <span>
@@ -173,7 +195,10 @@ export function FindObservatory({
               type="button"
               className="find-result"
               key={place.name}
-              onClick={() => choose(() => explore(place))}
+              onClick={() => {
+                dialog.current?.close();
+                explore(place);
+              }}
             >
               <svg
                 viewBox="0 0 20 20"
@@ -201,10 +226,11 @@ export function FindObservatory({
               <button
                 key={story.id}
                 data-find-name={story.title}
+                data-find-result={`story:${story.id}`}
                 type="button"
                 className="find-result find-story-result"
                 disabled={!!reason}
-                onClick={() => choose(() => open(story.id))}
+                onClick={() => choose(`story:${story.id}`, () => open(story.id))}
               >
                 <StoryThumbnail id={story.id} />
                 <span>
@@ -226,7 +252,10 @@ export function FindObservatory({
               className="find-result"
               key={layer.id}
               data-find-name={layer.name}
-              onClick={() => choose(() => explore(layer))}
+              onClick={() => {
+                dialog.current?.close();
+                explore(layer);
+              }}
             >
               <LayerIcon layer={layer.id} />
               <span>{layer.name}</span>

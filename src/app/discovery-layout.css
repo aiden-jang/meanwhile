@@ -239,48 +239,20 @@
 }
 
 .shared-story {
-  margin-block: 12px 18px;
-  padding: 12px 14px;
-  border-left: 2px solid var(--color-faint);
-  background: var(--color-deck);
+  margin-block: 4px;
   font-size: var(--text-control);
   line-height: 1.55;
-}
-.shared-story strong {
-  font-weight: 550;
 }
 .shared-story p {
   margin-top: 5px;
   color: var(--color-dim);
 }
 
-.shared-story-compact {
-  display: none;
-}
-
-@media (max-width: 599px) and (max-height: 680px),
-  (orientation: landscape) and (max-height: 440px) and (min-width: 600px) {
-  .shared-story {
-    margin-block: 4px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .shared-story-message {
-    display: none;
-  }
-
-  .shared-story-compact {
-    display: block;
-  }
-
-  .shared-story-compact summary {
-    min-height: 44px;
-    align-content: center;
-    cursor: pointer;
-    color: var(--color-dim);
-  }
+.shared-story-compact summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  color: var(--color-dim);
 }
 
 #explorer-stories .featured-story[data-feature] {

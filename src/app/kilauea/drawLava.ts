@@ -206,8 +206,8 @@ export function drawLavaSurface(canvas: HTMLCanvasElement, index: number, relief
 
 export function drawLavaComparison(relief: HTMLImageElement | null) {
   const atlas = document.createElement("canvas");
-  atlas.width = 1280;
-  atlas.height = 2048;
+  atlas.width = 1120;
+  atlas.height = 1792;
   const ctx = atlas.getContext("2d");
   if (ctx) {
     const height = atlas.height / 2;
@@ -229,8 +229,18 @@ export function drawLavaComparison(relief: HTMLImageElement | null) {
 export function coastlineDivider(percent: number) {
   if (percent <= 0) return 1;
   if (percent >= 100) return 0;
-  return (bay[0]! - 650 + (0.5 - percent / 100) * 13_000 - west) / (east - west);
+  return coastFraction(percent / 100);
 }
+
+function coastFraction(fraction: number) {
+  return (bay[0]! - 650 + (0.5 - fraction) * 13_000 - west) / (east - west);
+}
+
+export const coastHandle = {
+  before: coastFraction(0),
+  after: coastFraction(1),
+  latitude: (bay[1]! - south) / (north - south),
+};
 
 export function drawLavaFootage(canvas: HTMLCanvasElement, image: HTMLImageElement, elapsed: number) {
   const frame = Math.floor((elapsed * overflight.fps) / 1000);

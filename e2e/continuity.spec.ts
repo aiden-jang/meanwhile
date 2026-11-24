@@ -454,6 +454,9 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const rail = page.locator("#chrome-rail");
   await button("Explore the globe").click();
+  await expect(rail).toBeHidden();
+  await expect(page.locator("#explorer-fold")).toBeFocused();
+  await page.locator("#explorer-fold").click();
   await expect(rail).toBeVisible();
   await expect(button("Storm radar details")).toBeInViewport();
   const viewport = page.viewportSize()!;
@@ -518,6 +521,29 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect.poll(pose).toBe("-176,-18.3,1.95");
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBeNull();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
+
+test("Find restores a selected story result and the exact map on either Back action", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=explore&at=-74,40,1&p=map");
+  await page.getByRole("button", { name: "Find", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Find", exact: true });
+  const search = dialog.getByRole("searchbox");
+  const story = dialog.getByRole("button", { name: "Kīlauea", exact: true });
+  await search.fill("Kilauea");
+  for (const back of ["story", "browser"]) {
+    await story.click();
+    const close = page.getByRole("button", { name: "Back to Find", exact: true });
+    await expect(close).toBeVisible();
+    if (back === "story") await close.click();
+    else await page.goBack();
+    await expect(search).toHaveValue("Kilauea");
+    await expect(story).toBeFocused();
+  }
+  await dialog.getByRole("button", { name: "Close Find" }).click();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at")).toBe("-74,40,1");
 });
 
 test("Tokyo weather stays on the shared world and returns to the exact local sky", async ({ page }) => {

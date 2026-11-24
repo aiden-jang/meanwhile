@@ -307,7 +307,7 @@ function ObservatoryContent({
                   <>
                     {!solar && !aurora.run && !aurora.requested && (
                       <ObservatoryEntryActions
-                        explore={explorePaths.resume}
+                        explore={landing ? () => onExplore(false) : explorePaths.resume}
                         browse={() => navigationContext?.browse(true)}
                       />
                     )}

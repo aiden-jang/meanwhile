@@ -128,6 +128,7 @@ for (const width of [1440, 390]) {
     await expect.poll(queries).toBe(1);
     await expect(page.locator("#radar-layer-controls")).toBeHidden();
     await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+    await page.locator("#explorer-fold[aria-expanded=false]").click();
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
@@ -142,6 +143,7 @@ for (const width of [1440, 390]) {
     expect(await controls.evaluate((node, original) => node === original, player)).toBe(true);
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
+    await expect(controls.getByRole("slider")).toHaveCount(0);
     expect(await quakeOpacity(page)).toBe(1);
     expect(queries()).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBeNull();

@@ -11,11 +11,20 @@ import { sectionEdges, type SectionLine } from "../app/section";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 import { matches } from "../data/filter";
 import { createLayerExample } from "./layerExample";
+import { placeSurveyHandle } from "./surveyHandle";
 
 type Target = { kind: "quake" | "mark"; id: string } | null;
 type State = Pick<
   Required<GlobeProps>,
-  "selected" | "marks" | "inspection" | "depthSink" | "section" | "filters" | "scrubAt" | "landing"
+  | "selected"
+  | "marks"
+  | "inspection"
+  | "depthSink"
+  | "section"
+  | "filters"
+  | "scrubAt"
+  | "landing"
+  | "globePresentation"
 >;
 interface Placement {
   el: HTMLCanvasElement;
@@ -60,6 +69,7 @@ export function overlayPlacement({
     const state = read();
     const hovered = hover();
     const box = el.getBoundingClientRect();
+    placeSurveyHandle(el, globe.controls, state.globePresentation, box);
     placeExample(box, state);
     const projection = globe.controls.morph();
     const moving = projection > 0 && projection < 1;

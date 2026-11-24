@@ -2,34 +2,30 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ObservationRaster } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { revealReading } from "../observations/revealReading";
 import { StoryDock } from "../observations/StoryDock";
+import { useMedia } from "../useNarrow";
 import { TimelineTrack } from "../observations/TimelineTrack";
-import { coastlineDivider, drawLavaComparison, drawLavaSurface } from "./drawLava";
+import { coastHandle, coastlineDivider, drawLavaComparison, drawLavaSurface } from "./drawLava";
+import { ShorelineHandle } from "./ShorelineHandle";
 import { KilaueaFootage } from "./KilaueaFootage";
-import { COAST_COMPARISON, LAST, OCEAN_ENTRY, mapDate, snapshots } from "./lavaTimeline";
+import {
+  COAST_COMPARISON,
+  LAST,
+  OCEAN_ENTRY,
+  lavaChapter,
+  mapDate,
+  shorelineTime,
+  snapshots,
+} from "./lavaTimeline";
 import relief from "./relief.webp?url";
 import { useStorySession } from "../observations/StorySession";
 import { nearest } from "../../sources/observations/common";
 
-const fissure = { lon: -154.918, lat: 19.463, zoom: 2.4 };
-const coastalSurvey = { lon: -154.818, lat: 19.514, zoom: 2.4 };
-const lens = { globe: 82, map: 235 };
-// NAD83 / UTM 5N corners of the 3DEP tile, converted to geographic coordinates.
-const raster: ObservationRaster = {
-  url: "",
-  bounds: [-155.109, 19.314, -154.608, 19.736],
-  corners: [
-    { lon: -155.10338, lat: 19.31478 },
-    { lon: -154.60863, lat: 19.31982 },
-    { lon: -155.10876, lat: 19.73021 },
-    { lon: -154.61275, lat: 19.73536 },
-  ],
-  opacity: 1,
-};
+import { coastalSurvey, fissure, lens, raster, surveyLens } from "./surveyMap";
+
 const MOTION = "(prefers-reduced-motion: reduce)";
 
 export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
@@ -53,6 +49,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   );
   const [invited, setInvited] = useState(!coast && !initial);
   const [playing, setPlaying] = useState(false);
+  const reduced = useMedia(MOTION);
   const [arrived, setArrived] = useState(false);
   const [footage, setFootage] = useState(false);
   const replayIndex = useRef(index);
@@ -68,7 +65,10 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   const { element, status } = useObservationImage(relief);
   const arrive = useCallback(() => setArrived(true), []);
   const comparing = split !== null;
-  const atlas = useMemo(() => (comparing ? drawLavaComparison(element) : null), [comparing, element]);
+  const atlas = useMemo(
+    () => (comparing && status !== "loading" ? drawLavaComparison(element) : null),
+    [comparing, element, status],
+  );
   const target = comparing || index >= OCEAN_ENTRY ? coastalSurvey : fissure;
   const at = snapshots[comparing ? LAST : index]!.at;
   const kept =
@@ -84,25 +84,12 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     ? "Where ocean became land."
     : invited
       ? "From fissure to sea."
-      : index < 2
-        ? "Fissure 8 reopens"
-        : index < OCEAN_ENTRY
-          ? "Across lower Puna"
-          : index === OCEAN_ENTRY
-            ? "Lava reaches Kapoho Bay"
-            : "The lava delta grows";
-  const time =
-    split === null
-      ? mapDate(at)
-      : split === 0
-        ? "Before the eruption"
-        : split === 100
-          ? "August 9 coastline"
-          : `Shoreline divider at ${split}%`;
+      : lavaChapter(index);
+  const time = split === null ? mapDate(at) : shorelineTime(split);
 
   useLayoutEffect(() => {
-    if (!comparing) drawLavaSurface(surface, index, element);
-  }, [index, element, surface, comparing]);
+    if (!comparing || !atlas) drawLavaSurface(surface, index, element);
+  }, [index, element, surface, comparing, atlas]);
 
   useLayoutEffect(() => {
     onView({
@@ -112,8 +99,10 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       target,
       image: null,
       surface: atlas ?? surface,
-      ...(split !== null ? { surveyDivider: coastlineDivider(split) } : {}),
-      lens,
+      ...(split !== null && atlas
+        ? { surveyDivider: coastlineDivider(split), surveyHandle: { ...coastHandle, fraction: split / 100 } }
+        : {}),
+      lens: comparing ? surveyLens : lens,
       arrive,
     });
     remember?.({ chapter: comparing ? "compare" : "", choice: String(split ?? "") });
@@ -173,7 +162,8 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
 
   function follow() {
     if (matchMedia(MOTION).matches) {
-      compare();
+      inspect(comparing || index === LAST || invited ? 0 : index + 1);
+      requestAnimationFrame(() => timeline.current?.focus({ preventScroll: true }));
       return;
     }
     if (comparing || index === LAST) inspect(0);
@@ -237,6 +227,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       inset={
         <>
           {footage && !panel.map && <KilaueaFootage />}
+          {atlas && <ShorelineHandle onAdjust={setSplit} />}
           {comparing && (!coast || arrived) && split > 0 && split < 100 && (
             <div className="kilauea-coast-labels" aria-hidden="true">
               <span>Before eruption</span>
@@ -371,6 +362,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
                   buttonRef={playButton}
                   playing={playing}
                   ended={comparing || index === LAST}
+                  startLabel={reduced ? "Next survey" : undefined}
                   onClick={() => {
                     if (matchMedia(MOTION).matches)
                       inspect(comparing || index === LAST ? 0 : Math.min(LAST, index + 1));
@@ -380,10 +372,10 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
               )}
               {!comparing && (
                 <>
-                  <button type="button" onClick={() => inspect(0)}>
+                  <button type="button" data-survey-milestone="" onClick={() => inspect(0)}>
                     Fissure 8
                   </button>
-                  <button type="button" onClick={() => inspect(OCEAN_ENTRY)}>
+                  <button type="button" data-survey-milestone="" onClick={() => inspect(OCEAN_ENTRY)}>
                     Ocean entry
                   </button>
                 </>

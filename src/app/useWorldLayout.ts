@@ -53,7 +53,7 @@ export function useWorldLayout(layout: string) {
     const panel = document.querySelector<HTMLElement>(
       globe.closest("[data-presentation=explore]") ? "#chrome-rail" : ".observatory-intro",
     );
-    const reading = revealReadings(panel, "drift", 520);
+    const reading = panel?.hidden ? null : revealReadings(panel, "drift", 520);
     const controls = revealReadings(globe.querySelector(".canvas-information"), "fade", 520);
     if (flight) motions.current.push(flight);
     if (reading) motions.current.push(reading);

@@ -10,9 +10,6 @@ export function RadarReading({
   initialPose,
   problem,
   statusMessage,
-  canRetry,
-  provider,
-  retry,
 }: {
   layer: boolean;
   place: string;
@@ -22,9 +19,6 @@ export function RadarReading({
   initialPose: boolean;
   problem: boolean;
   statusMessage: ReactNode;
-  canRetry: boolean;
-  provider: string;
-  retry: () => void;
 }) {
   return (
     <div className="radar-reading">
@@ -50,11 +44,6 @@ export function RadarReading({
         <p role="status" aria-label="Radar status">
           {statusMessage}
         </p>
-      )}
-      {canRetry && (
-        <button type="button" className="radar-retry" onClick={retry}>
-          Retry {provider}
-        </button>
       )}
     </div>
   );

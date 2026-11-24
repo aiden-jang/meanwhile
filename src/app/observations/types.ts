@@ -140,6 +140,7 @@ export interface ObservationView {
   surface?: HTMLCanvasElement;
   /** Split in longitudinal UV space for a surface containing the before and after surveys stacked vertically. */
   surveyDivider?: number;
+  surveyHandle?: { fraction: number; before: number; after: number; latitude: number };
   curtain?: {
     points: readonly GeoPoint[];
     heightKm: number;

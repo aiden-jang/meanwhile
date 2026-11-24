@@ -158,6 +158,7 @@ export function Globe({
     setGuide(globe.controls.guidance);
     const detachRotation = rotation.attach(el, globe.controls, () => wakeRef.current());
     const readout = createOrbitReadout(orbit.current);
+    let redrawPending = false;
     const draw = (full = false) => {
       globe.render(full || !!live.current.onFrame);
       live.current.onFrame?.(el);
@@ -175,11 +176,11 @@ export function Globe({
       const el2 = canvas.current;
       if (!el2 || contextLost) return null;
       // Apply wavefront visibility before the synchronous capture.
-      globe.rings.step(0, visibleRing);
+      if (redrawPending) syncReadings();
+      else globe.rings.step(0, visibleRing);
       draw(true);
       return el2;
     });
-
     if (import.meta.env.DEV) exposeScene(globe, feed, () => live.current, draw, clockAt);
 
     // Read live rather than captured: somebody can turn reduced motion on while the page is open.
@@ -312,7 +313,8 @@ export function Globe({
       const expanding = globe.rings.step(dt, visibleRing) > 0;
       // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
       const zoomNow = globe.controls.state().zoom;
-      if (Math.abs(zoomNow - lastZoom) > 0.001) {
+      if (redrawPending) syncReadings();
+      else if (Math.abs(zoomNow - lastZoom) > 0.001) {
         globe.beginRegroup(reducedMotion.matches);
         lastZoom = zoomNow;
         // Cheap: the layer decides for itself whether the change is worth a rebuild.
@@ -336,7 +338,6 @@ export function Globe({
         animation.request(frame);
       } else running = false;
     };
-
     const detachSection = attachSectionDrawing(el, globe.controls, drag, onSectionRef, () =>
       wakeRef.current(),
     );
@@ -373,8 +374,8 @@ export function Globe({
         quake.primary.time <= (revealUntil() ?? Infinity)
       );
     };
-    const redraw = (): void => {
-      if (contextLost) return;
+    const syncReadings = (): void => {
+      redrawPending = false;
       globe.rings.step(0, visibleRing);
       globe.cancelRegroup();
       globe.events.sync(
@@ -385,8 +386,10 @@ export function Globe({
         revealUntil(),
         live.current.focus,
       );
-      draw();
-      placeOverlays();
+    };
+    const redraw = () => {
+      redrawPending = true;
+      wake();
     };
     redrawRef.current = redraw;
     auroraRef.current = globe.setAurora;
@@ -522,7 +525,6 @@ export function Globe({
       animation.cancel();
       running = false;
     });
-
     const detachGraphics = watchGraphics(
       el,
       () => {
@@ -535,7 +537,6 @@ export function Globe({
         contextLost = false;
         setUnavailable(null);
         redraw();
-        wake();
       },
     );
 
@@ -556,12 +557,9 @@ export function Globe({
       globe.dispose();
     };
   }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt, rotation]);
-
   useLayoutEffect(() => {
     redrawRef.current();
-    wakeRef.current();
   }, [filters, selected, focus, scrubAt, flat, placePin]);
-
   useGlobeLayers(
     { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, globePresentation, inspection },
     {

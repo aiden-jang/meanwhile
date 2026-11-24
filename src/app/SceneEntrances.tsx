@@ -13,7 +13,7 @@ export const OBSERVATORY_SCENES = [
 ] as const;
 
 const sceneCues: Record<EarthScene, string> = {
-  live: "Live weather",
+  live: "Storm radar",
   depth: "Quake depths",
   night: "Local sky",
 };

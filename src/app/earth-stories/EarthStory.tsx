@@ -9,7 +9,7 @@ import { loadEarthStory } from "./load";
 import type { EarthStoryData } from "./types";
 import { StoryPlayer } from "./StoryPlayer";
 import { storyChoice, usesCity } from "./storySelection";
-import { StoryRecovery } from "./StoryRecovery";
+import { StoryRecovery, storyRecoveryArchive } from "./StoryRecovery";
 import { StoryChoices } from "./StoryChoices";
 import { captureStoryFocus } from "./replacementFocus";
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
@@ -71,9 +71,8 @@ export function EarthStory(props: Props): JSX.Element {
         <StoryChoices id={id} city={city} choice={choice} select={setChoice} />
         {failed ? (
           <StoryRecovery
-            reefRecent={reefRecent}
             retry={() => setRetry((n) => n + 1)}
-            archive={() => setChoice("2023 archive")}
+            archive={storyRecoveryArchive(id, choice, setChoice)}
           />
         ) : (
           <StoryLoading>Preparing the observations. You can still explore the globe.</StoryLoading>

@@ -39,9 +39,9 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await expect(compareCoast).toBeInViewport({ ratio: 1 });
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toBeHidden();
   await follow.click();
-  await expect(panel.getByRole("slider", { name: "Compare before and after" })).toBeFocused();
-  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toBeFocused();
+  await panel.getByRole("button", { name: "Next survey" }).click();
+  await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveValue("1");
   await panel.getByRole("button", { name: /^Ocean entry · / }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
@@ -70,6 +70,27 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
     "Jun 4 · 22:00 HST",
   );
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+});
+
+test("the projected shoreline handle and the slider change the same comparison", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 760 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const { panel } = await openKilauea(page);
+  await panel.getByRole("button", { name: "Compare coast", exact: true }).click();
+  const slider = panel.getByRole("slider", { name: "Compare before and after" });
+  const handle = panel.locator("[data-survey-handle][data-positioned]");
+  for (const projection of ["Globe", "Map"]) {
+    await panel.getByRole("button", { name: projection, exact: true }).click();
+    await slider.press("Home");
+    await slider.press("ArrowRight");
+    await expect(handle).toBeVisible();
+    const box = (await handle.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 36, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect(slider).not.toHaveValue("1");
+  }
 });
 
 test("returning from Kīlauea keeps the archived day and its launch control", async ({ page }) => {

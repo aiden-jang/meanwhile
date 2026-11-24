@@ -1,4 +1,5 @@
 import { StoryLoading } from "../StoryLoading";
+import { loadKilauea } from "../kilauea/loadKilauea";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { lazy, Suspense } from "react";
 import type { StoryId, useObservationDeck } from "./useObservationDeck";
@@ -39,9 +40,7 @@ const ShadowChase = lazy(() =>
   import("../shadow/ShadowChase").then(({ ShadowChase }) => ({ default: ShadowChase })),
 );
 
-const KilaueaJourney = lazy(() =>
-  import("../kilauea/KilaueaJourney").then(({ KilaueaJourney }) => ({ default: KilaueaJourney })),
-);
+const KilaueaJourney = lazy(() => loadKilauea().then(({ KilaueaJourney }) => ({ default: KilaueaJourney })));
 
 export function ObservationDeckShell({
   deck,

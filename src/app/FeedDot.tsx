@@ -76,15 +76,18 @@ export function FeedDot({
               : feeds.phrase}
         </span>
         <span className="feed-count">
-          <span>
-            {feeds.arrived}/{feeds.total}
-          </span>
-          <span className="sr-only">
-            {" available"}
-            {feeds.settling && unavailable > 0 ? `, ${unavailable} unavailable` : ""}
-            {feeds.settling ? ", checking remaining feeds" : ""}
-            {storyFailed && source ? `. ${source.title} source unavailable` : ""}
-          </span>
+          {feeds.settling ? (
+            <>
+              <span aria-hidden="true">…</span>
+              <span className="sr-only">{feeds.phrase}</span>
+            </>
+          ) : (
+            <span>
+              {feeds.arrived}/{feeds.total}
+              <span className="sr-only"> available</span>
+            </span>
+          )}
+          {storyFailed && source && <span className="sr-only">. {source.title} source unavailable</span>}
         </span>
         <svg width="9" height="6" viewBox="0 0 9 6" fill="none" aria-hidden="true">
           <path d="m1 1 3.5 3.5L8 1" stroke="currentColor" />

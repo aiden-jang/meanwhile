@@ -273,6 +273,11 @@ export function RadarStage({
             {statusMessage}
           </p>
         )}
+        {canRetry && (
+          <button type="button" className="radar-retry" onClick={retry}>
+            Retry {provider}
+          </button>
+        )}
         {storm && <StormRadarCoverage {...{ coverage, problem }} />}
         {showingEarlier && (!storm || coverage) && (
           <p className="radar-reading-date">
@@ -295,7 +300,7 @@ export function RadarStage({
             </button>
           </div>
         )}
-        {(!storm || (stormOpen && coverage === true)) && (
+        {scans.length > 0 && (!storm || (stormOpen && coverage === true)) && (
           <RadarPlayer
             {...{ layer, dock, scans, index, atLatest, playing, togglePlay }}
             displayed={!!image}
@@ -342,9 +347,6 @@ export function RadarStage({
           global,
           problem,
           statusMessage,
-          canRetry,
-          provider,
-          retry,
         }}
       />
     </div>

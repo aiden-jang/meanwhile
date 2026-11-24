@@ -21,7 +21,6 @@ export function SharedStory({ moment }: { moment?: StoryMoment | undefined } = {
     return null;
   const positioned =
     initial.at !== undefined || (initial.id === "float" && initial.choice && initial.chapter);
-  const heading = positioned ? "A moment shared with you" : "A story shared with you";
   const explanation =
     initial.id === "tonga" && initial.chapter === "pressure"
       ? "Opened at the shared station minute. Inspect the pressure reading or follow the full story."
@@ -32,13 +31,13 @@ export function SharedStory({ moment }: { moment?: StoryMoment | undefined } = {
           : "Explore at your own pace. Source dates and coverage are shown in this view.";
   return (
     <aside className="shared-story" aria-label="About this shared view">
-      <div className="shared-story-message">
-        <strong>{heading}</strong>
-        <p>{explanation}</p>
-      </div>
       <details className="shared-story-compact">
         <summary>
-          {initial.at === undefined ? "Shared view" : storyObservationTime(initial.id, initial.at)}
+          {initial.at === undefined
+            ? positioned
+              ? "Shared reading"
+              : "Shared view"
+            : storyObservationTime(initial.id, initial.at)}
         </summary>
         <p>{explanation}</p>
       </details>
