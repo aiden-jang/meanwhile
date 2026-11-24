@@ -7,15 +7,20 @@ export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasEle
   let replayBank = 0;
   let replayPitch = 0;
   let skyBleed = 0;
+  let topBleed = 0;
+  const framedHeight = () => Math.max(1, canvas.clientHeight - topBleed);
   const snap = (nextBank = 0, nextLift = 0): void => {
     bank = nextBank;
     lift = nextLift;
   };
   return {
     snap,
-    setSkyBleed(pixels: number) {
+    setSkyBleed(pixels: number, top = 0) {
       skyBleed = pixels;
+      topBleed = top;
     },
+    framedHeight,
+    verticalCentre: () => 0.5 + topBleed / (2 * (canvas.clientHeight || 1)),
     horizontalCentre: () => 0.5 + skyBleed / (2 * (canvas.clientWidth || 1)),
     setReplayAngle(nextBank: number, nextPitch: number) {
       replayBank = nextBank;
@@ -36,20 +41,22 @@ export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasEle
     apply(flat: boolean): void {
       const offset = flat ? 0 : lift;
       const bleed = skyBleed;
-      if (offset || bleed) {
+      if (offset || bleed || topBleed) {
         const width = canvas.clientWidth || 1,
           height = canvas.clientHeight || 1;
         const x = -bleed / 2;
-        const y = -offset * height;
+        const framing = framedHeight();
+        const y = -topBleed - offset * framing;
         const view = camera.view;
         if (
           !view?.enabled ||
           view.width !== width ||
           view.height !== height ||
           view.offsetX !== x ||
-          view.offsetY !== y
+          view.offsetY !== y ||
+          view.fullHeight !== framing
         )
-          camera.setViewOffset(width, height, x, y, width, height);
+          camera.setViewOffset(width, framing, x, y, width, height);
       } else if (camera.view?.enabled) camera.clearViewOffset();
       if (!flat) {
         if (bank || replayBank) camera.rotateZ(bank + replayBank);

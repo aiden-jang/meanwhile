@@ -11,10 +11,26 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/");
     const original = await page.locator("#globe-view canvas").elementHandle();
     const browse = page.getByRole("button", { name: "All stories", exact: true });
-    const wordmark = page.locator(".wordmark");
+    const header = page.locator("#chrome-head");
+    const canvas = page.locator("#globe-view canvas");
+    const nav = [
+      ".wordmark",
+      ".header-explore",
+      ".header-find",
+      "#open-saved-observations",
+      "#observatory-options",
+    ];
+    const positions = () => Promise.all(nav.map((selector) => header.locator(selector).boundingBox()));
+    const underHeader = async () => {
+      const bar = (await header.boundingBox())!;
+      const world = (await canvas.boundingBox())!;
+      expect(world.y).toBeCloseTo(bar.y, 0);
+      expect(world.y + world.height).toBeGreaterThan(bar.y + bar.height);
+    };
     await expect(browse).toBeEnabled();
     await page.evaluate(() => document.fonts.ready);
-    const markBox = await wordmark.boundingBox();
+    const initialPositions = await positions();
+    await underHeader();
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`landing-${width}.png`) });
     await browse.click();
@@ -22,13 +38,15 @@ for (const width of [320, 390, 1440]) {
       "aria-selected",
       "true",
     );
-    expect(await wordmark.boundingBox()).toEqual(markBox);
+    expect(await positions()).toEqual(initialPositions);
+    await underHeader();
     await page.getByRole("button", { name: "Explore", exact: true }).click();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     await expect(layers.getByRole("button", { name: / details$/ })).toHaveCount(9);
     await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
-    expect(await wordmark.boundingBox()).toEqual(markBox);
+    expect(await positions()).toEqual(initialPositions);
+    await underHeader();
     await page.getByRole("button", { name: "View options", exact: true }).click();
     const options = page.getByRole("region", { name: "View options", exact: true });
     await expect(options).toBeVisible();

@@ -128,6 +128,8 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
     flying = false;
   }
 
+  const headerCrop = new Matrix4();
+
   function frame(aspect: number) {
     camera.aspect = aspect;
     const orbit = flight < ORBIT_END;
@@ -208,9 +210,16 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
       }
       return flying || playing || current.turning;
     },
-    render(renderer: WebGLRenderer, aspect: number) {
+    render(renderer: WebGLRenderer, earthCamera: PerspectiveCamera) {
       if (disposed) return false;
-      const view = frame(aspect);
+      const view = frame(earthCamera.aspect);
+      const crop = earthCamera.view;
+      if (crop?.enabled && crop.height > crop.fullHeight) {
+        // Keep the lunar survey in its original frame when the canvas extends under the header.
+        const scale = crop.fullHeight / crop.height;
+        view.projectionMatrix.premultiply(headerCrop.makeScale(1, scale, 1).setPosition(0, scale - 1, 0));
+        view.projectionMatrixInverse.copy(view.projectionMatrix).invert();
+      }
       renderer.render(scene, view);
       if (!flying) placeStops(renderer.domElement, view, surface.matrixWorld, routes.stops(eva));
       return true;

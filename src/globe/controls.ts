@@ -97,7 +97,7 @@ export function createControls(
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
    */
-  const focalPx = (): number => (camera.zoom * canvas.clientHeight) / (2 * Math.tan((fovDeg / 2) * DEG));
+  const focalPx = (): number => (camera.zoom * rig.framedHeight()) / (2 * Math.tan((fovDeg / 2) * DEG));
 
   const angleAt = (px: number, atZoom = zoom): number => {
     const globe = perspectiveAngle(px, distance.at(atZoom, 0), focalPx());
@@ -226,7 +226,7 @@ export function createControls(
       drag: (prev, next, lastMove, elapsed) => {
         const r = canvas.getBoundingClientRect();
         const cx = r.left + r.width * rig.horizontalCentre(),
-          cy = r.top + r.height / 2;
+          cy = r.top + r.height * rig.verticalCentre();
         const swept = (from: number, to: number, centre: number): number =>
           (angleAt(to - centre) - angleAt(from - centre)) / DEG;
         const lonScale = 1 + (1 - morph) * (1 / Math.max(0.25, Math.cos(lat * DEG)) - 1);
@@ -388,9 +388,9 @@ export function createControls(
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),
     degForPx: (px, atZoom) => angleAt(px, atZoom) / DEG,
-    setFit: (d, byHeight, skyBleed = 0) => {
+    setFit: (d, byHeight, skyBleed = 0, topBleed = 0) => {
       distance.fit(d, byHeight);
-      rig.setSkyBleed(skyBleed);
+      rig.setSkyBleed(skyBleed, topBleed);
       apply();
     },
   };

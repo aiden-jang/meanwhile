@@ -386,7 +386,8 @@
   .frame[data-landing] .zone-canvas {
     --landing-sky-bleed: 40;
     --landing-height: min(60vw, calc(100dvh - var(--head-h) - 24px));
-    inset: calc((100dvh + var(--head-h) - var(--landing-height)) / 2) 0 auto;
+    --scene-top-bleed: calc((100dvh + var(--head-h) - var(--landing-height)) / 2);
+    inset: var(--scene-top-bleed) 0 auto;
     height: var(--landing-height);
   }
   .frame[data-landing] .observatory-intro {

@@ -66,7 +66,8 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await expect(sheet).toHaveCount(1);
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const header = (await page.locator("#chrome-head").boundingBox())!;
-  expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
+  expect((await canvas!.boundingBox())!.y).toBeCloseTo(header.y);
+  expect((await page.locator("#globe-view").boundingBox())!.y).toBeCloseTo(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
   const catalogueSize = "303";
   const layersSize = "355";

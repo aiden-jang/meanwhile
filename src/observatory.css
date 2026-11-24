@@ -438,11 +438,6 @@
   color: var(--color-ink);
 }
 
-.frame[data-presentation="observe"] .zone-head {
-  background: transparent;
-  backdrop-filter: none;
-  border-color: transparent;
-}
 @media (prefers-reduced-motion: reduce) {
   .observatory-actions button,
   .observatory-scenes button {

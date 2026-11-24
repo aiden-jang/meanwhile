@@ -361,12 +361,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     resolution.resize(width, height);
     // Fit by whichever dimension is tighter. Height alone puts the globe off both sides of a phone; width
     // alone leaves it swimming on a desktop. Zoom is a multiple of this, so a resize keeps where you were.
-    const { limiting, bleed } = fitGlobeCamera(camera, canvas, width, height);
+    const { limiting, bleed, topBleed } = fitGlobeCamera(camera, canvas, width, height);
     const byHeight = 1 / (FILL * Math.tan((FOV / 2) * DEG));
     const fit = byHeight / limiting;
-    controls.setFit(fit, byHeight, bleed);
+    controls.setFit(fit, byHeight, bleed, topBleed);
     // The globe's on-screen radius at the framing shot, which is what marker sizes scale against.
-    const radiusPx = (height / 2) * (1 / (fit * Math.tan((FOV / 2) * DEG)));
+    const radiusPx = (height - topBleed) / (2 * fit * Math.tan((FOV / 2) * DEG));
     events.setGlobeRadius(radiusPx);
     markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
@@ -522,7 +522,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     setAurora,
     render: (full = false) => {
       if (!resolution.frame(full)) return;
-      if (presentation.renderMoon(renderer, camera.aspect)) return;
+      if (presentation.renderMoon(renderer, camera)) return;
       const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
       if (at !== null) {
         const minute = Math.floor(at / 60_000);

@@ -354,8 +354,8 @@ export function createScenePresentation(
     acceptsLivePicks: () => liveFocus !== "catalogue",
     shadows: () => !!chase,
     orbitalMoon: () => orbitalMoon,
-    renderMoon(renderer: WebGLRenderer, aspect: number) {
-      return skyView?.moonfall?.render(renderer, aspect) ?? false;
+    renderMoon(renderer: WebGLRenderer, camera: PerspectiveCamera) {
+      return skyView?.moonfall?.render(renderer, camera) ?? false;
     },
     skyOpacity(camera: PerspectiveCamera) {
       projection.value = controls.morph();

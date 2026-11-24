@@ -603,9 +603,13 @@
   padding-inline: 0;
 }
 @media (max-width: 767px) {
+  .frame[data-presentation="explore"] .zone-canvas {
+    margin-block-start: var(--scene-top-bleed);
+  }
   .frame[data-presentation="explore"] .globe-scene {
     position: absolute;
-    inset: var(--head-h) 0 var(--world-tools-space, 12px);
+    inset-inline: 0;
+    inset-block-end: var(--world-tools-space, 12px);
     height: auto;
     --scene-hud-top: 8px;
   }

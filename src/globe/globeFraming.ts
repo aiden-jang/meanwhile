@@ -13,11 +13,16 @@ export function fitGlobeCamera(
   canvas: HTMLCanvasElement,
   width: number,
   height: number,
-): { limiting: number; bleed: number } {
+): { limiting: number; bleed: number; topBleed: number } {
   const bleed = Math.min(width - 1, sceneBleed(canvas));
-  camera.aspect = width / height;
+  const scene = canvas.parentElement;
+  const topBleed = scene
+    ? Math.min(height - 1, Math.max(0, -parseFloat(getComputedStyle(scene).top) || 0))
+    : 0;
+  const framedHeight = height - topBleed;
+  camera.aspect = width / framedHeight;
   camera.updateProjectionMatrix();
-  return { limiting: Math.min(1, (width - bleed) / height), bleed };
+  return { limiting: Math.min(1, (width - bleed) / framedHeight), bleed, topBleed };
 }
 
 export function globeFramingRect(element: HTMLElement): DOMRect {

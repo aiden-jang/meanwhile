@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PerspectiveCamera } from "three";
+import { PerspectiveCamera, Vector3 } from "three";
 import {
   entranceFrom,
   entrancePose,
@@ -150,6 +150,22 @@ describe("cinematic camera and light", () => {
     rig.setSkyBleed(0);
     rig.apply(false);
     expect(camera.view?.enabled).toBe(false);
+  });
+  it("exposes scene above the header while preserving the globe's original scale and position", () => {
+    const camera = new PerspectiveCamera(32, 390 / 340);
+    const canvas = { clientWidth: 390, clientHeight: 340 };
+    const rig = createCameraRig(camera, canvas as HTMLCanvasElement);
+    const point = new Vector3(0.3, 0.4, -2);
+    const pixel = (top: number, height: number) => {
+      const projected = point.clone().project(camera);
+      return [(projected.x + 1) * 195, top + ((1 - projected.y) * height) / 2];
+    };
+    const original = pixel(60, 340);
+    canvas.clientHeight = 400;
+    rig.setSkyBleed(0, 60);
+    rig.apply(false);
+    expect(pixel(0, 400)[0]).toBeCloseTo(original[0]!);
+    expect(pixel(0, 400)[1]).toBeCloseTo(original[1]!);
   });
   it("keeps the surveyed region in frame while banking through a magnified replay", () => {
     for (const lens of [1, 13, 17, 36]) {
