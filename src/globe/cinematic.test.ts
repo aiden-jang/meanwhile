@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PerspectiveCamera, Vector3 } from "three";
+import { PerspectiveCamera } from "three";
 import {
   entranceFrom,
   entrancePose,
