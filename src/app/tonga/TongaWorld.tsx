@@ -1,4 +1,5 @@
 import { ReadingLabel } from "../observations/ReadingLabel";
+import type { ReplayProps } from "../observations/RecordedReplay";
 import { ORIGIN, pressureAt, stations, timeIso, timeLabel } from "./tongaTimeline";
 import { PressureChart } from "./PressureChart";
 import type { TongaStation } from "./useTongaPlayback";
@@ -12,8 +13,7 @@ export function TongaWorld({
   reading,
   minute,
   onInspect,
-  backLabel,
-  onBack,
+  back,
 }: {
   phase: TongaPhase;
   station: TongaStation;
@@ -21,8 +21,7 @@ export function TongaWorld({
   reading: boolean;
   minute: number;
   onInspect: (minute: number, station: TongaStation, trigger: HTMLButtonElement) => void;
-  backLabel: string;
-  onBack: () => void;
+  back: Pick<ReplayProps, "closeLabel" | "onClose">;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
   const inspecting = phase === "inspect" || phase === "shared";
@@ -115,8 +114,8 @@ export function TongaWorld({
         <button
           type="button"
           className="reading-back tonga-reading-back"
-          aria-label={backLabel}
-          onClick={onBack}
+          aria-label={back.closeLabel}
+          onClick={back.onClose}
         >
           Back
         </button>
