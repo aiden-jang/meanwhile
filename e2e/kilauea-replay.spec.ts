@@ -31,7 +31,7 @@ test("Kīlauea plays the survey and opens USGS footage on the shared globe", asy
 });
 
 test("Kīlauea keeps the same coastline comparison on globe and map", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 640 });
+  await page.setViewportSize({ width: 320, height: 568 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { panel, canvas, original } = await openKilauea(page);
   const follow = panel.getByRole("button", { name: "Follow the lava", exact: true });
@@ -52,22 +52,32 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   const compare = panel.getByRole("slider", { name: "Compare before and after" });
   await expect(panel.locator(".kilauea-coast-labels")).toBeVisible();
   await expect(panel.locator(".stage-ident")).toBeHidden();
-  await compare.press("Home");
+  const water = panel.getByRole("button", { name: /Open water/ });
+  const land = panel.getByRole("button", { name: /New lava land/ });
+  const keep = panel.getByRole("button", { name: "Keep this comparison" });
+  const back = panel.getByRole("button", { name: "Back to replay", exact: true });
+  for (const control of [water, land, keep, back]) {
+    await expect(control).toBeInViewport({ ratio: 1 });
+    await control.click({ trial: true });
+  }
+  await water.click();
   await expect(compare).toHaveAttribute("aria-valuetext", "Before the eruption");
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("group", { name: "Kīlauea on the map" })).toContainText("Before eruption");
   await expect(compare).toHaveAttribute("aria-valuetext", "Before the eruption");
-  await compare.press("End");
+  await expect(water).toHaveAttribute("aria-pressed", "true");
+  await land.click();
+  await expect(land).toHaveAttribute("aria-pressed", "true");
   await expect(compare).toHaveAttribute("aria-valuetext", "August 9 coastline");
   await panel.getByRole("button", { name: "Globe", exact: true }).click();
   await expect(page.getByRole("group", { name: "Kīlauea on the globe" })).toContainText("August 9, 2018");
   await compare.press("ArrowLeft");
   await expect(compare).toHaveValue("99");
-  await panel.getByRole("button", { name: "Keep this comparison" }).click();
+  await keep.click();
   await expect(panel.getByRole("button", { name: "Comparison kept", exact: true })).toBeVisible();
   const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
   expect(kept.position.moment).toMatchObject({ chapter: "compare", choice: "99" });
-  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
+  await back.click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
     "Jun 4 · 22:00 HST",
@@ -116,17 +126,28 @@ test("the projected shoreline handle and the slider change the same comparison",
   await panel.getByRole("button", { name: "Compare coast", exact: true }).click();
   const slider = panel.getByRole("slider", { name: "Compare before and after" });
   const handle = panel.locator("[data-survey-handle][data-positioned]");
+  const pin = panel.locator("[data-survey-point][data-positioned]");
+  const water = panel.getByRole("button", { name: /Open water/ });
+  const land = panel.getByRole("button", { name: /New lava land/ });
   for (const projection of ["Globe", "Map"]) {
     await panel.getByRole("button", { name: projection, exact: true }).click();
+    await expect(pin).toBeVisible();
     await slider.press("Home");
     await slider.press("ArrowRight");
+    await expect(water).toHaveAttribute("aria-pressed", "true");
     await expect(handle).toBeVisible();
+    const bay = (await pin.boundingBox())!;
     const box = (await handle.boundingBox())!;
+    const left = Number(await handle.getAttribute("data-start"));
+    const right = Number(await handle.getAttribute("data-end"));
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 - 36, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.move(left + (right - left) * 0.8, box.y + box.height / 2, { steps: 10 });
     await page.mouse.up();
-    await expect(slider).not.toHaveValue("1");
+    await expect(land).toHaveAttribute("aria-pressed", "true");
+    expect(Math.abs(Number(await slider.inputValue()) - 80)).toBeLessThanOrEqual(1);
+    expect((await pin.boundingBox())!.x).toBeCloseTo(bay.x, 1);
+    expect((await pin.boundingBox())!.y).toBeCloseTo(bay.y, 1);
   }
 });
 

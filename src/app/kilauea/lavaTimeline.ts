@@ -4,6 +4,7 @@ export const { bounds, sharedCoast, formerCoast, land, vent, fissures, snapshots
 export const LAST = snapshots.length - 1;
 export const OCEAN_ENTRY = snapshots.findIndex(({ at }) => at.startsWith("2018-06-04T22:00"));
 export const COAST_COMPARISON = 48;
+export const kapohoBay: [number, number] = [9630, 2049];
 
 export function shorelineTime(percent: number) {
   if (percent === 0) return "Before the eruption";

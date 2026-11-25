@@ -19,8 +19,9 @@ export function placeSurveyHandle(
   if (!surveyHandle || !corners) return;
   const handle = canvas.closest(".zones")?.querySelector<HTMLElement>("[data-survey-handle]");
   if (!handle) return;
-  const stage = handle.parentElement!.getBoundingClientRect();
-  const { before, after, fraction, latitude } = surveyHandle;
+  const parent = handle.parentElement!;
+  const stage = parent.getBoundingClientRect();
+  const { before, after, fraction, latitude, reference } = surveyHandle;
   const [sw, se, nw, ne] = corners;
   function project(u: number) {
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -31,22 +32,26 @@ export function placeSurveyHandle(
       box,
     );
   }
+  function place(element: HTMLElement, point: ReturnType<typeof project>) {
+    const visible =
+      !!point &&
+      point.x >= stage.left + 12 &&
+      point.x <= stage.right - 12 &&
+      point.y >= stage.top + 24 &&
+      point.y <= stage.bottom - 24;
+    element.toggleAttribute("data-positioned", visible);
+    if (visible) element.style.translate = `${point.x - stage.left}px ${point.y - stage.top}px`;
+  }
+
+  const pin = parent.querySelector<HTMLElement>("[data-survey-point]");
+  if (pin) place(pin, project(reference));
   const start = project(before);
   const end = project(after);
-  const point = project(before + (after - before) * fraction);
-  const visible = !!(
-    start &&
-    end &&
-    point &&
-    Math.abs(end.x - start.x) >= 12 &&
-    point.x >= stage.left + 12 &&
-    point.x <= stage.right - 12 &&
-    point.y >= stage.top + 24 &&
-    point.y <= stage.bottom - 24
-  );
-  handle.toggleAttribute("data-positioned", visible);
-  if (!visible || !point || !start || !end) return;
-  handle.style.translate = `${point.x - stage.left}px ${point.y - stage.top}px`;
-  handle.dataset["start"] = String(start.x);
-  handle.dataset["end"] = String(end.x);
+  const point =
+    start && end && Math.abs(end.x - start.x) >= 12 ? project(before + (after - before) * fraction) : null;
+  place(handle, point);
+  if (start && end) {
+    handle.dataset["start"] = String(start.x);
+    handle.dataset["end"] = String(end.x);
+  }
 }

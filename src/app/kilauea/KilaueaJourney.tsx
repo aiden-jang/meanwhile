@@ -7,8 +7,9 @@ import { revealReading } from "../observations/revealReading";
 import { StoryDock } from "../observations/StoryDock";
 import { useMedia } from "../useNarrow";
 import { TimelineTrack } from "../observations/TimelineTrack";
-import { coastHandle, coastlineDivider, drawLavaComparison, drawLavaSurface } from "./drawLava";
+import { drawLavaComparison, drawLavaSurface } from "./drawLava";
 import { ShorelineHandle } from "./ShorelineHandle";
+import { ShorelineReading } from "./ShorelineReading";
 import { KilaueaFootage } from "./KilaueaFootage";
 import {
   COAST_COMPARISON,
@@ -23,7 +24,7 @@ import { smallLavaSurvey, useLavaRelief } from "./lavaRelief";
 import { useStorySession } from "../observations/StorySession";
 import { nearest } from "../../sources/observations/common";
 
-import { coastalSurvey, fissure, lens, raster, surveyLens } from "./surveyMap";
+import { coastalSurvey, coastHandle, coastlineDivider, fissure, lens, raster, surveyLens } from "./surveyMap";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 
@@ -229,7 +230,12 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       inset={
         <>
           {footage && !panel.map && <KilaueaFootage />}
-          {atlas && <ShorelineHandle onAdjust={setSplit} />}
+          {atlas && (
+            <>
+              <span className="kapoho-mark" data-survey-point="" aria-hidden="true" />
+              <ShorelineHandle onAdjust={setSplit} />
+            </>
+          )}
           {atlas && arrived && split !== null && split > 0 && split < 100 && (
             <div className="kilauea-coast-labels" aria-hidden="true">
               <span>Before eruption</span>
@@ -258,15 +264,15 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
         data-kilauea-phase={comparing ? "compare" : invited ? "intro" : "replay"}
       >
         {!(coast && comparing) && <h3>{title}</h3>}
-        <p className="observation-note">
-          {comparing
-            ? coast
-              ? "Slide between the registered USGS shorelines to see where lava made new land."
-              : "The dashed line marks Kapoho Bay’s former shore. Light amber shows the new land."
-            : invited
+        {split !== null ? (
+          <ShorelineReading split={split} guided={coast} onAdjust={setSplit} />
+        ) : (
+          <p className="observation-note">
+            {invited
               ? "Follow the lava from Fissure 8 to Kapoho Bay."
               : "Amber highlights the newly mapped lava. Darker orange shows earlier flows."}
-        </p>
+          </p>
+        )}
         {coast && comparing && (
           <div className="coast-survey-control">
             <div>
@@ -341,7 +347,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           <div className="survey-transport" data-comparing={comparing}>
             <div className="story-dock-time">
               <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
-              <span className="story-dock-readout">{comparing ? `${split}%` : time}</span>
+              <span className="story-dock-readout">{comparing ? "Drag the divider" : time}</span>
             </div>
             <TimelineTrack
               max={comparing ? 100 : LAST}
