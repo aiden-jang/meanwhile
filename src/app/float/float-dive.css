@@ -335,6 +335,10 @@
   .observatory-intro[data-float-dive] {
     gap: 8px;
   }
+  .observatory-intro[data-float-dive] .float-heading {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
   .observatory-intro[data-float-dive] .float-heading h2 {
     font-size: 36px;
   }

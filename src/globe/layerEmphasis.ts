@@ -4,12 +4,12 @@ import type { MarkLayer } from "./marks";
 import type { RingLayer } from "./rings";
 import type { LayerEmphasis } from "../app/weatherLayers";
 
-const neutral = { radar: 1, quakes: 1, reports: 1, aurora: 1, weather: 1 };
+const neutral = { radar: 1, quakes: 1, reports: 1, aurora: 1, weather: 1, stars: 1 };
 const focus = {
-  radar: { radar: 1, quakes: 0.42, reports: 0.48, aurora: 0.48, weather: 0.42 },
-  earthquakes: { radar: 0.38, quakes: 1, reports: 0.49, aurora: 0.48, weather: 0.4 },
-  aurora: { radar: 0.31, quakes: 0.42, reports: 0.51, aurora: 1, weather: 0.38 },
-  catalogue: { radar: 0, quakes: 0, reports: 0, aurora: 0, weather: 0 },
+  radar: { radar: 1, quakes: 0.42, reports: 0.48, aurora: 0.48, weather: 0.42, stars: 1 },
+  earthquakes: { radar: 0.38, quakes: 1, reports: 0.49, aurora: 0.48, weather: 0.4, stars: 1 },
+  aurora: { radar: 0.31, quakes: 0.42, reports: 0.51, aurora: 1, weather: 0.38, stars: 1 },
+  catalogue: { radar: 0, quakes: 0, reports: 0, aurora: 0, weather: 0, stars: 0.4 },
 };
 const channels = Object.keys(neutral) as (keyof typeof neutral)[];
 
@@ -28,6 +28,7 @@ export function createLayerEmphasis(
   return {
     radar: () => value.radar,
     weather: () => value.weather,
+    stars: () => value.stars,
     step(subject: LayerEmphasis | null, dt: number, reduced: boolean) {
       if (subject === "aurora" && !nightUniforms["uAuroraOn"]!.value) subject = null;
       if (subject === "earthquakes" && events.object.geometry.drawRange.count === 0) subject = null;

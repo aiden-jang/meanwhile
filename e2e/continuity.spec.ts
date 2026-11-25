@@ -525,6 +525,12 @@ test("Moonfall opens with the rover traverse and playback reachable in landscape
   ).toBe(true);
   await traverse.selectOption("1");
   await expect(traverse).toHaveValue("1");
+  const caption = page.locator(".moonfall-description");
+  const dock = page.getByRole("group", { name: "Rover playback" });
+  await expect(caption).toBeInViewport({ ratio: 1 });
+  const captionBox = (await caption.boundingBox())!;
+  const dockBox = (await dock.boundingBox())!;
+  expect(captionBox.y + captionBox.height + 4).toBeLessThanOrEqual(dockBox.y);
   await expect(distance).toBeInViewport({ ratio: 1 });
   await expect(play).toBeInViewport({ ratio: 1 });
   await distance.press("ArrowRight");

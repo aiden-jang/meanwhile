@@ -199,7 +199,11 @@
   }
 }
 
-@media (min-width: 600px) and (max-height: 620px) {
+@media (max-width: 599px), (min-width: 600px) and (max-height: 620px) {
+  .observatory-intro[data-tonight]:has([data-moonfall-panel]) {
+    row-gap: 4px;
+  }
+
   .replay-sidebar > .observatory-intro > .tonight-heading[data-moonfall-panel] {
     flex-direction: row;
     align-items: center;
@@ -216,6 +220,26 @@
     flex-shrink: 0;
   }
 
+  .moonfall-finding h3 {
+    font-size: clamp(28px, 4vw, 36px);
+  }
+
+  .moonfall-finding .moonfall-description {
+    margin-block-start: 4px;
+    line-height: 1.45;
+  }
+
+  .moonfall-transport .tonight-clock {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+  }
+
+  .story-dock .moonfall-transport .observatory-actions {
+    grid-row: 2;
+  }
+}
+
+@media (min-width: 600px) and (max-height: 620px) {
   .replay-sidebar:has([data-moonfall-panel]) .story-dock-host {
     position: static;
     padding-inline: var(--observatory-inline);

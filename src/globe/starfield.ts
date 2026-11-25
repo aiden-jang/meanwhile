@@ -71,8 +71,7 @@ export interface Starfield {
   setStars: (table: StarTable) => void;
   /** Turns the sky to the moment on screen. Called wherever the sun is aimed, from the same clock. */
   setTime: (at: number, gmst: number) => void;
-  /** Fades with the morph to the flat map, which has no sky to be under. */
-  setOpacity: (value: number) => void;
+  setOpacity: (value: number, shortPhoneWeight: number) => void;
   /** Star sizes are in CSS pixels, so the shader needs the ratio the renderer actually used. */
   setPixelRatio: (value: number) => void;
   prepare: (camera: PerspectiveCamera, width: number, height: number, reduced: boolean) => void;
@@ -89,6 +88,7 @@ export function createStarfield(): Starfield {
   geometry.boundingSphere = null;
 
   const exposure = createStarExposure();
+  const shortPhone = window.matchMedia("(max-width: 599px) and (max-height: 650px)");
   const material = new ShaderMaterial({
     ...STARFIELD,
     uniforms: {
@@ -141,10 +141,10 @@ export function createStarfield(): Starfield {
     setTime: (_at, gmst) => {
       material.uniforms["uSpin"]!.value = -gmst * DEG;
     },
-    setOpacity: (value) => {
-      opacity = value;
-      material.uniforms["uOpacity"]!.value = value;
-      object.visible = loaded && value > 0.001;
+    setOpacity: (value, shortPhoneWeight) => {
+      opacity = value * (shortPhone.matches ? shortPhoneWeight : 1);
+      material.uniforms["uOpacity"]!.value = opacity;
+      object.visible = loaded && opacity > 0.001;
     },
     setPixelRatio: (value) => {
       material.uniforms["uPixelRatio"]!.value = value;

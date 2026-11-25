@@ -41,10 +41,15 @@ it("eases the other layers without changing which data is visible", () => {
   const fading = weight.value as number;
   expect(fading).toBeGreaterThan(0);
   expect(fading).toBeLessThan(1);
+  const starlight = emphasis.stars();
+  expect(starlight).toBeGreaterThan(0.4);
+  expect(starlight).toBeLessThan(1);
   expect(emphasis.step(null, 0.05, false)).toBe(true);
   expect(weight.value).toBeGreaterThan(fading);
+  expect(emphasis.stars()).toBeGreaterThan(starlight);
   expect(emphasis.step("catalogue", 0, true)).toBe(false);
   expect(weight.value).toBe(0);
   expect(emphasis.radar()).toBe(0);
+  expect(emphasis.stars()).toBe(0.4);
   regroup.dispose();
 });
