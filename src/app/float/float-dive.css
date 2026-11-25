@@ -194,6 +194,9 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+.float-instrument-reading .float-depth-cue {
+  color: #b8ebda;
+}
 .float-place {
   position: absolute;
   display: grid;

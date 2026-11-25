@@ -75,7 +75,13 @@ for (const width of [1440, 320]) {
       else await page.mouse.click(position!.x, position!.y);
       await expect(control).toBeVisible();
       if (title === "Moonfall") expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-      if (title === "Float Dive") await expect(control).toHaveValue("0");
+      if (title === "Float Dive") {
+        await expect(control).toHaveValue("0");
+        const cue = page.getByText("Drag to change depth", { exact: true });
+        await expect(cue).toBeInViewport({ ratio: 1 });
+        await page.getByRole("slider", { name: "Float depth", exact: true }).press("ArrowUp");
+        await expect(cue).toHaveCount(0);
+      }
       if (title === "Kīlauea") {
         await expect(control).toHaveValue("48");
         await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
@@ -233,4 +239,55 @@ test("Dust Curtain restores the catalogue row through story Back and browser Bac
     await expect(row).toBeFocused();
     await expect.poll(async () => Math.abs((await position()) - before)).toBeLessThanOrEqual(1);
   }
+});
+
+test("the Moon shortcut opens a visible path for the selected city and restores its row in Map", async ({
+  page,
+  hasTouch,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.clock.setFixedTime(new Date("2026-11-09T10:00:00Z"));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => localStorage.setItem("eif.sky-city", "Tokyo"));
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  const rail = page.locator("#chrome-rail");
+  const shortcut = rail.getByRole("button", { name: "Drag the Moon", exact: true });
+  await shortcut.evaluate((row) => {
+    const panel = row.closest("#chrome-rail")!;
+    panel.scrollTop += row.getBoundingClientRect().top - panel.getBoundingClientRect().top - 165;
+  });
+  await expect(shortcut).toBeInViewport({ ratio: 1 });
+  const offset = () =>
+    shortcut.evaluate(
+      (row) => row.getBoundingClientRect().top - row.closest("#chrome-rail")!.getBoundingClientRect().top,
+    );
+  const heldRow = await offset();
+  const point = (await shortcut.boundingBox())!;
+  if (hasTouch) await page.touchscreen.tap(point.x + point.width / 2, point.y + point.height / 2);
+  else await page.mouse.click(point.x + point.width / 2, point.y + point.height / 2);
+
+  const sky = page.getByRole("region", { name: "Tonight’s Sky", exact: true });
+  await expect(sky.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
+  const moon = page.getByRole("slider", { name: "Moon along its path" });
+  await expect(moon).toBeInViewport({ ratio: 1 });
+  const time = sky.getByRole("slider", { name: "City local time" });
+  await expect(time).toHaveAttribute("aria-valuetext", /Nov 12/);
+  const minute = await time.inputValue();
+  await moon.press("ArrowRight");
+  await expect(time).not.toHaveValue(minute);
+  const scrubbed = await time.inputValue();
+
+  await sky.locator("#open-moonfall").click();
+  await expect(page.getByRole("combobox", { name: "Rover traverse" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Tonight’s Sky" }).click();
+  await expect(time).toHaveValue(scrubbed);
+  await sky.getByRole("button", { name: "Back to stories" }).click();
+  await expect(page.locator("#globe-view")).toHaveAttribute("aria-label", "Map");
+  await expect(shortcut).toBeFocused();
+  await expect.poll(async () => Math.abs((await offset()) - heldRow)).toBeLessThanOrEqual(1);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });

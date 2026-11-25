@@ -15,7 +15,7 @@ function Reading({
   projection: Projection;
   fromExplore: boolean;
 }) {
-  const { index, stage, inspecting, field } = useSyncExternalStore(view.subscribe, view.read);
+  const { index, stage, inspecting, field, playing } = useSyncExternalStore(view.subscribe, view.read);
   const sample = view.profile.samples[index]!;
   return (
     <>
@@ -47,6 +47,11 @@ function Reading({
         <div className="float-instrument-reading" data-float-instrument>
           {(fromExplore || stage === "rise" || inspecting) && <FloatDepthHandle view={view} index={index} />}
           <span aria-hidden="true">{Math.round(sample.depth).toLocaleString()} m</span>
+          {!fromExplore && stage === "rise" && !inspecting && index === 0 && !playing && (
+            <small className="float-depth-cue" aria-hidden="true">
+              Drag to change depth
+            </small>
+          )}
           {inspecting && (
             <small aria-hidden="true">
               {field === "temperature"

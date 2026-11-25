@@ -4,13 +4,14 @@ import { StoryRow } from "./StoryRow";
 import { StoryThumbnail } from "./StoryThumbnail";
 import { browseStories, storyButtonId, storyKind } from "./storyBrowse";
 import { journeys } from "./journeys/catalogue";
+import { moonPathOpening } from "./tonight/moonPathOpening";
 import { ContinueVisit } from "./visitor/ContinueVisit";
 import type { Visit, VisitPosition } from "./visitor/library";
 import "./story-catalogue.css";
 
 const picks = [
-  { id: "float", title: "Float Dive", promise: "Ride an Argo float to the surface." },
-  { id: "moonfall", title: "Moonfall", promise: "Land in the Apollo 17 valley." },
+  { id: "float", title: "Float Dive", promise: "Drag through measured depths." },
+  { id: "moonfall", title: "Moonfall", promise: "Visit Apollo 17." },
   { id: "kilauea", title: "Kīlauea", promise: "See how lava redrew the coast." },
 ] as const;
 const catalogueLeads: Record<string, [number, string]> = {
@@ -80,7 +81,7 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
           const buttonId = storyButtonId(id);
           const unavailable = navigation?.unavailable(id);
           return (
-            <div className="catalogue-pick" key={id}>
+            <div className="catalogue-pick" data-moon-path={id === "moonfall" || undefined} key={id}>
               <StoryThumbnail id={id} />
               <span>
                 <button
@@ -100,6 +101,29 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
                 </button>
                 <small id={`${buttonId}-note`}>{unavailable ?? promise}</small>
               </span>
+              {id === "moonfall" && (
+                <button
+                  className="catalogue-moon-path"
+                  id="open-moon-path"
+                  type="button"
+                  disabled={!ready || !!unavailable}
+                  onClick={(event) => {
+                    if (!navigation) return;
+                    event.currentTarget.focus({ preventScroll: true });
+                    const now = Date.now();
+                    navigation.resume(
+                      {
+                        id: "sky",
+                        seen: now,
+                        position: { sky: moonPathOpening(navigation.previewCity, now) },
+                      },
+                      event.currentTarget.id,
+                    );
+                  }}
+                >
+                  Drag the Moon
+                </button>
+              )}
               <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
                 <path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" fill="none" strokeWidth="1.5" />
               </svg>
