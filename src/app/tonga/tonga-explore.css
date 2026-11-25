@@ -127,10 +127,12 @@
 }
 @media (max-width: 599px) and (max-height: 700px) {
   .frame[data-tonga-opening] .zones[data-tonga-explore-reading][data-tonga-phase="inspect"] {
-    grid-template-rows: clamp(145px, 32dvh, 225px) minmax(0, 1fr);
-    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+    grid-template-rows: clamp(145px, 31dvh, 225px) minmax(0, 1fr);
   }
   .tonga-explore-reading .tonga-explore-intro {
     display: none;
+  }
+  .tonga-explore-more {
+    margin-block-start: 4px;
   }
 }

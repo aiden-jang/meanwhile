@@ -6,7 +6,6 @@ import type { ReplayProps } from "../observations/RecordedReplay";
 import { pressureShare } from "./pressureShare";
 import { pressureAt, timeIso, timeLabel } from "./tongaTimeline";
 import type { TongaStation } from "./useTongaPlayback";
-import "./tonga-explore.css";
 
 export function TongaExploreReading({
   station,

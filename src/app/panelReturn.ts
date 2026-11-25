@@ -14,7 +14,11 @@ export function catalogueRowOffset(panel: HTMLElement | null, focus: string) {
 
 export function restorePanel(saved: PanelReturn) {
   const panel = document.getElementById(saved.scrollTarget);
-  if (!panel?.getClientRects().length) return;
+  if (!panel?.getClientRects().length) {
+    const outside = document.getElementById(saved.focus);
+    if (outside?.getClientRects().length) outside.focus({ preventScroll: true });
+    return;
+  }
   const target = [saved.focus, saved.fallback, saved.scrollTarget]
     .map((id) => (id ? document.getElementById(id) : null))
     .find((element) => element?.getClientRects().length && !element.hasAttribute("disabled"));

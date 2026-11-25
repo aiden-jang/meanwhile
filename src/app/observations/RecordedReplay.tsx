@@ -21,6 +21,7 @@ import "../rupture/recorded-waves.css";
 import "../tonga/tonga.css";
 import "../tonga/tonga-journey.css";
 import "../tonga/tonga-evidence.css";
+import "../tonga/tonga-explore.css";
 import "./world-evidence.css";
 
 export interface ReplayProps {

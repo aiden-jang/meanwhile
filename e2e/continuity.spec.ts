@@ -855,4 +855,10 @@ test("Honolulu scrubs the shared globe and map and returns to the same Explore v
       true,
     );
   }
+  await page.getByRole("button", { name: "Hide Layers", exact: true }).click();
+  await expect(rail).toBeHidden();
+  await marker.click();
+  await story.getByRole("button", { name: "Back to Explore" }).click();
+  await expect(rail).toBeHidden();
+  await expect(marker).toBeFocused();
 });
