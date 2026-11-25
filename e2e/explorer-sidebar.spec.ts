@@ -375,7 +375,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(trigger).toBeFocused();
     await search.fill("");
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Ride an Argo float to the surface.",
+      "Drag through measured depths.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveCount(0);
     expect((await new AxeBuilder({ page }).include("#chrome-rail").analyze()).violations).toEqual([]);
