@@ -1,0 +1,136 @@
+.tonga-explore-reading {
+  height: 100%;
+  overflow: auto;
+  padding: 4px 14px 12px 4px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  color: var(--color-ink);
+}
+.tonga-explore-reading .reading-back {
+  margin-inline-start: -4px;
+}
+.tonga-explore-date,
+.tonga-explore-help {
+  color: var(--color-dim);
+  font-size: 12px;
+}
+.tonga-explore-date {
+  margin-block: 16px 10px;
+}
+.tonga-explore-reading h2 {
+  margin: 0;
+  font:
+    550 clamp(48px, 6vw, 88px)/0.91 "Alumni Sans",
+    var(--font-sans);
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+.tonga-explore-intro {
+  max-width: 35ch;
+  margin-block: 16px 22px;
+  color: var(--color-dim);
+}
+.tonga-explore-instrument {
+  border-block-start: 1px solid var(--color-hairline);
+  padding-block-start: 12px;
+}
+.tonga-explore-station {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tonga-explore-station time {
+  font: 12px var(--font-mono);
+  white-space: nowrap;
+}
+.tonga-explore-value {
+  margin: 1px 0 6px;
+  color: #b4f0e2;
+  font:
+    550 48px/1 "Alumni Sans",
+    var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.tonga-explore-value span {
+  color: var(--color-dim);
+  font: 12px var(--font-mono);
+}
+.tonga-explore-reading .pressure-sample-slider {
+  touch-action: pan-y;
+}
+.tonga-explore-help {
+  margin-block: 7px 0;
+}
+.tonga-explore-more {
+  margin-block-start: 12px;
+  font-size: 13px;
+}
+.tonga-explore-more > :is(a, button, summary) {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.tonga-explore-more > a {
+  display: block;
+  text-decoration: underline;
+}
+.zones[data-tonga-explore-reading] .observatory-sidebar,
+.zones[data-tonga-explore-reading] .world-evidence-connector,
+.zones[data-tonga-explore-reading] :is(.stage-ident, .stage-readout, .tonga-world-title) {
+  visibility: hidden;
+}
+.zones[data-tonga-explore-reading] .tonga-world-anchors button:not([data-projection-anchor="true"]) {
+  display: none;
+}
+.zones[data-tonga-explore-reading] .story-projection {
+  inset-block: var(--stage-inset, 16px) auto;
+}
+@media (min-width: 900px) and (min-height: 621px) {
+  .frame[data-presentation="observe"] .zones[data-tonga-phase][data-tonga-explore-reading] {
+    grid-template-areas: "welcome canvas";
+    grid-template-columns: clamp(325px, 32vw, 470px) minmax(0, 1fr);
+  }
+  .zones[data-tonga-phase][data-tonga-explore-reading] .zone-canvas {
+    margin-inline-end: 0;
+  }
+  .zones[data-tonga-explore-reading] .world-evidence {
+    position: relative;
+    inset: auto;
+    grid-area: welcome;
+    align-self: center;
+    width: auto;
+    max-height: calc(100dvh - var(--head-h) - 72px);
+    margin: 16px 0 16px 28px;
+  }
+}
+@media (max-width: 899px), (max-height: 620px) {
+  .tonga-explore-reading h2 {
+    font-size: clamp(34px, 12vw, 55px);
+  }
+  .tonga-explore-reading .reading-back {
+    min-height: 44px;
+  }
+  .tonga-explore-date {
+    margin-block: 0 5px;
+  }
+  .tonga-explore-intro {
+    margin-block: 7px 13px;
+    font-size: 13px;
+  }
+  .tonga-explore-value {
+    font-size: 37px;
+  }
+  .tonga-explore-reading .tonga-chart-field svg {
+    height: 48px;
+  }
+}
+@media (max-width: 599px) and (max-height: 700px) {
+  .frame[data-tonga-opening] .zones[data-tonga-explore-reading][data-tonga-phase="inspect"] {
+    grid-template-rows: clamp(145px, 32dvh, 225px) minmax(0, 1fr);
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+  }
+  .tonga-explore-reading .tonga-explore-intro {
+    display: none;
+  }
+}

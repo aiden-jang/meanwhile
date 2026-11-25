@@ -797,3 +797,62 @@ test("Find opens an exact journey and the folded Stories panel keeps its identit
   await expect(button("Find")).toBeFocused();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
+
+test("Honolulu scrubs the shared globe and map and returns to the same Explore view", async ({ page }) => {
+  if (!test.info().project.use.isMobile) await page.setViewportSize({ width: 1260, height: 735 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=explore&p=globe&at=-158,19,1.4&layers=earthquakes");
+  const stage = page.locator("#globe-view");
+  const canvas = await stage.locator("canvas").elementHandle();
+  const marker = stage.getByRole("button", { name: "Inspect Honolulu pressure from Tonga’s shockwave" });
+  const rail = page.locator("#chrome-rail");
+  const position = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("at"));
+  const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+  const sample = story.getByRole("slider", { name: "Station pressure time" });
+
+  for (const projection of ["Globe", "Map"]) {
+    if (projection === "Map") {
+      await page.locator("#view-projection").click();
+    }
+    await expect(stage).toHaveAttribute("aria-label", projection);
+    await expect(marker).toBeVisible();
+    await rail.evaluate((panel) => panel.scrollTo(0, 90));
+    const scroll = await rail.evaluate((panel) => panel.scrollTop);
+    if (test.info().project.use.isMobile) expect(scroll).toBeGreaterThan(0);
+    const pose = await position();
+    const bounds = await marker.boundingBox();
+    const switches = rail.locator(".layer-row [aria-pressed]");
+    const preferences = await switches.evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("aria-pressed")),
+    );
+    await marker.click();
+    await expect(sample).toBeFocused();
+    await expect(sample).toHaveValue("539");
+    await expect(story.locator(".tonga-explore-value")).toHaveText("1017.75 hPa");
+    const plot = (await sample.boundingBox())!;
+    await sample.click({ position: { x: plot.width * 0.15, y: plot.height / 2 } });
+    await expect(sample).not.toHaveValue("539");
+    const minute = await sample.inputValue();
+    await expect(page).toHaveURL(/story=tonga/);
+    await story.getByRole("button", { name: projection === "Map" ? "Globe" : "Map", exact: true }).click();
+    await expect(sample).toHaveValue(minute);
+    await sample.press("ArrowRight");
+    await expect(sample).toHaveValue(String(Number(minute) + 1));
+    await story.getByRole("button", { name: "Back to Explore" }).click();
+    await expect(stage).toHaveAttribute("aria-label", projection);
+    await expect.poll(position).toBe(pose);
+    await expect.poll(() => rail.evaluate((panel) => panel.scrollTop)).toBe(scroll);
+    await expect(marker).toBeVisible();
+    await expect(marker).toBeFocused();
+    const restored = (await marker.boundingBox())!;
+    expect(Math.abs(restored.x - bounds!.x)).toBeLessThan(1);
+    expect(Math.abs(restored.y - bounds!.y)).toBeLessThan(1);
+    expect(
+      await switches.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-pressed"))),
+    ).toEqual(preferences);
+    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+      true,
+    );
+  }
+});

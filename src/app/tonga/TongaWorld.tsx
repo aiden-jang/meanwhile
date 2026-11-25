@@ -21,7 +21,7 @@ export function TongaWorld({
   reading: boolean;
   minute: number;
   onInspect: (minute: number, station: TongaStation, trigger: HTMLButtonElement) => void;
-  back: Pick<ReplayProps, "closeLabel" | "onClose">;
+  back: Pick<ReplayProps, "closeLabel" | "onClose"> | undefined;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
   const inspecting = phase === "inspect" || phase === "shared";
@@ -110,7 +110,7 @@ export function TongaWorld({
       {inspecting && (
         <ReadingLabel reading={`${station.id}:${Math.floor(minute)}`}>{station.name}</ReadingLabel>
       )}
-      {(inspecting || phase === "kept") && (
+      {back && (inspecting || phase === "kept") && (
         <button
           type="button"
           className="reading-back tonga-reading-back"

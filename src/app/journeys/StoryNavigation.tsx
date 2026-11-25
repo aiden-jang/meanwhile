@@ -31,6 +31,7 @@ import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
 import { captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
 import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
+import { honoluluTrigger } from "../tonga/honolulu";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
 
@@ -222,7 +223,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       openStoryCatalogue(props, panelReturn.restore, false, focus);
       return true;
     }
-    if (weatherOrigin(saved.trigger)) {
+    if (saved.trigger === honoluluTrigger || weatherOrigin(saved.trigger)) {
       props.views.visitCheckpoint.current();
       history.back();
       return true;

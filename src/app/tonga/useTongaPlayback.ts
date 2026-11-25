@@ -74,7 +74,8 @@ function openPlayback(initial: StoryMoment | undefined): TongaPlayback {
   );
 }
 
-export function useTongaPlayback(initial: StoryMoment | undefined) {
+export function useTongaPlayback(initial: StoryMoment | undefined, deferScans = false) {
+  const [scansRequested, setScansRequested] = useState(!deferScans || initial?.tongaView?.phase === "follow");
   const [assets, setAssets] = useState<"loading" | "ready" | "partial" | "error">("loading");
   const [view, setView] = useState(() => openPlayback(initial));
   const clock = useRef(view);
@@ -87,6 +88,7 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
   };
 
   useEffect(() => {
+    if (!scansRequested) return;
     let closed = false;
     void Promise.all([loadImage(infraredUrl), loadImage(vaporUrl)]).then(([infrared, vapor]) => {
       if (closed) return;
@@ -96,7 +98,7 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
     return () => {
       closed = true;
     };
-  }, []);
+  }, [scansRequested]);
 
   useEffect(() => {
     if (!view.playing || assets === "loading" || !ready) return;
@@ -160,6 +162,7 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
       update(survey(minute, current.station, current.anchor ?? minuteFor(current)));
     },
     begin() {
+      setScansRequested(true);
       if (matchMedia(MOTION).matches) update(survey(ERUPTION));
       else {
         setReady(false);

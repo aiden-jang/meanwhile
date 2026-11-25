@@ -9,6 +9,7 @@ import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./SceneEntrances";
 import { resetStoryResults } from "./StorySearch";
 import { reportAnalytics } from "../../analytics/browser";
+import { HonoluluMarker } from "./tonga/HonoluluMarker";
 import "./explore-panel.css";
 
 export function ExplorerFold({
@@ -113,6 +114,9 @@ export function ExplorerSidebar({
   };
   return (
     <>
+      {!context.views.observing && browser.pane === "layers" && (
+        <HonoluluMarker map={context.explorer.flat} />
+      )}
       <div className="explorer-tabs">
         <div
           className="explorer-tab-options"

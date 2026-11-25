@@ -1,15 +1,9 @@
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryThumbnail } from "./StoryThumbnail";
-import type { StoryMoment } from "./observations/storyMoment";
+import { honoluluReading } from "./tonga/honolulu";
 import "./landing-stories.css";
 
-const reading: StoryMoment = {
-  id: "tonga",
-  choice: "PHNL",
-  chapter: "pressure",
-  at: Date.parse("2022-01-15T08:59:00Z"),
-  map: false,
-};
+const reading = honoluluReading(false);
 const tongaEntry = "open-landing-tonga";
 
 export function LandingStories() {

@@ -1,0 +1,37 @@
+.honolulu-markers {
+  position: absolute;
+  inset: 0 0 0 var(--scene-left-bleed, 0px);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.honolulu-marker {
+  position: absolute;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 5px 10px;
+  transform: translate(-14px, -50%);
+  cursor: pointer;
+  pointer-events: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  color: var(--color-ink);
+  background: var(--color-deck);
+  text-align: start;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.honolulu-marker small {
+  display: block;
+  margin-block-start: 3px;
+  color: var(--color-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.honolulu-marker:is(:hover, :focus-visible) {
+  border-color: #8bc8bd;
+  background: var(--color-raised);
+}

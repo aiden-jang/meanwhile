@@ -1,6 +1,7 @@
 import type { ObservatoryProps } from "../observatoryProps";
 import { searchStories } from "../storyIndex";
 import { captureCollection } from "../visitor/collectionReturn";
+import { honoluluBack, honoluluTrigger } from "../tonga/honolulu";
 import { weatherOrigin } from "../storm/weatherHandoff";
 import { auroraHandoff } from "./auroraJourney";
 import type { BrowseOrigin } from "./storyNavigationTypes";
@@ -31,17 +32,19 @@ export function captureBrowseOrigin(
     ...(previous ? { previous } : {}),
     label:
       weatherOrigin(trigger) ??
-      (trigger === auroraHandoff
-        ? "Back to the ISS finding"
-        : collection
-          ? "Back to Saved"
-          : fromStory && active
-            ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
-            : browsing
-              ? "Back to stories"
-              : views.observing
-                ? "Back to home"
-                : "Back to layers"),
+      (trigger === honoluluTrigger
+        ? honoluluBack
+        : trigger === auroraHandoff
+          ? "Back to the ISS finding"
+          : collection
+            ? "Back to Saved"
+            : fromStory && active
+              ? `Back to ${searchStories.find((item) => item.id === active)?.title ?? "previous story"}`
+              : browsing
+                ? "Back to stories"
+                : views.observing
+                  ? "Back to home"
+                  : "Back to layers"),
     trigger,
   };
 }

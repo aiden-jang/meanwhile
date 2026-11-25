@@ -1,0 +1,16 @@
+import type { StoryMoment } from "../observations/storyMoment";
+import archive from "./tonga.json";
+
+export const honolulu = archive.stations.find(({ id }) => id === "PHNL")!;
+export const honoluluTrigger = "inspect-honolulu-from-explore";
+export const honoluluBack = "Back to Explore";
+
+export function honoluluReading(map: boolean): StoryMoment {
+  return {
+    id: "tonga",
+    choice: honolulu.id,
+    chapter: "pressure",
+    at: Date.parse(`${archive.date}T00:00:00Z`) + honolulu.peak * 60_000,
+    map,
+  };
+}

@@ -12,7 +12,10 @@ import { tongaGeography, tongaTarget } from "./tongaGlobe";
 import { paintTongaScan } from "./drawTonga";
 import { PressureChart } from "./PressureChart";
 import { KeepPressure } from "./KeepPressure";
+import { TongaSources } from "./TongaSources";
 import { TongaPressure } from "./TongaPressure";
+import { TongaExploreReading } from "./TongaExploreReading";
+import { honoluluBack } from "./honolulu";
 import { TongaKept } from "./TongaKept";
 import { TongaWorld, type TongaPhase } from "./TongaWorld";
 import { pressureShare } from "./pressureShare";
@@ -40,7 +43,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const navigation = useStoryNavigation();
   const guided = navigation?.route?.id === "through-the-air";
   const fromLanding = navigation?.returnLabel === "Back to home";
-  const playback = useTongaPlayback(initial);
+  const fromExplore = panel.closeLabel === honoluluBack;
+  const playback = useTongaPlayback(initial, fromExplore);
   const { assets, view, images, minute, ended, arrive, ready } = playback;
   const [phase, setPhase] = useState<TongaPhase>(() => {
     if (initial?.tongaView) return initial.tongaView.phase;
@@ -57,7 +61,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const station = view.station ?? signal ?? stationAt(minute);
   const scanCanvas = useRef<HTMLCanvasElement>(null);
   const scanOrigin = useRef<DOMRect | null>(null);
-  const focus = useRef<"sample" | "playback" | "kept" | null>(fromLanding ? "sample" : null);
+  const focus = useRef<"sample" | "playback" | "kept" | null>(fromLanding || fromExplore ? "sample" : null);
   const previous = useRef<ReturnType<typeof captureReplayFrame>>();
   const [held, setHeld] = useState(initial?.tongaView?.held ?? false);
   const frameHeld = held && !view.playing;
@@ -66,6 +70,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     if (zones) {
       zones.dataset["tongaPhase"] = phase;
       zones.toggleAttribute("data-tonga-handoff", held);
+      zones.toggleAttribute("data-tonga-explore-reading", fromExplore && phase === "inspect");
     }
     const selector =
       focus.current === "sample"
@@ -106,19 +111,21 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       if (zones) {
         delete zones.dataset["tongaPhase"];
         zones.removeAttribute("data-tonga-handoff");
+        zones.removeAttribute("data-tonga-explore-reading");
       }
     };
-  }, [phase, held]);
+  }, [phase, held, fromExplore]);
   const anchor = view.anchor;
   const framing = ["inspect", "shared", "kept"].includes(phase) ? station.peak : anchor;
   const target = useMemo(() => {
+    if (fromExplore && phase === "inspect") return { lon: -159, lat: 4, zoom: 1.03 };
     if (phase === "discover") return { lon: -162, lat: -4, zoom: 0.85 };
     if (framing === undefined) return tongaTarget;
     const shot = orbit(framing);
     return { lon: shot.lon, lat: shot.lat, zoom: 0.65 + shot.scale * 0.47 };
-  }, [framing, phase]);
+  }, [framing, phase, fromExplore]);
+  const geographic = useMemo(() => tongaGeography(minute, station, anchor), [minute, station, anchor]);
   useLayoutEffect(() => {
-    const geographic = tongaGeography(minute, station, anchor);
     onView({
       kind: "observation",
       ...geographic,
@@ -137,7 +144,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       tongaView: { phase, held, elapsed: view.elapsed, anchor, station: view.station?.id },
     });
   }, [
-    minute,
+    geographic,
     station,
     anchor,
     target,
@@ -223,7 +230,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     <ReplayPanel
       {...panel}
       className="tonga-experience"
-      focusOnEntry={!fromLanding}
+      focusOnEntry={!fromLanding && !fromExplore}
       sharing={false}
       ending={false}
       journeyControls={!inspecting && phase !== "kept"}
@@ -271,13 +278,22 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             reading={showReading}
             minute={minute}
             onInspect={inspect}
-            back={panel}
+            back={fromExplore && inspecting ? undefined : panel}
           />
         </>
       }
       evidence={
         <WorldEvidence state={phase}>
-          {inspecting ? (
+          {fromExplore && phase === "inspect" ? (
+            <TongaExploreReading
+              station={station}
+              minute={minute}
+              panel={panel}
+              onSeek={(next) => inspect(next, station)}
+              onKeep={kept}
+              onJourney={() => journey(true)}
+            />
+          ) : inspecting ? (
             <TongaPressure
               station={station}
               minute={minute}
@@ -293,23 +309,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
           ) : null}
         </WorldEvidence>
       }
-      sources={
-        <>
-          <a href="https://registry.opendata.aws/noaa-goes/" target="_blank" rel="noreferrer">
-            NOAA GOES-17
-          </a>
-          <a
-            href="https://mesonet.agron.iastate.edu/request/asos/1min.phtml"
-            target="_blank"
-            rel="noreferrer"
-          >
-            ASOS via Iowa Mesonet
-          </a>
-          <a href="https://doi.org/10.1038/s41586-022-05012-5" target="_blank" rel="noreferrer">
-            Wave study
-          </a>
-        </>
-      }
+      sources={<TongaSources />}
     >
       <div className="tonga-narrative">
         <TongaChapterTitle phase={phase} title={title} />
