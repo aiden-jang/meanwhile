@@ -9,7 +9,8 @@ const moonNights = new WeakMap<SkyCity, { start: number; end: number; points: Sk
 export function moonNight(city: SkyCity, start: number) {
   const cached = moonNights.get(city);
   if (cached?.start === start) return cached;
-  const { end } = localNight(city, start);
+  const civilNight = localNight(city, start);
+  const { end } = civilNight.start === start ? civilNight : localNight(city, start - 12 * 3_600_000);
   const night = { start, end, points: timedNightTrail(city, "Moon", start, end) };
   moonNights.set(city, night);
   return night;

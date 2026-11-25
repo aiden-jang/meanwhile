@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { horizontal, localNight, moonsetBetween, skyBodies, type SkyCity } from "./tonight";
-import { nightTrail } from "./nightTrail";
+import { horizontal, localNight, localNightOn, moonsetBetween, skyBodies, type SkyCity } from "./tonight";
+import { moonNight, nightTrail } from "./nightTrail";
 import { sunElevation } from "./sun";
 
 const newYork: SkyCity = { name: "New York", lat: 40.7128, lon: -74.006, zone: "America/New_York" };
@@ -84,4 +84,11 @@ test("a polar observing window never invents an above-horizon path for a planet 
   const path = nightTrail(pole, "Jupiter", start, end);
   expect(path.length).toBeGreaterThan(2);
   expect(path.every(({ altitude }) => altitude < 0)).toBe(true);
+});
+
+test("the Moon’s path ends at sunrise when the local sunset falls after midnight", () => {
+  const city = { name: "Reykjavík", lat: 64.1466, lon: -21.9426, zone: "Atlantic/Reykjavik" };
+  const night = localNightOn(city, "2026-06-21");
+  expect(night.start).toBe(Date.parse("2026-06-22T00:04:00Z"));
+  expect(moonNight(city, night.start).points.at(-1)?.at).toBe(night.end);
 });
