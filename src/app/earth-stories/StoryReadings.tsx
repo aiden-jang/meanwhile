@@ -1,7 +1,6 @@
 import { ObservationChart } from "../observations/ObservationChart";
 import { StoryCompass } from "./StoryCompass";
-import { StorySitePicker } from "./StoryOverlay";
-import type { EarthStoryData, StorySite } from "./types";
+import type { EarthStoryData } from "./types";
 import type { ObservationFrame } from "../observations/types";
 import type { EarthStoryId } from "./catalogue";
 import { nearestFrame } from "./nearestFrame";
@@ -11,18 +10,12 @@ export function StoryReadings({
   frame,
   index,
   id,
-  site,
-  selected,
-  chooseSite,
   seek,
 }: {
   data: EarthStoryData;
   frame: ObservationFrame;
   index: number;
   id: EarthStoryId;
-  site: string;
-  selected: StorySite | undefined;
-  chooseSite: (value: string) => void;
   seek: (index: number) => void;
 }) {
   const north = id === "north";
@@ -36,7 +29,7 @@ export function StoryReadings({
   );
   return (
     <>
-      {!north && frame.measurements && (
+      {!north && id !== "fault" && frame.measurements && (
         <dl className="observation-values">
           {frame.measurements.map((m) => (
             <div key={m.label}>
@@ -51,14 +44,6 @@ export function StoryReadings({
           value={data.series[0].samples[index][1]}
           label={frame.measurements[1].label}
           position={frame.measurements[0]?.value}
-        />
-      )}
-      {data.sites && (
-        <StorySitePicker
-          sites={data.sites}
-          site={site}
-          choose={chooseSite}
-          value={id === "fault" ? undefined : selected?.value}
         />
       )}
       {north && chart ? (

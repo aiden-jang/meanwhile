@@ -20,7 +20,8 @@ for (const [id, title] of [
     await page.getByRole("searchbox", { name: "Find a story" }).fill(title);
     await page.locator(`#search-story-${id}`).click();
     const panel = page.getByRole("region", { name: title, exact: true });
-    const timeline = panel.getByRole("slider");
+    if (id === "fault") await panel.getByRole("button", { name: "Replay sequence" }).click();
+    const timeline = panel.locator("#earth-story-time");
     await expect(panel.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(0);
     await panel.getByRole("button", { name: "Pause", exact: true }).click();

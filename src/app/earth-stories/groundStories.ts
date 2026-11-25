@@ -5,6 +5,8 @@ import { archive } from "./archive";
 import radar from "../../sources/earth-stories/fault-radar.json";
 import northData from "../../sources/earth-stories/north.json";
 
+export const firstFaultSite = "11905";
+
 export async function faultStory(): Promise<EarthStoryData> {
   const data = await archive("fault");
   const first = Date.parse("2019-07-04T17:33:49Z");
@@ -27,17 +29,19 @@ export async function faultStory(): Promise<EarthStoryData> {
     )
     .map((p) => ({
       id: p.id,
-      label: `${p.feature || "Survey site"} · ${p.id}`,
+      label: `${p.feature?.split(" (")[0] || "Survey site"} · ${p.id}`,
       lon: p.lon,
       lat: p.lat,
       at: p.event === "6.4" ? first : second,
-      value: `${(p.cm / 100).toFixed(2)} m ${p.sense.toLowerCase()} horizontal offset · surveyed ${p.observed}`,
+      measurement: `${p.cm < 10 ? `${p.cm} cm` : `${(p.cm / 100).toFixed(2)} m`} ${p.sense.split(" - ")[0]!.toLowerCase()}`,
+      observed: p.observed,
     }));
   return {
-    target: { lon: -117.57, lat: 35.78, zoom: 2.0 },
+    target: { lon: -117.52, lat: 35.67, zoom: 3.15 },
+    openingAt: second,
     timelineCues: true,
     playbackDuration: 10_200,
-    lens: { globe: 17, map: 36 },
+    lens: { globe: 17, map: 100 },
     frames: [
       {
         at: first,

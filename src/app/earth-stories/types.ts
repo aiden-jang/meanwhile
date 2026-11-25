@@ -20,7 +20,8 @@ export interface StorySite {
   lon: number;
   lat: number;
   at: number;
-  value: string;
+  measurement: string;
+  observed: string;
 }
 export interface EarthStoryData {
   frames: readonly StoryFrame[];

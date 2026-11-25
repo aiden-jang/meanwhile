@@ -16,7 +16,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const insets = story
     ? Array.from(
         root!.querySelectorAll(
-          "[data-world-inset], .iceberg-journey .stage-ident, .iceberg-journey .stage-readout",
+          "[data-world-inset], .iceberg-journey .stage-ident, .iceberg-journey .stage-readout, .fault-journey :is(.story-projection, .stage-ident)",
         ),
         (element) => element.getBoundingClientRect(),
       ).filter(({ width, height }) => width > 0 && height > 0)

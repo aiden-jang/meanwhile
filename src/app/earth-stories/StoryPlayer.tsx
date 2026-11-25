@@ -1,6 +1,6 @@
 import { startLabels, storyClass } from "./storyClass";
-import { FaultComparison } from "./FaultComparison";
-import { refreshAnnotations } from "../../globe/annotationInput";
+import { FaultComparison, type FaultMode } from "./FaultComparison";
+import { firstFaultSite } from "./groundStories";
 import { useArchiveSky } from "./CelestialView";
 import { StoryFinding } from "../journeys/StoryFinding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
@@ -8,7 +8,7 @@ import { StoryLoading } from "../StoryLoading";
 import { useJourneyGestures } from "../journeyCamera";
 import { storyMapTarget } from "./mapFraming";
 import { StoryTimeline } from "./StoryTimeline";
-import { nearestFrame, openingFrame } from "./nearestFrame";
+import { openingFrame } from "./nearestFrame";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useObservationImage } from "../observations/useObservationData";
@@ -60,9 +60,18 @@ export function StoryPlayer({
   const fieldStory = id === "dust" || fault || id === "ice" || id === "glacier" || !!data.coastalTarget;
   const orbitStory = id === "apophis" || id === "eclipse";
   const [ready, setReady] = useState(false);
-  const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
-  const arrive = useCallback(() => setReady(true), []);
   const [start] = useState(() => openingFrame(data, id, initial?.at));
+  const [site, setSite] = useState(
+    initial?.chapter?.startsWith("site:")
+      ? initial.chapter.slice(5)
+      : fault && start > 0
+        ? firstFaultSite
+        : "",
+  );
+  const [faultMode, setFaultMode] = useState<FaultMode>(
+    start === 0 ? "replay" : start === 2 ? "radar" : "survey",
+  );
+  const arrive = useCallback(() => setReady(true), []);
   const selected = data.sites?.find((p) => p.id === site);
   const waiting = useRef(true);
   const surveyed = id === "bloom" || id === "nino";
@@ -71,7 +80,7 @@ export function StoryPlayer({
     start,
     waiting,
     initial?.at !== undefined,
-    !startLabels[id] && !surveyed,
+    !fault && !startLabels[id] && !surveyed,
     id === "seafloor" ? 8500 : data.playbackDuration,
     data.pace,
     id === "seafloor" ? "elapsed" : "sampled",
@@ -138,17 +147,7 @@ export function StoryPlayer({
         : lunarImage.status;
   waiting.current = busy || !ready || status !== "ready" || bloom.status !== "ready";
   const mapTarget = useMemo(() => storyMapTarget(data), [data]);
-  const target = useMemo(
-    () =>
-      dust.target
-        ? dust.target
-        : selected
-          ? { ...data.target, lon: selected.lon, lat: selected.lat }
-          : panel.map
-            ? mapTarget
-            : data.target,
-    [selected, data.target, mapTarget, panel.map, dust.target],
-  );
+  const target = dust.target ?? (panel.map ? mapTarget : data.target);
   const sky = useArchiveSky(
     data,
     viewFrame,
@@ -171,7 +170,7 @@ export function StoryPlayer({
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const settled = !busy && status === "ready" && bloom.status === "ready";
   const finished = settled && !clock.playing && clock.position >= duration;
-  useStoryCompletion(finished);
+  useStoryCompletion(finished && (!fault || faultMode === "replay"));
   const shoreline = useShorelineComparison({
     basins: data.basins,
     finished,
@@ -301,15 +300,9 @@ export function StoryPlayer({
   useJourneyGestures(clock.pause, clock.resume, clock.position < duration, !localSky);
   const chooseSite = (value: string) => {
     setSite(value);
-    const point = data.sites?.find((p) => p.id === value);
-    if (point) {
-      clock.seek(nearestFrame(data, point.at));
-      refreshAnnotations({ lon: point.lon, lat: point.lat, zoom: data.target.zoom });
-    }
+    if (index !== 1 || clock.playing) clock.seek(1);
   };
-  const readings = (
-    <StoryReadings {...{ id, data, frame, index, site, selected, chooseSite }} seek={clock.seek} />
-  );
+  const readings = <StoryReadings {...{ id, data, frame, index }} seek={clock.seek} />;
   const chooseReading = (value: string) => {
     clock.pause();
     setChoice(value);
@@ -326,7 +319,7 @@ export function StoryPlayer({
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}
       className={storyClass(id, fieldStory, orbitStory)}
-      finding={id !== "aral"}
+      finding={id !== "aral" && (!fault || faultMode === "replay")}
       status={comparingShoreline ? null : (sky.status ?? displayCaption)}
       at={
         comparingShoreline || orbitStory || fieldStory ? undefined : (
@@ -340,7 +333,7 @@ export function StoryPlayer({
       sources={<StorySources id={id} />}
       inset={
         <>
-          <StoryOverlay localSky={localSky} data={data} frame={frame} site={site} chooseSite={chooseSite} />
+          <StoryOverlay {...{ localSky, data, frame, site, chooseSite }} inspectSites={index < duration} />
           {shoreline.labels}
           {openCurtain && moorings.labels}
         </>
@@ -350,30 +343,40 @@ export function StoryPlayer({
       {section.chart}
       {moorings.controls}
       {dust.control}
-      {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
-      {shoreline.reading}
-      {fault && (
-        <FaultComparison {...panel} data={data} selected={selected} at={frame.at} seek={clock.seek} />
+      {(busy || (status === "loading" && (!fault || faultMode !== "radar"))) && (
+        <StoryLoading>Loading the selected observations…</StoryLoading>
       )}
-      {fault && readings}
-      <StoryTimeline
-        startLabel={clock.cinematic && clock.position === 0 ? startLabels[id] : undefined}
-        data={data}
-        frame={{ ...frame, caption }}
-        settled={settled}
-        index={index}
-        clock={clock}
-        busy={busy}
-        time={time}
-        restored={initial?.at !== undefined}
-        comparison={bloom.controls}
-        compareDates={!fault}
-        yearReading={id === "north" ? readings : undefined}
-        label={
-          data.timelineLabel ??
-          (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
-        }
-      />
+      {shoreline.reading}
+      {fault && data.sites && (
+        <FaultComparison
+          {...panel}
+          sites={data.sites}
+          {...{ selected, index, clock, chooseSite }}
+          mode={faultMode}
+          onMode={setFaultMode}
+          scan={image.status}
+        />
+      )}
+      {(!fault || faultMode === "replay") && (
+        <StoryTimeline
+          startLabel={clock.cinematic && clock.position === 0 ? startLabels[id] : undefined}
+          data={data}
+          frame={{ ...frame, caption }}
+          settled={settled}
+          index={index}
+          clock={clock}
+          busy={busy}
+          time={time}
+          restored={initial?.at !== undefined}
+          comparison={bloom.controls}
+          compareDates={!fault}
+          yearReading={id === "north" ? readings : undefined}
+          label={
+            data.timelineLabel ??
+            (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
+          }
+        />
+      )}
       {id === "north" && choices}
       {glacier.control}
       {comparingShoreline ? (
@@ -383,7 +386,7 @@ export function StoryPlayer({
       ) : (
         shoreline.controls
       )}
-      {!fault && id !== "north" && readings}
+      {id !== "north" && readings}
       {failed && (
         <StoryRecovery retry={retry} archive={storyRecoveryArchive(id, choice, setChoice)} holding />
       )}

@@ -25,6 +25,7 @@ for (const [id, title, action] of stories) {
     });
     await page.goto(`/#v=observe&story=${id}`);
     const panel = page.getByRole("region", { name: title, exact: true });
+    if (id === "fault") await panel.getByRole("button", { name: "Replay sequence" }).click();
     const timeline = panel.locator("#earth-story-time");
     await expect(timeline).toBeVisible();
     await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
@@ -48,22 +49,14 @@ for (const [id, title, action] of stories) {
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`${id}-globe.png`) });
     if (id === "fault") {
-      await page.locator(".story-sites button:visible").first().click();
-      await expect(panel.getByRole("combobox", { name: "Survey measurement" })).not.toHaveValue("");
-      await expect(panel.locator(".fault-site-reading strong")).toHaveText(/m (left|right)/);
-      await expect(page.locator(".story-sites button[aria-pressed=true]")).toHaveCount(1);
-      const site = await panel.getByRole("combobox", { name: "Survey measurement" }).inputValue();
-      const radar = panel.getByRole("button", { name: "Radar displacement", exact: true });
-      await radar.dispatchEvent("click");
-      await expect(radar).toBeFocused();
-      await expect(radar).toHaveAttribute("aria-pressed", "true");
-      await expect(panel.getByRole("combobox", { name: "Survey measurement" })).toHaveValue(site);
-      await panel.getByRole("button", { name: "Shaded terrain", exact: true }).click();
-      await expect(panel.getByRole("button", { name: "Shaded terrain", exact: true })).toHaveAttribute(
-        "aria-pressed",
-        "true",
+      await panel.getByRole("button", { name: "Back to survey" }).click();
+      const survey = panel.getByRole("slider", { name: "Scrub survey sites" });
+      await survey.press("End");
+      await expect(survey).toHaveAttribute("aria-valuetext", /Dirt road · 28767, 1.20 m right/);
+      await expect(panel.locator(".story-sites button[aria-pressed=true]")).toHaveAttribute(
+        "aria-label",
+        "Inspect Dirt road · 28767",
       );
-      await expect(panel.getByRole("combobox", { name: "Survey measurement" })).toHaveValue(site);
     }
     expect(errors).toEqual([]);
   });
@@ -72,6 +65,7 @@ for (const [id, title, action] of stories) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/#v=observe&story=${id}`);
     const panel = page.getByRole("region", { name: title, exact: true });
+    if (id === "fault") await panel.getByRole("button", { name: "Replay sequence" }).click();
     const timeline = panel.locator("#earth-story-time");
     await expect(timeline).toBeVisible();
     await panel.getByRole("button", { name: action, exact: true }).click();
@@ -100,8 +94,14 @@ for (const [id, title, action] of stories) {
     const fragment = new URL(url).hash;
     expect(fragment).toContain(`story=${id}`);
     await page.goto("/" + fragment);
-    await expect(timeline).toHaveValue(selected);
-    await expect(panel.getByRole("button", { name: /^(Play|Replay)$/ })).toBeVisible();
+    if (id === "fault") {
+      await expect(panel.getByRole("heading", { name: "Radar displacement" })).toBeVisible();
+      await panel.getByRole("button", { name: "Back to survey" }).click();
+      await expect(panel.getByRole("slider", { name: "Scrub survey sites" })).toHaveValue("7");
+    } else {
+      await expect(timeline).toHaveValue(selected);
+      await expect(panel.getByRole("button", { name: /^(Play|Replay)$/ })).toBeVisible();
+    }
   });
 }
 
