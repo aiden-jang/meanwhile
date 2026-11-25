@@ -199,6 +199,10 @@
   pointer-events: none;
 }
 
+.zones:has(.iceberg-photo) [data-scale] {
+  display: none;
+}
+
 .iceberg-photo-image {
   position: relative;
   align-self: stretch;

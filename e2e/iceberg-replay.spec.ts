@@ -124,6 +124,7 @@ for (const touch of [false, true]) {
         const scroll = await reading.evaluate((element) => element.scrollTop);
         await open.click();
         await expect(panel.getByRole("img", { name: /Landsat 8/ })).toBeVisible();
+        await expect(page.locator("[data-scale]")).toHaveCSS("display", "none");
         await panel
           .getByRole("button", { name: projection === "Map" ? "Globe" : "Map", exact: true })
           .click();
@@ -142,6 +143,7 @@ for (const touch of [false, true]) {
           "true",
         );
         await expect(date).toHaveValue("48");
+        await expect(page.locator("[data-scale]")).not.toHaveCSS("display", "none");
         await expect.poll(() => reading.evaluate((element) => element.scrollTop)).toBe(scroll);
         await expect
           .poll(async () => {
