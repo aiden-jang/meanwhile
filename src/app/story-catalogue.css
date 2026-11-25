@@ -100,7 +100,7 @@
   min-height: 44px;
   padding-inline: 6px;
   border-radius: 6px;
-  color: #c7d4ff;
+  color: var(--color-ink);
   font-size: 12px;
   font-weight: 570;
   text-decoration: underline;
