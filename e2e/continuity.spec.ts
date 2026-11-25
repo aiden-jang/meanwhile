@@ -805,7 +805,7 @@ test("Honolulu scrubs the shared globe and map and returns to the same Explore v
   await page.goto("/#v=explore&p=globe&at=-158,19,1.4&layers=earthquakes");
   const stage = page.locator("#globe-view");
   const canvas = await stage.locator("canvas").elementHandle();
-  const marker = stage.getByRole("button", { name: "Inspect Honolulu pressure from Tonga’s shockwave" });
+  const marker = stage.getByRole("button", { name: "Honolulu Tonga’s shockwave" });
   const rail = page.locator("#chrome-rail");
   const position = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("at"));
   const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });

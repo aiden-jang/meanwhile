@@ -28,7 +28,7 @@ export function HonoluluMarker({ map }: { map: boolean }) {
         data-compact-anchor=""
         data-lon={honolulu.lon}
         data-lat={honolulu.lat}
-        aria-label="Inspect Honolulu pressure from Tonga’s shockwave"
+        aria-description="Inspect archived station pressure"
         onPointerEnter={prepareReading}
         onFocus={prepareReading}
         onClick={(event) => {
