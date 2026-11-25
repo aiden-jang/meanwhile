@@ -27,7 +27,7 @@ const MOON = {
     uniform vec3 uEclipsed;
     uniform float uUmbral;
     uniform vec3 uSun;
-    uniform float uOpacity;
+    uniform float uOpacity, uLocal;
     varying vec3 vNormal;
 
     void main() {
@@ -49,7 +49,8 @@ const MOON = {
       if (day < 0.004) discard;
 
       /* The Earth's shadow, which does not care which way the moon is facing. See ARCHITECTURE.md#srcglobemoonts. */
-      vec3 body = mix(uColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
+      vec3 dayColor = mix(uColor, vec3(0.83, 0.84, 0.88), uLocal);
+      vec3 body = mix(dayColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
       gl_FragColor = vec4(body, day * uOpacity);
     }`,
 };
@@ -61,7 +62,7 @@ export interface MoonLayer {
   /** How much of the face the Earth's shadow covers, 0 to 1. */
   setUmbral: (value: number) => void;
   /** Fades with the morph to the flat map, which has no sky to hang a moon in. */
-  setOpacity: (value: number) => void;
+  setOpacity: (value: number, localScale: number) => void;
   dispose: () => void;
 }
 
@@ -78,6 +79,7 @@ export function createMoon(): MoonLayer {
       uUmbral: { value: 0 },
       uSun: { value: null },
       uOpacity: { value: 1 },
+      uLocal: { value: 0 },
     },
     transparent: true,
     // Solid despite being transparent: see the note above. This is what lets it cover a star.
@@ -99,7 +101,9 @@ export function createMoon(): MoonLayer {
     setUmbral: (value) => {
       material.uniforms["uUmbral"]!.value = Math.max(0, Math.min(1, value));
     },
-    setOpacity: (value) => {
+    setOpacity: (value, localScale) => {
+      object.scale.setScalar(1 + localScale);
+      material.uniforms["uLocal"]!.value = Math.min(1, localScale);
       material.uniforms["uOpacity"]!.value = value;
       object.visible = value > 0.001;
     },

@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { StoryProjection } from "../observations/StoryProjection";
+import { moonPosition } from "../../geo/moon";
 import { bearingLabel, type TonightView } from "../../geo/tonight";
 import { manualSkyLook, useSkyLook } from "./useSkyLook";
 import { traceSkyBody } from "./traceSkyBody";
-import type { TonightPresentation } from "../../globe/scenePresentation";
+import { MoonScrub } from "./MoonScrub";
+import { hasMoonNight, type TonightPresentation } from "../../globe/skyPresentation";
 
 const bearings = [
   { short: "N", name: "north", azimuth: 0 },
@@ -45,6 +47,11 @@ export function TonightCompass({
     return () => document.removeEventListener("pointerdown", dismissOutside, true);
   }, [directions]);
   const target = view?.bodies.find(({ name }) => name === view.targetName);
+  const moonNightStart =
+    local && hasMoonNight(view) && (!view.nightTrail || target?.name === "Moon")
+      ? view.nightStart
+      : undefined;
+  const overhead = view && projection.map && !view.radiantTrail ? moonPosition(view.at) : null;
   return (
     <div
       className="observatory-stage"
@@ -72,7 +79,19 @@ export function TonightCompass({
           <path data-sky-arc="" data-radiant-arc="" pathLength="1" />
         </svg>
       )}
-      {!fromEarth && view?.nightTrail && target && (
+      {view && moonNightStart !== undefined && (
+        <svg
+          className="night-arc moon-night-arc"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`Moon’s path above the horizon in ${view.city.name} through the selected night`}
+        >
+          <path data-sky-arc="" data-moon-arc="" />
+          <path />
+        </svg>
+      )}
+      {moonNightStart === undefined && !fromEarth && view?.nightTrail && target && (
         <svg
           key={target.name}
           className="night-arc"
@@ -84,9 +103,20 @@ export function TonightCompass({
           <path data-sky-arc="" pathLength="1" />
         </svg>
       )}
-      <div className="tonight-labels" data-sky-labels="" aria-hidden={!(interactive && local)}>
+      <div
+        className="tonight-labels"
+        data-sky-labels=""
+        aria-hidden={!(local && (interactive || moonNightStart !== undefined))}
+      >
         {view?.bodies.map((body) =>
-          interactive && local ? (
+          body.name === "Moon" && moonNightStart !== undefined ? (
+            <MoonScrub
+              key={`${view.city.name}:${moonNightStart}`}
+              view={view}
+              start={moonNightStart}
+              onView={onView}
+            />
+          ) : interactive && local ? (
             <button
               key={body.name}
               type="button"
@@ -98,7 +128,12 @@ export function TonightCompass({
               {body.name}
             </button>
           ) : (
-            <span key={body.name} data-body={body.name} data-target={target?.name === body.name || undefined}>
+            <span
+              key={body.name}
+              aria-hidden="true"
+              data-body={body.name}
+              data-target={target?.name === body.name || undefined}
+            >
               {body.name}
             </span>
           ),
@@ -113,6 +148,16 @@ export function TonightCompass({
           data-lat={view.city.lat}
         >
           {view.city.name}
+        </span>
+      )}
+      {overhead && (
+        <span
+          className="sky-reference-marker"
+          data-observation-anchor=""
+          data-lon={overhead.lon}
+          data-lat={overhead.lat}
+        >
+          Moon overhead
         </span>
       )}
       {view && !view.radiantTrail && (!cityReference || fromEarth) && (

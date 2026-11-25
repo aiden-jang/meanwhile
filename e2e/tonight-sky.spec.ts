@@ -252,3 +252,77 @@ test("Moonfall returns to the Earth map with the same sky time", async ({ page }
   await expect(sky.locator("time")).toHaveAttribute("datetime", at!);
   await expect(projection.getByRole("button", { name: "Map" })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("dragging the Moon scrubs time without moving the sky and Moonfall returns to that reading", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  const time = Date.parse("2026-11-26T04:18:00Z");
+  await page.goto(`/#v=observe&story=sky&city=New%20York&t=${time}&look=107,57&body=Moon`);
+  const moon = page.getByRole("slider", { name: "Moon along its path" });
+  const timeline = page.getByRole("slider", { name: "City local time" });
+  const compass = page.getByRole("group", { name: "Look around the local sky" });
+  await expect(moon).toBeVisible();
+  const bearing = (await compass.innerText()).split("\n")[0]!;
+  const before = Number(await timeline.inputValue());
+  await moon.press("ArrowRight");
+  await expect(timeline).toHaveValue(String(before + 5));
+  await expect(moon).toBeFocused();
+
+  const pointerPath = async () => {
+    const start = (await moon.boundingBox())!;
+    const center = { x: start.x + start.width / 2, y: start.y + start.height / 2 };
+    return page.locator("[data-moon-arc]").evaluate((path: SVGPathElement, center) => {
+      const rect = path.ownerSVGElement!.getBoundingClientRect();
+      const length = path.getTotalLength();
+      const point = (position: number) => {
+        const { x, y } = path.getPointAtLength(position);
+        return { x: rect.left + (x * rect.width) / 100, y: rect.top + (y * rect.height) / 100 };
+      };
+      let closest = Infinity;
+      let start = 0;
+      for (let position = 0; position < length; position += 0.5) {
+        const { x, y } = point(position);
+        const distance = Math.hypot(x - center.x, y - center.y);
+        if (distance < closest) {
+          closest = distance;
+          start = position;
+        }
+      }
+      return [center, ...[3, 6, 9, 12].map((step) => point(Math.min(length, start + step)))];
+    }, center);
+  };
+
+  const [start, ...mouseMoves] = await pointerPath();
+  await page.mouse.move(start!.x, start!.y);
+  await page.mouse.down();
+  for (const { x, y } of mouseMoves) await page.mouse.move(x, y, { steps: 3 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(before + 20);
+  await expect(compass).toContainText(bearing);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await timeline.fill(String(before));
+  await expect(moon).toBeInViewport({ ratio: 1 });
+  const [touch, ...touchMoves] = await pointerPath();
+  const client = await page.context().newCDPSession(page);
+  await client.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [touch!] });
+  for (const point of touchMoves)
+    await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [point] });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect.poll(async () => Number(await timeline.inputValue())).toBeGreaterThan(before + 15);
+  await expect(compass).toContainText(bearing);
+
+  const held = await timeline.inputValue();
+  const moonfall = page.locator("#open-moonfall");
+  await moonfall.click();
+  await expect(page.getByRole("slider", { name: "Mapped distance" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Tonight’s Sky" }).click();
+  await expect(timeline).toHaveValue(held);
+  await expect(compass).toContainText(bearing);
+  await expect(moonfall).toBeFocused();
+  await expect(moon).toBeVisible();
+});

@@ -2,7 +2,7 @@ import type { Group, Object3D, PerspectiveCamera, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
 import type { LayerEmphasis, MapLayerPresentation } from "../app/weatherLayers";
-import type { CameraState, Controls } from "./controlsTypes";
+import type { Controls } from "./controlsTypes";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
 import { createRadarReveal } from "./radarReveal";
@@ -10,8 +10,7 @@ import { createRadarSurface } from "./radarSurface";
 import { createLocalSkyLight } from "./localSkyLight";
 import type { FloatDiveView } from "../app/float/floatPlayback";
 import { createFloatPresentation } from "./floatPresentation";
-import type { TonightView } from "../geo/tonight";
-import type { MoonfallView } from "./moonfall/scene";
+import { hasMoonNight, type TonightPresentation } from "./skyPresentation";
 
 import { createShadowChase } from "./shadowChase";
 import { positionObservationAnchors } from "./observationAnchors";
@@ -25,13 +24,7 @@ import { createDaylineLabel } from "./daylineLabel";
 
 export type GlobePresentation =
   "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | MapLayerPresentation | null;
-export type LunarDeparture = { previous: TonightView; camera?: CameraState | undefined; scroll: number };
-export type TonightPresentation = TonightView & {
-  moonfall?: MoonfallView;
-  lunarDeparture?: LunarDeparture;
-  reference?: CameraState;
-  earthReference?: true;
-};
+export type { LunarDeparture, TonightPresentation } from "./skyPresentation";
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
@@ -354,6 +347,10 @@ export function createScenePresentation(
     acceptsLivePicks: () => liveFocus !== "catalogue",
     shadows: () => !!chase,
     orbitalMoon: () => orbitalMoon,
+    localMoon: () =>
+      hasMoonNight(skyView)
+        ? controls.localSky.amount() * Math.min(13, 3600 / Math.max(1, canvas.clientHeight))
+        : 0,
     renderMoon(renderer: WebGLRenderer, camera: PerspectiveCamera) {
       return skyView?.moonfall?.render(renderer, camera) ?? false;
     },

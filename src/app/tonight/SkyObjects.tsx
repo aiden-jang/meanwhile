@@ -104,7 +104,10 @@ export function SkyObjects({
           </ul>
         </details>
       )}
-      <p>Calculated positions at a level horizon. Clouds and light pollution affect what you’ll see.</p>
+      <p>
+        Calculated positions at a level horizon. The Moon is enlarged for visibility. Clouds and light
+        pollution affect what you’ll see.
+      </p>
     </section>
   );
 }

@@ -55,10 +55,22 @@ export function TonightMoonfall({
   );
 }
 
-export function lunarFlight(view: TonightView, camera?: CameraState) {
+export function MoonfallEntry({ moonAboveHorizon, open }: { moonAboveHorizon: boolean; open: () => void }) {
+  return (
+    <div className="tonight-moonfall-entry">
+      <button type="button" id="open-moonfall" onClick={open}>
+        <strong>{moonAboveHorizon ? "Approach the Moon" : "Visit Apollo 17"}</strong>
+        <span>Moonfall · Taurus–Littrow</span>
+      </button>
+    </div>
+  );
+}
+
+export function lunarFlight(view: TonightView, map: boolean, camera?: CameraState) {
   const moon = view.bodies[0]!;
   const origin: LunarDeparture = {
     previous: view,
+    map,
     camera,
     scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
   };

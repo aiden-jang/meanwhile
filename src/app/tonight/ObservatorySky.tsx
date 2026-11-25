@@ -37,7 +37,7 @@ export function ObservatorySky({
           tonight.setOrbit(false);
           observations.setMap(false);
         }}
-        readCamera={explorer.read}
+        camera={explorer}
         preference={skyCity}
         projection={observations}
         initialMode={tonight.entry.mode}

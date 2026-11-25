@@ -557,6 +557,12 @@
   color: var(--color-dim);
 }
 
+.sky-held-reading:has(.tonight-time) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .sky-held-reading time {
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
@@ -680,4 +686,70 @@
   border: 2px solid var(--color-void);
   border-radius: 50%;
   background: var(--color-ink);
+}
+
+.observatory-stage[data-stage="tonight"] {
+  --moon-ink: #c7d4ff;
+}
+
+.moon-night-arc path {
+  animation: none;
+  stroke: var(--moon-ink);
+  stroke-dasharray: 2 5;
+  opacity: 0.62;
+}
+
+.moon-night-arc path + path {
+  stroke-dasharray: none;
+  opacity: 0.85;
+}
+
+.moon-scrub {
+  position: absolute;
+  z-index: 1;
+  visibility: hidden;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.moon-scrub::before {
+  position: absolute;
+  inset: 2px;
+  content: "";
+  border: 1px solid color-mix(in srgb, var(--moon-ink) 65%, transparent);
+  border-radius: inherit;
+  transition: border-color 150ms ease;
+}
+
+.moon-scrub:is(:hover, :focus-visible, [data-dragging])::before {
+  border-color: var(--color-ink);
+}
+
+.moon-scrub[data-dragging] {
+  cursor: grabbing;
+}
+
+.moon-drag-cue {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 4px);
+  translate: 0 -50%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: var(--color-ink);
+  background: var(--color-void);
+  font: 11px / 1.4 var(--font-sans);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.moon-scrub[data-edge="right"] .moon-drag-cue {
+  right: calc(100% + 4px);
+  left: auto;
 }

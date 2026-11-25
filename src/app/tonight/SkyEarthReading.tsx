@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
 import type { SkyCity } from "../../geo/tonight";
 import { DetailPanelHeading } from "../DetailPanelHeading";
 
@@ -61,14 +61,14 @@ export function SkyEarthEntry({ city, open }: { city: SkyCity; open: () => void 
 
 export function SkyEarthReading({
   city,
-  at,
-  time,
+  timeline,
+  moonfall,
   onBack,
   onWeather,
 }: {
   city: SkyCity;
-  at: number;
-  time: string;
+  timeline: ReactNode;
+  moonfall: ReactNode;
   onBack: () => void;
   onWeather: () => void;
 }) {
@@ -80,10 +80,8 @@ export function SkyEarthReading({
       <button className="sky-earth-entry" type="button" onClick={onWeather}>
         Explore live layers here
       </button>
-      <div className="sky-held-reading">
-        <span>Local sky held at</span>
-        <time dateTime={new Date(at).toISOString()}>{time}</time>
-      </div>
+      <div className="sky-held-reading">{timeline}</div>
+      {moonfall}
     </>
   );
 }
