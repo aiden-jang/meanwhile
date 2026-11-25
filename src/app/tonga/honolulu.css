@@ -3,7 +3,6 @@
   inset: 0 0 0 var(--scene-left-bleed, 0px);
   overflow: hidden;
   pointer-events: none;
-  z-index: 2;
 }
 .honolulu-marker {
   position: absolute;
