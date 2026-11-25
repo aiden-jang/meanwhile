@@ -33,6 +33,7 @@ export function useArgoProfiles(
   view: FloatDiveView | null,
   onView: (view: FloatDiveView, deliberate?: boolean) => void,
   resume?: VisitPosition["float"],
+  recordedOnly = false,
 ) {
   const [catalogue, setCatalogue] = useState<Catalogue>({ state: "loading", stations: [] });
   const [revision, retry] = useState(0);
@@ -53,6 +54,7 @@ export function useArgoProfiles(
   }, [onView, view, resume, catalogue.state, problem]);
 
   useEffect(() => {
+    if (recordedOnly) return;
     const abort = new AbortController();
     setCatalogue({ state: "loading", stations: [] });
     void get(argoCatalogueUrl(), abort.signal)
@@ -63,7 +65,7 @@ export function useArgoProfiles(
         if (!abort.signal.aborted) setCatalogue({ state: "error", stations: [] });
       });
     return () => abort.abort();
-  }, [revision]);
+  }, [recordedOnly, revision]);
 
   useEffect(() => () => request.current?.abort(), []);
 

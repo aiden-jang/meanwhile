@@ -15,7 +15,7 @@ import { KeepPressure } from "./KeepPressure";
 import { TongaSources } from "./TongaSources";
 import { TongaPressure } from "./TongaPressure";
 import { TongaExploreReading } from "./TongaExploreReading";
-import { honoluluBack } from "./honolulu";
+import { backToExplore } from "../discovery/worldStoryMarker";
 import { TongaKept } from "./TongaKept";
 import { TongaWorld, type TongaPhase } from "./TongaWorld";
 import { pressureShare } from "./pressureShare";
@@ -43,7 +43,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const navigation = useStoryNavigation();
   const guided = navigation?.route?.id === "through-the-air";
   const fromLanding = navigation?.returnLabel === "Back to home";
-  const fromExplore = panel.closeLabel === honoluluBack;
+  const fromExplore = panel.closeLabel === backToExplore;
   const playback = useTongaPlayback(initial, fromExplore);
   const { assets, view, images, minute, ended, arrive, ready } = playback;
   const [phase, setPhase] = useState<TongaPhase>(() => {

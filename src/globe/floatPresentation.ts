@@ -18,6 +18,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
   let inspection = 0;
   let reveal = 0;
   let folded = false;
+  let fromExplore = false;
 
   return {
     object: surface.object,
@@ -28,8 +29,10 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
         deck && box.height > 0
           ? Math.max(0.1, Math.min(0.72, (box.bottom - deck.top + 16) / box.height))
           : 0.1;
-      const point = surface.size(canvas.clientWidth, canvas.clientHeight, clearance);
-      placeFloatReading(canvas, point.x, point.y, reveal > 0.95);
+      if (!departure?.active)
+        fromExplore = !!canvas.closest(".zones")?.querySelector("[data-float-world-reading]");
+      const point = surface.size(canvas.clientWidth, canvas.clientHeight, clearance, fromExplore);
+      placeFloatReading(canvas, point, reveal > 0.95);
       departure?.place();
     },
     set(view: FloatDiveView | null, returnToGlobe: boolean, earth = returnToGlobe) {
@@ -115,8 +118,8 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
         if (arrived) landed += dt;
         if (!controls.guidance.following()) reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.4);
         else if (showing.read().stage === "locate") reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.55);
-        else if (arrived && (reduced || landed >= 0.38))
-          reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.35);
+        else if (arrived && (reduced || landed >= (fromExplore ? 0.1 : 0.38)))
+          reveal = reduced ? 1 : Math.min(1, reveal + dt / (fromExplore ? 0.62 : 1.35));
         if (reveal === 1 || !controls.guidance.following()) readyToPlay = true;
         if (readyToPlay && showing.read().stage !== "locate") rising = showing.step(elapsed);
       }

@@ -3,7 +3,6 @@ import archive from "./tonga.json";
 
 export const honolulu = archive.stations.find(({ id }) => id === "PHNL")!;
 export const honoluluTrigger = "inspect-honolulu-from-explore";
-export const honoluluBack = "Back to Explore";
 
 export function honoluluReading(map: boolean): StoryMoment {
   return {

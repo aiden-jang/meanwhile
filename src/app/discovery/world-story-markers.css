@@ -1,10 +1,10 @@
-.honolulu-markers {
+.world-story-markers {
   position: absolute;
   inset: 0 0 0 var(--scene-left-bleed, 0px);
   overflow: hidden;
   pointer-events: none;
 }
-.honolulu-marker {
+.world-story-marker {
   position: absolute;
   visibility: hidden;
   display: flex;
@@ -23,14 +23,27 @@
   font-size: 13px;
   line-height: 1.2;
 }
-.honolulu-marker small {
+.world-story-marker small {
   display: block;
   margin-block-start: 3px;
   color: var(--color-dim);
   font-size: 10px;
   white-space: nowrap;
 }
-.honolulu-marker:is(:hover, :focus-visible) {
+.world-story-marker:is(:hover, :focus-visible) {
   border-color: #8bc8bd;
   background: var(--color-raised);
+}
+.world-story-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  border: 1px solid var(--color-ink);
+  background: var(--color-void);
+  box-shadow: 0 0 0 5px #92dcd21c;
+}
+#inspect-float-from-explore .world-story-dot {
+  border-color: #ffcc99;
+  background: #d49b60;
 }

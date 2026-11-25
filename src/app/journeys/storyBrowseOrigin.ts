@@ -1,7 +1,7 @@
 import type { ObservatoryProps } from "../observatoryProps";
 import { searchStories } from "../storyIndex";
 import { captureCollection } from "../visitor/collectionReturn";
-import { honoluluBack, honoluluTrigger } from "../tonga/honolulu";
+import { backToExplore, isWorldStoryMarker } from "../discovery/worldStoryMarker";
 import { weatherOrigin } from "../storm/weatherHandoff";
 import { auroraHandoff } from "./auroraJourney";
 import type { BrowseOrigin } from "./storyNavigationTypes";
@@ -32,8 +32,8 @@ export function captureBrowseOrigin(
     ...(previous ? { previous } : {}),
     label:
       weatherOrigin(trigger) ??
-      (trigger === honoluluTrigger
-        ? honoluluBack
+      (isWorldStoryMarker(trigger)
+        ? backToExplore
         : trigger === auroraHandoff
           ? "Back to the ISS finding"
           : collection

@@ -16,6 +16,7 @@ import { ObservatorySky } from "./tonight/ObservatorySky";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
+import { floatExploreTrigger } from "./float/firstProfile";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -23,6 +24,7 @@ import "./experience.css";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
+import "./float/float-explore.css";
 import "./float/float-profile.css";
 import "./float/float-journey.css";
 import "./measurement-sound.css";
@@ -66,6 +68,7 @@ function ObservatoryContent({
   entry,
 }: ObservatoryProps & { entry: ReturnType<typeof useSceneEntrances> }): JSX.Element {
   const { sun, tonight, floatDive, observations, skyCity, closeStory, landing, navigation } = views;
+  const floatFromExplore = floatDive.active && observations.trigger === floatExploreTrigger;
   const fromAfterDark = useAfterDarkSky({ explorer, views, tour, aurora });
   const navigationContext = useStoryNavigation();
   const guidedStorm = navigationContext?.route?.id === stormJourney;
@@ -162,7 +165,7 @@ function ObservatoryContent({
       aria-label={radar.active ? "Storm Radar" : undefined}
     >
       {floatDive.active ? (
-        <FloatReadout view={floatDive.view} projection={observations} />
+        <FloatReadout view={floatDive.view} projection={observations} fromExplore={floatFromExplore} />
       ) : radar.active ? (
         <RadarReadout map={observations.map} onMap={observations.setMap} view={radar.view} />
       ) : tonight.view?.moonfall ? (
@@ -210,6 +213,7 @@ function ObservatoryContent({
             data-storm-radar={radar.active || undefined}
             data-tonight={tonight.active || undefined}
             data-float-dive={floatDive.active || undefined}
+            data-float-explore={floatFromExplore || undefined}
             aria-label={observatoryReadingLabel(floatDive.active, tonight.active || radar.active)}
             aria-labelledby={tonight.active ? "local-sky-title" : undefined}
             role={tonight.active || radar.active ? "group" : undefined}
@@ -218,6 +222,7 @@ function ObservatoryContent({
               <Suspense fallback={<StoryLoading>Opening Float Dive…</StoryLoading>}>
                 <FloatDive
                   view={floatDive.view}
+                  fromExplore={floatFromExplore}
                   resume={floatDive.entry}
                   returnLabel={navigationContext?.returnLabel}
                   onView={floatDive.update}

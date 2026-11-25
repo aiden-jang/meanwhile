@@ -862,3 +862,61 @@ test("Honolulu scrubs the shared globe and map and returns to the same Explore v
   await expect(rail).toBeHidden();
   await expect(marker).toBeFocused();
 });
+
+test("Float Dive drags a measured depth across projections and returns to the Explore marker", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/#v=explore&p=map&at=-53.4,56.7,1.2&layers=earthquakes");
+  const world = page.locator("#globe-view");
+  const canvas = await world.locator("canvas").elementHandle();
+  const marker = world.getByRole("button", { name: "Float Dive Labrador Sea · Argo" });
+  const rail = page.locator("#chrome-rail");
+  const position = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("at"));
+  await expect(marker).toBeVisible();
+  await rail.evaluate((node) => {
+    node.scrollTop = 90;
+  });
+  const scroll = await rail.evaluate((node) => node.scrollTop);
+  const pose = await position();
+  const toggles = rail.locator(".layer-row [aria-pressed]");
+  const readLayers = () =>
+    toggles.evaluateAll((items) => items.map((item) => item.getAttribute("aria-pressed")));
+  const layers = await readLayers();
+  const origin = (await marker.boundingBox())!;
+  await marker.click();
+  const float = page.getByRole("slider", { name: "Float depth" });
+  const projection = page.getByRole("group", { name: "Float projection" });
+  await expect(projection.getByRole("button", { name: "Map" })).toHaveAttribute("aria-pressed", "true");
+  await expect(float).toHaveAttribute("aria-valuenow", "611");
+  await expect(page.getByRole("img", { name: /Measured temperature by estimated depth/ })).toBeVisible();
+  const cursor = page.locator(".float-world-chart-sample");
+  const firstPoint = await cursor.getAttribute("style");
+  const box = (await float.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 44, { steps: 8 });
+  await page.mouse.up();
+  const read = async () => Number(await float.getAttribute("aria-valuenow"));
+  await expect.poll(read).toBeGreaterThan(750);
+  await expect(cursor).not.toHaveAttribute("style", firstPoint!);
+  const depth = await read();
+  const value = await float.getAttribute("aria-valuetext");
+  await expect(page.locator("[data-float-depth]")).toHaveText(`${depth.toLocaleString("en-US")} m`);
+  await projection.getByRole("button", { name: "Globe" }).click();
+  await expect(float).toHaveAttribute("aria-valuetext", value!);
+  await float.press("ArrowUp");
+  await expect.poll(read).toBeLessThan(depth);
+  await page.getByRole("button", { name: "Back to Explore" }).click();
+  await expect(world).toHaveAttribute("aria-label", "Map");
+  await expect.poll(position).toBe(pose);
+  await expect.poll(() => rail.evaluate((node) => node.scrollTop)).toBe(scroll);
+  await expect(marker).toBeFocused();
+  expect(await readLayers()).toEqual(layers);
+  const restored = (await marker.boundingBox())!;
+  expect(Math.hypot(origin.x - restored.x, origin.y - restored.y)).toBeLessThan(1);
+  expect(await canvas!.evaluate((element) => element === document.querySelector("#globe-view canvas"))).toBe(
+    true,
+  );
+});

@@ -5,6 +5,7 @@ const water = /* glsl */ `
   uniform float ascent;
   uniform float aspect;
   uniform float motion;
+  uniform float inspectionView;
   uniform vec4 bounds;
   uniform float departure;
   uniform vec2 anchor;
@@ -22,7 +23,7 @@ const water = /* glsl */ `
     vec2 high = mix(bounds.zw, anchor + vec2(0.005), fold);
     vec2 local = (uv - low) / (high - low);
     vec3 abyss = vec3(0.012, 0.025, 0.063);
-    float veil = 0.76 * reveal * (1.0 - smoothstep(0.0, 0.42, departure));
+    float veil = mix(0.76, 0.24, inspectionView) * reveal * (1.0 - smoothstep(0.0, 0.42, departure));
     if (local.x < 0.0 || local.x > 1.0 || local.y < 0.0 || local.y > 1.0) {
       gl_FragColor = vec4(abyss, veil);
       return;
@@ -30,7 +31,7 @@ const water = /* glsl */ `
     vec2 p = (local * 2.0 - 1.0) * vec2(aspect, 1.0);
     float height = 0.64 + 0.025 * sin(p.x * 6.0) + 0.012 * cos(p.x * 13.0) - 1.02 * smoothstep(0.0, 0.74, departure);
     float below = max(0.0, height - p.y);
-    float light = mix(0.11, 1.0, pow(ascent, 2.4));
+    float light = mix(mix(0.11, 1.0, pow(ascent, 2.4)), 0.50 + 0.25 * ascent, inspectionView);
     vec3 blue = mix(vec3(0.025, 0.16, 0.24), vec3(0.12, 0.57, 0.62), light);
     vec3 color = mix(abyss, blue, exp(-below * mix(3.1, 1.3, light)));
     float shafts = pow(0.5 + 0.5 * cos(p.x * 9.0 + below * 3.0), 9.0)
@@ -41,7 +42,7 @@ const water = /* glsl */ `
     color = mix(color, sky, surface);
     color += vec3(0.23, 0.43, 0.42) * exp(-abs(p.y - height) * 128.0);
 
-    float x = 0.0;
+    float x = -0.18 * aspect * inspectionView * (1.0 - fold);
     vec2 flecks = p * 22.0 + vec2(ascent * 0.7, -ascent * 9.0) * motion;
     vec2 cell = floor(flecks);
     float seed = fract(sin(dot(cell, vec2(11.27, 47.83))) * 151.13);
@@ -91,6 +92,7 @@ export function createFloatSurface() {
         ascent: { value: 0 },
         aspect: { value: 1 },
         motion: { value: 1 },
+        inspectionView: { value: 0 },
         bounds: { value: bounds },
         departure: { value: 0 },
         anchor: { value: new Vector2(0.5, 0.5) },
@@ -126,17 +128,23 @@ export function createFloatSurface() {
       sheet.material.uniforms.ascent!.value = ascent;
       sheet.material.uniforms.motion!.value = reduced ? 0 : 1;
     },
-    size(width: number, height: number, clearance: number) {
-      if (width <= 0 || height <= 0) return { x: 0.5, y: 0.5 };
+    size(width: number, height: number, clearance: number, fromExplore = false) {
       const compact = width < 600;
       const panel = compact ? Math.min(236, width * 0.64) : 280;
-      bounds.set(0.025, clearance, 0.975 - (panel / width) * inspection, 0.98);
+      const left = fromExplore ? (compact ? 0.16 : 0.095) : 0.025;
+      const right = fromExplore ? 0.96 : 0.975 - (panel / Math.max(1, width)) * inspection;
+      bounds.set(left, clearance, right, fromExplore ? 0.79 : 0.98);
       sheet.material.uniforms.aspect!.value =
-        ((bounds.z - bounds.x) * width) / ((bounds.w - bounds.y) * height);
+        ((bounds.z - bounds.x) * Math.max(1, width)) / ((bounds.w - bounds.y) * Math.max(1, height));
+      sheet.material.uniforms.inspectionView!.value = Number(fromExplore);
+      const y = (part: number) => bounds.y + part * (bounds.w - bounds.y);
       return {
-        x: (bounds.x + bounds.z) / 2,
-        y:
-          bounds.y + ((-0.61 + 1.12 * sheet.material.uniforms.ascent!.value + 1) / 2) * (bounds.w - bounds.y),
+        x: bounds.x + (bounds.z - bounds.x) * (fromExplore ? 0.41 : 0.5),
+        y: y(0.195 + 0.56 * sheet.material.uniforms.ascent!.value),
+        shallow: y(0.755),
+        deep: y(0.195),
+        left,
+        right,
       };
     },
   };

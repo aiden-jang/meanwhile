@@ -24,6 +24,17 @@ export type FloatRestore = Pick<FloatReading, "stage" | "field" | "inspecting"> 
 
 export type FloatDiveView = ReturnType<typeof createFloatPlayback>;
 
+function nearestSample(samples: ArgoProfile["samples"], depth: number) {
+  let low = 0;
+  let high = samples.length - 1;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (samples[middle]!.depth > depth) low = middle + 1;
+    else high = middle;
+  }
+  return low > 0 && samples[low - 1]!.depth - depth < depth - samples[low]!.depth ? low - 1 : low;
+}
+
 export function createFloatPlayback(
   profile: ArgoProfile,
   autoplay: boolean,
@@ -93,6 +104,13 @@ export function createFloatPlayback(
       };
     },
     seek,
+    scrubDepth(requested: number, settle = false) {
+      if (!Number.isFinite(requested)) return;
+      const clamped = Math.max(shallowest, Math.min(deepest, requested));
+      const index = nearestSample(samples, clamped);
+      depth = settle ? samples[index]!.depth : clamped;
+      update(index, false, { stage: "rise" });
+    },
     setField(field: ProfileField) {
       update(current.index, current.playing, { field });
     },

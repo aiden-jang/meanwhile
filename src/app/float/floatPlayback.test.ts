@@ -43,3 +43,23 @@ it("rounds and bounds selections without allowing non-finite samples", () => {
   expect(view.read().index).toBe(profile.samples.length - 1);
   expect(view.depth()).toBe(profile.samples.at(-1)!.depth);
 });
+
+it("moves between depths and settles on the nearest recorded sample", () => {
+  const raw = recorded[0]!;
+  const profile = compileArgoProfile(argoStation(raw.station)!, raw.measurements)!;
+  const view = createFloatPlayback(profile, true, "recorded");
+  const index = 278;
+  const shallow = profile.samples[index]!.depth;
+  const deep = profile.samples[index - 1]!.depth;
+  const depth = shallow + (deep - shallow) / 4;
+  view.scrubDepth(depth);
+  expect(view.read()).toMatchObject({ index, playing: false, stage: "rise" });
+  expect(view.depth()).toBe(depth);
+  view.scrubDepth(depth, true);
+  expect(view.depth()).toBe(shallow);
+  view.scrubDepth(NaN);
+  expect(view.depth()).toBe(shallow);
+  view.scrubDepth(-1, true);
+  expect(view.depth()).toBe(profile.samples.at(-1)!.depth);
+  expect(view.read().stage).toBe("rise");
+});

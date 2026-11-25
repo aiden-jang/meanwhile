@@ -31,7 +31,7 @@ import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
 import { captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
 import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
-import { honoluluTrigger } from "../tonga/honolulu";
+import { isWorldStoryMarker } from "../discovery/worldStoryMarker";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
 
@@ -223,7 +223,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       openStoryCatalogue(props, panelReturn.restore, false, focus);
       return true;
     }
-    if (saved.trigger === honoluluTrigger || weatherOrigin(saved.trigger)) {
+    if (active === "float") floatDive.view?.depart(saved.camera);
+    if (isWorldStoryMarker(saved.trigger) || weatherOrigin(saved.trigger)) {
       props.views.visitCheckpoint.current();
       history.back();
       return true;
@@ -233,7 +234,6 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     props.views.visitCheckpoint.current();
     if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
       props.explorer.radarTime(props.radar.view.selectedAt ?? null);
-    if (active === "float") floatDive.view?.depart(saved.camera);
     props.views.navigation.restore(saved.route);
     props.explorer.restore(saved.camera, saved.flat);
     if (saved.collection || saved.find) {

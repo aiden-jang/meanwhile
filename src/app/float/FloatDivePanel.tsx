@@ -5,6 +5,7 @@ import { ARGO_DOI, ARGO_PROVIDER, type ArgoStation } from "../../sources/argo";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { FloatDiveView } from "./floatPlayback";
 import { useArgoProfiles } from "./useArgoProfiles";
+import { FloatExploreReading } from "./FloatExploreReading";
 import { FloatTitle } from "./FloatChapter";
 import { FloatMeasurements } from "./FloatMeasurements";
 import { floatMoment } from "./floatMoment";
@@ -30,7 +31,9 @@ export function FloatDivePanel({
   resume,
   returnLabel = "Back to Earth",
   projection,
+  fromExplore,
 }: {
+  fromExplore: boolean;
   projection: { map: boolean; setMap: (map: boolean) => void };
   view: FloatDiveView | null;
   onView: (view: FloatDiveView, deliberate?: boolean) => void;
@@ -45,8 +48,24 @@ export function FloatDivePanel({
     if (view?.read().inspecting) view.inspect(false);
     else onClose();
   });
-  const { saved, catalogue, pending, problem, select, retry } = useArgoProfiles(view, onView, resume);
+  const { saved, catalogue, pending, problem, select, retry } = useArgoProfiles(
+    view,
+    onView,
+    resume,
+    fromExplore,
+  );
   const value = pending ?? (view ? `${view.source}/${view.profile.id}` : "");
+
+  if (fromExplore)
+    return (
+      <FloatExploreReading
+        view={view}
+        map={projection.map}
+        back={back}
+        onClose={onClose}
+        returnLabel={returnLabel}
+      />
+    );
 
   return (
     <>
