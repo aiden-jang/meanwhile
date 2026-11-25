@@ -196,23 +196,22 @@
   font-size: clamp(38px, 3.5vw, 54px);
 }
 
-.field-journey .story-dock .observation-transport,
-.iceberg-journey .story-dock .observation-transport:not([data-drift-opening]) {
+.field-journey .story-dock .observation-transport {
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 10px;
 }
 
-:is(.field-journey, .iceberg-journey) .observation-transport span {
+.field-journey .observation-transport span {
   grid-column: 1;
 }
 
-:is(.field-journey, .iceberg-journey) .observation-transport .observatory-actions {
+.field-journey .observation-transport .observatory-actions {
   grid-column: 2;
   grid-row: 1 / span 2;
 }
 
-:is(.field-journey, .iceberg-journey) .observation-transport .observation-scrub {
+.field-journey .observation-transport .observation-scrub {
   grid-column: 1;
 }
 

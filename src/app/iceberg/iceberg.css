@@ -4,7 +4,7 @@
   pointer-events: none;
 }
 
-.iceberg-fragments button {
+.iceberg-fragments :is(button, .iceberg-handle) {
   position: absolute;
   visibility: hidden;
   z-index: 1;
@@ -15,29 +15,182 @@
   cursor: pointer;
 }
 
-.iceberg-fragments button span {
+.iceberg-fragments :is(button, .iceberg-handle) span {
   position: absolute;
-  top: calc(50% + 11px);
+  top: calc(50% + 16px);
   left: 50%;
   transform: translateX(-50%);
   padding: 2px 5px;
-  background: var(--color-deck);
+  background: var(--color-void);
   color: var(--color-ink);
+  font: 11px/1.4 var(--font-mono);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.iceberg-fragments button:not(:hover, :focus-visible) span {
+  visibility: hidden;
+}
+
+.iceberg-fragments svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.iceberg-fragments [data-track-guide] {
+  fill: none;
+  stroke: var(--color-dim);
+  stroke-width: 1.4;
+  stroke-dasharray: 2 5;
+  opacity: 0.68;
+}
+
+.iceberg-fragments [data-track-diamond] {
+  fill: var(--color-deck);
+  stroke: var(--color-dim);
+}
+
+.iceberg-landmark {
+  position: absolute;
+  inset: 0 auto auto 0;
+  padding: 3px 5px;
+  background: var(--color-void);
+  color: var(--color-dim);
   font: 11px/1.4 var(--font-mono);
   white-space: nowrap;
 }
 
-.iceberg-fragments button:not([aria-pressed="true"], :hover, :focus-visible) span {
-  visibility: hidden;
+.iceberg-fragments .iceberg-handle {
+  display: grid;
+  z-index: 2;
+  place-items: center;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
 }
 
-.iceberg-reading .observation-picker {
-  margin-top: 12px;
+.iceberg-handle::before {
+  width: 23px;
+  height: 23px;
+  border: 1px solid #eed5b9;
+  border-radius: 50%;
+  background: radial-gradient(circle, #eed5b9 3px, var(--color-deck) 3.5px);
+  content: "";
+}
+
+.iceberg-fragments .iceberg-handle[data-dragging] {
+  cursor: grabbing;
+}
+
+.iceberg-journey #observatory-intro {
+  overflow-anchor: none;
+}
+
+.iceberg-journey #observatory-intro > .observation-note {
+  display: none;
+}
+
+.iceberg-reading {
+  display: grid;
+  gap: 12px;
+  padding-block: 14px 12px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.iceberg-fix {
+  display: grid;
+  min-height: 88px;
+  align-content: center;
+  gap: 6px;
+}
+
+.iceberg-fix h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font:
+    600 clamp(34px, 4vw, 54px) / 1 "Alumni Sans",
+    var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.iceberg-reading p {
+  margin: 0;
+  color: var(--color-dim);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.iceberg-fix .iceberg-coordinates {
+  min-height: 1.5em;
+  font: 11px/1.5 var(--font-mono);
+}
+
+.iceberg-dates {
+  display: grid;
+  gap: 2px;
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.iceberg-dates input {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  touch-action: pan-y;
+}
+
+.iceberg-dates input::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-deck);
+}
+
+.iceberg-dates input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-deck);
+}
+
+.iceberg-date-limits {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-dim);
+  font-size: 11px;
+}
+
+.iceberg-actions {
+  gap: 8px;
+}
+
+.iceberg-actions button {
+  min-height: 44px;
+}
+
+.iceberg-actions button:first-child {
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
+.iceberg-filters {
+  display: grid;
+  gap: 10px;
+}
+
+.iceberg-journey :is(.iceberg-playback, .iceberg-filters)[hidden] {
+  display: none;
 }
 
 .iceberg-photo {
   position: absolute;
-  inset: 44px 20px max(70px, var(--story-dock-height, 0px));
+  inset: 44px 20px 70px;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   justify-items: center;
@@ -85,10 +238,29 @@
   }
 }
 
-@media (max-height: 440px) and (min-width: 600px) {
-  .iceberg-journey:has(.observation-transport:not([data-drift-opening])) .story-dock-host {
-    position: static;
-    padding-inline: var(--observatory-inline);
+@media (max-width: 899px) {
+  .iceberg-journey #observatory-intro > .observation-heading {
+    min-height: 44px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .iceberg-journey .observation-heading > .observatory-actions {
+    order: 1;
+  }
+
+  .iceberg-reading {
+    padding-block: 10px;
+    gap: 8px;
+  }
+
+  .iceberg-fix {
+    min-height: 72px;
+  }
+
+  .iceberg-fix h3 {
+    font-size: 36px;
   }
 }
 
@@ -96,11 +268,55 @@
   .iceberg-photo {
     inset: 30px 12px 56px;
   }
+
+  .zones:has(.iceberg-journey) .camera-recenter {
+    inset: auto auto 12px 12px;
+  }
 }
 
 @media (max-width: 599px) and (max-height: 700px) {
+  .iceberg-reading {
+    gap: 6px;
+    padding-block: 8px;
+  }
+
+  .iceberg-fix {
+    min-height: 62px;
+    gap: 4px;
+  }
+
+  .iceberg-fix h3 {
+    font-size: 32px;
+  }
+
+  .iceberg-actions button {
+    font-size: 12px;
+  }
+
+  .iceberg-journey .replay-stage > .stage-ident {
+    inset: auto auto 10px 12px;
+    font-size: 9px;
+  }
+
+  .iceberg-journey .stage-rule {
+    display: none;
+  }
+
+  .iceberg-journey .replay-stage > .story-projection {
+    inset-block: 8px auto;
+    inset-inline: 12px auto;
+  }
+
+  .iceberg-journey .replay-stage:has(> .iceberg-photo) > .stage-ident {
+    display: none;
+  }
+
+  .zones:has(.iceberg-journey) .camera-recenter {
+    inset: calc(var(--scene-top-bleed) + 12px) 12px auto auto;
+  }
+
   .iceberg-photo {
-    inset: 40px 12px 16px;
+    inset: 60px 12px 16px;
     grid-template: minmax(0, 1fr) / repeat(2, minmax(0, 1fr));
     align-items: start;
   }

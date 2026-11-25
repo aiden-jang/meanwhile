@@ -703,10 +703,12 @@ HVO overflight marks the ocean entry. The camera levels at the bay for the shore
 holds scale and position so the former coast and the new land can be compared. Reduced motion
 uses fixed maps and the manual wipe.
 
-Iceberg Drift banks along A-68A’s track and widens as the fragments separate. Selecting a world
-marker pauses on that date and connects the route to its reading. The track picker can jump to
-a fragment’s last fix. Terra MODIS, Landsat and VIIRS images open at their capture dates and
-return to the same track and framing. Reduced motion keeps the dates and markers available.
+Iceberg Drift opens on A-68A’s December track. Dragging the selected iceberg or stepping it with
+the arrow keys snaps to recorded positions and keeps the camera steady. A dotted guide shows
+later fixes, leaving gaps in the record open. The date slider can also inspect dates without fixes.
+The breakup replay banks along the track and widens as the fragments separate. Terra MODIS,
+Landsat and VIIRS images open at their capture dates. Back to track restores the same date,
+iceberg, projection, camera and reading position. Reduced motion keeps each control available.
 
 Vanishing Sea reveals the labeled basins as the early shoreline separates. A basin marker opens
 the observed-water and coverage reading for the held year. The early shoreline and gaps remain

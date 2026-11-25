@@ -3,10 +3,12 @@ import type { Controls } from "./controls";
 import { positionEvidenceConnector } from "./evidenceConnector";
 import { positionJourneyPreview } from "./journeyPreview";
 import { positionReadingLabel } from "./readingLabels";
+import { positionObservationTrack } from "./observationTrack";
 
 export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: Controls, story = false) {
   const root = canvas.closest(".zones");
   positionJourneyPreview(root, canvas, controls);
+  if (story && root) positionObservationTrack(root, canvas, controls);
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
   const readingLabel = root?.querySelector<HTMLElement>("[data-reading-label]");
@@ -16,7 +18,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const insets = story
     ? Array.from(
         root!.querySelectorAll(
-          "[data-world-inset], .iceberg-journey .stage-ident, .iceberg-journey .stage-readout, .fault-journey :is(.story-projection, .stage-ident)",
+          "[data-world-inset], :is(.iceberg-journey, .fault-journey) :is(.story-projection, .stage-ident)",
         ),
         (element) => element.getBoundingClientRect(),
       ).filter(({ width, height }) => width > 0 && height > 0)
@@ -25,17 +27,18 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const parents = new Map<Element, DOMRect>();
   const placeWidths = new Map<HTMLElement, number>();
   let evidenceSource: HTMLElement | undefined;
+  let selected: HTMLElement | undefined;
   for (const anchor of anchors) {
     if (anchor.dataset["evidenceSource"] === "true") evidenceSource ??= anchor;
+    if (anchor.hasAttribute("data-track-handle")) selected = anchor;
     const parent = anchor.parentElement;
     if (parent && !parents.has(parent)) parents.set(parent, parent.getBoundingClientRect());
     if (!story && anchor.hasAttribute("data-place-label") && zoom >= Number(anchor.dataset["minZoom"])) {
       placeWidths.set(anchor, anchor.offsetWidth);
     }
   }
-  const ordered = evidenceSource
-    ? [evidenceSource, ...Array.from(anchors).filter((anchor) => anchor !== evidenceSource)]
-    : anchors;
+  const first = evidenceSource ?? selected;
+  const ordered = first ? [first, ...Array.from(anchors).filter((anchor) => anchor !== first)] : anchors;
   for (const anchor of ordered) {
     const place = anchor.hasAttribute("data-place-label");
     const locator = anchor.hasAttribute("data-story-locator");

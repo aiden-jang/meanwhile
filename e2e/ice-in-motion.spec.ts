@@ -54,7 +54,7 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await fragment.selectOption("E");
   await expect(trackDate).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
   await iceberg.getByRole("button", { name: "Map", exact: true }).click();
-  await iceberg.getByRole("button", { name: "Show satellite image", exact: true }).click();
+  await iceberg.getByRole("button", { name: "Open satellite image", exact: true }).click();
   const photo = iceberg.getByRole("img", { name: /NOAA-20 VIIRS/ });
   await expect(photo).toBeVisible();
 
@@ -68,8 +68,10 @@ test("Ice in Motion keeps the selected date, glacier pin, and iceberg photograph
   await next("Glacier Flow").click();
   await expect(divider).toHaveValue(split);
   await next("Iceberg Drift").click();
-  await expect(fragment).toHaveValue("E");
   await expect(photo).toBeVisible();
   await expect(iceberg.getByRole("group", { name: "Iceberg Drift on the map" })).toBeVisible();
+  await iceberg.getByRole("button", { name: "Back to track", exact: true }).click();
+  await expect(fragment).toHaveValue("E");
+  await expect(trackDate).toHaveAttribute("aria-valuetext", "Jan 11, 2021");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });

@@ -20,6 +20,7 @@ const format = new Intl.DateTimeFormat("en-US", {
 export const tracks = data.tracks as Track[];
 export const { coast } = data;
 export const END = day(data.end);
+export const TRACK_OPENING = day("2020-12-14");
 export const BREAKUP = day("2020-12-23");
 export const FIRST_FRAGMENT = day("2020-12-17");
 export const BREAKUP_END = day("2021-02-04");
@@ -65,6 +66,7 @@ export function positionAt(track: Track, date: number, index = latestIndex(track
 }
 
 export const icebergOverview = { lon: -37.5, lat: -56.2, zoom: 2.16 };
+export const icebergTrackView = { lon: -39.35, lat: -55.48, zoom: 3.14 };
 const mainTrack = tracks[0]!;
 
 export function driftCamera(day: number, selected = "A") {
