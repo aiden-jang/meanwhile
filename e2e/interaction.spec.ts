@@ -662,6 +662,7 @@ test.describe("on a touch screen", () => {
     await page.mouse.up();
     await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).not.toMatch(/^140,/);
 
+    const pageScale = await page.evaluate(() => window.visualViewport?.scale ?? 1);
     await page.evaluate(
       ([x, y]) => {
         const canvas = document.querySelector("canvas")!;
@@ -696,8 +697,16 @@ test.describe("on a touch screen", () => {
       [cx, cy],
     );
 
-    // Spread fingers, so the globe comes closer rather than the page getting bigger.
-    await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,2\.\d$/);
+    await expect
+      .poll(
+        () => {
+          const zoom = Number(linkField(page, "at")?.split(",")[2]);
+          return zoom > 2 && zoom < 3;
+        },
+        { timeout: CAMERA_SETTLE_MS },
+      )
+      .toBe(true);
+    expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(pageScale);
   });
 
   test("a touch device keeps keyboard shortcuts out of the scene", async ({ page }) => {
