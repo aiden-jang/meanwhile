@@ -91,6 +91,18 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   };
   return (
     <>
+      {!flying && (
+        <label className="tonight-city">
+          Rover traverse
+          <select value={eva} onChange={(event) => act(() => view.select(Number(event.currentTarget.value)))}>
+            {traverses.map(({ title }, i) => (
+              <option key={title} value={i}>
+                {i + 1} · {title}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="moonfall-finding">
         <h3>
           {flying
@@ -137,19 +149,6 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
       </div>
       {!flying && (
         <>
-          <label className="tonight-city">
-            Rover traverse
-            <select
-              value={eva}
-              onChange={(event) => act(() => view.select(Number(event.currentTarget.value)))}
-            >
-              {traverses.map(({ title }, i) => (
-                <option key={title} value={i}>
-                  {i + 1} · {title}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className="tonight-city">
             Geology stop
             <select

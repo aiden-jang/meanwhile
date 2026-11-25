@@ -506,6 +506,33 @@ test("the phone sky exposes the selected object and returns from the Moon on the
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
+test("Moonfall opens with the rover traverse and playback reachable in landscape", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.goto("/");
+  await page.getByRole("button", { name: "All stories", exact: true }).click();
+  await page.locator("#open-story-moonfall").click();
+  const traverse = page.getByRole("combobox", { name: "Rover traverse" });
+  const distance = page.getByRole("slider", { name: "Mapped distance" });
+  const play = page.getByRole("button", { name: "Play", exact: true });
+  await expect(traverse).toBeInViewport({ ratio: 1 });
+  expect(
+    await traverse.evaluate((node) => {
+      const { x, y, width, height } = node.getBoundingClientRect();
+      return node.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+    }),
+  ).toBe(true);
+  await traverse.selectOption("1");
+  await expect(traverse).toHaveValue("1");
+  await expect(distance).toBeInViewport({ ratio: 1 });
+  await expect(play).toBeInViewport({ ratio: 1 });
+  await distance.press("ArrowRight");
+  await expect(distance).toHaveValue("1");
+  await play.click();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeInViewport({ ratio: 1 });
+});
+
 test("Explore opens Layers and nearby Fiji reports keep the same world and reading", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const now = Date.now();
