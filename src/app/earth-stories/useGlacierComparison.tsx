@@ -1,18 +1,30 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import type { ReplayProps } from "../observations/RecordedReplay";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
+import type { StoryMoment } from "../observations/storyMoment";
 import { surveyComparison } from "../observations/surveyComparison";
 import type { GeoPoint, ObservationFrame } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
-import { glacierCell, glacierPlaces, glacierPoint, glacierYears } from "./glacierReadings";
+import { GlacierReading } from "./GlacierReading";
+import { GlacierWorld } from "./GlacierWorld";
+import { glacierCell, glacierPlaces, glacierPoint } from "./glacierReadings";
 import type { EarthStoryData } from "./types";
+
+type GlacierCamera = Pick<ReplayProps, "map" | "onMap" | "readCamera" | "restoreCamera">;
 
 export function useGlacierComparison(
   glacier: EarthStoryData["glacier"],
-  chapter: string | undefined,
+  initial: StoryMoment | undefined,
   pause: () => void,
+  panel: GlacierCamera,
 ) {
-  const saved = /^velocity:(\d{1,5}),(\d{1,3})$/.exec(chapter ?? "");
+  const guided = !!useStoryNavigation()?.route;
+  const saved = /^velocity:(\d{1,5}),(\d{1,3})$/.exec(initial?.chapter ?? "");
   const grid = glacier?.readings;
-  const [comparing, setComparing] = useState(!!grid && !!saved);
+  const [comparing, setComparing] = useState(
+    !!grid && (!!saved || (!guided && initial?.at === undefined && initial?.choice === undefined)),
+  );
   const [divider, setDivider] = useState(saved ? Math.min(100, Number(saved[2])) : 50);
   const [sample, setSample] = useState(() => {
     if (!grid) return undefined;
@@ -20,6 +32,23 @@ export function useGlacierComparison(
     return cell >= 0 && cell < grid.columns * grid.rows ? cell : glacierCell(grid, glacierPlaces[0]!);
   });
   const [outside, setOutside] = useState(false);
+  const [details, setDetails] = useState(false);
+  const compactTarget = useMemo(
+    () =>
+      grid && matchMedia("(max-width: 599px) and (max-height: 700px)").matches
+        ? { lon: -49.575, lat: 69.145, zoom: 2.6 }
+        : undefined,
+    [grid],
+  );
+  const detailsOpener = useRef<HTMLButtonElement>(null);
+  const detailsBack = useRef<HTMLButtonElement>(null);
+  const returnFrame = useRef<ReturnType<typeof captureReplayFrame>>();
+  useLayoutEffect(() => {
+    if (details) detailsBack.current?.focus({ preventScroll: true });
+  }, [details]);
+  useLayoutEffect(() => {
+    if (comparing) pause();
+  }, [comparing, pause]);
   const earlier = useObservationImage(comparing ? glacier?.earlier : undefined, "glacier-earlier");
   const later = useObservationImage(comparing ? glacier?.later : undefined, "glacier-later");
   const ready = earlier.status === "ready" && later.status === "ready";
@@ -32,123 +61,99 @@ export function useGlacierComparison(
   );
   const mark = useMemo<ObservationFrame["marks"]>(() => {
     if (!comparing || !grid || sample === undefined) return undefined;
-    return [{ ...glacierPoint(grid, sample), size: 12, color: 0xf6dc9f }];
+    return [{ ...glacierPoint(grid, sample), size: 8, color: 0xf6dc9f, lift: 0.001 }];
   }, [comparing, grid, sample]);
+  const select = useCallback(
+    (cell: number) => {
+      pause();
+      setOutside(false);
+      setSample(cell);
+    },
+    [pause],
+  );
   const pick = useCallback(
     (point: GeoPoint) => {
       if (!grid) return;
       const cell = glacierCell(grid, point);
-      setOutside(cell === undefined);
-      if (cell !== undefined) {
-        pause();
-        setSample(cell);
-      }
+      if (cell === undefined) setOutside(true);
+      else select(cell);
     },
-    [grid, pause],
+    [grid, select],
   );
-  const places = grid
-    ? glacierPlaces.map((place) => ({ label: place.label, cell: glacierCell(grid, place) }))
-    : [];
   const failed = [earlier, later].find((image) => image.status === "failed");
+  function inspect(opener: HTMLButtonElement | null) {
+    returnFrame.current = { ...captureReplayFrame(panel), focus: opener };
+    setDetails(true);
+  }
+  function closeDetails() {
+    setDetails(false);
+    restoreReplayFrame(returnFrame.current, panel, () => detailsOpener.current);
+  }
+  function changeMode() {
+    pause();
+    setOutside(false);
+    setComparing(!comparing);
+  }
+
   return {
     comparing,
+    target: comparing ? compactTarget : undefined,
     surface,
     divider: divider / 100,
     mark,
-    pick: comparing ? pick : undefined,
+    pick: comparing && surface && !details ? pick : undefined,
     chapter: comparing && sample !== undefined ? `velocity:${sample},${divider}` : "",
-    control: grid && (
-      <section className="terrain-comparison" aria-label="Glacier velocity comparison">
+    world: comparing && grid && sample !== undefined && (
+      <GlacierWorld
+        grid={grid}
+        sample={sample}
+        divider={divider}
+        ready={!!surface}
+        inspecting={details}
+        select={select}
+        pick={pick}
+        adjust={setDivider}
+        inspect={inspect}
+      />
+    ),
+    control:
+      grid &&
+      (comparing && sample !== undefined ? (
+        <section className="glacier-comparison" aria-label="Compare ice speed">
+          <div className="glacier-reading-heading">
+            <h3>Ice speed</h3>
+            <span>Metres per year</span>
+          </div>
+          <GlacierReading
+            grid={grid}
+            sample={sample}
+            details={details}
+            outside={outside}
+            button={detailsOpener}
+            back={detailsBack}
+            select={select}
+            inspect={() => inspect(detailsOpener.current)}
+            onBack={closeDetails}
+          />
+          {!details && (
+            <button className="glacier-trace-action" type="button" onClick={changeMode}>
+              Open flow trace
+            </button>
+          )}
+          {failed ? (
+            <button type="button" onClick={failed.retry}>
+              Retry matching velocity image
+            </button>
+          ) : (
+            !surface && <p role="status">Loading both velocity maps…</p>
+          )}
+        </section>
+      ) : (
         <div className="observatory-actions">
-          <button
-            type="button"
-            aria-pressed={comparing}
-            onClick={() => {
-              pause();
-              setComparing(!comparing);
-            }}
-          >
-            {comparing ? "Close velocity comparison" : "Compare 2013 and 2024"}
+          <button type="button" onClick={changeMode}>
+            Compare 2013 and 2024
           </button>
         </div>
-        {comparing && (
-          <>
-            <div className="velocity-divider">
-              <label htmlFor="velocity-divider">
-                <span>2013</span>
-                <span>2024</span>
-              </label>
-              <input
-                id="velocity-divider"
-                className="scrub-slider"
-                type="range"
-                min={0}
-                max={100}
-                value={divider}
-                aria-label="Velocity map divider"
-                aria-valuetext={`${divider}% 2013 · ${100 - divider}% 2024`}
-                disabled={!surface}
-                onInput={(event) => setDivider(event.currentTarget.valueAsNumber)}
-              />
-            </div>
-            {failed ? (
-              <button type="button" onClick={failed.retry}>
-                Retry matching velocity image
-              </button>
-            ) : (
-              !surface && (
-                <p className="observation-note" role="status">
-                  Loading both velocity maps…
-                </p>
-              )
-            )}
-            <label className="observation-picker">
-              <span>Reading location</span>
-              <select
-                value={sample}
-                onChange={(event) => {
-                  setOutside(false);
-                  setSample(Number(event.currentTarget.value));
-                }}
-              >
-                {places.map(({ label, cell }) => (
-                  <option key={label} value={cell}>
-                    {label}
-                  </option>
-                ))}
-                {!places.some(({ cell }) => cell === sample) && (
-                  <option value={sample}>Pinned on the map</option>
-                )}
-              </select>
-            </label>
-            <p className="observation-note">
-              {outside
-                ? "Choose a point inside the survey. Showing your last reading."
-                : "Tap the glacier to sample the same point in both years."}
-            </p>
-            {sample !== undefined && (
-              <dl className="observation-values velocity-readings" aria-label="Velocity at the pinned point">
-                {glacierYears.map((year) => {
-                  const velocity = grid.samples[year][sample];
-                  return (
-                    <div key={year}>
-                      <dt>{year}</dt>
-                      <dd>
-                        {velocity === undefined || velocity < 0
-                          ? "No usable reading"
-                          : `${velocity.toLocaleString()} m/year`}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
-            )}
-            <p className="observation-note">
-              Nearest sampled grid cell · flow traces follow the selected year.
-            </p>
-          </>
-        )}
-      </section>
-    ),
+      )),
   };
 }

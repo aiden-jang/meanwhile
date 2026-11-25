@@ -118,7 +118,7 @@ export function StoryPlayer({
       surface: bloom.surface,
     };
   const { frame, element, caption, surface } = holding.current;
-  const glacier = useGlacierComparison(data.glacier, initial?.chapter, clock.pause);
+  const glacier = useGlacierComparison(data.glacier, initial, clock.pause, panel);
   const dust = useDustSlice(id === "dust", data, frame.at, initial?.chapter, panel.map, clock);
   const moorings = useMooringInspection(frame.moorings, data.frames, initial?.chapter, clock.pause);
   const openCurtain = id !== "nino" || ready || initial?.at !== undefined;
@@ -147,7 +147,7 @@ export function StoryPlayer({
         : lunarImage.status;
   waiting.current = busy || !ready || status !== "ready" || bloom.status !== "ready";
   const mapTarget = useMemo(() => storyMapTarget(data), [data]);
-  const target = dust.target ?? (panel.map ? mapTarget : data.target);
+  const target = dust.target ?? glacier.target ?? (panel.map ? mapTarget : data.target);
   const sky = useArchiveSky(
     data,
     viewFrame,
@@ -297,7 +297,7 @@ export function StoryPlayer({
     openCurtain,
     status,
   ]);
-  useJourneyGestures(clock.pause, clock.resume, clock.position < duration, !localSky);
+  useJourneyGestures(clock.pause, clock.resume, clock.position < duration, !localSky && !glacier.comparing);
   const chooseSite = (value: string) => {
     setSite(value);
     if (index !== 1 || clock.playing) clock.seek(1);
@@ -320,7 +320,7 @@ export function StoryPlayer({
       subtitle={meta.summary}
       className={storyClass(id, fieldStory, orbitStory)}
       finding={id !== "aral" && (!fault || faultMode === "replay")}
-      status={comparingShoreline ? null : (sky.status ?? displayCaption)}
+      status={comparingShoreline || glacier.comparing ? null : (sky.status ?? displayCaption)}
       at={
         comparingShoreline || orbitStory || fieldStory ? undefined : (
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
@@ -329,17 +329,17 @@ export function StoryPlayer({
       sharedMoment={
         initial?.at !== undefined && id === "aral" ? { ...initial, at: data.frames[start]!.at } : undefined
       }
-      primaryAction={dust.action || section.controls || actions}
+      primaryAction={glacier.control || dust.action || section.controls || actions}
       sources={<StorySources id={id} />}
       inset={
         <>
           <StoryOverlay {...{ localSky, data, frame, site, chooseSite }} inspectSites={index < duration} />
-          {shoreline.labels}
+          {glacier.world || shoreline.labels}
           {openCurtain && moorings.labels}
         </>
       }
     >
-      {id !== "north" && choices}
+      {id !== "north" && !glacier.comparing && choices}
       {section.chart}
       {moorings.controls}
       {dust.control}
@@ -357,7 +357,7 @@ export function StoryPlayer({
           scan={image.status}
         />
       )}
-      {(!fault || faultMode === "replay") && (
+      {!glacier.comparing && (!fault || faultMode === "replay") && (
         <StoryTimeline
           startLabel={clock.cinematic && clock.position === 0 ? startLabels[id] : undefined}
           data={data}
@@ -378,7 +378,6 @@ export function StoryPlayer({
         />
       )}
       {id === "north" && choices}
-      {glacier.control}
       {comparingShoreline ? (
         <StoryFinding id={id} completed>
           {shoreline.controls}
@@ -386,7 +385,7 @@ export function StoryPlayer({
       ) : (
         shoreline.controls
       )}
-      {id !== "north" && readings}
+      {id !== "north" && !glacier.comparing && readings}
       {failed && (
         <StoryRecovery retry={retry} archive={storyRecoveryArchive(id, choice, setChoice)} holding />
       )}

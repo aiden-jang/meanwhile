@@ -20,7 +20,7 @@ export const atlasStories = {
   glacier: {
     title: "Glacier Flow",
     summary: "Trace Jakobshavn’s measured ice motion and compare two annual velocity maps.",
-    location: "West Greenland · 2013 and 2024",
+    location: "Jakobshavn · West Greenland",
     scene: "live",
     source: "NASA ITS_LIVE · annual velocity mosaics v2.1",
     url: "https://its-live.jpl.nasa.gov/",

@@ -1,5 +1,6 @@
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 import type { Controls } from "./controls";
+import { positionGlacierControls } from "./glacierControls";
 import { positionEvidenceConnector } from "./evidenceConnector";
 import { positionJourneyPreview } from "./journeyPreview";
 import { positionReadingLabel } from "./readingLabels";
@@ -8,7 +9,10 @@ import { positionObservationTrack } from "./observationTrack";
 export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: Controls, story = false) {
   const root = canvas.closest(".zones");
   positionJourneyPreview(root, canvas, controls);
-  if (story && root) positionObservationTrack(root, canvas, controls);
+  if (story && root) {
+    positionObservationTrack(root, canvas, controls);
+    positionGlacierControls(root, canvas, controls);
+  }
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
   const readingLabel = root?.querySelector<HTMLElement>("[data-reading-label]");

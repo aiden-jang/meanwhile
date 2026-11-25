@@ -61,6 +61,7 @@ test("phone Saved keeps background controls out of keyboard navigation and resto
 test("switching glacier years holds the trace at the same point", async ({ page }) => {
   await open(page, "glacier");
   const panel = page.getByRole("region", { name: "Glacier Flow", exact: true });
+  await panel.getByRole("button", { name: "Open flow trace" }).click();
   await panel.getByRole("button", { name: "Flowing seaward", exact: true }).click();
   const chapters = panel.getByRole("group", { name: "Story moments" });
   await expect(chapters.locator("img")).toHaveCount(0);
@@ -108,7 +109,6 @@ test("the glacier comparison keeps its sample and divider across projections and
 }) => {
   await open(page, "glacier");
   const panel = page.getByRole("region", { name: "Glacier Flow", exact: true });
-  await panel.getByRole("button", { name: "Compare 2013 and 2024" }).click();
   const divide = panel.getByRole("slider", { name: "Velocity map divider" });
   await expect(divide).toBeEnabled();
   const location = panel.getByRole("combobox", { name: "Reading location" });

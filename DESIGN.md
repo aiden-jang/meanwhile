@@ -957,9 +957,11 @@ leaving the world clear for the actual terrain, section line and lidar curtain. 
 reveal their chart within that panel without moving keyboard focus or the globe.
 Dust Curtain brings the airborne view to the Caribbean ground track, then lifts the recorded
 CALIPSO profile into that geography. Fault Offset draws each mapped rupture in sequence and
-holds the selected survey site while the radar sweep replaces shaded terrain. Glacier Flow
-holds one camera and a pinned sample across its two annual velocity mosaics. Its slider divides
-the registered maps, and the selected year still controls the illustrative traces.
+holds the selected survey site while the radar sweep replaces shaded terrain. Glacier Flow opens
+on its two annual velocity mosaics. Dragging its pin samples both years in the same grid cell.
+The year divider moves independently, and neither gesture changes the camera. Point details
+returns to the held cell, divider, projection, camera and reading position. The separate flow
+trace uses the selected year's mean velocity field for illustrative trajectories.
 Water in Motion holds the Pacific camera while the forecast gives way to Rainbelt.
 The source record distinguishes the forecast valid time and run from the satellite estimate time.
 While the first estimate loads, the retained forecast keeps its own label. A failed later
