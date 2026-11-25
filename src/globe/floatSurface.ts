@@ -133,7 +133,8 @@ export function createFloatSurface() {
       const panel = compact ? Math.min(236, width * 0.64) : 280;
       const left = fromExplore ? (compact ? 0.16 : 0.095) : 0.025;
       const right = fromExplore ? 0.96 : 0.975 - (panel / Math.max(1, width)) * inspection;
-      bounds.set(left, clearance, right, fromExplore ? 0.79 : 0.98);
+      const top = fromExplore ? (compact && height < 300 ? 0.65 : 0.79) : 0.98;
+      bounds.set(left, clearance, right, top);
       sheet.material.uniforms.aspect!.value =
         ((bounds.z - bounds.x) * Math.max(1, width)) / ((bounds.w - bounds.y) * Math.max(1, height));
       sheet.material.uniforms.inspectionView!.value = Number(fromExplore);

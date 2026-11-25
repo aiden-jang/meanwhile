@@ -77,6 +77,8 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (locator ? 152 : place ? 100 : 44));
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
+      if (anchor.hasAttribute("data-world-story-marker"))
+        anchor.toggleAttribute("data-label-left", point.x + 156 > Math.min(parent.right, innerWidth));
       if (place) places++;
       if (locator) locators++;
       occupied.push({ x, y });

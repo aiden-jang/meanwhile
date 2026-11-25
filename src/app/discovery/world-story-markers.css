@@ -11,6 +11,7 @@
   align-items: center;
   gap: 9px;
   min-height: 44px;
+  max-inline-size: 156px;
   padding: 5px 10px;
   transform: translate(-14px, -50%);
   cursor: pointer;
@@ -43,7 +44,7 @@
   background: var(--color-void);
   box-shadow: 0 0 0 5px #92dcd21c;
 }
-#inspect-float-from-explore .world-story-dot {
-  border-color: #ffcc99;
-  background: #d49b60;
+.world-story-marker[data-label-left] {
+  flex-direction: row-reverse;
+  transform: translate(calc(14px - 100%), -50%);
 }

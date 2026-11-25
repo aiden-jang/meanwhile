@@ -36,7 +36,8 @@ function Instrument({ view, map }: { view: FloatDiveView; map: boolean }) {
         </div>
       </dl>
       <p className="float-explore-hint">
-        <strong>Drag the float</strong> to change depth. Use the arrow keys when it’s focused.
+        <strong>Drag the float</strong> to change depth.
+        <span className="float-explore-keys"> Use the arrow keys when it’s focused.</span>
       </p>
       <details className="float-explore-details">
         <summary>Profile &amp; source</summary>

@@ -314,6 +314,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           {(comparing || (view.phase === "inspect" && !view.playing && (!fromWeather || ready))) && (
             <div className="storm-map-labels" aria-hidden="true">
               <span
+                key={storm.fixIndex}
                 data-observation-anchor=""
                 data-storm-fix={storm.fixIndex}
                 data-evidence-source="true"

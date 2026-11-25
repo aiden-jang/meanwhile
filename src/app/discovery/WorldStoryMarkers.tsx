@@ -52,6 +52,7 @@ export function WorldStoryMarkers({ map }: { map: boolean }) {
             id={trigger}
             className="world-story-marker"
             data-observation-anchor=""
+            data-world-story-marker=""
             data-compact-anchor=""
             data-lon={place.lon}
             data-lat={place.lat}
