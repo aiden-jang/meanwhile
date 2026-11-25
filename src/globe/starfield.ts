@@ -88,7 +88,7 @@ export function createStarfield(): Starfield {
   geometry.boundingSphere = null;
 
   const exposure = createStarExposure();
-  const shortPhone = window.matchMedia("(max-width: 599px) and (max-height: 650px)");
+  const shortPhone = window.matchMedia("(max-width: 767px) and (max-height: 650px)");
   const material = new ShaderMaterial({
     ...STARFIELD,
     uniforms: {
