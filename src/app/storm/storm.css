@@ -820,6 +820,10 @@
     height: 20px;
   }
 
+  .storm-track-handle > span {
+    display: none;
+  }
+
   .storm-landfall-reading th[scope="row"] {
     white-space: nowrap;
   }

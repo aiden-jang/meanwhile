@@ -332,7 +332,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
                   data-lon={fix.lon}
                   data-lat={fix.lat}
                 />
-                <ReadingLabel reading={fix.at}>
+                <ReadingLabel reading={fix.at} shortDock={comparing}>
                   {fix.wind} kt · {fix.pressure} hPa
                 </ReadingLabel>
               </div>

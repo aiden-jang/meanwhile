@@ -16,15 +16,11 @@ function readingLabelPosition(point: Point, stage: Box, width: number, height: n
   const minX = stage.left + clearance;
   const maxX = stage.right - clearance - width;
   const centered = Math.max(minX, Math.min(x - width / 2, maxX));
-  const belowControls = y + gap + height + clearance;
   const candidates = [
     { x: centered, y: y - height - gap },
     { x: x + gap, y: y - height / 2 },
     { x: x - width - gap, y: y - height / 2 },
     { x: centered, y: y + gap },
-    { x: centered, y: belowControls },
-    { x: maxX, y: belowControls },
-    { x: minX, y: belowControls },
   ];
   return candidates.find(
     ({ x, y }) =>
@@ -110,7 +106,10 @@ export function positionReadingLabel(layer: HTMLElement, point: Point | null, ma
     const style = getComputedStyle(node);
     return style.visibility === "visible" && Number(style.opacity) > 0 ? [bounds] : [];
   });
-  const position = point && readingLabelPosition(point, stage, text.offsetWidth, text.offsetHeight, blocks);
+  const docked = layer.hasAttribute("data-short-dock") && stage.width <= 360 && stage.height <= 188;
+  const position = docked
+    ? { x: stage.right - text.offsetWidth - 8, y: stage.bottom - text.offsetHeight - 12 }
+    : point && readingLabelPosition(point, stage, text.offsetWidth, text.offsetHeight, blocks);
   text.style.visibility = position ? "visible" : "hidden";
   if (position) text.style.transform = `translate(${position.x - stage.left}px, ${position.y - stage.top}px)`;
   if (!point || obstructsPoint(blocks, point, stage)) {
