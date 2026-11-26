@@ -46,7 +46,7 @@ export function WaveTimeline({
   changeSpan: () => void;
 }) {
   return (
-    <section className="recorded-timeline" aria-label="Recording playback">
+    <section aria-label="Recording playback">
       <div className="recorded-clock">
         <div>
           <h3>Recorded arrivals</h3>
@@ -120,7 +120,7 @@ export function WavePair({
   const difference = a.first === null || b.first === null ? null : Math.abs(a.first - b.first);
   return (
     <>
-      <div className="recorded-pair">
+      <div>
         {[first, second].map((index, slot) => {
           const station = waves[index]!;
           const arrived = reached(station, seconds);
