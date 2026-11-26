@@ -182,10 +182,10 @@ export function StoryPlayer({
   });
   waiting.current ||= shoreline.holding;
   const displayedImage = shoreline.image ?? element;
-  const framing = shoreline.framing ?? dust.framing;
+  const framing = glacier.framing ?? shoreline.framing ?? dust.framing;
   const comparingShoreline = id === "aral" && finished;
   const holdGeography =
-    ready && (glacier.comparing || shoreline.holding || (!!shoreline.basin && !clock.playing));
+    ready && (glacier.holding || shoreline.holding || (!!shoreline.basin && !clock.playing));
   const inspecting = dust.forcedPause || glacier.comparing || selected || shoreline.holding;
   const canFly = !(inspecting || panel.map || localSky || orbitStory || surveyed);
   const motionProgress = canFly && clock.cinematic && clock.playing ? clock.position / duration : undefined;

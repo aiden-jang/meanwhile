@@ -33,6 +33,11 @@ export function useGlacierComparison(
   });
   const [outside, setOutside] = useState(false);
   const [details, setDetails] = useState(false);
+  const [framed, setFramed] = useState(false);
+  const framing = useMemo(
+    () => (grid ? { map: panel.map, onReady: () => setFramed(true) } : undefined),
+    [grid, panel.map],
+  );
   const compactTarget = useMemo(
     () =>
       grid && matchMedia("(max-width: 599px) and (max-height: 700px)").matches
@@ -97,6 +102,8 @@ export function useGlacierComparison(
 
   return {
     comparing,
+    holding: comparing && framed,
+    framing,
     target: comparing ? compactTarget : undefined,
     surface,
     divider: divider / 100,
@@ -108,7 +115,7 @@ export function useGlacierComparison(
         grid={grid}
         sample={sample}
         divider={divider}
-        ready={!!surface}
+        ready={!!surface && framed}
         inspecting={details}
         select={select}
         pick={pick}

@@ -59,7 +59,7 @@ for (const touch of [false, true]) {
           await page.mouse.move(from.x, from.y);
           await page.mouse.down();
           await expect(control).toHaveAttribute("data-grabbing", "");
-          await page.mouse.move(to.x, to.y, { steps: 8 });
+          await page.mouse.move(to.x, to.y, { steps: 4 });
           await page.mouse.up();
         }
       }
