@@ -83,6 +83,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const y = (point?.y ?? 0) - (parent?.top ?? 0);
     const inset = locator ? 82 : Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
+    const fiji = anchor.hasAttribute("data-fiji-locator");
     const flashPulse = anchor.hasAttribute("data-flash-pulse");
     const compactPulse = flashPulse && parent && parent.width <= 360 && parent.height <= 188;
     const spacing = locator ? 152 : place ? 100 : compactPulse ? 32 : 44;
@@ -100,7 +101,9 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       x < parent.width - inset &&
       y > blockInset &&
       y < parent.height - blockInset &&
+      (!fiji || (point.x > 24 && point.x < innerWidth - 110 && point.y > 24 && point.y < innerHeight - 24)) &&
       !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < spacing);
+    if (fiji) anchor.toggleAttribute("data-positioned", !!visible);
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
       if (anchor.hasAttribute("data-world-story-marker") || flashPulse)

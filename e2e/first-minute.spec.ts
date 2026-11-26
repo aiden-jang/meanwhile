@@ -45,20 +45,32 @@ for (const { width, height } of [
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto("/");
     const subjects = page.getByRole("group", { name: "Explore by subject" });
-    for (const [name, title, range] of [
-      ["Below the Surface", "Below the Surface", "Drag to change depth"],
-      ["After Dark", "Tonight’s Sky", "City local time"],
-    ]) {
-      const shortcut = subjects.getByRole("button", { name, exact: true });
-      await shortcut.click();
-      await expect(page.getByRole("heading", { name: title, exact: true })).toBeInViewport({ ratio: 1 });
-      await expect(page.getByRole("slider", { name: range, exact: true })).toBeInViewport({ ratio: 1 });
-      await expect(subjects).toBeInViewport({ ratio: 1 });
-      const back = page.getByRole("button", { name: "Back to the Observatory", exact: true });
-      await expect(back).toBeInViewport({ ratio: 1 });
-      await back.click();
-      await expect(shortcut).toBeFocused();
-    }
+    const depthShortcut = subjects.getByRole("button", { name: "Below the Surface", exact: true });
+    await depthShortcut.click();
+    const fiji = page.getByRole("region", { name: "Beneath Fiji", exact: true });
+    await expect(fiji.getByRole("heading", { name: "Fiji", exact: true })).toBeInViewport({ ratio: 1 });
+    const depth = fiji.getByRole("slider", { name: "Descend beneath the waterline" });
+    await expect(depth).toBeInViewport({ ratio: 1 });
+    await depth.press("End");
+    await expect(fiji.getByRole("link", { name: "USGS record" })).toBeInViewport({ ratio: 1 });
+    const backFromFiji = fiji.getByRole("button", { name: "Back to previous view" });
+    await expect(backFromFiji).toBeInViewport({ ratio: 1 });
+    await backFromFiji.click();
+    await expect(depthShortcut).toBeFocused();
+
+    const afterDark = subjects.getByRole("button", { name: "After Dark", exact: true });
+    await afterDark.click();
+    await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(page.getByRole("slider", { name: "City local time", exact: true })).toBeInViewport({
+      ratio: 1,
+    });
+    await expect(subjects).toBeInViewport({ ratio: 1 });
+    const back = page.getByRole("button", { name: "Back to the Observatory", exact: true });
+    await expect(back).toBeInViewport({ ratio: 1 });
+    await back.click();
+    await expect(afterDark).toBeFocused();
   });
 }
 

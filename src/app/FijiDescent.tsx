@@ -26,6 +26,7 @@ export function FijiLocator({ onOpen }: { onOpen: (opener: HTMLElement) => void 
     <button
       id="fiji-locator"
       className="fiji-locator"
+      data-fiji-locator=""
       data-observation-anchor=""
       data-compact-anchor=""
       data-lon={august.lon}

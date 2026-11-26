@@ -15,12 +15,15 @@
   transform: translate(-17px, -50%);
   visibility: hidden;
 }
+.fiji-locator:not([data-positioned]) {
+  display: none;
+}
 .fiji-locator i {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffc994;
-  box-shadow: 0 0 0 4px rgb(255 201 148 / 23%);
+  background: var(--color-ink);
+  box-shadow: 0 0 0 4px rgb(237 243 243 / 20%);
 }
 .fiji-locator:is(:hover, :focus-visible) {
   background: var(--color-raised);
