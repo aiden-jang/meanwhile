@@ -6,7 +6,7 @@ import type {
 } from "../observations/types";
 import { BIN, DURATION, bounds, lines, overview, trace, type flashFrame } from "./flashTimeline";
 
-export const flashTarget = { lon: overview.lon, lat: overview.lat, zoom: 2.15 };
+export const flashTarget = { lon: overview.lon, lat: 35.8, zoom: 2.15 };
 export const flashLens = { globe: 2.6, map: 7.3 };
 export const flashStart = Date.parse("2017-10-22T08:56:45.834Z");
 const raster: ObservationRaster = {
@@ -43,7 +43,7 @@ export function flashGeography(
   const markWindow =
     inspecting || (phase === "replay" && !complete) ? { from, to, showAhead: inspecting } : undefined;
   const opening = phase === "first";
-  const rasterAt = opening ? DURATION : at;
+  const rasterAt = opening || inspecting ? DURATION : at;
   return {
     frame: {
       at: Math.round(flashStart + Math.max(0, at)),

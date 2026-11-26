@@ -24,7 +24,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const insets = story
     ? Array.from(
         root!.querySelectorAll(
-          "[data-world-inset], :is(.iceberg-journey, .fault-journey) :is(.story-projection, .stage-ident)",
+          "[data-world-inset], :is(.iceberg-journey, .fault-journey, .megaflash-journey) :is(.story-projection, .stage-ident)",
         ),
         (element) => element.getBoundingClientRect(),
       ).filter(({ width, height }) => width > 0 && height > 0)
@@ -60,7 +60,9 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const point = controls.project(
       Number(anchor.dataset["lon"]),
       Number(anchor.dataset["lat"]),
-      depth === undefined ? 1.01 : 1 - Number(depth) / EARTH_RADIUS_KM,
+      depth === undefined
+        ? Number(anchor.dataset["anchorRadius"] ?? 1.01)
+        : 1 - Number(depth) / EARTH_RADIUS_KM,
     );
     if (readingLabel && anchor === evidenceSource)
       positionReadingLabel(readingLabel, point, controls.morph());
@@ -69,6 +71,9 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const y = (point?.y ?? 0) - (parent?.top ?? 0);
     const inset = locator ? 82 : Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
+    const flashPulse = anchor.hasAttribute("data-flash-pulse");
+    const compactPulse = flashPulse && parent && parent.width <= 360 && parent.height <= 188;
+    const spacing = locator ? 152 : place ? 100 : compactPulse ? 32 : 44;
     const visible =
       point &&
       parent &&
@@ -83,10 +88,10 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       x < parent.width - inset &&
       y > blockInset &&
       y < parent.height - blockInset &&
-      !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < (locator ? 152 : place ? 100 : 44));
+      !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < spacing);
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
-      if (anchor.hasAttribute("data-world-story-marker"))
+      if (anchor.hasAttribute("data-world-story-marker") || flashPulse)
         anchor.toggleAttribute("data-label-left", point.x + 156 > Math.min(parent.right, innerWidth));
       if (place) places++;
       if (locator) locators++;

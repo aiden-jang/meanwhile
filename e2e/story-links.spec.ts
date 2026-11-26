@@ -31,7 +31,7 @@ const restores = [
     id: "megaflash",
     title: "Megaflash",
     at: "2017-10-22T08:56:49.834Z",
-    slider: "Flash elapsed time",
+    slider: "Scrub the flash",
     value: "16",
   },
   {

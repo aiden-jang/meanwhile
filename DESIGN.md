@@ -724,9 +724,11 @@ column and keeps its longitude when a month has no usable observations. Ocean Bl
 6 May 2024 observation and compares natural color and chlorophyll on a single registered surface.
 Changing dates keeps the divider and geography in place, with coverage gaps left transparent.
 
-Megaflash banks over a false-color infrared scan and slows the observed optical spread
-so the newest pulses stand out against the accumulated trace. It levels into a five-state
-map. Scrubbing and reduced motion use the same level framing.
+Megaflash opens on the first optical window with the full footprint visible. Marked pulses
+and a histogram of published trace samples select the same quarter-second windows without
+steering the camera.
+The infrared scan and guided replay remain available. Returning from a window reading restores
+the recorded time, projection, camera, and panel position.
 
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
