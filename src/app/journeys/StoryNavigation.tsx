@@ -29,8 +29,9 @@ import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
-import { captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
+import { storyReturnLabel, captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
 import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
+import { passageRecord } from "../tonga/honolulu";
 import { isWorldStoryMarker } from "../discovery/worldStoryMarker";
 
 const Navigation = createContext<StoryNavigationValue | null>(null);
@@ -224,7 +225,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       return true;
     }
     if (active === "float") floatDive.view?.depart(saved.camera);
-    if (isWorldStoryMarker(saved.trigger) || weatherOrigin(saved.trigger)) {
+    if (deck.trigger === passageRecord || isWorldStoryMarker(saved.trigger) || weatherOrigin(saved.trigger)) {
       props.views.visitCheckpoint.current();
       history.back();
       return true;
@@ -275,6 +276,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     <Navigation.Provider
       value={{
         active,
+        returnView: origin.current,
         hasReturnOrigin: origin.current !== null,
         auroraFromPass: origin.current?.trigger === auroraHandoff,
         katrinaFromWeather: isKatrinaHandoff(deck.trigger),
@@ -315,11 +317,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
               props.explorer.restore(saved.camera, keepProjection ? props.explorer.flat : saved.flat);
           }
         },
-        returnLabel:
-          origin.current?.label ??
-          (active && !deck.trigger?.startsWith("event-story-") && !deck.trigger?.startsWith("archive-story-")
-            ? "Back to stories"
-            : undefined),
+        returnLabel: storyReturnLabel(origin.current, active, deck.trigger),
         browse(focusSearch) {
           leaveStory();
           openStoryCatalogue(props, panelReturn.restore, !!focusSearch);

@@ -1,3 +1,4 @@
+import { passageRecord } from "../tonga/honolulu";
 import { readHistoryPanel, rememberHistoryQuery } from "../historyPanel";
 import { spanDeg } from "../../geo/sphere";
 import { storyPlace, type StoryPlace } from "../discovery/places";
@@ -147,6 +148,7 @@ export function useObservationDeck(
       setView(null);
     },
     trigger,
+    historyKey: trigger === passageRecord ? passageRecord : entry,
     setTrigger,
     returnTo(fallback: string, closeView: () => void) {
       const origin = trigger;

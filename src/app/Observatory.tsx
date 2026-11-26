@@ -40,11 +40,14 @@ import { DepthReading } from "./DepthReading";
 import { AuroraReading } from "./journeys/AuroraReading";
 import { stormJourney } from "./journeys/stormJourney";
 import "./journeys/aurora-journey.css";
+import { PassageEntry } from "./tonga/PassageEntry";
 export function Observatory(props: ObservatoryProps): JSX.Element {
   const entry = useSceneEntrances(props);
   return (
     <StoryBoundary resetKey={props.views.navigation.key} onHome={props.onHome}>
-      <ObservatoryContent {...props} entry={entry} />
+      <PassageEntry world={props.world} deck={props.views.observations}>
+        <ObservatoryContent {...props} entry={entry} />
+      </PassageEntry>
     </StoryBoundary>
   );
 }

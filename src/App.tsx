@@ -883,6 +883,7 @@ export function App(): JSX.Element {
     />
   );
   const observatoryProps: ObservatoryProps = {
+    world: globeCamera.world.current,
     explorer: {
       radarAt: mapLayers.radarAt,
       ...explorerCamera(readCamera, flyTo, flat, setFlat),
@@ -1349,7 +1350,6 @@ export function App(): JSX.Element {
             ) : null}
             <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
               {!observatory.observing && <LayerReadout controls={mapLayers} withLegend legend={marksKey} />}
-
               <EclipseReplayControls playback={chase} />
               <WaveReplayControls replay={inspection} />
               <SequenceReplayControls replay={inspection} />

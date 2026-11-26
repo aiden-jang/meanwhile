@@ -51,6 +51,7 @@ export default defineConfig({
             resilience,
             "**/continuity.spec.ts",
             "**/fiji-descent.spec.ts",
+            "**/tonga-passage.spec.ts",
             "**/story-recovery.spec.ts",
             "**/story-curation.spec.ts",
           ],

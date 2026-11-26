@@ -15,13 +15,15 @@ import type { Aurora } from "../sources/aurora";
 import type { SlabPoint } from "../geo/slab";
 import type { Mark } from "./marks";
 
+import type { PassageCamera } from "../app/tonga/passageSurface";
+
 export interface GlobeProps {
   feed: Feed;
   filters: Filters;
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  onReady: (flyTo: FlyTo | null, read?: () => CameraState) => void;
+  onReady: (flyTo: FlyTo | null, read?: () => CameraState, world?: PassageCamera) => void;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobepropsts. */
   onFrame?: (source: HTMLCanvasElement) => void;
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;

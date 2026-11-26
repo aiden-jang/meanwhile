@@ -64,6 +64,10 @@ to Layers with the selected frame held.
 Tap a covered place and choose **Rewind radar** to step through recent scans with that place in view.
 **Copy radar link** shares the displayed frame while RainViewer still has it. **Back to live** returns to the latest scan.
 
+The landing feature and the Tonga marker on the globe or map follow the archived infrared scans to Honolulu.
+Scrub the measured pressure to move the modeled wave, or open the station record to keep or share a minute.
+Back restores the projection and viewpoint where you started.
+
 All stories highlights Tonga’s shockwave through recorded GOES-17 imagery and ground pressure readings.
 Earth, Below the Surface and After Dark highlight Float Dive, Rupture Reveal and Moonfall respectively.
 Returning visitors see one action for their most recent story in that category.

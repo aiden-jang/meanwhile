@@ -1,3 +1,4 @@
+import { separatePacificLabels } from "./pacificLabels";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { positionGlacierControls } from "./glacierControls";
@@ -30,7 +31,8 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
   const readingLabel = root?.querySelector<HTMLElement>("[data-reading-label]");
-  const occupied: { x: number; y: number }[] = [];
+  const occupied: { x: number; y: number; fiji: boolean }[] = [];
+  let fijiPoint: { x: number; y: number } | undefined;
   let places = 0;
   let locators = 0;
   const insets = story
@@ -84,6 +86,10 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const inset = locator ? 82 : Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
     const fiji = anchor.hasAttribute("data-fiji-locator");
+    const paired =
+      point && parent && fijiPoint && anchor.hasAttribute("data-eruption-locator")
+        ? separatePacificLabels(point, fijiPoint, parent)
+        : null;
     const flashPulse = anchor.hasAttribute("data-flash-pulse");
     const compactPulse = flashPulse && parent && parent.width <= 360 && parent.height <= 188;
     const spacing = locator ? 152 : place ? 100 : compactPulse ? 32 : 44;
@@ -102,17 +108,26 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       y > blockInset &&
       y < parent.height - blockInset &&
       (!fiji || (point.x > 24 && point.x < innerWidth - 110 && point.y > 24 && point.y < innerHeight - 24)) &&
-      !occupied.some((p) => Math.hypot(p.x - x, p.y - y) < spacing);
+      !occupied.some((p) => !(paired && p.fiji) && Math.hypot(p.x - x, p.y - y) < spacing);
     if (fiji) anchor.toggleAttribute("data-positioned", !!visible);
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
+      if (fiji) fijiPoint = point;
+      if (anchor.hasAttribute("data-eruption-locator")) {
+        if (paired) {
+          anchor.dataset["paired"] = paired.side;
+          anchor.style.setProperty("--leader-length", Math.abs(paired.dx || paired.dy) + "px");
+        } else {
+          delete anchor.dataset["paired"];
+        }
+      }
       if (anchor.hasAttribute("data-world-story-marker") || flashPulse)
         anchor.toggleAttribute("data-label-left", point.x + 156 > Math.min(parent.right, innerWidth));
       if (place) places++;
       if (locator) locators++;
-      occupied.push({ x, y });
-      anchor.style.left = `${x}px`;
-      anchor.style.top = `${y}px`;
+      occupied.push({ x, y, fiji });
+      anchor.style.left = `${x + (paired?.dx ?? 0)}px`;
+      anchor.style.top = `${y + (paired?.dy ?? 0)}px`;
     }
   }
   positionEvidenceConnector(canvas, controls, parents);

@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { firstFloatProfile, floatExploreTrigger } from "../float/firstProfile";
-import { honolulu, honoluluReading, honoluluTrigger } from "../tonga/honolulu";
+import { TongaLocator } from "../tonga/TongaLocator";
+import { eruptionMarker, honolulu, honoluluReading, honoluluTrigger } from "../tonga/honolulu";
 import type { VisitPosition } from "../visitor/library";
 import "./world-story-markers.css";
 
@@ -71,6 +72,18 @@ export function WorldStoryMarkers({ map }: { map: boolean }) {
           </button>
         );
       })}
+      <TongaLocator
+        onOpen={() =>
+          navigation.resume(
+            {
+              id: "tonga",
+              seen: Date.now(),
+              position: { moment: { ...honoluluReading(map), chapter: "eruption" } },
+            },
+            eruptionMarker,
+          )
+        }
+      />
     </div>,
     stage,
   );

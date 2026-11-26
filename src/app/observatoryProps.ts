@@ -5,7 +5,9 @@ import type { DiscoveriesData } from "./visitor/Discoveries";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import type { explorerEntrances } from "./useExplorerView";
+import type { PassageCamera } from "./tonga/passageSurface";
 export interface ObservatoryProps {
+  world: PassageCamera | null;
   explorer: {
     radarAt: number | undefined;
     flat: boolean;

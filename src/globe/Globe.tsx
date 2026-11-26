@@ -159,15 +159,18 @@ export function Globe({
     const detachRotation = rotation.attach(el, globe.controls, () => wakeRef.current());
     const readout = createOrbitReadout(orbit.current);
     let redrawPending = false;
+    const afterRender = new Set<() => void>();
     const draw = (full = false) => {
       globe.render(full || !!live.current.onFrame);
       live.current.onFrame?.(el);
+      afterRender.forEach((update) => update());
     };
     globe.resize();
     draw();
     onReady(
       createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival),
       globe.controls.state,
+      { ...globe.passageWorld, controls: globe.controls, afterRender, wake: () => wakeRef.current() },
     );
     let archiveTo = feed.snapshot().archive?.to;
     const clockAt = () => archiveTo ?? Date.now();
@@ -185,10 +188,6 @@ export function Globe({
 
     // Read live rather than captured: somebody can turn reduced motion on while the page is open.
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    /*
-     * What the pointer is over, which is no longer only an earthquake. Tagged rather than a bare string,
-     * because a quake key and a mark id are different namespaces that both contain colons.
-     */
     let hovered: MarkerTarget | null = null;
 
     const placeOverlays = overlayPlacement({

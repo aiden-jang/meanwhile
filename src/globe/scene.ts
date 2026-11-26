@@ -31,7 +31,7 @@ import {
 } from "three";
 import { buildLand, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry } from "../geo/land";
 import type { RampName } from "./ramp";
-import { DEG, graticule } from "../geo/sphere";
+import { graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
 import { lunarEclipse, solarEclipse } from "../geo/eclipse";
@@ -98,9 +98,9 @@ const COLOR_GLINT = new Color(0xa8c4e4);
 
 const FOV = 32;
 /** Fraction of the smaller viewport dimension the globe fills. */
-const FILL = 0.86;
 
 export interface Globe {
+  passageWorld: { spin: Group; morph: { value: number }; optics: { magnification: number } };
   resize: () => void;
   foldCurtain: (complete: () => void) => boolean;
   render: (full?: boolean) => void;
@@ -358,14 +358,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     if (width < 1 || height < 1) return;
 
     resolution.resize(width, height);
-    // Fit by whichever dimension is tighter. Height alone puts the globe off both sides of a phone; width
-    // alone leaves it swimming on a desktop. Zoom is a multiple of this, so a resize keeps where you were.
-    const { limiting, bleed, topBleed } = fitGlobeCamera(camera, canvas, width, height);
-    const byHeight = 1 / (FILL * Math.tan((FOV / 2) * DEG));
-    const fit = byHeight / limiting;
+    const { fit, byHeight, bleed, topBleed, radiusPx } = fitGlobeCamera(camera, canvas, width, height);
     controls.setFit(fit, byHeight, bleed, topBleed);
-    // The globe's on-screen radius at the framing shot, which is what marker sizes scale against.
-    const radiusPx = (height - topBleed) / (2 * fit * Math.tan((FOV / 2) * DEG));
     events.setGlobeRadius(radiusPx);
     markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
@@ -376,7 +370,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   }
   const regroup = createRegroup(events.object);
   catalogue.add(regroup.object);
+  const optics = { magnification: 1 };
   return {
+    passageWorld: { spin, morph, optics },
     resize,
     controls,
     foldCurtain: presentation.foldCurtain,
@@ -531,7 +527,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           aimSun(at);
         }
       }
-      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera);
+      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, optics.magnification);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       starfield.setOpacity(skyOpacity, emphasis.stars());
       moon.setOpacity(presentation.orbitalMoon() ? 0 : 1 - morph.value, presentation.localMoon());

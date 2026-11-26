@@ -271,7 +271,7 @@ On large and short landscape screens, the same starfield extends behind the invi
 globe keeps its own right-hand framing at every zoom level.
 The introduction and its actions sit together in a 42% reading track with 34px horizontal and
 64px bottom clearance.
-The Earth diagram opens the live Layers list. Above the diagrams, one Tonga story row opens
+The Earth diagram opens the live Layers list. Above the diagrams, one Tonga story row follows the eruption to
 Honolulu’s recorded pressure trace and All stories opens the searchable catalogue. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
@@ -682,7 +682,12 @@ times stay pinned to geography. Recorded data and model output carry separate la
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.
 
-Tonga opens close to the eruption’s infrared scans and pulls back through the water-vapor
+The landing feature and the geographic eruption marker frame the same infrared scans on the globe or map.
+The modeled wave leads to Honolulu, where the station trace unfolds from its geographic position.
+Dragging the trace changes the wave’s time while the camera holds. Back reverses the shot and
+restores the entry projection, camera and focus. Reduced motion opens the reading directly.
+
+The full Tonga replay opens close to the eruption’s infrared scans and pulls back through the water-vapor
 difference scans until the wave fits against the curvature of the shared globe. The bright
 ring estimates the leading wave and the fainter ring traces its earlier position. At each
 recorded station pulse, a short-lived trace links the site to the measured reading on the same

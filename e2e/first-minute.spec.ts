@@ -16,19 +16,25 @@ for (const width of [1440, 844, 320]) {
     await expect(page.getByRole("button", { name: "Follow nightfall", exact: true })).toHaveCount(0);
     await feature.click();
 
-    const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
-    const reading = story.getByRole("region", { name: "Honolulu pressure evidence" });
-    const sample = reading.getByRole("slider", { name: "Station pressure time" });
+    const passage = page.getByRole("region", { name: "Tonga to Honolulu" });
+    if (width !== 320) {
+      await expect(passage).toHaveAttribute("data-beat", "satellite", { timeout: 30000 });
+      await passage.getByRole("button", { name: "Skip to reading" }).click();
+    }
+    const sample = passage.getByRole("slider", { name: "Scrub Honolulu’s measured pressure" });
     await expect(sample).toBeInViewport({ ratio: 1 });
     await expect(sample).toHaveAttribute("aria-valuetext", "08:59 UTC · 1017.75 hPa");
     await sample.press("ArrowRight");
     await expect(sample).toHaveValue("540");
-    await expect(
-      reading.getByRole("button", { name: "Follow the full story", exact: true }),
-    ).toBeInViewport();
-    await expect(reading.getByText("Up next", { exact: true })).toHaveCount(0);
+    await passage.getByRole("button", { name: "Open Honolulu station record" }).click();
+    const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+    const reading = story.getByRole("region", { name: "Honolulu pressure evidence" });
+    await expect(reading.getByRole("slider", { name: "Station pressure time" })).toHaveValue("540");
+    await expect(reading.getByRole("button", { name: "Follow the full story" })).toBeInViewport();
+    await story.getByRole("button", { name: "Back to Honolulu" }).click();
+    await expect(sample).toHaveValue("540");
     expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
-    await story.getByRole("button", { name: "Back to home", exact: true }).click();
+    await passage.getByRole("button", { name: "Back", exact: true }).click();
     await expect(feature).toBeFocused();
     await page.getByRole("button", { name: "All stories", exact: true }).click();
     await expect(page.getByRole("region", { name: "Story catalogue" })).toBeVisible();

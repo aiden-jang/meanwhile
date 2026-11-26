@@ -1,10 +1,9 @@
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryThumbnail } from "./StoryThumbnail";
-import { honoluluReading } from "./tonga/honolulu";
+import { honoluluReading, landingTonga } from "./tonga/honolulu";
 import "./landing-stories.css";
 
-const reading = honoluluReading(false);
-const tongaEntry = "open-landing-tonga";
+const reading = { ...honoluluReading(false), chapter: "eruption" };
 
 export function LandingStories() {
   const navigation = useStoryNavigation();
@@ -13,14 +12,18 @@ export function LandingStories() {
     <div className="landing-stories">
       <button
         type="button"
-        id={tongaEntry}
+        id={landingTonga}
         className="landing-story"
         aria-labelledby="landing-story-title"
         aria-describedby="landing-story-summary"
         disabled={unavailable}
-        onClick={() =>
-          navigation?.resume({ id: reading.id, seen: Date.now(), position: { moment: reading } }, tongaEntry)
-        }
+        onClick={(event) => {
+          event.currentTarget.focus({ preventScroll: true });
+          navigation?.resume(
+            { id: reading.id, seen: Date.now(), position: { moment: reading } },
+            landingTonga,
+          );
+        }}
       >
         <StoryThumbnail id={reading.id} featured />
         <span className="landing-story-text">

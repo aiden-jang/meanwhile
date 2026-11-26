@@ -237,7 +237,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         scene,
         focus?.descent ? "fiji-descent" : "",
         `${browser.open}:${browser.category ?? "all"}`,
-        observations.entry ??
+        observations.historyKey ??
           (tonight
             ? sky.historyKey(!!localSky?.lunarDeparture, observations.map)
             : sunActive

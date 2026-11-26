@@ -1,3 +1,4 @@
+import { passageRecord } from "../tonga/honolulu";
 import type { ObservatoryProps } from "../observatoryProps";
 import { searchStories } from "../storyIndex";
 import { captureCollection } from "../visitor/collectionReturn";
@@ -70,4 +71,12 @@ export function openStoryCatalogue(
     focus,
     fallback: "explorer-stories-tab",
   });
+}
+
+export function storyReturnLabel(source: BrowseOrigin | null, active: string | null, trigger: string | null) {
+  if (trigger === passageRecord) return "Back to Honolulu";
+  if (source) return source.label;
+  return active && !trigger?.startsWith("event-story-") && !trigger?.startsWith("archive-story-")
+    ? "Back to stories"
+    : undefined;
 }

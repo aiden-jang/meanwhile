@@ -23,6 +23,7 @@ export interface BrowseOrigin {
 }
 export type StoryNavigationValue = {
   returnLabel: string | undefined;
+  returnView: Pick<BrowseOrigin, "camera" | "flat"> | null;
   hasReturnOrigin: boolean;
   auroraFromPass: boolean;
   katrinaFromWeather: boolean;

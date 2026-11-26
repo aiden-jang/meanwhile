@@ -42,7 +42,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
   const navigation = useStoryNavigation();
   const guided = navigation?.route?.id === "through-the-air";
-  const fromLanding = navigation?.returnLabel === "Back to home";
+  const fromLanding = ["Back to home", "Back to Honolulu"].includes(navigation?.returnLabel ?? "");
   const fromExplore = panel.closeLabel === backToExplore;
   const playback = useTongaPlayback(initial, fromExplore);
   const { assets, view, images, minute, ended, arrive, ready } = playback;

@@ -1,3 +1,4 @@
+import type { PassageCamera } from "./tonga/passageSurface";
 import { DEFAULT_CAMERA } from "../globe/framing";
 import { useCallback, useEffect, useRef } from "react";
 import type { FlyTo } from "../globe/cameraTarget";
@@ -7,11 +8,13 @@ import { mayLocateInitially } from "./location/position";
 import { requestApproximateLocation } from "./location/approximate";
 
 export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boolean) => void) {
+  const world = useRef<PassageCamera | null>(null);
   const flyTo = useRef<FlyTo>(() => {});
   const home = useRef<CameraState>({ ...DEFAULT_CAMERA });
   const untouched = useRef(true);
   const stopLocation = useRef<() => void>(() => {});
   const flight = useRef<FlyTo | null>(null);
+  const linked = shared.lon !== undefined && shared.lat !== undefined && shared.zoom !== undefined;
   const camera = useRef<CameraState>({
     lon: shared.lon ?? DEFAULT_CAMERA.lon,
     lat: shared.lat ?? DEFAULT_CAMERA.lat,
@@ -29,7 +32,8 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
     return stop;
   }, [shared]);
   const onReady = useCallback(
-    (fly: FlyTo | null, current?: () => CameraState) => {
+    (fly: FlyTo | null, current?: () => CameraState, scene?: PassageCamera) => {
+      world.current = scene ?? null;
       if (!fly || !current) {
         setReady(false);
         return;
@@ -42,11 +46,13 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
       };
       read.current = current;
       setReady(true);
-      fly(camera.current.lon, camera.current.lat, camera.current.zoom);
+      // A shared camera is already a destination. Opening a story immediately must capture that exact spot.
+      if (linked && scene) scene.controls.setView(camera.current);
+      else fly(camera.current.lon, camera.current.lat, camera.current.zoom);
     },
-    [setReady],
+    [linked, setReady],
   );
-  return { flyTo, camera, read, onReady, home };
+  return { flyTo, camera, read, onReady, home, world };
 }
 
 export function explorerCamera(

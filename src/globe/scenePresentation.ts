@@ -354,7 +354,7 @@ export function createScenePresentation(
     renderMoon(renderer: WebGLRenderer, camera: PerspectiveCamera) {
       return skyView?.moonfall?.render(renderer, camera) ?? false;
     },
-    skyOpacity(camera: PerspectiveCamera) {
+    skyOpacity(camera: PerspectiveCamera, magnification = 1) {
       projection.value = controls.morph();
       veil?.opacity(Math.max(0, 1 - 2 * projection.value));
       const target = lens
@@ -362,7 +362,8 @@ export function createScenePresentation(
         : 1;
       const zoom =
         target ** (lensReveal * lensReveal * (3 - 2 * lensReveal)) *
-        orbital.magnification(controls.magnification(), projection.value);
+        orbital.magnification(controls.magnification(), projection.value) *
+        magnification;
       if (camera.zoom !== zoom) {
         camera.zoom = zoom;
         camera.updateProjectionMatrix();

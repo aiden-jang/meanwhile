@@ -13,7 +13,7 @@ export function fitGlobeCamera(
   canvas: HTMLCanvasElement,
   width: number,
   height: number,
-): { limiting: number; bleed: number; topBleed: number } {
+) {
   const bleed = Math.min(width - 1, sceneBleed(canvas));
   const scene = canvas.parentElement;
   const topBleed = scene
@@ -22,7 +22,11 @@ export function fitGlobeCamera(
   const framedHeight = height - topBleed;
   camera.aspect = width / framedHeight;
   camera.updateProjectionMatrix();
-  return { limiting: Math.min(1, (width - bleed) / framedHeight), bleed, topBleed };
+  // Zoom is relative to this fit, so resizing preserves the visitor's chosen framing.
+  const halfFov = Math.tan((camera.fov * Math.PI) / 360);
+  const byHeight = 1 / (0.86 * halfFov);
+  const fit = byHeight / Math.min(1, (width - bleed) / framedHeight);
+  return { fit, byHeight, bleed, topBleed, radiusPx: framedHeight / (2 * fit * halfFov) };
 }
 
 export function globeFramingRect(element: HTMLElement): DOMRect {
