@@ -5,7 +5,7 @@ export function WaveStationPicker({
   other,
   select,
 }: {
-  stations: readonly { id: string; name: string }[];
+  stations: readonly { id: string; shortName: string }[];
   label: string;
   index: number;
   other: number;
@@ -17,7 +17,7 @@ export function WaveStationPicker({
       <select value={index} onChange={(event) => select(Number(event.currentTarget.value))}>
         {stations.map((station, i) => (
           <option key={station.id} value={i} disabled={i === other}>
-            {station.name.split(",")[0]}
+            {station.shortName}
           </option>
         ))}
       </select>

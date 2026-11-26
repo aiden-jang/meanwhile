@@ -33,6 +33,7 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
 });
 
 test("Tōhoku recordings restore the station pair, cursor, and prior projection", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/#v=observe&story=rupture&chapter=shaking");
@@ -41,11 +42,11 @@ test("Tōhoku recordings restore the station pair, cursor, and prior projection"
   const original = await canvas.elementHandle();
   const recorded = reveal.getByRole("button", { name: "Recorded waves", exact: true });
   await recorded.click();
-  await expect(reveal.getByRole("heading", { name: "Two stations. One event." })).toBeVisible();
+  await expect(reveal.getByRole("heading", { name: "Recorded arrivals" })).toBeVisible();
   await expect(reveal.getByRole("combobox", { name: "Second station" })).toHaveValue("3");
   const japan = reveal.locator('[data-wave-station="MAJO"]');
   const hawaii = reveal.locator('[data-wave-station="KIP"]');
-  await expect(reveal.locator(".wave-onset-interval")).toContainText("MAJO → KIP · about 8 min 22 sec");
+  await expect(reveal.getByText("About 8 min 22 sec")).toBeVisible();
   await expect(japan).not.toHaveAttribute("data-reached");
   await expect(hawaii).not.toHaveAttribute("data-reached");
   await reveal.getByRole("button", { name: "Jump to MAJO onset" }).click();
@@ -53,14 +54,64 @@ test("Tōhoku recordings restore the station pair, cursor, and prior projection"
   await expect(hawaii).not.toHaveAttribute("data-reached");
   await reveal.getByRole("button", { name: "Jump to KIP onset" }).click();
   await expect(hawaii).toHaveAttribute("data-reached", "true");
+  const first = reveal.getByRole("combobox", { name: "First station" });
+  const second = reveal.getByRole("combobox", { name: "Second station" });
+  await reveal.getByRole("button", { name: "Pick first on scene" }).click();
+  await reveal.locator('[data-wave-station="TATO"]').click();
+  await expect(first).toHaveValue("1");
   await reveal.getByRole("button", { name: "Map", exact: true }).click();
   await expect(reveal.getByRole("slider")).toHaveAttribute("aria-valuetext", "05:55:40 UTC");
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   await expect(hawaii).toHaveAttribute("data-reached", "true");
-  await reveal.getByRole("combobox", { name: "Second station" }).selectOption({ label: "Albuquerque" });
+  await reveal.getByRole("button", { name: "Pick second on scene" }).click();
+  await reveal.locator('[data-wave-station="COLA"]').click();
+  await expect(second).toHaveValue("4");
+  await second.selectOption({ label: "Albuquerque" });
+  const slider = reveal.getByRole("slider", { name: "Recording time" });
+  await expect(slider).toHaveAttribute("max", "900");
+  await reveal.getByRole("button", { name: "Full 90-minute recording" }).click();
+  await expect(slider).toHaveAttribute("max", "5400");
+  await expect(slider).toHaveValue("556");
+  await slider.press("End");
+  await expect(slider).toHaveValue("5400");
+
+  const opener = reveal.getByRole("button", { name: "Open Albuquerque trace" });
+  const pin = reveal.locator('[data-wave-station="TATO"]');
+  const center = async () => {
+    const box = await pin.boundingBox();
+    if (!box) throw new Error("The comparison pin is outside the scene");
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+  const before = await center();
+  const rail = reveal.locator("#observatory-intro");
+  const scroll = () => rail.evaluate((element) => element.scrollTop);
+  await opener.scrollIntoViewIfNeeded();
+  const scrollBefore = await scroll();
+  await opener.click();
+  await expect(reveal.getByRole("region", { name: "Station trace" })).toBeVisible();
   await expect(
     reveal.getByRole("img", { name: /Albuquerque, New Mexico, normalized vertical motion/ }),
   ).toBeVisible();
+  await reveal.getByRole("button", { name: "Globe", exact: true }).click();
+  await canvas.dispatchEvent("wheel", { deltaY: -180, clientX: before.x, clientY: before.y });
+  await reveal.getByRole("button", { name: "Back to comparison" }).click();
+  await expect(opener).toBeFocused();
+  await expect(reveal.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(first).toHaveValue("1");
+  await expect(second).toHaveValue("5");
+  await expect(slider).toHaveValue("5400");
+  await expect.poll(scroll).toBe(scrollBefore);
+  await expect
+    .poll(async () => {
+      const after = await center();
+      return Math.hypot(after.x - before.x, after.y - before.y);
+    })
+    .toBeLessThan(1);
+  await reveal.getByRole("button", { name: "First 15 minutes" }).click();
+  await reveal.getByRole("button", { name: "Jump to TATO onset" }).click();
   await reveal.getByRole("button", { name: "Keep this comparison" }).click();
   await expect(reveal.getByRole("button", { name: "Comparison kept" })).toBeDisabled();
   await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
@@ -70,21 +121,9 @@ test("Tōhoku recordings restore the station pair, cursor, and prior projection"
     "true",
   );
   await recorded.click();
-  await expect(reveal.getByRole("combobox", { name: "Second station" })).toHaveValue("5");
-  await expect(reveal.getByRole("slider", { name: /Recording time/ })).toHaveAttribute(
-    "aria-valuetext",
-    "05:55:40 UTC",
-  );
-  await reveal.getByRole("button", { name: "Map", exact: true }).click();
-  await hawaii.click();
-  await expect(reveal.getByRole("combobox", { name: "First station" })).toHaveValue("3");
-  await expect(reveal.getByRole("slider", { name: /Recording time/ })).toHaveAttribute(
-    "aria-valuetext",
-    "05:55:40 UTC",
-  );
-  await expect(hawaii).toHaveAttribute("aria-pressed", "true");
-  await expect(reveal.locator(".recorded-trace").first()).toContainText("KIP");
-  await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
+  await expect(first).toHaveValue("1");
+  await expect(second).toHaveValue("5");
+  await expect(slider).toHaveValue("288");
 });
 
 test("Tōhoku archive exposes both maps on a small phone with reduced motion", async ({ page }) => {
@@ -150,15 +189,18 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
   const overflow = () => reveal.evaluate((panel) => panel.scrollWidth - panel.clientWidth);
   await expect.poll(overflow).toBe(0);
   await reveal.getByRole("button", { name: "Recorded waves", exact: true }).click();
-  const comparison = reveal.locator(".recorded-traces");
-  await expect(comparison.getByRole("img", { name: /Oʻahu, Hawaiʻi, normalized/ })).toBeVisible();
-  expect(
-    await comparison.evaluate((figure) =>
-      Array.from(figure.querySelectorAll(".recorded-trace svg")).every(
-        (trace) => trace.getBoundingClientRect().bottom <= figure.getBoundingClientRect().bottom,
-      ),
-    ),
-  ).toBe(true);
+  const compare = reveal.getByRole("button", { name: "Open Oʻahu trace", exact: true });
+  await compare.scrollIntoViewIfNeeded();
+  await compare.click();
+  const trace = reveal.getByRole("region", { name: "Station trace" });
+  await expect(trace.getByRole("img", { name: /Oʻahu, Hawaiʻi, normalized/ })).toBeVisible();
+  await expect.poll(overflow).toBe(0);
+  await reveal.getByRole("button", { name: "Back to comparison" }).click();
+  await expect(compare).toBeFocused();
+  await expect(reveal.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect.poll(overflow).toBe(0);

@@ -1,129 +1,44 @@
-import { useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { ObservationView } from "../observations/types";
-import stations from "../../sources/observations/recordings/tohoku-waves.json";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useStorySession } from "../observations/StorySession";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
-import { EvidenceConnector } from "../observations/EvidenceConnector";
-import { StoryDock } from "../observations/StoryDock";
-import { WaveStationPicker } from "./WaveStationPicker";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
+import type { ReplayProps } from "../observations/RecordedReplay";
+import { StationTrace, WavePair, WaveTimeline } from "./WaveReadings";
+import {
+  amplitudeAt,
+  archiveDuration,
+  arrivalWindow,
+  origin,
+  reached,
+  waves,
+  type StationSlot,
+} from "./waveRecordings";
 
-const origin = Date.parse("2011-03-11T05:46:24Z");
-const duration = 90 * 60;
-const scale = 900;
-const audioFiles = import.meta.glob<string>("../../sources/observations/recordings/*.mp3", {
-  eager: true,
-  import: "default",
-  query: "?url",
-});
-const width = 720;
 const target = { lon: 177, lat: 35, zoom: 0.94 };
+const sonificationSpeed = 900;
 
-const waves = stations.map((station) => ({
-  ...station,
-  audio: audioFiles[`../../sources/observations/recordings/${station.id}.mp3`]!,
-  trace: station.envelope
-    .map((sample, index) => {
-      if (!sample) return "";
-      const x = (((index * 5) / duration) * width).toFixed(2);
-      return `M${x} ${(30 - sample[0]! * 0.028).toFixed(2)}V${(30 - sample[1]! * 0.028).toFixed(2)}`;
-    })
-    .join(" "),
-}));
-type Station = (typeof waves)[number];
 export interface WaveReading {
   first: number;
   second: number;
   seconds: number;
+  full?: boolean;
 }
-export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat"> & {
+
+export interface WavePin {
+  id: string;
+  name: string;
+  lon: number;
+  lat: number;
   reached: boolean;
-  slot?: "first" | "second";
-  linked: boolean;
-  inspect: () => void;
-};
-
-const reached = (station: Station, seconds: number) => station.first !== null && seconds >= station.first;
-
-function OnsetInterval({ a, b }: { a: Station; b: Station }) {
-  if (a.first === null || b.first === null) return null;
-  const [earlier, later] = a.first <= b.first ? [a, b] : [b, a];
-  const diff = later.first! - earlier.first!;
-  const x1 = (earlier.first! / duration) * width;
-  const x2 = (later.first! / duration) * width;
-  return (
-    <div className="wave-onset-interval">
-      <svg viewBox={`0 0 ${width} 12`} preserveAspectRatio="none" aria-hidden="true">
-        <path d={`M${x1} 2V9H${x2}V2`} />
-      </svg>
-      <p>
-        {earlier.id} → {later.id} · about {Math.floor(diff / 60)} min {diff % 60} sec between onsets
-      </p>
-    </div>
-  );
+  slot?: StationSlot;
+  action: string;
+  activate: (opener: HTMLButtonElement) => void;
 }
 
-function waveTime(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds) % 60).padStart(2, "0")}`;
-}
-const timeAt = (seconds: number) =>
-  new Date(origin + Math.round(seconds) * 1000).toISOString().slice(11, 19) + " UTC";
-
-function Trace({
-  station,
-  seconds,
-  second,
-  linked,
-}: {
-  station: Station;
-  seconds: number;
-  second?: boolean;
-  linked?: boolean;
-}) {
-  const x = (seconds / duration) * width;
-  return (
-    <div
-      className="recorded-trace"
-      data-second={second || undefined}
-      data-evidence-body=""
-      data-reached={reached(station, seconds) || undefined}
-    >
-      <div>
-        <strong data-ramp="">{station.id}</strong> · {station.name}{" "}
-        <span>
-          {station.first === null
-            ? "Onset unclear"
-            : `${reached(station, seconds) ? "Reached" : "Onset"} at +${waveTime(station.first)}`}
-        </span>
-      </div>
-      <svg
-        data-ramp=""
-        viewBox={`0 0 ${width} 60`}
-        preserveAspectRatio="none"
-        role="img"
-        aria-label={`${station.name}, normalized vertical motion for the first 90 minutes`}
-      >
-        <path className="recorded-base" d={`M0 30H${width}`} />
-        <path d={station.trace} />
-        {station.first !== null && (
-          <line
-            className="recorded-onset"
-            x1={(station.first / duration) * width}
-            x2={(station.first / duration) * width}
-            y1="0"
-            y2="60"
-          />
-        )}
-        <line
-          className="recorded-cursor"
-          data-evidence-point={linked || undefined}
-          x1={x}
-          x2={x}
-          y1="0"
-          y2="60"
-        />
-      </svg>
-    </div>
-  );
+function stationIndex(value: number | undefined, fallback: number) {
+  return value !== undefined && Number.isInteger(value) && value >= 0 && value < waves.length
+    ? value
+    : fallback;
 }
 
 export function RecordedWaves({
@@ -132,76 +47,47 @@ export function RecordedWaves({
   initialReading,
   onReading,
   onPins,
-  onView,
-  reduced,
-}: {
+  trace,
+  setTrace,
+  ...camera
+}: Pick<ReplayProps, "onView" | "map" | "onMap" | "readCamera" | "restoreCamera"> & {
   back: () => void;
   backLabel: string;
   initialReading?: WaveReading | undefined;
   onReading: (reading: WaveReading) => void;
   onPins: (pins: WavePin[]) => void;
-  onView: (view: ObservationView) => void;
-  reduced: boolean;
+  trace: number | null;
+  setTrace: (index: number | null) => void;
 }): JSX.Element {
+  const { onView } = camera;
   const { initial, remember } = useStorySession();
   const navigation = useStoryNavigation();
   const selection = initial?.choice?.split(",").map(Number);
-  const valid = (n: number | undefined, fallback: number) =>
-    n !== undefined && Number.isInteger(n) && n >= 0 && n < waves.length ? n : fallback;
-  const [first, setFirst] = useState(initialReading?.first ?? valid(selection?.[0], 0));
+  const [first, setFirst] = useState(initialReading?.first ?? stationIndex(selection?.[0], 0));
   const [second, setSecond] = useState(() => {
-    const picked = initialReading?.second ?? valid(selection?.[1], 3);
+    const picked = initialReading?.second ?? stationIndex(selection?.[1], 3);
     return picked === first ? (first + 1) % waves.length : picked;
   });
   const [seconds, setSeconds] = useState(
     initialReading?.seconds ??
       (initial?.chapter === "waves"
-        ? Math.max(0, Math.min(duration, ((initial.at ?? origin) - origin) / 1000))
+        ? Math.max(0, Math.min(archiveDuration, ((initial.at ?? origin) - origin) / 1000))
         : 0),
   );
+  const [full, setFull] = useState(initialReading?.full ?? seconds > arrivalWindow);
   const [playing, play] = useState(false);
-  const [linked, setLinked] = useState(false);
+  const [picking, setPicking] = useState<StationSlot | null>(null);
   const cursor = useRef<HTMLInputElement>(null);
   const sound = useRef<HTMLAudioElement>(null);
+  const heldFrame = useRef<{ frame: ReturnType<typeof captureReplayFrame>; station: string }>();
+  const cameraAccess = useRef(camera);
+  useLayoutEffect(() => {
+    cameraAccess.current = camera;
+  }, [camera]);
   const a = waves[first]!;
   const b = waves[second]!;
-  const inspect = useCallback(
-    (index: number) => {
-      play(false);
-      sound.current?.pause();
-      if (index === second) setSecond(first);
-      setFirst(index);
-      setLinked(true);
-      requestAnimationFrame(() =>
-        document.querySelector(".recorded-trace")?.scrollIntoView({ block: "nearest" }),
-      );
-    },
-    [first, second],
-  );
-  const arrivalMask = waves.reduce(
-    (mask, station, index) => (reached(station, seconds) ? mask | (1 << index) : mask),
-    0,
-  );
-  const pins = useMemo(
-    () =>
-      [first, second, ...waves.map((_, i) => i).filter((i) => i !== first && i !== second)].map(
-        (index): WavePin => {
-          const { id, name, lon, lat } = waves[index]!;
-          return {
-            id,
-            name,
-            lon,
-            lat,
-            reached: !!(arrivalMask & (1 << index)),
-            ...(index === first ? { slot: "first" } : index === second ? { slot: "second" } : {}),
-            linked: index === first && linked,
-            inspect: () => inspect(index),
-          };
-        },
-      ),
-    [first, second, arrivalMask, linked, inspect],
-  );
-  useLayoutEffect(() => onPins(pins), [pins, onPins]);
+  const span = full ? archiveDuration : arrivalWindow;
+  const running = playing && seconds < span;
   const at = origin + seconds * 1000;
   const choice = `${first},${second}`;
   const kept = navigation?.library.saved.some(
@@ -211,55 +97,117 @@ export function RecordedWaves({
       position.moment.at === at &&
       position.moment.choice === choice,
   );
+
+  const openTrace = useCallback(
+    (index: number, opener?: HTMLButtonElement) => {
+      if (trace !== null) return;
+      const frame = captureReplayFrame(cameraAccess.current);
+      heldFrame.current = { frame: { ...frame, focus: opener ?? null }, station: waves[index]!.id };
+      play(false);
+      sound.current?.pause();
+      setTrace(index);
+    },
+    [setTrace, trace],
+  );
+
+  useLayoutEffect(() => {
+    if (trace !== null) {
+      document.getElementById("observatory-intro")?.scrollTo(0, 0);
+    } else if (heldFrame.current) {
+      const { frame, station } = heldFrame.current;
+      restoreReplayFrame(
+        frame,
+        cameraAccess.current,
+        () =>
+          document.querySelector<HTMLButtonElement>(`[data-recording-row="${station}"]`) ?? cursor.current,
+      );
+      heldFrame.current = undefined;
+    }
+  }, [trace]);
+
+  const choose = useCallback(
+    (slot: StationSlot, index: number) => {
+      if (slot === "first") {
+        if (index === second) setSecond(first);
+        setFirst(index);
+      } else {
+        if (index === first) setFirst(second);
+        setSecond(index);
+      }
+      setPicking(null);
+      play(false);
+      sound.current?.pause();
+    },
+    [first, second],
+  );
+  const activate = useCallback(
+    (index: number, opener?: HTMLButtonElement) => {
+      if (trace !== null) return;
+      if (picking) choose(picking, index);
+      else if (index === first || index === second) openTrace(index, opener);
+      else choose("second", index);
+    },
+    [choose, first, openTrace, picking, second, trace],
+  );
+  const arrivals = waves.reduce(
+    (mask, station, index) => (reached(station, seconds) ? mask | (1 << index) : mask),
+    0,
+  );
+  const pins = useMemo(
+    () =>
+      [first, second, ...waves.map((_, i) => i).filter((i) => i !== first && i !== second)].map(
+        (index): WavePin => {
+          const { id, name, lon, lat } = waves[index]!;
+          const slot = index === first ? "first" : index === second ? "second" : undefined;
+          return {
+            id,
+            name,
+            lon,
+            lat,
+            reached: !!(arrivals & (1 << index)),
+            ...(slot ? { slot } : {}),
+            action: picking
+              ? `Pick ${name} as ${picking} station`
+              : slot
+                ? `Open ${name} trace`
+                : `Compare with ${name}`,
+            activate: (opener) => activate(index, opener),
+          };
+        },
+      ),
+    [first, second, arrivals, activate, picking],
+  );
+  useLayoutEffect(() => onPins(pins), [pins, onPins]);
+
   useLayoutEffect(() => {
     onView({
       kind: "observation",
       cameraKey: "waves",
       image: null,
       target,
-      holdGeography: linked,
-      pickMarks: { points: waves, select: inspect },
+      ...(trace === null ? { pickMarks: { points: waves, select: activate } } : {}),
       frame: {
         at,
         marks: [
-          { lon: 142.373, lat: 38.297, size: 19, color: 0xe8edf5 },
+          { lon: 142.373, lat: 38.297, size: 16, color: 0xe8edf5 },
           ...waves.map((station) => {
-            const sample = station.envelope[Math.min(station.envelope.length - 1, Math.floor(seconds / 5))];
-            const amplitude = sample ? Math.max(Math.abs(sample[0]!), Math.abs(sample[1]!)) : 0;
-            const arrived = reached(station, seconds);
             const color = station === a ? 0xf2be95 : station === b ? 0xa6dce9 : 0xaebcc9;
             const selected = station === a || station === b;
-            const pulse =
-              arrived && playing && !reduced ? Math.max(0, 1 - (seconds - station.first!) / 120) : 0;
+            const arrived = reached(station, seconds);
             return {
               lon: station.lon,
               lat: station.lat,
-              size: arrived ? (selected ? 13 : 9) + Math.sqrt(amplitude / 1000) * 12 + pulse * 9 : 7,
+              size: arrived ? (selected ? 12 : 8) + Math.sqrt(amplitudeAt(station, seconds) / 1000) * 11 : 7,
               color: arrived ? color : 0x657786,
             };
           }),
         ],
       },
     });
-    remember?.({ chapter: "waves", choice });
-    onReading({ first, second, seconds });
-  }, [
-    at,
-    choice,
-    seconds,
-    a,
-    b,
-    first,
-    second,
-    onView,
-    onReading,
-    remember,
-    playing,
-    reduced,
-    linked,
-    inspect,
-  ]);
-  const running = playing && seconds < duration;
+    onReading({ first, second, seconds, full });
+  }, [a, b, at, activate, first, full, onReading, onView, second, seconds, trace]);
+  useLayoutEffect(() => remember?.({ chapter: "waves", choice }), [choice, remember]);
+
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {
     const pauseHidden = () => {
@@ -271,74 +219,50 @@ export function RecordedWaves({
   useEffect(() => {
     if (!running) return;
     const timer = window.setInterval(() => {
-      if (!document.hidden) setSeconds((at) => Math.min(duration, at + 24));
-    }, 80);
+      if (!document.hidden) setSeconds((time) => Math.min(span, time + (full ? 18 : 6)));
+    }, 50);
     return () => window.clearInterval(timer);
-  }, [running]);
-  const seek = (at: number) => {
+  }, [full, running, span]);
+
+  function seek(time: number) {
     play(false);
-    setSeconds(at);
-  };
+    setSeconds(time);
+  }
+  function changeSpan() {
+    seek(full ? Math.min(seconds, arrivalWindow) : seconds);
+    setFull(!full);
+  }
+
+  const reading = trace === null ? null : waves[trace]!;
   return (
-    <>
-      <div className="archive-scene-console">
-        <div className="archive-scene-caption recorded-chapter">
-          <h3>Two stations. One event.</h3>
-          <p>
-            Tap a station to inspect its trace. Stations light up at the approximate recorded onset. The
-            traces share one clock and are normalized per instrument.
-          </p>
-        </div>
-        <div className="recorded-controls">
-          <div className="recorded-pickers">
-            <WaveStationPicker
-              stations={waves}
-              label="First station"
-              index={first}
-              other={second}
-              select={setFirst}
-            />
-            <WaveStationPicker
-              stations={waves}
-              label="Second station"
-              index={second}
-              other={first}
-              select={setSecond}
-            />
-          </div>
-          <div className="recorded-traces">
-            <Trace station={a} seconds={seconds} linked={linked} />
-            <Trace station={b} seconds={seconds} second />
-            <OnsetInterval a={a} b={b} />
-          </div>
-          {linked && <EvidenceConnector key={a.id} trace />}
-          <StoryDock label="Recorded wave playback">
-            <label className="recorded-time">
-              <span>Recording time · {timeAt(seconds)}</span>
-              <input
-                ref={cursor}
-                className="scrub-slider"
-                type="range"
-                min="0"
-                max={duration}
-                step="1"
-                value={seconds}
-                aria-valuetext={timeAt(seconds)}
-                onChange={(event) => seek(event.currentTarget.valueAsNumber)}
-              />
-            </label>
-            <button
-              data-playback-start={!running || undefined}
-              type="button"
-              className="archive-scene-button"
-              onClick={() => {
-                if (seconds >= duration) setSeconds(0);
-                play(!running);
-              }}
-            >
-              {running ? "Pause recording" : seconds >= duration ? "Replay recording" : "Play recording"}
-            </button>
-          </StoryDock>
+    <div className="recorded-controls">
+      {reading ? (
+        <StationTrace station={reading} seconds={seconds} span={span} second={trace === second} />
+      ) : (
+        <>
+          <WaveTimeline
+            seconds={seconds}
+            span={span}
+            first={a}
+            second={b}
+            playing={running}
+            cursor={cursor}
+            seek={seek}
+            toggle={() => {
+              if (seconds >= span) setSeconds(0);
+              play(!running);
+            }}
+            changeSpan={changeSpan}
+          />
+          <WavePair
+            first={first}
+            second={second}
+            seconds={seconds}
+            picking={picking}
+            inspect={openTrace}
+            pick={(slot) => setPicking(picking === slot ? null : slot)}
+            choose={choose}
+          />
           <div className="archive-scene-controls">
             {a.first !== null && (
               <button type="button" className="archive-scene-button" onClick={() => seek(a.first!)}>
@@ -372,28 +296,28 @@ export function RecordedWaves({
               {navigation.library.notice}
             </p>
           )}
-          <details
-            className="recorded-audio"
-            onToggle={(event) => {
-              if (!event.currentTarget.open) sound.current?.pause();
-            }}
-          >
-            <summary onClick={() => play(false)}>
-              Listen to {a.id} · {scale}× speed
-            </summary>
-            <audio
-              ref={sound}
-              key={a.id}
-              controls
-              preload="none"
-              onPlay={() => play(false)}
-              aria-label={`Sonification of ${a.name} at ${scale} times speed`}
-              src={a.audio}
-            />
-            <p>Recorded motion sped up into audible sound.</p>
-          </details>
-        </div>
-      </div>
-    </>
+        </>
+      )}
+      <details
+        className="recorded-audio"
+        key={(reading ?? a).id}
+        onToggle={(event) => {
+          if (!event.currentTarget.open) sound.current?.pause();
+        }}
+      >
+        <summary onClick={() => play(false)}>
+          Listen to {(reading ?? a).id} · {sonificationSpeed}× speed
+        </summary>
+        <audio
+          ref={sound}
+          controls
+          preload="none"
+          onPlay={() => play(false)}
+          aria-label={`Sonification of ${(reading ?? a).name} at ${sonificationSpeed} times speed`}
+          src={(reading ?? a).audio}
+        />
+        <p>Recorded motion sped up into audible sound.</p>
+      </details>
+    </div>
   );
 }

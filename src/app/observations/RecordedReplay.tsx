@@ -70,6 +70,7 @@ export function ReplayPanel({
   className = "",
   sharing = true,
   sharedMoment,
+  deferSharedView = false,
   evidence,
   horizon = false,
   projection,
@@ -91,6 +92,7 @@ export function ReplayPanel({
   className?: string;
   sharing?: boolean;
   sharedMoment?: StoryMoment | undefined;
+  deferSharedView?: boolean;
   evidence?: ReactNode;
   horizon?: boolean;
   projection?: ReactNode;
@@ -99,6 +101,7 @@ export function ReplayPanel({
 }): JSX.Element {
   const navigation = useStoryNavigation();
   const active = navigation?.active;
+  const sharedView = navigation?.route?.id !== "water-in-motion" && <SharedStory moment={sharedMoment} />;
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     if (focusOnEntry) back.current?.focus({ preventScroll: true });
@@ -154,9 +157,10 @@ export function ReplayPanel({
             </div>
             {primaryAction}
             <p className="observation-note">{subtitle}</p>
-            {navigation?.route?.id !== "water-in-motion" && <SharedStory moment={sharedMoment} />}
+            {!deferSharedView && sharedView}
             {journeyControls && <ConnectedJourney />}
             {children}
+            {deferSharedView && sharedView}
             {sharing && <ShareMoment />}
             {ending && <ExperienceEnding showFinding={finding} showSave={save} />}
             <details className="replay-sources">

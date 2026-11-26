@@ -89,6 +89,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
     ),
   );
   const [waves, setWaves] = useState(initial?.chapter === "waves");
+  const [trace, setTrace] = useState<number | null>(null);
   const [reduced, setReduced] = useState(() => matchMedia(MOTION_QUERY).matches);
   const [inspection, setInspection] = useState(() =>
     initial?.chapter === "fault" && initial.at !== undefined
@@ -249,12 +250,17 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
   return (
     <ReplayPanel
       {...panel}
+      onClose={trace === null ? panel.onClose : () => setTrace(null)}
+      closeLabel={trace === null ? panel.closeLabel : "Back to comparison"}
       title="The Tōhoku rupture"
       location="Offshore Honshu · Japan"
-      subtitle="11 Mar 2011 · 05:46:24 UTC · M9.1 · 29 km deep"
-      className="rupture-journey"
+      subtitle={waves ? "11 March 2011 · Offshore Japan" : "11 Mar 2011 · 05:46:24 UTC · M9.1 · 29 km deep"}
+      deferSharedView={waves}
+      className={`rupture-journey${waves ? " rupture-recordings" : ""}`}
       finding={false}
       save={!waves}
+      sharing={trace === null}
+      ending={trace === null}
       status={
         waves
           ? "GSN · Recorded motion"
@@ -265,17 +271,19 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
               : "11 March 2011"
       }
       at={<span>{!waves && frame.depth > 0 ? "Depth exaggerated 4×" : null}</span>}
-      inset={<WaveStationLabels pins={waves ? pins : null} />}
+      inset={<WaveStationLabels pins={waves ? pins : null} interactive={trace === null} />}
       sources={<RuptureSources />}
     >
       {waves ? (
         <Suspense fallback={<p role="status">Opening recorded waves…</p>}>
           <RecordedWaves
+            {...panel}
             onView={onView}
+            trace={trace}
+            setTrace={setTrace}
             initialReading={waveReading.current}
             onReading={rememberWaves}
             onPins={setPins}
-            reduced={reduced}
             back={closeWaves}
             backLabel={
               waveReturn.current && waveReturn.current.mode !== "shaking"

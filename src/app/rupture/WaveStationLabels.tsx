@@ -1,28 +1,28 @@
 import type { WavePin } from "./RecordedWaves";
 
-export function WaveStationLabels({ pins }: { pins: WavePin[] | null }) {
+export function WaveStationLabels({ pins, interactive }: { pins: WavePin[] | null; interactive: boolean }) {
   return (
     <div className="recorded-anchors" aria-label={pins ? "Seismic stations" : undefined}>
       {pins ? (
-        pins.map(({ id, lon, lat, name, reached, slot, linked, inspect }) => (
+        pins.map(({ id, lon, lat, name, reached, slot, action, activate }) => (
           <button
             key={id}
             type="button"
-            aria-label={`Inspect ${name}`}
-            aria-pressed={slot === "first"}
+            aria-label={interactive ? action : name}
+            disabled={!interactive}
             title={name}
             data-observation-anchor=""
             data-compact-anchor=""
             data-wave-station={id}
             data-station-slot={slot}
             data-second={slot === "second" || undefined}
-            data-evidence-source={linked ? "true" : undefined}
             data-projection-anchor={slot === "first" || undefined}
             data-reached={reached || undefined}
             data-lon={lon}
             data-lat={lat}
-            onClick={inspect}
+            onClick={(event) => activate(event.currentTarget)}
           >
+            <i aria-hidden="true" />
             <span aria-hidden="true">{slot ? name.split(",")[0] : id}</span>
           </button>
         ))
