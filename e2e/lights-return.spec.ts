@@ -132,17 +132,7 @@ for (const mobile of [false, true]) {
       const start = await lensPoint();
       const end = { x: start.x - (mobile ? 35 : 57), y: start.y + 32 };
       const touch = mobile ? await context.newCDPSession(page) : undefined;
-      const activate = async (control: Locator) => {
-        if (!touch) return control.click();
-        await control.tap({ trial: true });
-        const bounds = await control.boundingBox();
-        if (!bounds) throw new Error("The control is outside the panel.");
-        await touch.send("Input.dispatchTouchEvent", {
-          type: "touchStart",
-          touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }],
-        });
-        await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-      };
+      const activate = (control: Locator) => (mobile ? control.tap() : control.click());
       if (touch) {
         await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
         await expect(lens).toHaveAttribute("data-grabbing", "");
@@ -167,8 +157,12 @@ for (const mobile of [false, true]) {
       const opener = button("Inspect this place");
       await expect(opener).toBeVisible();
       await expect(lens).not.toHaveAttribute("data-grabbing", "");
-      const moved = await lensPoint();
-      expect(Math.hypot(moved.x - start.x, moved.y - start.y)).toBeGreaterThan(22);
+      await expect
+        .poll(async () => {
+          const point = await lensPoint();
+          return Math.hypot(point.x - start.x, point.y - start.y);
+        })
+        .toBeGreaterThan(22);
       expect(await marker.boundingBox()).toEqual(cameraMark);
       const chapter = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("chapter"));
       await expect.poll(chapter).toMatch(/^lens:-\d+\.\d+,\d+\.\d+$/);
@@ -185,6 +179,8 @@ for (const mobile of [false, true]) {
       });
       const scroll = () => rail.evaluate((node) => node.scrollTop);
       const savedScroll = await scroll();
+      // Capture the departure on opening the reading, after the final touch move has been drawn.
+      const departure = await lensPoint();
       await activate(opener);
       const reading = panel.getByRole("region", { name: "Night lights at this place" });
       await expect(reading.getByRole("heading", { name: "Pinned location" })).toBeVisible();
@@ -199,7 +195,7 @@ for (const mobile of [false, true]) {
       const next = mobile ? "Globe" : "Map";
       await activate(button(next));
       await expect(button(next)).toHaveAttribute("aria-pressed", "true");
-      await canvas.dispatchEvent("wheel", { deltaY: -120, clientX: moved.x, clientY: moved.y });
+      await canvas.dispatchEvent("wheel", { deltaY: -120, clientX: departure.x, clientY: departure.y });
       await activate(button("Back to comparison"));
       await expect(opener).toBeFocused();
       await expect(button(projection)).toHaveAttribute("aria-pressed", "true");
@@ -212,7 +208,7 @@ for (const mobile of [false, true]) {
       await expect
         .poll(async () => {
           const after = await lensPoint();
-          return Math.hypot(after.x - moved.x, after.y - moved.y);
+          return Math.hypot(after.x - departure.x, after.y - departure.y);
         })
         .toBeLessThan(1);
       await activate(main.getByRole("button", { name: "Ponce", exact: true }));
