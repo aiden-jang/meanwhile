@@ -113,7 +113,7 @@
   line-height: 1.4;
 }
 .tonga-passage time,
-.passage-measurement strong,
+.passage-value,
 .passage-axis {
   font-variant-numeric: tabular-nums;
 }
@@ -191,7 +191,7 @@
   white-space: nowrap;
   color: var(--wave);
 }
-.passage-measurement strong {
+.passage-value {
   min-width: 6.2ch;
   font:
     550 clamp(32px, 3vw, 50px)/1 "Alumni Sans",
@@ -214,7 +214,7 @@
   font-size: 13px;
   margin-top: 10px;
 }
-.passage-ident time {
+.passage-clock {
   font-family: var(--font-mono, monospace);
   font-size: 12px;
 }
@@ -334,7 +334,7 @@
   .passage-reading h2 {
     font-size: clamp(52px, 15vw, 72px);
   }
-  .passage-measurement strong {
+  .passage-value {
     font-size: clamp(30px, 8.7vw, 39px);
   }
   .passage-measurement span {

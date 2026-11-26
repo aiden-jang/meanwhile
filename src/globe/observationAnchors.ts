@@ -86,10 +86,9 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const inset = locator ? 82 : Math.max(24, (placeWidths.get(anchor) ?? 0) / 2 + 4);
     const blockInset = anchor.hasAttribute("data-compact-anchor") ? 24 : 55;
     const fiji = anchor.hasAttribute("data-fiji-locator");
+    const eruption = anchor.hasAttribute("data-eruption-locator");
     const paired =
-      point && parent && fijiPoint && anchor.hasAttribute("data-eruption-locator")
-        ? separatePacificLabels(point, fijiPoint, parent)
-        : null;
+      point && parent && fijiPoint && eruption ? separatePacificLabels(point, fijiPoint, parent) : null;
     const flashPulse = anchor.hasAttribute("data-flash-pulse");
     const compactPulse = flashPulse && parent && parent.width <= 360 && parent.height <= 188;
     const spacing = locator ? 152 : place ? 100 : compactPulse ? 32 : 44;
@@ -107,13 +106,17 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       x < parent.width - inset &&
       y > blockInset &&
       y < parent.height - blockInset &&
-      (!fiji || (point.x > 24 && point.x < innerWidth - 110 && point.y > 24 && point.y < innerHeight - 24)) &&
+      (!(fiji || eruption) ||
+        (point.x > 24 &&
+          point.x < innerWidth - (fiji ? 110 : 24) &&
+          point.y > 24 &&
+          point.y < innerHeight - 24)) &&
       !occupied.some((p) => !(paired && p.fiji) && Math.hypot(p.x - x, p.y - y) < spacing);
-    if (fiji) anchor.toggleAttribute("data-positioned", !!visible);
+    if (fiji || eruption) anchor.toggleAttribute("data-positioned", !!visible);
     anchor.style.visibility = visible ? "visible" : "hidden";
     if (visible) {
       if (fiji) fijiPoint = point;
-      if (anchor.hasAttribute("data-eruption-locator")) {
+      if (eruption) {
         if (paired) {
           anchor.dataset["paired"] = paired.side;
           anchor.style.setProperty("--leader-length", Math.abs(paired.dx || paired.dy) + "px");

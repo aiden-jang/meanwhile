@@ -3,6 +3,8 @@ import type { ObservatoryProps } from "../observatoryProps";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { StoryLoading } from "../StoryLoading";
 import { honoluluReading, passageEntrance, passageRecord } from "./honolulu";
+import "./tonga-passage.css";
+
 const Passage = lazy(() =>
   import("./TongaPassage").then(({ TongaPassage: defaultExport }) => ({ default: defaultExport })),
 );

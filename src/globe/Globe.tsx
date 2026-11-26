@@ -167,7 +167,7 @@ export function Globe({
     };
     globe.resize();
     draw();
-    onReady(
+    const restoredCamera = onReady(
       createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival),
       globe.controls.state,
       { ...globe.passageWorld, controls: globe.controls, afterRender, wake: () => wakeRef.current() },
@@ -517,7 +517,7 @@ export function Globe({
     });
     const unsubscribe = feed.subscribe(redrawFromData);
     redraw();
-    if (!isLandingPresentation(live.current.globePresentation)) globe.controls.enter();
+    if (!restoredCamera && !isLandingPresentation(live.current.globePresentation)) globe.controls.enter();
     wake();
 
     const detachViewport = observeViewport(el, globe, redraw, wake, () => {

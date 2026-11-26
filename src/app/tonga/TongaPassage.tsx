@@ -8,7 +8,6 @@ import { timeIso } from "./tongaTimeline";
 import { first, last } from "./passageTrace";
 import type { PassageCamera } from "./passageSurface";
 import { attachPassage, type PassageActions } from "./passagePlayback";
-import "./tonga-passage.css";
 
 export function TongaPassage({
   camera,

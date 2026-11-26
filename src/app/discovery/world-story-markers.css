@@ -73,6 +73,9 @@
 .passage-locator:focus-visible {
   background: #254149;
 }
+.passage-locator:not([data-positioned]) {
+  display: none;
+}
 .passage-locator[data-label-left] {
   flex-direction: row-reverse;
   transform: translate(calc(100% * -1 + 15px), -50%);

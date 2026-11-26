@@ -36,7 +36,7 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
       world.current = scene ?? null;
       if (!fly || !current) {
         setReady(false);
-        return;
+        return false;
       }
       flight.current = fly;
       flyTo.current = (...args) => {
@@ -47,8 +47,12 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
       read.current = current;
       setReady(true);
       // A shared camera is already a destination. Opening a story immediately must capture that exact spot.
-      if (linked && scene) scene.controls.setView(camera.current);
-      else fly(camera.current.lon, camera.current.lat, camera.current.zoom);
+      if (linked && scene) {
+        scene.controls.setView(camera.current);
+        return true;
+      }
+      fly(camera.current.lon, camera.current.lat, camera.current.zoom);
+      return false;
     },
     [linked, setReady],
   );
