@@ -373,6 +373,7 @@ export function createScenePresentation(
         controls.apply,
         (observationTarget?.zoom ?? 1) / controls.state().zoom,
       );
+      observations?.positionLens(canvas, controls);
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
       placeDayline(dayline.value);
       dive?.size();

@@ -4,13 +4,9 @@ import {
   BufferGeometry,
   CanvasTexture,
   Color,
-  DoubleSide,
   Group,
   LineSegments,
-  Mesh,
-  MeshBasicMaterial,
   Points,
-  ShaderChunk,
   ShaderMaterial,
   SphereGeometry,
   SRGBColorSpace,
@@ -22,7 +18,10 @@ import {
 } from "three";
 import type { GeoPoint, ObservationFrame, ObservationView } from "../app/observations/types";
 import { DEG, toVec3 } from "../geo/sphere";
-import { MORPH_GLSL, morphable } from "./morph";
+import { MORPH_GLSL } from "./morph";
+import { createObservationRaster } from "./observationRasterMaterial";
+import { positionSurveyLens, SURVEY_RASTER_RADIUS } from "./surveyLens";
+import type { Controls } from "./controlsTypes";
 import { createObservationCurtain } from "./observationCurtain";
 import { createObservationTerrain } from "./observationTerrain";
 import { createObservationFault } from "./observationFault";
@@ -80,7 +79,7 @@ type Raster = NonNullable<ObservationFrame["raster"]>;
 export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: Raster["corners"]) {
   const [west, south, east, north] = bounds;
   const geometry = new SphereGeometry(
-    1.009,
+    SURVEY_RASTER_RADIUS,
     64,
     42,
     (west + 90) * DEG,
@@ -102,7 +101,7 @@ export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: 
         (a + (b - a) * u) * (1 - v) + (c + (d - c) * u) * v;
       lon = mix(sw.lon, se.lon, nw.lon, ne.lon);
       lat = mix(sw.lat, se.lat, nw.lat, ne.lat);
-      vertices.setXYZ(i, ...toVec3(lon, lat, 1.009));
+      vertices.setXYZ(i, ...toVec3(lon, lat, SURVEY_RASTER_RADIUS));
     }
     coordinates[i * 2] = lon;
     coordinates[i * 2 + 1] = lat;
@@ -216,57 +215,7 @@ export function createObservationLayer(morph: { value: number }) {
       depthWrite: false,
     }),
   );
-  const raster = new Mesh(
-    new BufferGeometry(),
-    new MeshBasicMaterial({
-      side: DoubleSide,
-      forceSinglePass: true,
-      transparent: true,
-      depthWrite: false,
-      toneMapped: false,
-    }),
-  );
-  morphable(raster.material, morph);
-  const sweep = { value: 1 };
-  const divider = { value: -1 };
-  const feather = { value: 0 };
-  const fold = { value: 0 };
-  const compileRaster = raster.material.onBeforeCompile;
-  raster.material.onBeforeCompile = (shader, renderer) => {
-    compileRaster(shader, renderer);
-    shader.uniforms.sweep = sweep;
-    shader.uniforms.surveyDivider = divider;
-    shader.uniforms.observationFeather = feather;
-    shader.uniforms.observationFold = fold;
-    const mapFragment = ShaderChunk.map_fragment.replace(
-      "texture2D( map, vMapUv )",
-      `texture2D( map, surveyDivider < 0.0 ? vMapUv :
-        vec2(vMapUv.x, 0.5 * clamp(vMapUv.y, 0.001, 0.999) + 0.5 * (1.0 - step(surveyDivider, vMapUv.x))))`,
-    );
-    shader.fragmentShader =
-      `uniform float sweep;\nuniform float surveyDivider;\nuniform float observationFeather;\nuniform float observationFold;\n${shader.fragmentShader}`.replace(
-        "#include <map_fragment>",
-        `${mapFragment}
-       #ifdef USE_MAP
-       diffuseColor.a *= smoothstep(vMapUv.x - 0.025, vMapUv.x + 0.025, sweep);
-       if (observationFeather > 0.0) {
-         vec2 edgeUv = min(vMapUv, 1.0 - vMapUv);
-         diffuseColor.a *= smoothstep(0.0, observationFeather, min(edgeUv.x, edgeUv.y));
-       }
-       if (observationFold > 0.0) {
-         vec2 centered = abs(2.0 * vMapUv - 1.0);
-         float edge = 1.1 * (1.0 - observationFold);
-         diffuseColor.a *= 1.0 - smoothstep(edge - 0.08, edge, max(centered.x, centered.y));
-       }
-       if (surveyDivider > 0.0 && surveyDivider < 1.0) {
-         float edge = fwidth(vMapUv.x);
-         float white = 1.0 - smoothstep(0.1 * edge, 1.2 * edge, abs(vMapUv.x - surveyDivider));
-         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.90, 0.92, 0.90), white);
-       }
-       #endif`,
-      );
-  };
-  raster.material.customProgramCacheKey = () => "fm-morph-radar-sweep-survey";
+  const { raster, sweep, divider, feather, fold, aperture } = createObservationRaster(morph);
   raster.renderOrder = 4;
   line.renderOrder = 5;
   dot.renderOrder = 6;
@@ -320,7 +269,7 @@ export function createObservationLayer(morph: { value: number }) {
       dot.geometry = marks.geometry();
       dot.visible = dot.geometry.getAttribute("position").count > 0;
     }
-    divider.value = view?.surveyDivider ?? -1;
+    divider.value = view?.surveyLens ? 0 : (view?.surveyDivider ?? -1);
     feather.value = view?.frame.raster?.feather ?? 0;
     const image = view?.frame.raster ? (view.surface ?? view.image) : null;
     const priorImage = prior?.frame.raster ? (prior.surface ?? prior.image) : null;
@@ -336,7 +285,7 @@ export function createObservationLayer(morph: { value: number }) {
         raster.material.map.needsUpdate = true;
       }
       raster.material.needsUpdate = true;
-    } else if (view?.surface && view.surveyDivider === undefined && raster.material.map)
+    } else if (view?.surface && divider.value < 0 && raster.material.map)
       raster.material.map.needsUpdate = true;
     const bounds = view?.frame.raster?.bounds ?? FULL;
     const corners = view?.frame.raster?.corners;
@@ -355,6 +304,9 @@ export function createObservationLayer(morph: { value: number }) {
   return {
     object,
     set,
+    positionLens(canvas: HTMLCanvasElement, controls: Controls) {
+      positionSurveyLens(prior?.surveyLens, canvas, controls, aperture.value);
+    },
     prepareRaster(renderer: WebGLRenderer, camera: PerspectiveCamera, scene: Scene) {
       if (rasterPrepared || raster.material.map || renderer.getContext().isContextLost()) return;
       rasterPrepared = true;

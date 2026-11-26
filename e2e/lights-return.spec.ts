@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { devices, expect, test } from "@playwright/test";
 import { installFeeds, openStories, saveImageButton, revealStoryTools, selectScene } from "./feeds";
 
 test("Lights Return compares NASA recovery periods and returns to the same After Dark globe", async ({
@@ -24,6 +24,11 @@ test("Lights Return compares NASA recovery periods and returns to the same After
     "NASA’s archived images couldn’t load.",
   );
   await panel.getByRole("button", { name: "Retry images" }).click();
+  await expect(panel.getByRole("button", { name: "Early aftermath", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await panel.getByRole("button", { name: "Island replay", exact: true }).click();
   const stage = panel.locator(".replay-stage");
   const periodTitle = panel.locator("[data-lights-period] h3");
   await expect(stage.locator(".stage-readout")).toContainText("Before Maria");
@@ -85,3 +90,124 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+for (const mobile of [false, true]) {
+  const projection = mobile ? "Map" : "Globe";
+  test(`Lights Return drags the comparison on the ${projection.toLowerCase()} and restores an exact place reading`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      ...(mobile ? devices["Pixel 7"] : {}),
+      viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 },
+      deviceScaleFactor: 1,
+      reducedMotion: "reduce",
+    });
+    try {
+      const page = await context.newPage();
+      await installFeeds(page, { presentation: "fresh", empty: true });
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      page.on("console", (entry) => {
+        if (entry.type() === "error" && /WebGLProgram|Shader Error/.test(entry.text()))
+          errors.push(entry.text());
+      });
+      await page.goto(
+        "/#v=observe&story=lights&choice=1&chapter=lens:san-juan&p=" + projection.toLowerCase(),
+      );
+      const panel = page.getByRole("region", { name: "Lights Return", exact: true });
+      const button = (name: string) => panel.getByRole("button", { name, exact: true });
+      const main = panel.getByRole("region", { name: "Compare Puerto Rico" });
+      const canvas = page.locator("#globe-view canvas");
+      const original = await canvas.elementHandle();
+      const lens = button("Move the before-Maria lens");
+      const lensPoint = async () => {
+        await expect(lens).toHaveAttribute("data-positioned", "");
+        const bounds = await lens.boundingBox();
+        if (!bounds) throw new Error("The lens is outside the scene.");
+        return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+      };
+      const marker = button("Ponce on the scene");
+      await expect(marker).toBeVisible();
+      const cameraMark = await marker.boundingBox();
+      const start = await lensPoint();
+      const end = { x: start.x - (mobile ? 35 : 57), y: start.y + 32 };
+      const action = mobile ? "tap" : "click";
+      if (mobile) {
+        const touch = await context.newCDPSession(page);
+        await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
+        await expect(lens).toHaveAttribute("data-grabbing", "");
+        for (let step = 1; step <= 5; step++)
+          await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [
+              {
+                x: start.x + ((end.x - start.x) * step) / 5,
+                y: start.y + ((end.y - start.y) * step) / 5,
+              },
+            ],
+          });
+        await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      } else {
+        await page.mouse.move(start.x, start.y);
+        await page.mouse.down();
+        await expect(lens).toHaveAttribute("data-grabbing", "");
+        await page.mouse.move(end.x, end.y, { steps: 5 });
+        await page.mouse.up();
+      }
+      const opener = button("Inspect this place");
+      await expect(opener).toBeVisible();
+      const moved = await lensPoint();
+      expect(Math.hypot(moved.x - start.x, moved.y - start.y)).toBeGreaterThan(22);
+      expect(await marker.boundingBox()).toEqual(cameraMark);
+      await main.getByRole("button", { name: "Months 5–6", exact: true })[action]();
+      await expect(page).toHaveURL(/choice=3/);
+      const chapter = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("chapter"));
+      const keptPlace = await chapter();
+      expect(keptPlace).toMatch(/^lens:-\d+\.\d+,\d+\.\d+$/);
+
+      await opener.scrollIntoViewIfNeeded();
+      const rail = panel.locator("#observatory-intro");
+      await rail.evaluate((node) => {
+        node.scrollTop += 9;
+      });
+      const scroll = () => rail.evaluate((node) => node.scrollTop);
+      const savedScroll = await scroll();
+      await opener[action]();
+      const reading = panel.getByRole("region", { name: "Night lights at this place" });
+      await expect(reading.getByRole("heading", { name: "Pinned location" })).toBeVisible();
+      await expect(reading.getByText("21 Jan – 20 Mar 2018")).toBeVisible();
+      const crops = await reading
+        .getByRole("img")
+        .evaluateAll((nodes) => nodes.map((node) => (node as HTMLCanvasElement).toDataURL()));
+      expect(crops).toHaveLength(2);
+      expect(crops[0]).not.toBe(crops[1]);
+      await reading.getByRole("button", { name: "Early aftermath", exact: true })[action]();
+      await expect(page).toHaveURL(/choice=1/);
+      const next = mobile ? "Globe" : "Map";
+      await button(next)[action]();
+      await expect(button(next)).toHaveAttribute("aria-pressed", "true");
+      await canvas.dispatchEvent("wheel", { deltaY: -120, clientX: moved.x, clientY: moved.y });
+      await button("Back to comparison")[action]();
+      await expect(opener).toBeFocused();
+      await expect(button(projection)).toHaveAttribute("aria-pressed", "true");
+      await expect(main.getByRole("button", { name: "Months 5–6", exact: true })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await expect.poll(chapter).toBe(keptPlace);
+      await expect.poll(scroll).toBe(savedScroll);
+      await expect
+        .poll(async () => {
+          const after = await lensPoint();
+          return Math.hypot(after.x - moved.x, after.y - moved.y);
+        })
+        .toBeLessThan(1);
+      await main.getByRole("button", { name: "Ponce", exact: true })[action]();
+      await expect(button("Inspect Ponce")).toBeVisible();
+      expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
+      expect(errors).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+}

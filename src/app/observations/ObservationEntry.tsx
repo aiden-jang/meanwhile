@@ -138,6 +138,8 @@ export function ObservationDeckShell({
           />
         ) : entry === "lights" ? (
           <LightsReturn
+            readCamera={readCamera}
+            restoreCamera={restoreCamera}
             map={deck.map}
             onMap={deck.setMap}
             onView={deck.update}

@@ -1,6 +1,8 @@
 import type { SkyCity, SkyLook, TonightView } from "../../geo/tonight";
 import type { CameraState } from "../../globe/controls";
 
+import type { SurveyLens } from "../../globe/surveyLens";
+
 export class ObservationDataError extends Error {}
 
 export interface GeoPoint {
@@ -140,6 +142,7 @@ export interface ObservationView {
   surface?: HTMLCanvasElement;
   /** Split in longitudinal UV space for a surface containing the before and after surveys stacked vertically. */
   surveyDivider?: number;
+  surveyLens?: SurveyLens;
   surveyHandle?: { fraction: number; before: number; after: number; latitude: number; reference: number };
   curtain?: {
     points: readonly GeoPoint[];

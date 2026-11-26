@@ -14,6 +14,7 @@ import { ShareMoment } from "./StorySession";
 import { StoryDockProvider } from "./StoryDock";
 import { StoryProjection } from "./StoryProjection";
 import "../archive-scene.css";
+import "../lights/lights-lens.css";
 import "../storm/storm.css";
 import "../kilauea/kilauea.css";
 import "../megaflash/megaflash.css";

@@ -637,10 +637,10 @@ globe or map. The wind cursor selects a measured minute independently of the GOE
 Back to the oval restores the forecast edition, camera and projection. Reduced motion opens on
 Earth with the same three chapter controls.
 
-Lights Return approaches Puerto Rico from After Dark and reveals the registered Black Marble stills
-at the island’s scale. Both dates remain visible when the before-and-after divider is open. The
-globe and map preserve the landscape beneath the divider. Reduced motion opens the baseline
-directly with the same playback and comparison controls.
+Lights Return brings Puerto Rico into view on the shared globe or map. A draggable lens shows the
+registered pre-storm Black Marble image inside the selected recovery period. A city or pinned
+location opens matched crops. Back restores the lens, period, projection, camera, and reading position.
+The island replay keeps the baseline and divider available, including on earlier shared links.
 
 Katrina opens on a banked view of the Gulf horizon, follows the eye along NOAA’s best track and
 settles to an overview at the Buras landfall. Track dots mark published fixes. Wind outlines use

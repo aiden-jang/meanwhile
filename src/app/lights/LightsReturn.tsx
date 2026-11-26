@@ -1,21 +1,23 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  blackMarbleSource,
   lightsBounds,
   lightsCorners,
   lightsLens,
   lightsPeriods,
   loadBlackMarble,
-  mariaStudy,
   puertoRico,
 } from "../../sources/observations/blackMarble";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { PlaybackButton } from "../PlaybackButton";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
-import { StoryDock } from "../observations/StoryDock";
 import { useStorySession } from "../observations/StorySession";
 import { StoryLoading } from "../StoryLoading";
-import { lightsCities } from "./lightsSurface";
+import { lightsChapter, lightsCities, type LightsPlace } from "./lightsSurface";
+import { LightsComparison, LightsPlaceReading, LightsSources } from "./LightsComparison";
+import { LightsLensWorld } from "./LightsLensWorld";
+import { LightsTimeline } from "./LightsTimeline";
+import { useLightsLens } from "./useLightsLens";
+import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
+import { refreshAnnotations } from "../../globe/annotationInput";
 import { surveyComparison } from "../observations/surveyComparison";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { stormJourney } from "../journeys/stormJourney";
@@ -23,57 +25,53 @@ import { useMedia } from "../useNarrow";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 const phoneLens = { globe: 17.5, map: 42 };
+const comparisonTarget = { ...puertoRico, zoom: 2.48 };
 const LAST = lightsPeriods.length - 1;
 const bounds = { bounds: lightsBounds, corners: lightsCorners, opacity: 1, feather: 0.045 };
 const locator = [{ lon: puertoRico.lon, lat: puertoRico.lat, size: 19, color: 0xe6caa6 }];
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
-const sources = (
-  <>
-    <p>
-      NASA Black Marble HD visualizations from Suomi NPP VIIRS. The three recovery periods are dated averages.
-      The stills were aligned to the Natural Earth coast for comparison at island scale.
-    </p>
-    <a href={blackMarbleSource} target="_blank" rel="noreferrer">
-      NASA Scientific Visualization Studio
-    </a>
-    <a href={mariaStudy} target="_blank" rel="noreferrer">
-      Román and Stokes et al. · recovery study
-    </a>
-    <a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">
-      Natural Earth coast
-    </a>
-    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
-      © OpenStreetMap contributors
-    </a>
-  </>
-);
-
 export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
   const guided = useStoryNavigation()?.route?.id === stormJourney;
   const openComparison = guided && initial?.choice === undefined;
   const phone = useMedia("(max-width: 599px)");
-  const lens = guided && phone ? phoneLens : lightsLens;
+  const short = useMedia("(max-height: 700px)");
+  const [usingLens, setUsingLens] = useState(
+    () => initial?.chapter?.startsWith("lens:") || (!guided && !initial),
+  );
+  const lens = phone && (guided || (usingLens && !short)) ? phoneLens : lightsLens;
+  const target = usingLens && !phone ? comparisonTarget : puertoRico;
+  const recovery = useLightsLens(initial?.chapter);
   const [images, setImages] = useState<HTMLImageElement[]>();
   const [failed, setFailed] = useState(false);
   const [attempt, retry] = useState(0);
   const [arrived, setArrived] = useState(false);
   const [settled, setSettled] = useState(false);
   const [index, setIndex] = useState(() =>
-    Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice ?? (openComparison ? 1 : 0)) || 0))),
+    Math.max(
+      usingLens ? 1 : 0,
+      Math.min(LAST, Math.round(Number(initial?.choice ?? (openComparison ? 1 : 0)) || 0)),
+    ),
   );
-  const [playing, setPlaying] = useState(() => !guided && !initial && !matchMedia(MOTION).matches);
+  const [playing, setPlaying] = useState(false);
   const [compare, setCompare] = useState(() => initial?.chapter?.startsWith("compare:") ?? openComparison);
   const [split, setSplit] = useState(() => clamp(Number(initial?.chapter?.split(":")[1] ?? 50) || 0));
+  const [reading, setReading] = useState(false);
+  const readingReturn = useRef<{
+    frame: ReturnType<typeof captureReplayFrame>;
+    index: number;
+    place: LightsPlace;
+  }>();
   const play = useRef<HTMLButtonElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
 
   const period = lightsPeriods[index]!;
-  const comparing = compare && index > 0;
+  const comparing = !usingLens && compare && index > 0;
+  const paired = usingLens || comparing;
   const displayed = comparing && split === 100 ? lightsPeriods[0] : period;
   const surface = useMemo(
-    () => (comparing && images ? surveyComparison(images[0]!, images[index]!) : undefined),
-    [comparing, images, index],
+    () => (paired && images ? surveyComparison(images[0]!, images[index]!) : undefined),
+    [paired, images, index],
   );
   useStoryCompletion(index === LAST && !playing);
 
@@ -119,22 +117,35 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
       frame: arrived
         ? { at: period.at, raster: { ...bounds, url: period.image }, reconstruction: true }
         : { at: period.at, marks: locator },
-      target: puertoRico,
+      target,
       image: arrived ? images[index]! : null,
-      ...(arrived && surface ? { surface, surveyDivider: split / 100 } : {}),
+      ...(arrived && surface
+        ? {
+            surface,
+            ...(usingLens ? { surveyLens: recovery.aperture } : { surveyDivider: split / 100 }),
+          }
+        : {}),
       capture: arrived,
       lens,
       arrive,
       comparisonFrame: framing,
       holdGeography: settled,
     });
-    remember?.({ choice: String(index), chapter: comparing ? `compare:${split}` : "", map: panel.map });
+    remember?.({
+      choice: String(index),
+      chapter: usingLens ? lightsChapter(recovery.place) : comparing ? `compare:${split}` : "",
+      map: panel.map,
+    });
   }, [
     images,
     onView,
     period,
     index,
     comparing,
+    usingLens,
+    recovery.aperture,
+    recovery.place,
+    target,
     split,
     surface,
     arrived,
@@ -177,22 +188,97 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
     return () => motion.removeEventListener("change", stop);
   }, []);
 
+  function selectPeriod(value: number) {
+    setPlaying(false);
+    setIndex(value);
+  }
+
+  function inspect(opener: HTMLButtonElement) {
+    if (!settled) return;
+    readingReturn.current = {
+      frame: { ...captureReplayFrame(panel), focus: opener },
+      index,
+      place: recovery.place,
+    };
+    recovery.move(recovery.place.point);
+    setReading(true);
+    requestAnimationFrame(() => {
+      const rail = document.getElementById("observatory-intro");
+      if (rail) rail.scrollTop = 0;
+      rail?.querySelector<HTMLButtonElement>(".reading-back")?.focus({ preventScroll: true });
+    });
+  }
+
+  function backToComparison() {
+    const prior = readingReturn.current;
+    if (prior) {
+      setIndex(prior.index);
+      recovery.choose(prior.place);
+    }
+    setReading(false);
+    restoreReplayFrame(prior?.frame, panel, () => null);
+    readingReturn.current = undefined;
+  }
+
+  function switchMode(next: boolean) {
+    setPlaying(false);
+    setCompare(false);
+    setIndex(next ? Math.max(index, 1) : 0);
+    setUsingLens(next);
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(
+          next ? ".recovery-choices button[aria-pressed=true]" : ".lights-playback-button",
+        )
+        ?.focus({ preventScroll: true }),
+    );
+  }
+
   return (
     <ReplayPanel
       {...panel}
       title="Lights Return"
       location="Puerto Rico"
-      subtitle="Follow the uneven return of nighttime light after Hurricane Maria."
-      className="lights-journey"
-      finding={!guided}
-      status={failed ? "NASA image unavailable" : !arrived ? "Approaching the island" : displayed.title}
-      at={arrived ? <span>{displayed.dates}</span> : null}
+      subtitle={
+        usingLens
+          ? "Puerto Rico after Hurricane Maria"
+          : "Follow the uneven return of nighttime light after Hurricane Maria."
+      }
+      className={
+        usingLens
+          ? "lights-journey recovery-study" + (reading ? " recovery-inspecting" : "")
+          : "lights-journey"
+      }
+      closeLabel={reading ? "Back to comparison" : panel.closeLabel}
+      onClose={reading ? backToComparison : panel.onClose}
+      finding={!guided && !usingLens}
+      sharing={!reading}
+      ending={!reading}
+      deferSharedView={usingLens}
+      status={
+        failed
+          ? "NASA image unavailable"
+          : !arrived
+            ? "Approaching the island"
+            : usingLens
+              ? null
+              : displayed.title
+      }
+      at={arrived && !usingLens ? <span>{displayed.dates}</span> : null}
       inset={
         <>
           {guided && (
             <div className="lights-exposure" data-arrived={arrived || undefined} aria-hidden="true" />
           )}
-          {arrived && (
+          {usingLens && !failed ? (
+            <LightsLensWorld
+              lens={recovery}
+              period={period.title}
+              ready={arrived && settled}
+              reading={reading}
+              inspect={inspect}
+            />
+          ) : arrived ? (
             <>
               <div className="lights-geography" aria-hidden="true">
                 {lightsCities.map(({ id, name, lon, lat }) => (
@@ -213,10 +299,10 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
                 <span>Brighter</span>
               </div>
             </>
-          )}
+          ) : null}
         </>
       }
-      sources={sources}
+      sources={<LightsSources />}
     >
       {!images && !failed && <StoryLoading>Loading NASA’s night-light archive…</StoryLoading>}
       {failed && (
@@ -235,94 +321,61 @@ export function LightsReturn({ onView, ...panel }: ReplayProps): JSX.Element {
           </button>
         </div>
       )}
-      {images && (
+      {images && usingLens && (
         <>
-          <div className="archive-scene-caption" data-lights-period={index}>
-            <h3>{period.title}</h3>
-            <p>{period.note}</p>
-          </div>
-          <StoryDock label="Night-light playback" deferOnShortPhone={!arrived}>
-            <div className="lights-transport">
-              <div className="observation-transport">
-                <span>Night-light period · {period.dates}</span>
-                <input
-                  className="scrub-slider observation-scrub"
-                  type="range"
-                  min={0}
-                  max={LAST}
-                  value={index}
-                  aria-label="Night-light period"
-                  aria-valuetext={`${period.title} · ${period.dates}`}
-                  onChange={(event) => {
-                    const selected = event.currentTarget.valueAsNumber;
-                    if (!arrived) ready();
-                    setPlaying(false);
-                    setIndex(selected);
-                    if (selected === 0) setCompare(false);
-                  }}
-                />
-                <div className="observatory-actions">
-                  {!arrived && (
-                    <button ref={skip} type="button" onClick={ready}>
-                      Skip approach
-                    </button>
-                  )}
-                  <PlaybackButton
-                    className="lights-playback-button"
-                    playing={playing}
-                    ended={index === LAST}
-                    buttonRef={play}
-                    onClick={() => {
-                      if (playing) setPlaying(false);
-                      else {
-                        if (index === LAST) setIndex(0);
-                        setCompare(false);
-                        setPlaying(true);
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    aria-pressed={comparing}
-                    disabled={!arrived || index === 0}
-                    onClick={() => {
-                      setPlaying(false);
-                      setCompare(!comparing);
-                    }}
-                  >
-                    Compare with before
-                  </button>
-                </div>
-              </div>
-              {comparing && (
-                <div className="lights-comparison">
-                  <div className="lights-dates">
-                    <div>
-                      <strong>Before Maria</strong>
-                      <span>{lightsPeriods[0].dates}</span>
-                    </div>
-                    <div>
-                      <strong>{period.title}</strong>
-                      <span>{period.dates}</span>
-                    </div>
-                  </div>
-                  <label>
-                    <span>Before and after divider</span>
-                    <input
-                      className="scrub-slider"
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={split}
-                      aria-valuetext={`${split}% from left`}
-                      onChange={(event) => setSplit(event.currentTarget.valueAsNumber)}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-          </StoryDock>
+          {reading && (
+            <LightsPlaceReading
+              index={index}
+              place={recovery.place}
+              images={images}
+              selectPeriod={selectPeriod}
+            />
+          )}
+          <LightsComparison
+            index={index}
+            place={recovery.place}
+            ready={settled}
+            reading={reading}
+            selectPeriod={selectPeriod}
+            selectPlace={(place) => {
+              if (settled) refreshAnnotations({ camera: "freeze" });
+              recovery.choose(place, settled);
+            }}
+            inspect={inspect}
+            replay={() => switchMode(false)}
+          />
         </>
+      )}
+      {images && !usingLens && (
+        <LightsTimeline
+          index={index}
+          arrived={arrived}
+          comparing={comparing}
+          playing={playing}
+          split={split}
+          skip={skip}
+          play={play}
+          ready={ready}
+          seek={(value) => {
+            if (!arrived) ready();
+            selectPeriod(value);
+            if (value === 0) setCompare(false);
+          }}
+          togglePlay={() => {
+            if (playing) setPlaying(false);
+            else {
+              if (index === LAST) setIndex(0);
+              setCompare(false);
+              setPlaying(true);
+            }
+          }}
+          toggleCompare={() => {
+            setPlaying(false);
+            setCompare(!comparing);
+          }}
+          changeSplit={setSplit}
+          openLens={() => switchMode(true)}
+        />
       )}
     </ReplayPanel>
   );
