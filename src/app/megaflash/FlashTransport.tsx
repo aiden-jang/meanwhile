@@ -12,6 +12,7 @@ export function FlashTransport({
   full,
   playing,
   before,
+  scanning,
   onSeek,
   onFirst,
   onFull,
@@ -26,6 +27,7 @@ export function FlashTransport({
   full: boolean;
   playing: boolean;
   before: boolean;
+  scanning: boolean;
   onSeek: (step: number) => void;
   onFirst: () => void;
   onFull: () => void;
@@ -102,7 +104,7 @@ export function FlashTransport({
             <path d="M4 12l8-8M5 4h7v7" fill="none" stroke="currentColor" strokeWidth="1.5" />
           </svg>
         </button>
-        <button type="button" aria-pressed={before} onClick={onScan}>
+        <button type="button" aria-pressed={scanning} onClick={onScan}>
           Infrared scan
         </button>
       </div>
@@ -112,7 +114,7 @@ export function FlashTransport({
           buttonRef={buttonRef}
           playing={playing}
           ended={full}
-          startLabel={before ? "Follow the flash" : undefined}
+          startLabel={scanning ? "Follow the flash" : undefined}
           onClick={onToggle}
         />
         <button type="button" aria-pressed={first} onClick={onFirst}>

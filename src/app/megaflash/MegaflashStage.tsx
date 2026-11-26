@@ -298,6 +298,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
         first={first}
         full={full}
         before={before}
+        scanning={view.phase === "infrared"}
         playing={view.playing}
         buttonRef={playback}
         onSeek={seek}
