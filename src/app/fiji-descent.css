@@ -1,0 +1,392 @@
+.fiji-locator {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 5px;
+  color: var(--color-ink);
+  background: rgb(9 18 25 / 88%);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 22%);
+  font-size: 13px;
+  white-space: nowrap;
+  transform: translate(-17px, -50%);
+  visibility: hidden;
+}
+.fiji-locator i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffc994;
+  box-shadow: 0 0 0 4px rgb(255 201 148 / 23%);
+}
+.fiji-locator:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+}
+
+.frame[data-fiji] .zone-canvas {
+  position: absolute;
+  grid-area: auto;
+  inset: var(--head-h) 0 0;
+}
+.frame[data-fiji] :is(.canvas-information, .camera-recenter) {
+  display: none;
+}
+.frame[data-fiji] [data-scale] {
+  inset: 66px clamp(18px, 4vw, 64px) auto auto;
+  margin: 0;
+}
+.frame:has(.fiji-descent) .zone-head {
+  z-index: 5;
+}
+.fiji-descent {
+  --amber: #ffd1a7;
+  --gutter: clamp(18px, 4vw, 64px);
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--color-ink);
+  isolation: isolate;
+}
+.fiji-descent :is(button, a, input) {
+  pointer-events: auto;
+}
+.fiji-navigation {
+  position: absolute;
+  z-index: 3;
+  inset: calc(var(--head-h) + 10px) var(--gutter) auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fiji-navigation .story-projection {
+  position: static;
+}
+.fiji-back {
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border-radius: 6px;
+  background: var(--color-deck);
+  font-size: 14px;
+}
+.fiji-back span {
+  padding-inline-end: 5px;
+  font-size: 19px;
+}
+.fiji-back:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+}
+
+.fiji-waterline {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition:
+    opacity 620ms cubic-bezier(0.22, 0.7, 0.24, 1),
+    transform 720ms cubic-bezier(0.22, 0.7, 0.24, 1);
+}
+.fiji-waterline {
+  background:
+    linear-gradient(90deg, rgb(5 12 18 / 74%), transparent 59%),
+    linear-gradient(0deg, #08151b, transparent 56%, rgb(7 17 25 / 25%)),
+    url("/fiji/waterline.jpg") center 52% / cover;
+}
+.fiji-title,
+.fiji-reading,
+.fiji-credit {
+  position: absolute;
+  inset-inline-start: var(--gutter);
+  text-shadow: 0 2px 20px rgb(0 0 0 / 74%);
+}
+.fiji-title {
+  inset-block-start: 19%;
+}
+.fiji-title h2 {
+  margin: 0;
+  font:
+    600 clamp(100px, 16vw, 220px)/0.74 "Alumni Sans",
+    var(--font-sans);
+  letter-spacing: -0.036em;
+  transition: font-size 300ms cubic-bezier(0.22, 0.76, 0.24, 1);
+}
+.fiji-descent[data-underwater] .fiji-title h2 {
+  font-size: clamp(54px, 8vw, 114px);
+}
+.fiji-title p {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+.fiji-reading {
+  inset-block-end: clamp(58px, 9dvh, 110px);
+  display: grid;
+  gap: 16px;
+  min-block-size: calc(clamp(60px, 8vw, 110px) * 0.7 + 108px);
+  max-inline-size: calc(100% - var(--gutter) - 78px);
+  align-content: start;
+}
+.fiji-caption {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-ink);
+}
+.fiji-caption strong {
+  display: block;
+  color: var(--amber);
+  font:
+    550 clamp(60px, 8vw, 110px)/0.7 "Alumni Sans",
+    var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.fiji-caption small {
+  font: 500 16px var(--font-sans);
+}
+
+.fiji-depth-control {
+  position: absolute;
+  top: 54%;
+  bottom: 13%;
+  right: var(--gutter);
+  width: 78px;
+  container-type: size;
+  display: flex;
+  justify-content: end;
+  align-items: stretch;
+  animation: fiji-control-in 440ms both;
+}
+.fiji-depth-control input {
+  width: 44px;
+  height: 100cqh;
+  margin: 0;
+  writing-mode: vertical-lr;
+  direction: ltr;
+  accent-color: var(--amber);
+  touch-action: none;
+  background: transparent;
+  cursor: ns-resize;
+}
+.fiji-depth-control input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--amber);
+  border: 2px solid #251912;
+  box-shadow: 0 0 0 4px rgb(255 209 167 / 22%);
+}
+.fiji-depth-ticks {
+  position: absolute;
+  inset: 8px 46px 13%;
+  display: flex;
+  align-items: end;
+  flex-direction: column;
+  justify-content: space-between;
+  font: 10px var(--font-mono);
+  color: var(--color-ink);
+  text-shadow: 0 2px 8px #000;
+}
+.fiji-record {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  animation: fiji-control-in 250ms both;
+}
+.fiji-record p {
+  margin: 0;
+}
+.fiji-record p span {
+  padding-inline: 4px;
+  color: var(--color-dim);
+}
+.fiji-record div {
+  display: flex;
+  gap: 14px;
+}
+.fiji-record :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-size: 12px;
+}
+.fiji-credit {
+  inset-block-end: max(32px, 4.5%);
+  color: var(--color-dim);
+  font-size: 10px;
+}
+@keyframes fiji-control-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+@media (max-width: 599px) {
+  .fiji-title {
+    inset-block-start: 16%;
+  }
+  .fiji-title h2 {
+    font-size: 104px;
+  }
+  .fiji-waterline {
+    background-position:
+      center,
+      center,
+      61% center;
+  }
+  .fiji-depth-control {
+    top: 47%;
+    bottom: 24%;
+    right: 10px;
+  }
+  .fiji-reading {
+    inset-block-end: 64px;
+    gap: 10px;
+  }
+}
+@media (max-height: 480px) {
+  .fiji-title {
+    inset-block-start: 26%;
+  }
+  .fiji-title h2 {
+    font-size: 68px;
+  }
+  .fiji-reading {
+    inset-block-end: 36px;
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fiji-descent * {
+    animation-duration: 0s !important;
+    transition-duration: 0s !important;
+  }
+}
+
+.fiji-quake-mark {
+  position: absolute;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--amber);
+  font: 11px var(--font-mono);
+  transform: translate(-5px, -50%);
+  text-shadow: 0 2px 8px #000;
+}
+.fiji-quake-mark::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgb(255 209 167 / 19%);
+}
+.fiji-quake-mark[data-label-left] {
+  flex-direction: row-reverse;
+  transform: translate(calc(-100% + 5px), -50%);
+}
+
+.fiji-quake-mark span {
+  padding: 4px 7px;
+  background: var(--color-void);
+  white-space: nowrap;
+}
+
+@property --fiji-wipe {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --fiji-aperture {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.fiji-descent {
+  --fiji-x: 50%;
+  --fiji-y: 50%;
+}
+
+.fiji-descent .fiji-waterline {
+  --fiji-wipe: var(--fiji-progress);
+  opacity: 1;
+  mask-image:
+    radial-gradient(
+      circle farthest-corner at var(--fiji-x) var(--fiji-y),
+      #000 calc(var(--fiji-aperture) * 124% - 20%),
+      transparent calc(var(--fiji-aperture) * 137%)
+    ),
+    linear-gradient(
+      to bottom,
+      #000 calc(101% - var(--fiji-wipe) * 119%),
+      transparent calc(113% - var(--fiji-wipe) * 119%)
+    );
+  mask-composite: intersect;
+  transform-origin: var(--fiji-x) var(--fiji-y);
+  transform: translateY(calc(var(--fiji-progress) * -18% + (1 - var(--fiji-aperture)) * 3%))
+    scale(calc(1 + var(--fiji-progress) * 0.33 - (1 - var(--fiji-aperture)) * 0.12));
+  transition: opacity 140ms ease-out;
+}
+
+.fiji-descent[data-returning] .fiji-waterline {
+  opacity: 1;
+  transition:
+    opacity 340ms ease-out,
+    --fiji-wipe 380ms ease-out,
+    transform 440ms cubic-bezier(0.22, 0.76, 0.24, 1);
+}
+
+.fiji-descent[data-closed] .fiji-waterline {
+  --fiji-aperture: 0;
+  opacity: 0;
+  transition:
+    --fiji-aperture 680ms cubic-bezier(0.47, 0, 0.51, 1),
+    opacity 700ms cubic-bezier(0.7, 0, 0.81, 0.5);
+}
+
+.fiji-flight-point {
+  position: absolute;
+  top: var(--fiji-y);
+  left: var(--fiji-x);
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow:
+    0 0 0 5px rgb(255 209 167 / 24%),
+    0 0 22px 7px rgb(255 209 167 / 23%);
+  transform: translate(-50%, -50%);
+  opacity: calc(1 - var(--fiji-aperture));
+  visibility: hidden;
+}
+
+.fiji-descent[data-fiji-projected]:not([data-closed]) .fiji-flight-point {
+  visibility: visible;
+}
+
+.fiji-descent .fiji-title {
+  opacity: clamp(0, calc((var(--fiji-aperture) - 0.13) * 2.5), 1);
+  transform: translateY(calc((1 - var(--fiji-aperture)) * 22px));
+}
+
+.fiji-descent[data-returning]
+  :is(.fiji-title, .fiji-reading, .fiji-credit, .fiji-depth-control, .fiji-navigation),
+.fiji-descent[data-closed] :is(.fiji-title, .fiji-navigation) {
+  opacity: 0;
+  transition: opacity 250ms ease;
+}
+
+.fiji-descent[data-closed] :is(button, a, input) {
+  pointer-events: none;
+}

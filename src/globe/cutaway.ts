@@ -21,6 +21,7 @@ export interface CutawayFocus {
   lat: number;
   dive?: true;
   cameraOnly?: true;
+  descent?: true | undefined;
   archiveReading?: DepthRecord;
   sweepKm?: number | undefined;
 }
@@ -203,12 +204,18 @@ export function createCutaway(morph: { value: number }) {
     set(focus: CutawayFocus | null): void {
       cameraActive = focus?.dive === true || focus?.cameraOnly === true;
       const event = focus?.archiveReading;
+      const descent = focus?.descent === true;
+      guide.visible = !descent;
       sweepDepth = focus?.cameraOnly ? undefined : focus?.sweepKm;
       const points = !event
         ? []
-        : sweepDepth === undefined
-          ? [event]
-          : depthRecords.filter((record) => record.depthKm <= sweepDepth!);
+        : descent
+          ? (focus?.sweepKm ?? 0) >= event.depthKm
+            ? [event]
+            : []
+          : sweepDepth === undefined
+            ? [event]
+            : depthRecords.filter((record) => record.depthKm <= sweepDepth!);
       const key = points.map(({ id }) => id).join(",");
       if (key !== litRecords) {
         litRecords = key;
@@ -217,7 +224,7 @@ export function createCutaway(morph: { value: number }) {
       reading.setOpacity(points.length ? 1 : 0);
       if (sweepDepth !== undefined) sweep.scale.setScalar(1 - sweepDepth / EARTH_RADIUS_KM);
       if (focus?.cameraOnly) focus = null;
-      target = focus ? 1 : 0;
+      target = focus?.descent ? Math.min(1, (focus.sweepKm ?? 0) / 365) : focus ? 1 : 0;
       if (focus && progress === 0) guideProgress = 0;
       if (focus) {
         const lat = focus.lat * DEG,
@@ -251,7 +258,10 @@ export function createCutaway(morph: { value: number }) {
       // Reveal the well through the same aperture; the surface hides the rest while it opens.
       object.visible = angle > 0.0001;
       sweep.visible = progress >= 0.98 && morph === 0 && sweepDepth !== undefined;
-      return (progress !== openingTarget || (openingTarget === 1 && guideProgress < 1)) && morph === 0;
+      return (
+        (progress !== openingTarget || (guide.visible && openingTarget === 1 && guideProgress < 1)) &&
+        morph === 0
+      );
     },
   };
 }

@@ -19,6 +19,7 @@ export function useDepthCutaway(
     if (tour?.purpose === "depth") return tour;
     if (focus?.archiveReading && map)
       return {
+        descent: focus.descent,
         lon: focus.lon,
         lat: focus.lat,
         archiveReading: focus.archiveReading,

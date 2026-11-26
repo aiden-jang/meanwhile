@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
-import { expect, test } from "@playwright/test";
-import { installFeeds, openLayer, openStories } from "./feeds";
+import { expect, test, type Page } from "@playwright/test";
+import { installFeeds, openLayer, openStories, revealSceneEntry } from "./feeds";
+
+async function openRecordedCutaway(page: Page) {
+  await (await revealSceneEntry(page, "Below the Surface")).click();
+  await page
+    .getByRole("group", { name: "Explore by subject" })
+    .getByRole("button", { name: "Below the Surface", exact: true })
+    .click();
+}
 
 for (const [id, title] of [
   ["aurora", "Aurora Overflight"],
@@ -394,7 +402,7 @@ test("Layers holds the radar scan and scene tabs restore each position", async (
   await page.getByRole("button", { name: "Storm radar details", exact: true }).click();
   await expect(scan).toHaveValue("0");
   await page.getByRole("button", { name: /back to the Observatory/ }).click();
-  await tab("Below the Surface").click();
+  await openRecordedCutaway(page);
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
   await expect.poll(pose).toBe("-176,-18.3,1.95");
   const handle = depth.getByRole("slider", { name: "Drag to change depth" });
@@ -446,7 +454,7 @@ test("the cutaway and sky panels show the shared world through their edge", asyn
       return vertical ? world.bottom - rail.top : rail.right - world.left;
     }, stacked);
   const subjects = page.getByRole("group", { name: "Explore by subject" });
-  await subjects.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await openRecordedCutaway(page);
   const cutaway = page.getByRole("region", { name: "Earthquake cutaway" });
   await expect.poll(panelOverlap).toBeGreaterThan(stacked ? 12 : 128);
   await expect(cutaway.getByRole("slider", { name: "Drag to change depth" })).toBeInViewport();
@@ -557,7 +565,6 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await page.goto("/#v=observe&at=-74,40,1");
   const globe = page.locator("#globe-view");
   const canvas = await globe.locator("canvas").elementHandle();
-  const entrances = page.getByRole("group", { name: "Explore by subject" });
   const home = page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" });
   const button = (name: string) => page.getByRole("button", { name, exact: true });
   const rail = page.locator("#chrome-rail");
@@ -607,7 +614,7 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect(stories).toBeFocused();
   await home.click();
 
-  await entrances.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await openRecordedCutaway(page);
   const depth = page.getByRole("region", { name: "Earthquake cutaway" });
   await depth.getByRole("button", { name: "600 km", exact: true }).click();
   await expect(depth.getByText("600 km deep", { exact: true })).toBeVisible();

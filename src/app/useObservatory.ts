@@ -235,6 +235,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         presentation,
         observing ? "observe" : browser.pane,
         scene,
+        focus?.descent ? "fiji-descent" : "",
         `${browser.open}:${browser.category ?? "all"}`,
         observations.entry ??
           (tonight
@@ -348,6 +349,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     observeScene,
     depth,
     depthFocus: depth ? depthFocus : null,
+    setDepthFocus: setFocus,
     selectDepth: cutaway.selectDepth,
     sweepDepth: cutaway.sweepDepth,
     night,

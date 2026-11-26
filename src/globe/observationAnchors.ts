@@ -15,6 +15,18 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     positionGlacierControls(root, canvas, controls);
     positionStormTrack(root, canvas, controls);
   }
+  const crossing = root?.querySelector<HTMLElement>(".fiji-descent");
+  if (crossing && (!crossing.hasAttribute("data-arrived") || crossing.hasAttribute("data-returning"))) {
+    const point = controls.project(Number(crossing.dataset.fijiLon), Number(crossing.dataset.fijiLat));
+    if (point) {
+      const bounds = crossing.getBoundingClientRect();
+      const x = `${(((point.x - bounds.left) / bounds.width) * 100).toFixed(2)}%`;
+      const y = `${(((point.y - bounds.top) / bounds.height) * 100).toFixed(2)}%`;
+      if (crossing.style.getPropertyValue("--fiji-x") !== x) crossing.style.setProperty("--fiji-x", x);
+      if (crossing.style.getPropertyValue("--fiji-y") !== y) crossing.style.setProperty("--fiji-y", y);
+    }
+    crossing.toggleAttribute("data-fiji-projected", !!point);
+  }
   const anchors = root?.querySelectorAll<HTMLElement>("[data-observation-anchor]");
   if (!anchors?.length) return;
   const readingLabel = root?.querySelector<HTMLElement>("[data-reading-label]");

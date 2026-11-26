@@ -50,6 +50,7 @@ export default defineConfig({
           testMatch: [
             resilience,
             "**/continuity.spec.ts",
+            "**/fiji-descent.spec.ts",
             "**/story-recovery.spec.ts",
             "**/story-curation.spec.ts",
           ],

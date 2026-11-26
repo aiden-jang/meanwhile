@@ -324,7 +324,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   // for the same reason the slab and the plate motions do.
   const figures = createFigures();
   scene.add(figures.object);
-
   // Six Kepler solutions is cheaper than fetching anything, so there is nothing to load. Rebuilt whenever
   // the sun is aimed, from the same clock.
   const planets = createPlanets();
@@ -394,6 +393,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
+      grat.visible = !focus?.descent;
       cutaway.set(focus);
       if (focus && !focus.cameraOnly && !cutaway.isOpen()) lights.begin();
     },

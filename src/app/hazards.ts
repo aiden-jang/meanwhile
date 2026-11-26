@@ -181,3 +181,38 @@ export function outsideWindowNote(layers: readonly LayerTally[], now: number): s
   const advice = reach === null ? "so widen the window to see them." : `so try ${reach}.`;
   return `${subject} in this window. The feed holds ${held},${since} ${advice}`;
 }
+
+export function hazardCounts(held: HazardInput, shown: HazardInput) {
+  const newestOf = <T>(list: readonly T[], dateOf: (h: T) => number | null): number | null =>
+    list.reduce<number | null>((best, h) => {
+      const at = dateOf(h);
+      return at === null ? best : best === null ? at : Math.max(best, at);
+    }, null);
+  const started = (h: { startedAt: number | null }): number | null => h.startedAt;
+  return [
+    {
+      kind: "cyclone" as const,
+      held: held.cyclones.length,
+      shown: shown.cyclones.length,
+      newest: newestOf(held.cyclones, started),
+    },
+    {
+      kind: "fire" as const,
+      held: held.fires.length,
+      shown: shown.fires.length,
+      newest: newestOf(held.fires, started),
+    },
+    {
+      kind: "flood" as const,
+      held: held.floods.length,
+      shown: shown.floods.length,
+      newest: newestOf(held.floods, started),
+    },
+    {
+      kind: "volcano" as const,
+      held: held.volcanoes.length,
+      shown: shown.volcanoes.length,
+      newest: newestOf(held.volcanoes, (v) => v.endedAt),
+    },
+  ];
+}

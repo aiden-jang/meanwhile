@@ -25,6 +25,7 @@ export function useSceneEntrances({
   explorePaths,
   explorer,
   onScene,
+  onFiji,
   onHome,
   scene,
 }: ObservatoryProps) {
@@ -52,12 +53,16 @@ export function useSceneEntrances({
         document.getElementById(trigger(active ?? "live"))?.focus({ preventScroll: true }),
       );
     },
-    open(subject: EarthScene) {
+    open(subject: EarthScene, opener: HTMLButtonElement) {
       if (active === subject || (views.globeStarting && !(views.landing && subject === "live"))) return;
       reportAnalytics({ name: "scene_selected", scene: subject });
       remember();
       if (subject === "live") {
         explorePaths.resume();
+        return;
+      }
+      if (subject === "depth" && views.landing) {
+        onFiji(opener);
         return;
       }
       const saved = memory.current[subject];
@@ -104,7 +109,7 @@ export function ObservatoryEntrances({
           key={id}
           id={trigger(id)}
           type="button"
-          onClick={() => open(id)}
+          onClick={(event) => open(id, event.currentTarget)}
           aria-label={name}
           aria-description={!active ? sceneCues[id] : undefined}
           aria-pressed={active ? active === id : undefined}

@@ -1,5 +1,7 @@
 import { EarthquakeDiscovery } from "./app/EarthquakeDiscovery";
 import { searchStories } from "./app/storyIndex";
+import { FijiDescent, FijiLocator, fijiFocus } from "./app/FijiDescent";
+import { useFijiDescent } from "./app/useFijiDescent";
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
 import { useWorldSelection } from "./app/useWorldSelection";
@@ -61,7 +63,7 @@ import { countries } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { findSubject, MarkCard } from "./app/MarkCard";
-import { hazardGroups, outsideWindowNote } from "./app/hazards";
+import { hazardCounts, hazardGroups, outsideWindowNote } from "./app/hazards";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
 import { createSiren, type Siren } from "./app/sound";
@@ -236,50 +238,8 @@ export function App(): JSX.Element {
           floods: archiveHazards?.floods ?? [],
         }
       : { cyclones, volcanoes, fires, floods };
-    const newestOf = <T,>(list: readonly T[], dateOf: (h: T) => number | null): number | null =>
-      list.reduce<number | null>((best, h) => {
-        const at = dateOf(h);
-        return at === null ? best : best === null ? at : Math.max(best, at);
-      }, null);
-    const started = (h: { startedAt: number | null }): number | null => h.startedAt;
-    return [
-      {
-        kind: "cyclone" as const,
-        held: held.cyclones.length,
-        shown: inWindow.cyclones.length,
-        newest: newestOf(held.cyclones, started),
-      },
-      {
-        kind: "fire" as const,
-        held: held.fires.length,
-        shown: inWindow.fires.length,
-        newest: newestOf(held.fires, started),
-      },
-      {
-        kind: "flood" as const,
-        held: held.floods.length,
-        shown: inWindow.floods.length,
-        newest: newestOf(held.floods, started),
-      },
-      {
-        kind: "volcano" as const,
-        held: held.volcanoes.length,
-        shown: inWindow.volcanoes.length,
-        newest: newestOf(held.volcanoes, (v) => v.endedAt),
-      },
-    ];
-  }, [
-    archived,
-    archiveHazards,
-    cyclones,
-    volcanoes,
-    fires,
-    floods,
-    inWindow.cyclones,
-    inWindow.fires,
-    inWindow.floods,
-    inWindow.volcanoes,
-  ]);
+    return hazardCounts(held, inWindow);
+  }, [archived, archiveHazards, cyclones, volcanoes, fires, floods, inWindow]);
   const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   // Keyed on the revision, not the clock: the rail re-renders every second and these only move when an
   // earthquake arrives. Same reason everywhere else in this file that keys on `snapshot.revision`.
@@ -504,6 +464,7 @@ export function App(): JSX.Element {
     if (!direct || scene !== "live") flyTo.current(...next.camera);
     else setScrub(LIVE);
   };
+  const { fiji, fijiClosing, openFiji, backFromFiji } = useFijiDescent(observatory, flat, stopTour, flyTo);
   function returnHome() {
     observatory.home(() => {
       stopTour();
@@ -948,6 +909,7 @@ export function App(): JSX.Element {
     feedNote: observatoryFeedNote(snapshot.statuses, feeds.silent),
     deepAvailable: journey.deepest !== null,
     onScene: chooseEarthScene,
+    onFiji: openFiji,
     onHome: returnHome,
     onExplore: entrances.open,
     explorePaths: entrances,
@@ -1040,6 +1002,7 @@ export function App(): JSX.Element {
         className="frame"
         data-presentation={observatory.presentation}
         data-landing={observatory.landing || undefined}
+        data-fiji={!!fiji || undefined}
         data-tonga-opening={observatory.observations.entry === "tonga" || undefined}
       >
         <SkipControls observing={observatory.observing} railShown={railShown} />
@@ -1090,7 +1053,7 @@ export function App(): JSX.Element {
             } as React.CSSProperties
           }
         >
-          {observatory.observing ? <Observatory {...observatoryProps} /> : null}
+          {observatory.observing && !fiji ? <Observatory {...observatoryProps} /> : null}
           {observatory.observing ? null : (
             <ExploreSheet
               {...{ flat, height: sheetCanvas }}
@@ -1297,6 +1260,18 @@ export function App(): JSX.Element {
             className={railShown ? "explorer-resize absolute hidden xl:block" : "hidden"}
             style={{ left: "calc(var(--rail-w) - 18px)" }}
           />
+          {(fiji || fijiClosing) && (
+            <FijiDescent
+              depth={fijiClosing ? 0 : (fiji?.sweepKm ?? 0)}
+              closing={fijiClosing}
+              closed={!fiji}
+              onBack={backFromFiji}
+              map={flat}
+              setMap={observations.setMap}
+              readCamera={readCamera.current}
+              setDepth={(depth) => observatory.setDepthFocus(fijiFocus(depth))}
+            />
+          )}
           <section
             id="globe-view"
             tabIndex={-1}
@@ -1320,7 +1295,15 @@ export function App(): JSX.Element {
                 landing={observatory.landing}
                 rotateLanding={observatory.rotation.enabled}
                 depthSink={observatory.depth || sinkOn}
-                cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
+                cutaway={
+                  observatory.observing
+                    ? fijiClosing && fiji
+                      ? fijiFocus(0)
+                      : observatory.depthFocus
+                    : flat
+                      ? null
+                      : cutaway
+                }
                 slab={
                   ((!observatory.observing && slabOn) || observatory.depth) && slabData.length > 0
                     ? slabData
@@ -1358,6 +1341,12 @@ export function App(): JSX.Element {
                 onReplay={receiveReplay}
               />
             </Suspense>
+            {!fiji &&
+            observatory.ready &&
+            (observatory.landing || !observatory.observing) &&
+            !mapLayers.suspended ? (
+              <FijiLocator onOpen={openFiji} />
+            ) : null}
             <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
               {!observatory.observing && <LayerReadout controls={mapLayers} withLegend legend={marksKey} />}
 

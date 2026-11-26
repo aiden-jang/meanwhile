@@ -46,6 +46,7 @@ export interface ObservatoryProps {
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   layerReadout: ReactNode;
+  onFiji: (opener?: HTMLElement) => void;
   onScene: (scene: EarthScene, direct?: boolean) => void;
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
