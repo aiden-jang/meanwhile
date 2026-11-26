@@ -4,12 +4,15 @@ import { installFeeds } from "./feeds";
 test("Fiji enters from the landing and Back returns the same globe", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.addInitScript(() => localStorage.setItem("eif.landingRotation", "0"));
+  // Establish the exact departure before exercising the animated descent and return.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#v=observe&at=155,-14,1");
   const globe = page.getByRole("region", { name: "Globe", exact: true });
-  const canvas = await globe.locator("canvas").elementHandle();
+  const canvas = await globe.locator("canvas[data-engine]").elementHandle();
   const opener = page.getByRole("button", { name: "Below the Surface", exact: true });
   const pose = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("at");
   await expect.poll(pose).toBe("155,-14,1");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await opener.click();
 
   const fiji = page.getByRole("region", { name: "Beneath Fiji", exact: true });

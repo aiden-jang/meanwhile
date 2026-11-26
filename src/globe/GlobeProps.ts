@@ -23,7 +23,7 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  /** A restored camera skips the introductory approach. */
+  /** Returns true when a shared Explore view is already framed. */
   onReady: (flyTo: FlyTo | null, read?: () => CameraState, world?: PassageCamera) => boolean;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobepropsts. */
   onFrame?: (source: HTMLCanvasElement) => void;

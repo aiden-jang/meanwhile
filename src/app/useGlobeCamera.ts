@@ -14,7 +14,11 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
   const untouched = useRef(true);
   const stopLocation = useRef<() => void>(() => {});
   const flight = useRef<FlyTo | null>(null);
-  const linked = shared.lon !== undefined && shared.lat !== undefined && shared.zoom !== undefined;
+  const framedExplore =
+    shared.presentation === "explore" &&
+    shared.lon !== undefined &&
+    shared.lat !== undefined &&
+    shared.zoom !== undefined;
   const camera = useRef<CameraState>({
     lon: shared.lon ?? DEFAULT_CAMERA.lon,
     lat: shared.lat ?? DEFAULT_CAMERA.lat,
@@ -46,15 +50,15 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
       };
       read.current = current;
       setReady(true);
-      // A shared camera is already a destination. Opening a story immediately must capture that exact spot.
-      if (linked && scene) {
+      // Explore opens ready for picking. The Observatory keeps its approach to the shared viewpoint.
+      if (framedExplore && scene) {
         scene.controls.setView(camera.current);
         return true;
       }
       fly(camera.current.lon, camera.current.lat, camera.current.zoom);
       return false;
     },
-    [linked, setReady],
+    [framedExplore, setReady],
   );
   return { flyTo, camera, read, onReady, home, world };
 }

@@ -1034,7 +1034,7 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   await page.goto("/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2");
   await waitForData(page);
 
-  const band = page.locator(".zone-canvas");
+  const band = page.locator("[data-section-panel]");
   await expect(band.getByText("Cross-section", { exact: true })).toBeVisible();
   // The boundary the slab belongs to is marked, and the key for it only appears when it is.
   await expect(band).toContainText("plate boundar");
@@ -1060,7 +1060,7 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
 
   // The band stops where the panel starts. It ran to the right edge, so opening an event from the section hid
   // a fifth of the section behind it.
-  const bandBox = (await band.locator("svg").last().boundingBox())!;
+  const bandBox = (await band.locator("svg").boundingBox())!;
   const panelBox = (await panel.boundingBox())!;
   expect(bandBox.x + bandBox.width).toBeLessThanOrEqual(panelBox.x + 1);
 
