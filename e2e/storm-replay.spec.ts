@@ -116,7 +116,8 @@ test("Katrina’s visible track points select their exact readings on the same g
       await expect(marker).toBeVisible();
       return marker.evaluate((node) => {
         const parent = node.parentElement!.getBoundingClientRect();
-        return { x: parent.left + parseFloat(node.style.left), y: parent.top + parseFloat(node.style.top) };
+        const position = getComputedStyle(node);
+        return { x: parent.left + parseFloat(position.left), y: parent.top + parseFloat(position.top) };
       });
     };
     await slider.press("Home");

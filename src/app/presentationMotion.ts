@@ -1,4 +1,5 @@
 import { globeFramingRect } from "../globe/globeFraming";
+import { refreshAnnotations } from "../globe/annotationInput";
 
 export function shiftGlobe(globe: HTMLElement, from: DOMRect, id = "globe-presentation"): Animation | null {
   const to = globeFramingRect(globe);
@@ -16,6 +17,9 @@ export function shiftGlobe(globe: HTMLElement, from: DOMRect, id = "globe-presen
     { duration: 560, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
   );
   flight.id = id;
+  // The scene may already be idle when the browser finishes or interrupts this transform.
+  const reproject = () => refreshAnnotations();
+  void flight.finished.then(reproject, reproject);
   return flight;
 }
 

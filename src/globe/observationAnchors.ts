@@ -129,8 +129,9 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
       if (place) places++;
       if (locator) locators++;
       occupied.push({ x, y, fiji });
-      anchor.style.left = `${x + (paired?.dx ?? 0)}px`;
-      anchor.style.top = `${y + (paired?.dy ?? 0)}px`;
+      // Projection coordinates and parent bounds share the current on-screen transform.
+      anchor.style.left = `${((x + (paired?.dx ?? 0)) / parent.width) * 100}%`;
+      anchor.style.top = `${((y + (paired?.dy ?? 0)) / parent.height) * 100}%`;
     }
   }
   positionEvidenceConnector(canvas, controls, parents);
