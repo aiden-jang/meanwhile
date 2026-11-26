@@ -182,6 +182,12 @@
   display: block;
   margin-top: 12px;
 }
+@media (min-width: 768px) {
+  .layer-times-popover[data-open-below] {
+    inset-block: var(--layer-times-top) auto;
+    max-height: calc(100dvh - var(--layer-times-top) - 12px);
+  }
+}
 .layer-times-popover a {
   text-decoration: underline;
   text-underline-offset: 0.2em;

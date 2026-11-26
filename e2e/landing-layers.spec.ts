@@ -198,7 +198,9 @@ for (const [width, height] of [
         "datetime",
         new Date(source.at).toISOString(),
       );
-      await times.getByRole("button", { name: "Close layer times", exact: true }).click();
+      const close = times.getByRole("button", { name: "Close layer times", exact: true });
+      await expect(close).toBeInViewport({ ratio: 1 });
+      await close.click();
       await expect(sources).toBeFocused();
     }
     if (process.env["EIF_CAPTURE_UI"])

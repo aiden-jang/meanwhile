@@ -154,7 +154,9 @@ export function LayerReadout({
 }
 
 function positionReadout(trigger: HTMLButtonElement, panel: HTMLDivElement) {
-  const { top, left } = trigger.getBoundingClientRect();
+  const { top, bottom, left } = trigger.getBoundingClientRect();
+  panel.toggleAttribute("data-open-below", window.innerHeight - bottom > top);
+  panel.style.setProperty("--layer-times-top", `${bottom + 8}px`);
   panel.style.setProperty("--layer-times-bottom", `${Math.max(12, window.innerHeight - top + 8)}px`);
   panel.style.setProperty("--layer-times-left", `${left}px`);
 }
