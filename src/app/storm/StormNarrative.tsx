@@ -1,9 +1,15 @@
-import type { ReactNode } from "react";
-import { FIXES, LANDFALL, START, TRACK_MINUTES, stormClock } from "./stormTrack";
+import type { ReactNode, Ref } from "react";
+import {
+  FIXES,
+  LANDFALL,
+  PEAK,
+  PEAK_INDEX,
+  PEAK_MINUTE,
+  START,
+  TRACK_MINUTES,
+  stormClock,
+} from "./stormTrack";
 
-const PEAK = FIXES.reduce((peak, fix) => (fix.wind > peak.wind ? fix : peak));
-export const PEAK_MINUTE = (PEAK.time - START) / 60_000;
-const PEAK_INDEX = FIXES.indexOf(PEAK);
 const point = (fix: (typeof FIXES)[number]) => ({
   x: 34 + ((fix.time - START) / (TRACK_MINUTES * 60_000)) * 282,
   y: 126 - ((fix.wind - 90) / 70) * 98,
@@ -33,18 +39,34 @@ export function StormFinding({
   selected,
   onInspect,
   readings,
+  transport,
   actions,
+  comparisonButton,
+  openComparison,
 }: {
   selected: number;
   onInspect: (minute: number) => void;
   readings: ReactNode;
+  transport: ReactNode;
   actions: ReactNode;
+  comparisonButton: Ref<HTMLButtonElement>;
+  openComparison: (opener: HTMLButtonElement) => void;
 }) {
   return (
-    <section className="storm-finding" aria-label="What this track showed" data-storm-phase="finding">
-      <h3>Two points. One storm.</h3>
-      <p>Choose a track point to read its wind and pressure, or compare the offshore peak with landfall.</p>
+    <section className="storm-finding" aria-label="Katrina’s recorded track" data-storm-phase="finding">
       {readings}
+      {transport}
+      <button
+        className="storm-open-pair"
+        type="button"
+        ref={comparisonButton}
+        onClick={(event) => openComparison(event.currentTarget)}
+      >
+        Compare peak and landfall
+        <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <path d="M4 10h12m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      </button>
       <div className="storm-finding-actions" role="group" aria-label="Compare two recorded positions">
         <button
           type="button"

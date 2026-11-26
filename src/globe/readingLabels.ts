@@ -16,11 +16,15 @@ function readingLabelPosition(point: Point, stage: Box, width: number, height: n
   const minX = stage.left + clearance;
   const maxX = stage.right - clearance - width;
   const centered = Math.max(minX, Math.min(x - width / 2, maxX));
+  const belowControls = y + gap + height + clearance;
   const candidates = [
     { x: centered, y: y - height - gap },
     { x: x + gap, y: y - height / 2 },
     { x: x - width - gap, y: y - height / 2 },
     { x: centered, y: y + gap },
+    { x: centered, y: belowControls },
+    { x: maxX, y: belowControls },
+    { x: minX, y: belowControls },
   ];
   return candidates.find(
     ({ x, y }) =>
@@ -93,7 +97,7 @@ export function positionReadingLabel(layer: HTMLElement, point: Point | null, ma
     scope
       ?.closest(".zones")
       ?.querySelectorAll(
-        ".stage-ident, .stage-readout, .story-projection, .story-dock, .camera-recenter, .tonga-world-title, .tonga-signal, .world-evidence, [data-world-inset], [data-scale], [data-orbit-readout][data-visible=true]",
+        ".stage-ident, .stage-readout, .story-projection, .story-dock, .camera-recenter, .tonga-world-title, .tonga-signal, .storm-track-handle > span, .storm-world-legend, .world-evidence, [data-world-inset], [data-scale], [data-orbit-readout][data-visible=true]",
       ) ?? [],
   ).flatMap((node) => {
     const bounds = node.getBoundingClientRect();

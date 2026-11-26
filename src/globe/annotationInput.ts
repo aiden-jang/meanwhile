@@ -3,7 +3,7 @@ import type { Controls } from "./controls";
 
 type AnnotationInput =
   | { lon: number; lat: number; zoom?: number }
-  | { camera: "hold" | "resume" | "reset"; home?: { lon: number; lat: number; zoom: number } }
+  | { camera: "hold" | "freeze" | "resume" | "reset"; home?: { lon: number; lat: number; zoom: number } }
   | { curtainFold: () => void }
   | { revealReading: { lon: number; lat: number }; anchor: { lon: number; lat: number } };
 
@@ -39,7 +39,8 @@ export function attachAnnotations(
     if (point && "curtainFold" in point) {
       if (foldCurtain?.(point.curtainFold)) event.preventDefault();
     } else if (point && "camera" in point) {
-      if (point.camera === "hold") controls.guidance.interrupt();
+      if (point.camera === "freeze") controls.setView(controls.state());
+      else if (point.camera === "hold") controls.guidance.interrupt();
       else if (!controls.guidance.recenter() && point.camera === "reset") {
         const home = point.home ?? DEFAULT_CAMERA;
         controls.flyTo(home.lon, home.lat, home.zoom);

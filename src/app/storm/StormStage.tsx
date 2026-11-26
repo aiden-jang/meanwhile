@@ -5,50 +5,23 @@ import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
 import { ReadingLabel } from "../observations/ReadingLabel";
 import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
 import { useObservationImage } from "../observations/useObservationData";
-import {
-  FIXES,
-  FLIGHT_MS,
-  START,
-  SURVEY_MS,
-  TRACK_MINUTES,
-  stormCategory,
-  stormClock,
-  stormFrame,
-} from "./stormTrack";
+import { FIXES, START, PEAK_MINUTE, TRACK_MINUTES, stormClock, stormFrame } from "./stormTrack";
 
 import { useStorySession } from "../observations/StorySession";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey } from "../visitor/library";
 import terra from "./terra-2005-08-28.webp?url";
 import { StormFinding, StormInvitation, StormSources } from "./StormNarrative";
+import { StormLandfallComparison, StormReading, StormWindExtent } from "./StormReadings";
+import { StormTrackWorld } from "./StormTrackWorld";
+import { refreshAnnotations } from "../../globe/annotationInput";
+import { duration, fixedComparison, initialPlayback, seekTo, type Playback } from "./stormPlayback";
 import { StormTransport } from "./StormTransport";
 import { stormJourney } from "../journeys/stormJourney";
 
-const comparisonTarget = { ...stormTarget, lat: 26.55 };
+const comparisonTarget = { lon: -88.25, lat: 26.75, zoom: 1.92 };
 const MOTION = "(prefers-reduced-motion: reduce)";
-
-interface Playback {
-  elapsed: number;
-  survey: boolean;
-  playing: boolean;
-  phase: "intro" | "follow" | "inspect" | "compare";
-}
-
-function seekTo(minute: number): Playback {
-  return { elapsed: (minute / TRACK_MINUTES) * SURVEY_MS, survey: true, playing: false, phase: "inspect" };
-}
-
-const fixedComparison = (minute: number): Playback => ({ ...seekTo(minute), phase: "compare" });
-
-function initialPlayback(at: number, compare: boolean) {
-  const minute = Math.max(0, Math.min(TRACK_MINUTES, (at - START) / 60_000));
-  const fix = FIXES.reduce((closest, candidate) =>
-    Math.abs(at - candidate.time) < Math.abs(at - closest.time) ? candidate : closest,
-  );
-  return compare ? fixedComparison((fix.time - START) / 60_000) : seekTo(minute);
-}
-
-const duration = (playback: Playback) => (playback.survey ? SURVEY_MS : FLIGHT_MS);
+const peakFrame = stormFrame(fixedComparison(PEAK_MINUTE).elapsed, true);
 
 export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
@@ -67,6 +40,9 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const reading = useRef<HTMLHeadingElement>(null);
   const replayPoint = useRef<Playback | null>(null);
   const from = useRef<ReturnType<typeof captureReplayFrame>>();
+  const comparisonButton = useRef<HTMLButtonElement>(null);
+  const comparisonReturn = useRef<ReturnType<typeof captureReplayFrame>>();
+  const [paired, setPaired] = useState(false);
   const hold = useRef(false);
   const camera = useRef(panel);
   camera.current = panel;
@@ -138,7 +114,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
         replayPoint.current = invited ? seekTo(0) : { ...clock.current, playing: false };
         from.current = captureReplayFrame(camera.current);
       }
-      hold.current = false;
+      if (!comparing) hold.current = false;
       update(fixedComparison(minute));
       if (!comparing) requestAnimationFrame(() => reading.current?.focus({ preventScroll: true }));
     },
@@ -160,11 +136,17 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     const frame = stormFrame(view.elapsed, view.survey);
     const arriving = fromWeather && !ready;
     const firstTrack = fromWeather && ready && !comparing && !view.playing && view.elapsed === 0;
-    const geography = stormGeography(frame, !view.survey, comparing, firstTrack || (guided && invited));
+    const geography = stormGeography(
+      paired ? peakFrame : frame,
+      !view.survey,
+      comparing,
+      firstTrack || (guided && invited),
+    );
     onView({
       kind: "observation",
       ...geography,
       ...(arriving ? { frame: { at: geography.frame.at }, follow: undefined } : {}),
+      ...(paired ? { frame: { ...geography.frame, at: frame.storm.at } } : {}),
       ...(firstTrack ? { follow: undefined } : {}),
       ...(hold.current ? { holdGeography: true, follow: undefined } : {}),
       ...(guided && !view.playing ? { follow: undefined } : {}),
@@ -173,7 +155,8 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       target: comparing ? comparisonTarget : stormTarget,
       lens: stormLens,
       ...(hold.current ? {} : { arrive }),
-      pickMarks: invited || visibleArchive || arriving ? undefined : { points: FIXES, select: inspectFix },
+      pickMarks:
+        invited || visibleArchive || arriving || paired ? undefined : { points: FIXES, select: inspectFix },
     });
     remember?.({ chapter: guided && invited ? "intro" : comparing ? "compare" : "" });
   }, [
@@ -189,6 +172,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     guided,
     fromWeather,
     ready,
+    paired,
   ]);
   const storm = stormFrame(view.elapsed, view.survey).storm;
   const { fix } = storm;
@@ -196,11 +180,6 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const ended = view.elapsed >= duration(view);
   const kept =
     comparing && navigation?.library.saved.some((entry) => savedVisitKey(entry) === `katrina:${fix.time}`);
-  const title = fix.landfall
-    ? "Landfall near Buras, Louisiana"
-    : fix.wind === 150
-      ? "Peak offshore intensity"
-      : "Across the Gulf";
   const progress = stormClock(storm.at);
   useStoryCompletion(comparing);
   const atFix = storm.at === fix.time;
@@ -229,28 +208,39 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
     restoreReplayFrame(from.current, panel, () => playback.current);
   }
 
-  const readings = (
-    <div className="archive-scene-caption storm-reading" data-reading-cue="">
-      <h3 ref={reading} tabIndex={-1}>
-        {title}
-      </h3>
-      <p
-        className="storm-measurements"
-        aria-live={comparing ? "polite" : undefined}
-        aria-atomic={comparing || undefined}
-      >
-        <span>
-          <strong>{fix.wind} kt</strong> max wind
-        </span>
-        <span>
-          <strong>{fix.pressure} hPa</strong> central pressure
-        </span>
-      </p>
-      <p>
-        Category {stormCategory(fix.wind)} · {atFix ? "Recorded position" : "Last recorded position"}{" "}
-        <time dateTime={fix.at}>{stormClock(fix.time)}</time>
-      </p>
-    </div>
+  function startTrackScrub() {
+    refreshAnnotations({ camera: "freeze" });
+  }
+
+  function openPair(opener: HTMLButtonElement) {
+    comparisonReturn.current = { ...captureReplayFrame(panel), focus: opener };
+    startTrackScrub();
+    setPaired(true);
+  }
+
+  function closePair() {
+    setPaired(false);
+    restoreReplayFrame(comparisonReturn.current, panel, () => comparisonButton.current);
+    comparisonReturn.current = undefined;
+  }
+
+  const readings = <StormReading refHeading={reading} fix={fix} atFix={atFix} live={comparing} />;
+  const transport = (
+    <StormTransport
+      at={storm.at}
+      minute={minute}
+      fixIndex={storm.fixIndex}
+      comparing={comparing}
+      playing={view.playing}
+      ended={ended}
+      buttonRef={playback}
+      onSeek={(value) => {
+        if (comparing) inspectFix(value);
+        else update(seekTo(value));
+      }}
+      onInspect={compareAt}
+      onToggle={toggle}
+    />
   );
   const comparisonActions = (
     <div className="observatory-actions storm-keep-actions">
@@ -281,12 +271,21 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   return (
     <ReplayPanel
       {...panel}
+      onClose={paired ? closePair : panel.onClose}
+      closeLabel={paired ? "Back to track" : panel.closeLabel}
       finding={false}
+      sharing={!paired}
+      ending={!paired}
+      deferSharedView={comparing}
       save={!comparing}
-      className="storm-journey"
+      className={`storm-journey${comparing ? " storm-track-inspector" : ""}${paired ? " storm-track-comparing" : ""}`}
       title="Eye of the Storm"
       location="Gulf of Mexico"
-      subtitle="Hurricane Katrina · NOAA best track · 28–29 Aug 2005"
+      subtitle={
+        comparing
+          ? "Hurricane Katrina · 28–29 August 2005"
+          : "Hurricane Katrina · NOAA best track · 28–29 Aug 2005"
+      }
       status={
         fromWeather
           ? "Recorded · August 2005"
@@ -311,23 +310,33 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
               hidden={archiveReady && !visibleArchive}
             />
           )}
-          {(comparing || (view.phase === "inspect" && !view.playing && (!fromWeather || ready))) && (
-            <div className="storm-map-labels" aria-hidden="true">
-              <span
-                key={storm.fixIndex}
-                data-observation-anchor=""
-                data-storm-fix={storm.fixIndex}
-                data-evidence-source="true"
-                data-compact-anchor=""
-                data-projection-anchor=""
-                data-lon={fix.lon}
-                data-lat={fix.lat}
-              />
-              <ReadingLabel reading={fix.at}>
-                {fix.wind} kt · {fix.pressure} hPa
-              </ReadingLabel>
-            </div>
+          {comparing && (
+            <StormTrackWorld
+              begin={startTrackScrub}
+              select={inspectFix}
+              selected={storm.fixIndex}
+              comparing={paired}
+            />
           )}
+          {comparing && <StormWindExtent fix={paired ? peakFrame.storm.fix : fix} atFix onWorld />}
+          {!paired &&
+            (comparing || (view.phase === "inspect" && !view.playing && (!fromWeather || ready))) && (
+              <div className="storm-map-labels" aria-hidden="true">
+                <span
+                  key={storm.fixIndex}
+                  data-observation-anchor=""
+                  data-storm-fix={storm.fixIndex}
+                  data-evidence-source="true"
+                  data-compact-anchor=""
+                  data-projection-anchor=""
+                  data-lon={fix.lon}
+                  data-lat={fix.lat}
+                />
+                <ReadingLabel reading={fix.at}>
+                  {fix.wind} kt · {fix.pressure} hPa
+                </ReadingLabel>
+              </div>
+            )}
         </>
       }
       at={
@@ -345,6 +354,8 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
         </p>
       ) : invited ? (
         <StormInvitation onFollow={follow} onInspect={() => inspectFix(0)} />
+      ) : paired ? (
+        <StormLandfallComparison />
       ) : (
         <div className="archive-scene-console" data-storm-phase={comparing ? "compare" : view.phase}>
           {comparing ? (
@@ -352,43 +363,18 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
               selected={storm.fixIndex}
               onInspect={compareAt}
               readings={readings}
+              transport={transport}
               actions={comparisonActions}
+              comparisonButton={comparisonButton}
+              openComparison={openPair}
             />
           ) : (
-            readings
+            <>
+              {readings}
+              {transport}
+            </>
           )}
-          <StormTransport
-            at={storm.at}
-            minute={minute}
-            fixIndex={storm.fixIndex}
-            comparing={comparing}
-            playing={view.playing}
-            ended={ended}
-            buttonRef={playback}
-            onSeek={(value) => {
-              if (comparing) inspectFix(value);
-              else update(seekTo(value));
-            }}
-            onInspect={compareAt}
-            onToggle={toggle}
-          />
-          <p className="storm-legend">
-            {fix.landfall ? (
-              "Wind extent unavailable for this position."
-            ) : (
-              <>
-                <span>
-                  <i className="storm-extent" aria-hidden="true" />
-                  34 kt radius
-                </span>
-                <span>
-                  <i className="storm-extent storm-extent-strong" aria-hidden="true" />
-                  64 kt radius
-                </span>
-                {!atFix && <span>Center and radii interpolated.</span>}
-              </>
-            )}
-          </p>
+          {!comparing && <StormWindExtent fix={fix} atFix={atFix} />}
         </div>
       )}
     </ReplayPanel>
