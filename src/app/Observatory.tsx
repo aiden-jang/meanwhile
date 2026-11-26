@@ -194,6 +194,7 @@ function ObservatoryContent({
         !solar && (
           <ObservatoryStage
             scene={scene}
+            landing={landing}
             at={at}
             tour={active ? tour.stop : undefined}
             aurora={aurora.run}

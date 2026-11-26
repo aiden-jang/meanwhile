@@ -1,3 +1,4 @@
+import { createEarthBasemap, type SurfaceView } from "./earthBasemap";
 import { createRenderResolution } from "./renderResolution";
 import { DEFAULT_CAMERA } from "./framing";
 import { createNightSurface } from "./nightSurface";
@@ -34,7 +35,7 @@ import type { RampName } from "./ramp";
 import { graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { lunarEclipse, solarEclipse } from "../geo/eclipse";
+import { lunarEclipse } from "../geo/eclipse";
 import { gmstDeg, type FigureTable, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
@@ -103,7 +104,7 @@ export interface Globe {
   passageWorld: { spin: Group; morph: { value: number }; optics: { magnification: number } };
   resize: () => void;
   foldCurtain: (complete: () => void) => boolean;
-  render: (full?: boolean) => void;
+  render: (full?: boolean, view?: SurfaceView) => void;
   dispose: () => void;
   controls: Controls;
   events: EventLayer;
@@ -149,7 +150,7 @@ export interface Globe {
   stats: LandGeometry["stats"];
 }
 
-export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe {
+export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake = () => {}): Globe {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setClearAlpha(0);
   const scene = new Scene();
@@ -257,7 +258,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   coast.renderOrder = 4;
   spin.add(coast);
 
-  const { night, aurora, dayline, setAurora } = createNightSurface(morph);
+  const { night, aurora, dayline, setAurora, placeShadow } = createNightSurface(morph);
   spin.add(night);
   const eclipseTrack = createEclipseTrack();
   spin.add(eclipseTrack.path);
@@ -274,7 +275,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let quietMotion = false;
   lightSurface(ocean.material, sunDir, morph, true, lights.reveal);
   lightSurface(fill.material, sunDir, morph, false, lights.reveal);
-  const eclipseDir = new Vector3(0, 0, 1);
+  const atlas = createEarthBasemap(
+    canvas,
+    ocean.material,
+    fill.material,
+    grat.material,
+    coast.material,
+    night.material,
+    wake,
+  );
   /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
   let sink = 0;
 
@@ -289,19 +298,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     const c = Math.cos(phi);
     sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
-    /* Aimed from the same instant as everything else: tonight's shadow over an archived April is nonsense. */
-    const shadow = solarEclipse(at);
-    const nightUniforms = (night.material as ShaderMaterial).uniforms;
-    if (shadow.touching && !presentation.shadows()) {
-      eclipseDir.set(shadow.centre[0], shadow.centre[1], shadow.centre[2]);
-      nightUniforms["uEclipse"]!.value = eclipseDir;
-      nightUniforms["uPenumbraAng"]!.value = Math.asin(Math.min(1, shadow.penumbra));
-      // Negative means annular: the cone closed before it landed, so there is no totality to draw.
-      nightUniforms["uUmbraAng"]!.value = shadow.umbra > 0 ? Math.asin(Math.min(1, shadow.umbra)) : 0;
-    } else {
-      nightUniforms["uPenumbraAng"]!.value = 0;
-      nightUniforms["uUmbraAng"]!.value = 0;
-    }
+    placeShadow(at, presentation.shadows());
     // Reuse the turn so a constellation line cannot separate from its stars.
     const sidereal = gmstDeg(at);
     starfield.setTime(at, sidereal);
@@ -516,16 +513,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (on) lights.begin();
     },
     setAurora,
-    render: (full = false) => {
+    render: (full = false, view) => {
       if (!resolution.frame(full)) return;
+      atlas.setView(view);
       if (presentation.renderMoon(renderer, camera)) return;
-      const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
-      if (at !== null) {
-        const minute = Math.floor(at / 60_000);
-        if (minute !== sunMinute) {
-          sunMinute = minute;
-          aimSun(at);
-        }
+      const at = inspection.recordedAt() ?? atlas.litAt(moment ?? Date.now());
+      const minute = Math.floor(at / 60_000);
+      if (minute !== sunMinute) {
+        sunMinute = minute;
+        aimSun(at);
       }
       const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, optics.magnification);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
@@ -568,6 +564,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       presentation.dispose();
       inspection.dispose();
       eclipseTrack.dispose();
+      atlas.dispose();
       regroup.dispose();
       events.dispose();
       slab.dispose();

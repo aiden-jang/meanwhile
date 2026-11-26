@@ -148,7 +148,7 @@ export function Globe({
 
     let globe: ReturnType<typeof createGlobe>;
     try {
-      globe = createGlobe(el);
+      globe = createGlobe(el, undefined, () => wakeRef.current());
     } catch {
       setUnavailable("startup");
       onReady(null);
@@ -161,7 +161,7 @@ export function Globe({
     let redrawPending = false;
     const afterRender = new Set<() => void>();
     const draw = (full = false) => {
-      globe.render(full || !!live.current.onFrame);
+      globe.render(full || !!live.current.onFrame, live.current);
       live.current.onFrame?.(el);
       afterRender.forEach((update) => update());
     };

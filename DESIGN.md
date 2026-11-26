@@ -520,9 +520,9 @@ unrelated earthquakes. Reading time begins at camera arrival and pauses in hidde
 interaction ends the tour except within its narration and controls. Escape always stops it.
 
 Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
-a thin reference line. Reduced motion shows the full boundary immediately. Surface lighting may
-use the displayed sun and the sphere's actual normals to improve form. It must not fabricate
-topography, add photographic textures, dim earthquake measurements, or alter the flat-map palette.
+a thin reference line. Reduced motion shows the full boundary immediately. The landing scrubber
+moves sunlight across satellite terrain while the camera holds its angle. Radar, aurora and event
+markers keep their own source times and remain legible on either side of the boundary.
 Presentation crossfades are finite and skipped under reduced motion.
 
 ### Shared world layout motion
@@ -542,10 +542,10 @@ hooks retain their geographic shots. Panel motion retains readable content and n
 
 ### Globe, map and scientific scene
 
-The explorer canvas fills the viewport behind responsive panels. Vector geography and
-readable event marks replace photographic Earth textures. Day/night follows the
-displayed moment's real subsolar point; geography dims while observations remain
-legible. The atmospheric rim adds form without competing with data.
+The explorer canvas fills the viewport behind responsive panels. The landing and live explorer
+use muted satellite terrain, fine coastlines and measured night lights. The satellite composites
+give geographic context. Day/night follows the displayed solar time. Story views can use their
+own surface treatment to keep the selected reading legible.
 
 Globe and map share geometry and a continuous projection. Longitude seams and
 poles must remain coherent; the map wraps rather than splitting the Pacific with
@@ -891,6 +891,7 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 - **Do** preserve camera, projection, pane, category, query, scroll and focus when returning from a story.
 - **Do** keep the author credit anchored at the lower left across presentations, outside moving and scrolling regions.
 - **Do** preserve source distinctions, independent layer times, reduced motion and keyboard access.
+- **Do** credit the historical satellite composites and label live observations with their own times.
 - **Do** keep rounded location optional to override; shared views and deliberate camera movement take priority.
 - **Do** retain scientific content and marker sizes when the existing frame budget adapts high-density drawing.
 
@@ -898,7 +899,6 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 
 - **Don’t** use saturated interface accents, accent glows, pure-black surfaces, serif typography or emoji.
 - **Don’t** rotate the globe outside the controlled Earth landing view or introduce perpetual decorative interface motion.
-- **Don’t** add photographic Earth textures, decorative cloud layers or night-light overlays to the shared globe.
 - **Don’t** use proportional figures in updating numbers, clip names or allow horizontal page overflow.
 - **Don’t** hide the product behind loading spinners or blank working layers because another source failed.
 - **Don’t** require accounts, API keys or setup before the first useful frame.

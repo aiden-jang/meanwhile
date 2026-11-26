@@ -29,6 +29,9 @@ do not support browser CORS. The local server supplies the same routes without a
 ## Observe and explore
 
 A fresh visit opens a compact introduction beside the shared globe, with no scene selected.
+Drag the globe to rotate it. The **Day–night** slider moves sunlight up to six hours either side of
+the current time. Watch the boundary cross the same terrain and city lights appear after dusk.
+**Now** restores current sunlight. Radar keeps its scan time and each report keeps its observation time.
 Its starting view uses an approximate network location rounded to 0.1 degree, falling back to New York
 when unavailable. Shared links take priority, and an estimate never interrupts someone already exploring.
 In Layers, open **Find a place**. **Use device location** requests browser permission only when chosen; its coordinates are
@@ -311,6 +314,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 
 | Layer | Source |
 | --- | --- |
+| Satellite basemap | NASA Earth Observatory [Blue Marble Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/) (August 2004 terrain) and [Black Marble](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/) (2016 night lights), lit for the displayed solar time |
 | Live earthquakes | USGS HTTPS feeds and EMSC WebSocket / catalogue |
 | Archived earthquakes | USGS and EMSC FDSN endpoints |
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |

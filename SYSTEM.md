@@ -79,7 +79,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/StoryThumbnail.tsx` and `src/assets/story-previews/` | Lazy recorded-view thumbnails and their origin sidecars |
 | `src/app/MeasurementSound.tsx` and `src/app/measurementVoice.ts` | Gesture-enabled measurement tones, bounded playback, and audio cleanup |
 | `src/app/useGlobeTour.ts` | Captured route, arrival-aware reading time, pause/step controls and interaction cancellation |
-| `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading, fading to the unchanged flat-map palette |
+| `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading on the shared globe and map |
 | `src/app/waveReplay.ts` | City selection, regional travel times and replay clock |
 | `src/app/sequenceReplay.ts` | Recorded event order, pinned moment and replay clock |
 | `src/globe/sequencePresentation.ts` | Unclustered regional replay with magnitude-colored arrivals |
@@ -447,7 +447,10 @@ Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.
 The feed total includes each enabled source, reports failure independently, and retains its last
 successful check. Archived earthquakes and cinematic views do not mount current weather sources.
-Landing composition retains its day/night lighting and automatic rotation while sharing these overlays.
+On the landing, the Day–night control offsets solar lighting independently of feed selection.
+It holds idle rotation while the visitor inspects another time. **Now** restores current sunlight.
+The landing and live explorer share the satellite basemap across projections. Specialized stories
+keep their own surfaces. The globe can draw the vector geography while satellite imagery loads.
 Scene-category browsing hides base layers; explicit stories own their separate source data. Guided depth stops pause background weather until the surface view returns.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.

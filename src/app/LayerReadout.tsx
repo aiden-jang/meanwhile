@@ -122,6 +122,26 @@ export function LayerReadout({
             </span>
           );
         })}
+        <span>
+          Earth imagery · NASA{" "}
+          <a
+            href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/"
+            target="_blank"
+            rel="noreferrer"
+            aria-describedby="external-link-hint"
+          >
+            Blue Marble (2004)
+          </a>
+          {" · "}
+          <a
+            href="https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/"
+            target="_blank"
+            rel="noreferrer"
+            aria-describedby="external-link-hint"
+          >
+            Black Marble (2016)
+          </a>
+        </span>
         {legend && (
           <section className="globe-info-legend" aria-label="Legend">
             <h3>Legend</h3>

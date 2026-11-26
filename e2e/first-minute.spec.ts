@@ -14,6 +14,13 @@ for (const width of [1440, 844, 320]) {
     await expect(feature).toHaveAccessibleDescription("Scrub Honolulu’s pressure trace");
     await expect(page.getByRole("button", { name: "All stories", exact: true })).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole("button", { name: "Follow nightfall", exact: true })).toHaveCount(0);
+    if (width === 320) {
+      const subjects = await page.getByRole("group", { name: "Explore by subject" }).boundingBox();
+      const footer = await page.locator(".creator-credit").boundingBox();
+      expect(subjects!.y + subjects!.height, "subject links clear the legal footer").toBeLessThanOrEqual(
+        footer!.y,
+      );
+    }
     await feature.click();
 
     const passage = page.getByRole("region", { name: "Tonga to Honolulu" });

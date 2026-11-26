@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { Mesh, MeshBasicMaterial, Object3D } from "three";
+import type { Mesh, MeshBasicMaterial, Object3D, ShaderMaterial, Vector3 } from "three";
 import { installFeeds, openLayer, selectScene } from "./feeds";
 
 // Synthetic radar pixels make the actual scene texture observable without depending on today's storms.
@@ -12,9 +12,9 @@ const transparentPixel = Buffer.from(
   "base64",
 );
 
-async function radarSource(page: Page, covered = false) {
+async function radarSource(page: Page, covered = false, now = Date.now()) {
   let calls = 0;
-  const at = Math.floor(Date.now() / 600_000) * 600_000;
+  const at = Math.floor(now / 600_000) * 600_000;
   await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) => {
     calls++;
     return route.fulfill({
@@ -41,10 +41,100 @@ const radarTexture = (page: Page) =>
     const texture = (radar?.material as MeshBasicMaterial | undefined)?.map;
     return radar?.visible && texture ? texture.uuid : null;
   });
+const daylineSun = (page: Page) =>
+  page.evaluate(() => {
+    let root = (window as unknown as { __events: { object: Object3D } }).__events.object;
+    while (root.parent) root = root.parent;
+    let sun: number[] | null = null;
+    root.traverse((item) => {
+      const material = (item as Mesh).material as ShaderMaterial | undefined;
+      if (material?.uniforms?.["uDayColor"] && material.uniforms["uAuroraOn"])
+        sun = (material.uniforms["uSun"]!.value as Vector3).toArray();
+    });
+    return sun;
+  });
 const longitude = (page: Page) =>
   page.evaluate(
     () => (window as unknown as { __globe: { state: () => { lon: number } } }).__globe.state().lon,
   );
+
+for (const touch of [false, true]) {
+  test.describe(touch ? "touchscreen sunlight" : "desktop sunlight", () => {
+    test.use({
+      hasTouch: touch,
+      isMobile: touch,
+      viewport: touch ? { width: 390, height: 844 } : { width: 1420, height: 700 },
+    });
+
+    test("scrubbing across midnight moves the dayline while the camera and radar hold @dev", async ({
+      page,
+    }) => {
+      const now = Date.parse("2026-11-26T22:58:00Z");
+      await page.clock.setFixedTime(now);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await installFeeds(page, { presentation: "fresh", radar: "default", empty: true, now });
+      const source = await radarSource(page, false, now);
+      await page.goto("/#at=-74.006,40.7128,1&v=observe");
+      await expect(page.locator("#globe-view canvas")).toHaveAttribute("data-basemap", "satellite");
+      await expect.poll(() => radarTexture(page)).not.toBeNull();
+      const texture = await radarTexture(page);
+      const pose = () =>
+        page.evaluate(() => (window as unknown as { __globe: { state: () => unknown } }).__globe.state());
+      const initialCamera = await pose();
+      const slider = page.getByRole("slider", { name: "Day–night time" });
+      const clock = page.getByRole("region", { name: "Solar lighting" }).locator("time");
+      const marker = page.locator("[data-dayline-label]");
+      const anchor = () => marker.evaluate((el) => (el as HTMLElement).style.transform);
+      const radarTime = page.locator(".radar-canvas-credit time");
+      await expect(marker).toHaveAttribute("data-on-boundary", "");
+      await expect(slider).toBeInViewport({ ratio: 1 });
+      const initialSun = await daylineSun(page);
+      expect(initialSun).not.toBeNull();
+      const startingAnchor = await anchor();
+      const rail = (await slider.boundingBox())!;
+      const point = (fraction: number) => ({
+        x: rail.x + rail.width * fraction,
+        y: rail.y + rail.height / 2,
+      });
+      const centre = point(0.5);
+      const finger = touch ? await page.context().newCDPSession(page) : null;
+      if (finger)
+        await finger.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [centre] });
+      else {
+        await page.mouse.move(centre.x, centre.y);
+        await page.mouse.down();
+      }
+      for (const fraction of [0.75, 0.25]) {
+        const target = point(fraction);
+        if (finger)
+          await finger.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [target] });
+        else await page.mouse.move(target.x, target.y, { steps: 8 });
+        const minutes = Number(await slider.inputValue());
+        expect(Math.sign(minutes)).toBe(Math.sign(fraction - 0.5));
+        expect(Math.abs(minutes)).toBeGreaterThan(120);
+        await expect(clock).toHaveAttribute("datetime", new Date(now + minutes * 60_000).toISOString());
+        expect(await slider.boundingBox(), "midnight must not move the track under the pointer").toEqual(
+          rail,
+        );
+        await expect.poll(() => daylineSun(page)).not.toEqual(initialSun);
+        expect(await pose()).toEqual(initialCamera);
+        expect(await radarTexture(page)).toBe(texture);
+        await expect(radarTime).toHaveAttribute("datetime", new Date(source.at).toISOString());
+      }
+      if (finger) await finger.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      else await page.mouse.up();
+      await expect.poll(anchor).not.toBe(startingAnchor);
+      const reset = page.getByRole("button", { name: "Now", exact: true });
+      if (touch) await reset.tap();
+      else await reset.click();
+      await expect(slider).toHaveValue("0");
+      await expect(clock).toHaveAttribute("datetime", new Date(now).toISOString());
+      await expect.poll(() => daylineSun(page)).toEqual(initialSun);
+      await expect(marker).toHaveAttribute("data-on-boundary", "");
+      expect(await pose()).toEqual(initialCamera);
+    });
+  });
+}
 
 for (const [width, height] of [
   [1440, 900],

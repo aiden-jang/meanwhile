@@ -1,3 +1,4 @@
+import { solarEclipse } from "../geo/eclipse";
 import { Color, FrontSide, Mesh, ShaderMaterial, SphereGeometry, Vector3 } from "three";
 import { attachLonLat, MORPH_GLSL, SPHERE_PHI_START } from "./morph";
 import { AURORA_LAT, AURORA_LON, type Aurora } from "../sources/aurora";
@@ -134,6 +135,19 @@ export function createNightSurface(morph: { value: number }) {
     night,
     aurora,
     dayline,
+    placeShadow(at: number, storyOwnsShadow: boolean) {
+      const uniforms = night.material.uniforms;
+      const shadow = solarEclipse(at);
+      if (shadow.touching && !storyOwnsShadow) {
+        uniforms["uEclipse"]!.value.fromArray(shadow.centre);
+        uniforms["uPenumbraAng"]!.value = Math.asin(Math.min(1, shadow.penumbra));
+        // An annular eclipse has no totality at the surface.
+        uniforms["uUmbraAng"]!.value = shadow.umbra > 0 ? Math.asin(Math.min(1, shadow.umbra)) : 0;
+      } else {
+        uniforms["uPenumbraAng"]!.value = 0;
+        uniforms["uUmbraAng"]!.value = 0;
+      }
+    },
     setAurora(grid: Aurora | null) {
       if (grid) writeAurora(aurora, grid);
       night.material.uniforms["uAuroraOn"]!.value = grid ? 1 : 0;

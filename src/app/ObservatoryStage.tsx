@@ -1,4 +1,5 @@
 import { StoryProjection } from "./observations/StoryProjection";
+import { LandingSolarRange } from "./LandingSolarRange";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { subsolarPoint } from "../geo/sun";
@@ -12,6 +13,7 @@ import { OBSERVATORY_SCENES } from "./SceneEntrances";
 
 export function ObservatoryStage({
   scene,
+  landing,
   at,
   tour,
   aurora,
@@ -19,6 +21,7 @@ export function ObservatoryStage({
   projection,
 }: {
   scene: EarthScene;
+  landing: boolean;
   at: number;
   tour: Stop | null | undefined;
   aurora: AuroraRun | null;
@@ -79,13 +82,19 @@ export function ObservatoryStage({
       {aurora && <StoryProjection map={projection.map} onMap={projection.setMap} label="Aurora projection" />}
       <div key={`readout-${mode}`} className="stage-readout">
         {layers}
-        <div>
-          <span>{label}</span> <strong>{value}</strong>
-        </div>
-        <time dateTime={time}>
-          {mode === "aurora" ? "Valid for " : ""}
-          {time.slice(11, 16)} UTC
-        </time>
+        {landing && mode === "live" ? (
+          <LandingSolarRange at={at} />
+        ) : (
+          <>
+            <div>
+              <span>{label}</span> <strong>{value}</strong>
+            </div>
+            <time dateTime={time}>
+              {mode === "aurora" ? "Valid for " : ""}
+              {time.slice(11, 16)} UTC
+            </time>
+          </>
+        )}
       </div>
     </div>
   );

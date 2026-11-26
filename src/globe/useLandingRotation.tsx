@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Controls } from "./controls";
+import { solarOffsetMinutes, subscribeLandingSun } from "./landingSolarClock";
 import { createLandingRotation } from "./landingRotation";
 import { createRotationIdle } from "./rotationIdle";
 import { isLandingPresentation } from "../app/weatherLayers";
@@ -41,15 +42,24 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
           schedule();
         }
         const active =
-          settings.current && !media.matches && !document.hidden && idle.remaining(performance.now()) === 0;
+          settings.current &&
+          solarOffsetMinutes() === 0 &&
+          !media.matches &&
+          !document.hidden &&
+          idle.remaining(performance.now()) === 0;
         return camera ? advance(camera, dt, active, busy) : false;
       },
       attach(canvas: HTMLCanvasElement, controls: Controls, redraw: () => void) {
         camera = controls;
         wake = redraw;
+        const unsubscribeSun = subscribeLandingSun(redraw);
         const down = (event: PointerEvent) => {
           idle.hold(event.pointerId);
           defer();
+        };
+        const solarDown = (event: PointerEvent) => {
+          if (event.target instanceof HTMLInputElement && event.target.id === "landing-solar-time")
+            down(event);
         };
         const up = (event: PointerEvent) => {
           if (idle.release(event.pointerId, performance.now())) {
@@ -74,17 +84,20 @@ export function useLandingRotation(presentation: GlobePresentation, preference: 
         };
         canvas.addEventListener("pointerdown", down, { capture: true, passive: true });
         canvas.addEventListener("wheel", defer, { capture: true, passive: true });
+        window.addEventListener("pointerdown", solarDown, true);
         window.addEventListener("pointerup", up, true);
         window.addEventListener("pointercancel", up, true);
         window.addEventListener("blur", blur);
         window.addEventListener("keydown", key, true);
         return () => {
+          unsubscribeSun();
           camera = undefined;
           wake = () => {};
           clearTimeout(timer);
           timer = undefined;
           canvas.removeEventListener("pointerdown", down, true);
           canvas.removeEventListener("wheel", defer, true);
+          window.removeEventListener("pointerdown", solarDown, true);
           window.removeEventListener("pointerup", up, true);
           window.removeEventListener("pointercancel", up, true);
           window.removeEventListener("blur", blur);
