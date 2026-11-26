@@ -62,6 +62,7 @@ export function LightsLensWorld({
     if (!held || event.pointerId !== held.id) return;
     const handle = event.currentTarget;
     drag.current = undefined;
+    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
     cancelAnimationFrame(frame.current);
     if (final && held.moved) reposition(handle, event.clientX + held.x, event.clientY + held.y);
     handle.removeAttribute("data-grabbing");

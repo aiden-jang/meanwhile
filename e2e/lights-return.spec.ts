@@ -1,4 +1,4 @@
-import { devices, expect, test } from "@playwright/test";
+import { devices, expect, test, type Locator } from "@playwright/test";
 import { installFeeds, openStories, saveImageButton, revealStoryTools, selectScene } from "./feeds";
 
 test("Lights Return compares NASA recovery periods and returns to the same After Dark globe", async ({
@@ -131,9 +131,19 @@ for (const mobile of [false, true]) {
       const cameraMark = await marker.boundingBox();
       const start = await lensPoint();
       const end = { x: start.x - (mobile ? 35 : 57), y: start.y + 32 };
-      const action = mobile ? "tap" : "click";
-      if (mobile) {
-        const touch = await context.newCDPSession(page);
+      const touch = mobile ? await context.newCDPSession(page) : undefined;
+      const activate = async (control: Locator) => {
+        if (!touch) return control.click();
+        await control.tap({ trial: true });
+        const bounds = await control.boundingBox();
+        if (!bounds) throw new Error("The control is outside the panel.");
+        await touch.send("Input.dispatchTouchEvent", {
+          type: "touchStart",
+          touchPoints: [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }],
+        });
+        await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      };
+      if (touch) {
         await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [start] });
         await expect(lens).toHaveAttribute("data-grabbing", "");
         for (let step = 1; step <= 5; step++)
@@ -156,14 +166,17 @@ for (const mobile of [false, true]) {
       }
       const opener = button("Inspect this place");
       await expect(opener).toBeVisible();
+      await expect(lens).not.toHaveAttribute("data-grabbing", "");
       const moved = await lensPoint();
       expect(Math.hypot(moved.x - start.x, moved.y - start.y)).toBeGreaterThan(22);
       expect(await marker.boundingBox()).toEqual(cameraMark);
-      await main.getByRole("button", { name: "Months 5–6", exact: true })[action]();
-      await expect(page).toHaveURL(/choice=3/);
       const chapter = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("chapter"));
+      await expect.poll(chapter).toMatch(/^lens:-\d+\.\d+,\d+\.\d+$/);
       const keptPlace = await chapter();
-      expect(keptPlace).toMatch(/^lens:-\d+\.\d+,\d+\.\d+$/);
+      const late = main.getByRole("button", { name: "Months 5–6", exact: true });
+      await activate(late);
+      await expect(late).toHaveAttribute("aria-pressed", "true");
+      await expect(page).toHaveURL(/choice=3/);
 
       await opener.scrollIntoViewIfNeeded();
       const rail = panel.locator("#observatory-intro");
@@ -172,7 +185,7 @@ for (const mobile of [false, true]) {
       });
       const scroll = () => rail.evaluate((node) => node.scrollTop);
       const savedScroll = await scroll();
-      await opener[action]();
+      await activate(opener);
       const reading = panel.getByRole("region", { name: "Night lights at this place" });
       await expect(reading.getByRole("heading", { name: "Pinned location" })).toBeVisible();
       await expect(reading.getByText("21 Jan – 20 Mar 2018")).toBeVisible();
@@ -181,13 +194,13 @@ for (const mobile of [false, true]) {
         .evaluateAll((nodes) => nodes.map((node) => (node as HTMLCanvasElement).toDataURL()));
       expect(crops).toHaveLength(2);
       expect(crops[0]).not.toBe(crops[1]);
-      await reading.getByRole("button", { name: "Early aftermath", exact: true })[action]();
+      await activate(reading.getByRole("button", { name: "Early aftermath", exact: true }));
       await expect(page).toHaveURL(/choice=1/);
       const next = mobile ? "Globe" : "Map";
-      await button(next)[action]();
+      await activate(button(next));
       await expect(button(next)).toHaveAttribute("aria-pressed", "true");
       await canvas.dispatchEvent("wheel", { deltaY: -120, clientX: moved.x, clientY: moved.y });
-      await button("Back to comparison")[action]();
+      await activate(button("Back to comparison"));
       await expect(opener).toBeFocused();
       await expect(button(projection)).toHaveAttribute("aria-pressed", "true");
       await expect(main.getByRole("button", { name: "Months 5–6", exact: true })).toHaveAttribute(
@@ -202,7 +215,7 @@ for (const mobile of [false, true]) {
           return Math.hypot(after.x - moved.x, after.y - moved.y);
         })
         .toBeLessThan(1);
-      await main.getByRole("button", { name: "Ponce", exact: true })[action]();
+      await activate(main.getByRole("button", { name: "Ponce", exact: true }));
       await expect(button("Inspect Ponce")).toBeVisible();
       expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
       expect(errors).toEqual([]);
