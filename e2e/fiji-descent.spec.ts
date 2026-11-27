@@ -20,6 +20,26 @@ test("Fiji enters from the landing and Back returns the same globe", async ({ pa
   await expect(depth).toHaveValue("0");
   await expect(fiji.getByText("At the waterline", { exact: true })).toBeVisible();
   await expect(depth).toBeInViewport({ ratio: 1 });
+  const waterline = fiji.locator(".fiji-waterline");
+  const composition = () =>
+    waterline.evaluate((el) => ({
+      cover: Number(getComputedStyle(el).opacity),
+      photo: Number(getComputedStyle(el, "::before").opacity),
+      mask: getComputedStyle(el).maskImage,
+    }));
+  await depth.press("ArrowDown");
+  await expect.poll(composition).toMatchObject({ cover: 1, mask: "none" });
+  expect((await composition()).photo).toBeGreaterThan(0);
+  for (let step = 0; step < 4; step++) await depth.press("ArrowDown");
+  await expect(depth).toHaveValue("75");
+  await expect.poll(composition).toMatchObject({ photo: 0 });
+  await depth.press("ArrowDown");
+  await depth.press("ArrowDown");
+  await depth.press("ArrowDown");
+  await expect(depth).toHaveValue("120");
+  await expect.poll(composition).toMatchObject({ cover: 0, photo: 0 });
+  await depth.press("Home");
+  await expect.poll(composition).toMatchObject({ cover: 1, photo: 1 });
   const rail = (await depth.boundingBox())!;
   const x = rail.x + rail.width / 2;
   await page.mouse.move(x, rail.y + 8);

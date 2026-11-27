@@ -90,16 +90,19 @@
 .fiji-waterline {
   position: absolute;
   inset: 0;
-  opacity: 0;
-  transition:
-    opacity 620ms cubic-bezier(0.22, 0.7, 0.24, 1),
-    transform 720ms cubic-bezier(0.22, 0.7, 0.24, 1);
+  overflow: hidden;
+  background-color: #07131b;
 }
-.fiji-waterline {
+.fiji-waterline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
     linear-gradient(90deg, rgb(5 12 18 / 74%), transparent 59%),
     linear-gradient(0deg, #08151b, transparent 56%, rgb(7 17 25 / 25%)),
     url("/fiji/waterline.jpg") center 52% / cover;
+  opacity: clamp(0, calc(1 - var(--fiji-progress) * 8), 1);
+  transform: scale(calc(1 + min(0.125, var(--fiji-progress)) * 0.48));
 }
 .fiji-title,
 .fiji-reading,
@@ -241,7 +244,7 @@
   .fiji-title h2 {
     font-size: 104px;
   }
-  .fiji-waterline {
+  .fiji-waterline::before {
     background-position:
       center,
       center,
@@ -318,9 +321,9 @@
   white-space: nowrap;
 }
 
-@property --fiji-wipe {
+@property --fiji-progress {
   syntax: "<number>";
-  inherits: false;
+  inherits: true;
   initial-value: 0;
 }
 
@@ -336,32 +339,21 @@
 }
 
 .fiji-descent .fiji-waterline {
-  --fiji-wipe: var(--fiji-progress);
-  opacity: 1;
-  mask-image:
-    radial-gradient(
-      circle farthest-corner at var(--fiji-x) var(--fiji-y),
-      #000 calc(var(--fiji-aperture) * 124% - 20%),
-      transparent calc(var(--fiji-aperture) * 137%)
-    ),
-    linear-gradient(
-      to bottom,
-      #000 calc(101% - var(--fiji-wipe) * 119%),
-      transparent calc(113% - var(--fiji-wipe) * 119%)
-    );
-  mask-composite: intersect;
-  transform-origin: var(--fiji-x) var(--fiji-y);
-  transform: translateY(calc(var(--fiji-progress) * -18% + (1 - var(--fiji-aperture)) * 3%))
-    scale(calc(1 + var(--fiji-progress) * 0.33 - (1 - var(--fiji-aperture)) * 0.12));
-  transition: opacity 140ms ease-out;
+  /* The illustration must be fully gone before terrain shows through the field. */
+  opacity: clamp(0, calc(2 - var(--fiji-progress) * 8), 1);
+  mask-image: radial-gradient(
+    circle farthest-corner at var(--fiji-x) var(--fiji-y),
+    #000 calc(var(--fiji-aperture) * 124% - 20%),
+    transparent calc(var(--fiji-aperture) * 137%)
+  );
 }
 
-.fiji-descent[data-returning] .fiji-waterline {
-  opacity: 1;
-  transition:
-    opacity 340ms ease-out,
-    --fiji-wipe 380ms ease-out,
-    transform 440ms cubic-bezier(0.22, 0.76, 0.24, 1);
+.fiji-descent[data-returning] {
+  transition: --fiji-progress 380ms ease-out;
+}
+
+.fiji-descent[data-arrived]:not([data-closed]) .fiji-waterline {
+  mask-image: none;
 }
 
 .fiji-descent[data-closed] .fiji-waterline {
