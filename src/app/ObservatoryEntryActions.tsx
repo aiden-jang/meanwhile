@@ -1,39 +1,29 @@
 import { useStoryNavigation } from "./journeys/StoryNavigation";
-import { StoryThumbnail } from "./StoryThumbnail";
-import { honoluluReading, landingTonga } from "./tonga/honolulu";
+import type { PacificEntry } from "./pacific/usePacificDescent";
+import waterline from "./pacific/pacific-thumbnail.webp";
 import "./landing-stories.css";
 
-const reading = { ...honoluluReading(false), chapter: "eruption" };
-
-export function LandingStories() {
+export function LandingStories({ pacific, ready }: { pacific: PacificEntry; ready: boolean }) {
   const navigation = useStoryNavigation();
-  const unavailable = !navigation || !!navigation.unavailable(reading.id);
   return (
     <div className="landing-stories">
       <button
         type="button"
-        id={landingTonga}
+        id="open-pacific-descent"
         className="landing-story"
         aria-labelledby="landing-story-title"
         aria-describedby="landing-story-summary"
-        disabled={unavailable}
-        onClick={(event) => {
-          event.currentTarget.focus({ preventScroll: true });
-          navigation?.resume(
-            { id: reading.id, seen: Date.now(), position: { moment: reading } },
-            landingTonga,
-          );
-        }}
+        aria-busy={pacific.loading || undefined}
+        aria-disabled={pacific.loading || undefined}
+        disabled={!ready}
+        onClick={(event) => pacific.open(event.currentTarget)}
       >
-        <StoryThumbnail id={reading.id} featured />
+        <img className="story-thumbnail" src={waterline} alt="" width="58" height="46" />
         <span className="landing-story-text">
-          <strong id="landing-story-title">
-            Tonga’s shockwave
-            <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-              <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
-          </strong>
-          <small id="landing-story-summary">Scrub Honolulu’s pressure trace</small>
+          <strong id="landing-story-title">Through the Pacific</strong>
+          <small id="landing-story-summary" role="status">
+            {pacific.status || "From orbit to the seafloor"}
+          </small>
         </span>
       </button>
       <button type="button" id="browse-stories" onClick={() => navigation?.browse(true)}>

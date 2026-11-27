@@ -1,7 +1,8 @@
 import { EarthquakeDiscovery } from "./app/EarthquakeDiscovery";
 import { searchStories } from "./app/storyIndex";
-import { FijiDescent, FijiLocator, fijiFocus } from "./app/FijiDescent";
+import { FijiLocator, fijiFocus } from "./app/FijiDescent";
 import { useFijiDescent } from "./app/useFijiDescent";
+import { usePacificDescent } from "./app/pacific/usePacificDescent";
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
 import { useWorldSelection } from "./app/useWorldSelection";
@@ -105,7 +106,6 @@ const RAIL_MIN = 264;
 const RAIL_MAX = 620;
 const RAIL_DEFAULT = Math.min(480, Math.max(320, Math.round(window.innerWidth * 0.295)));
 export function App(): JSX.Element {
-  // Capture the shared starting position before the first visual frame.
   const shared = useMemo(() => decode(window.location.hash), []);
 
   const snapshot = useFeedSnapshot(feed);
@@ -114,6 +114,7 @@ export function App(): JSX.Element {
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
   const globeCamera = useGlobeCamera(shared, setGlobeReady);
   const { flyTo, camera, home, read: readCamera, onReady } = globeCamera;
+  const pacific = usePacificDescent(globeCamera.world, camera);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -464,7 +465,13 @@ export function App(): JSX.Element {
     if (!direct || scene !== "live") flyTo.current(...next.camera);
     else setScrub(LIVE);
   };
-  const { fiji, fijiClosing, openFiji, backFromFiji } = useFijiDescent(observatory, flat, stopTour, flyTo);
+  const { fiji, fijiClosing, openFiji, fijiStage } = useFijiDescent(
+    observatory,
+    flat,
+    stopTour,
+    flyTo,
+    readCamera,
+  );
   function returnHome() {
     observatory.home(() => {
       stopTour();
@@ -911,6 +918,7 @@ export function App(): JSX.Element {
     deepAvailable: journey.deepest !== null,
     onScene: chooseEarthScene,
     onFiji: openFiji,
+    pacific,
     onHome: returnHome,
     onExplore: entrances.open,
     explorePaths: entrances,
@@ -1003,6 +1011,7 @@ export function App(): JSX.Element {
         className="frame"
         data-presentation={observatory.presentation}
         data-landing={observatory.landing || undefined}
+        data-pacific={pacific.visible || undefined}
         data-fiji={!!fiji || undefined}
         data-tonga-opening={observatory.observations.entry === "tonga" || undefined}
       >
@@ -1261,18 +1270,7 @@ export function App(): JSX.Element {
             className={railShown ? "explorer-resize absolute hidden xl:block" : "hidden"}
             style={{ left: "calc(var(--rail-w) - 18px)" }}
           />
-          {(fiji || fijiClosing) && (
-            <FijiDescent
-              depth={fijiClosing ? 0 : (fiji?.sweepKm ?? 0)}
-              closing={fijiClosing}
-              closed={!fiji}
-              onBack={backFromFiji}
-              map={flat}
-              setMap={observations.setMap}
-              readCamera={readCamera.current}
-              setDepth={(depth) => observatory.setDepthFocus(fijiFocus(depth))}
-            />
-          )}
+          {fijiStage}
           <section
             id="globe-view"
             tabIndex={-1}
@@ -1294,7 +1292,7 @@ export function App(): JSX.Element {
                 flat={flat}
                 globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
                 landing={observatory.landing}
-                rotateLanding={observatory.rotation.enabled}
+                rotateLanding={observatory.rotation.enabled && !pacific.active}
                 depthSink={observatory.depth || sinkOn}
                 cutaway={
                   observatory.observing
@@ -1336,6 +1334,7 @@ export function App(): JSX.Element {
                     : undefined
                 }
                 onCamera={(state) => {
+                  if (pacific.active) return;
                   camera.current = state;
                   observeTourCamera(state);
                 }}
@@ -1368,6 +1367,7 @@ export function App(): JSX.Element {
             </div>
           </section>
 
+          {pacific.surface}
           {!headShown && <CanvasStamp cursor={view.at} day={snapshot.archive?.from ?? null} />}
 
           {markSubject ? (

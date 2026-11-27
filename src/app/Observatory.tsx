@@ -69,6 +69,7 @@ function ObservatoryContent({
   explorePaths,
   tour,
   entry,
+  pacific,
 }: ObservatoryProps & { entry: ReturnType<typeof useSceneEntrances> }): JSX.Element {
   const { sun, tonight, floatDive, observations, skyCity, closeStory, landing, navigation } = views;
   const floatFromExplore = floatDive.active && observations.trigger === floatExploreTrigger;
@@ -303,7 +304,7 @@ function ObservatoryContent({
                 {solar && <SunCredits />}
                 {landing && (
                   <>
-                    <LandingStories />
+                    <LandingStories pacific={pacific} ready={ready} />
                     {entrances}
                   </>
                 )}

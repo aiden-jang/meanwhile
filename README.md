@@ -67,7 +67,12 @@ to Layers with the selected frame held.
 Tap a covered place and choose **Rewind radar** to step through recent scans with that place in view.
 **Copy radar link** shares the displayed frame while RainViewer still has it. **Back to live** returns to the latest scan.
 
-The landing feature and the Tonga marker on the globe or map follow the archived infrared scans to Honolulu.
+**Through the Pacific** starts on the landing globe. Drag down or use the depth slider to cross the
+illustrated waterline, then open the recorded temperature profile from Station ALOHA. Back retraces
+the descent and restores the viewpoint. The temperature and pressure come from the [19 December
+2024 Hawaiʻi Ocean Time-series cast](https://ftp.soest.hawaii.edu/hot/ctd/hot-355/h355a0203.ctd).
+
+The Tonga marker on the globe or map follows the archived infrared scans to Honolulu.
 Scrub the measured pressure to move the modeled wave, or open the station record to keep or share a minute.
 Back restores the projection and viewpoint where you started.
 

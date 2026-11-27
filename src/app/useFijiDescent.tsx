@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { fijiFocus } from "./FijiDescent";
+import { FijiDescent, fijiFocus } from "./FijiDescent";
 import type { useObservatory } from "./useObservatory";
+import type { CameraState } from "../globe/controls";
 import type { FlyTo } from "../globe/cameraTarget";
 
 export function useFijiDescent(
@@ -8,6 +9,7 @@ export function useFijiDescent(
   flat: boolean,
   stopTour: () => void,
   flyTo: { current: FlyTo },
+  readCamera: { current: () => CameraState },
 ) {
   const fiji = observatory.observing && observatory.depthFocus?.descent ? observatory.depthFocus : null;
   const [fijiClosing, setFijiClosing] = useState(false);
@@ -38,5 +40,17 @@ export function useFijiDescent(
     });
     flyTo.current(focus.lon, focus.lat, flat ? 2.42 : 1.84);
   }
-  return { fiji, fijiClosing, openFiji, backFromFiji };
+  const fijiStage = (fiji || fijiClosing) && (
+    <FijiDescent
+      depth={fijiClosing ? 0 : (fiji?.sweepKm ?? 0)}
+      closing={fijiClosing}
+      closed={!fiji}
+      onBack={backFromFiji}
+      map={flat}
+      setMap={observatory.observations.setMap}
+      readCamera={readCamera.current}
+      setDepth={(depth) => observatory.setDepthFocus(fijiFocus(depth))}
+    />
+  );
+  return { fiji, fijiClosing, openFiji, fijiStage };
 }

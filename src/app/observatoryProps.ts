@@ -6,6 +6,7 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import type { explorerEntrances } from "./useExplorerView";
 import type { PassageCamera } from "./tonga/passageSurface";
+import type { PacificEntry } from "./pacific/usePacificDescent";
 export interface ObservatoryProps {
   world: PassageCamera | null;
   explorer: {
@@ -48,6 +49,7 @@ export interface ObservatoryProps {
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   layerReadout: ReactNode;
+  pacific: PacificEntry;
   onFiji: (opener?: HTMLElement) => void;
   onScene: (scene: EarthScene, direct?: boolean) => void;
   onHome: () => void;

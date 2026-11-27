@@ -682,7 +682,15 @@ times stay pinned to geography. Recorded data and model output carry separate la
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.
 
-The landing feature and the geographic eruption marker frame the same infrared scans on the globe or map.
+Through the Pacific begins with the landing globe at the visitor’s current angle and zoom. Dragging
+connects the orbit to the illustrated waterline in both directions. The opening globe and the return
+use the same renderer. The foreground readout stays clear of the waterline and the recorded profile
+stays reachable on short phones. The preview, aerial, waterline, instrument and seafloor artwork are
+generated illustrations. The profile uses quality-flagged temperature samples from the 19 December
+2024 Station ALOHA cast. Displayed depth is estimated from pressure using the UNESCO conversion.
+Instrument Serif follows its bundled SIL Open Font License.
+
+The geographic eruption marker frames the archived infrared scans on the globe or map.
 The modeled wave leads to Honolulu, where the station trace unfolds from its geographic position.
 Dragging the trace changes the wave’s time while the camera holds. Back reverses the shot and
 restores the entry projection, camera and focus. Reduced motion opens the reading directly.

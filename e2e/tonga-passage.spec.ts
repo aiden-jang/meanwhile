@@ -65,8 +65,8 @@ for (const motion of ["reduce", "no-preference"] as const) {
 test("the Honolulu record can be scrubbed when satellite imagery cannot load", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.route(/\/infrared[^/]*\.webp(?:\?.*)?$/, (route) => route.abort());
-  await page.goto("/");
-  const feature = page.locator("#open-landing-tonga");
+  await page.goto("/#v=explore&p=map&at=-156,-4,1.33&layers=earthquakes");
+  const feature = page.getByRole("button", { name: "Follow Tonga’s shockwave" });
   await feature.click();
   const passage = page.getByRole("region", { name: "Tonga to Honolulu" });
   await expect(passage.getByRole("status")).toContainText("Satellite scans unavailable");

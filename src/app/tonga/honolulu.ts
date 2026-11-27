@@ -5,10 +5,9 @@ export const honolulu = archive.stations.find(({ id }) => id === "PHNL")!;
 export const honoluluTrigger = "inspect-honolulu-from-explore";
 
 export const eruptionMarker = "tonga-passage-marker";
-export const landingTonga = "open-landing-tonga";
 export const passageRecord = "tonga-passage-record";
 export function passageEntrance(trigger: string | null) {
-  return trigger === eruptionMarker || trigger === landingTonga;
+  return trigger === eruptionMarker;
 }
 
 export function honoluluReading(map: boolean): StoryMoment {

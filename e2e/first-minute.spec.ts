@@ -2,17 +2,21 @@ import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
 for (const width of [1440, 844, 320]) {
-  test(`the featured Tonga reading opens in one action at ${width}px`, async ({ page }) => {
+  test(`the Pacific descent keeps its globe and exact return at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 320 ? 568 : width === 844 ? 390 : 900 });
-    await page.emulateMedia({ reducedMotion: width === 320 ? "reduce" : "no-preference" });
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await installFeeds(page, { presentation: "fresh", empty: true });
-    await page.goto("/");
+    await page.addInitScript(() => localStorage.setItem("eif.landingRotation", "0"));
+    await page.goto("/#v=observe&at=-121,41,1.17");
     const canvas = page.locator("#globe-view canvas");
     const original = await canvas.elementHandle();
-    const feature = page.getByRole("button", { name: "Tonga’s shockwave", exact: true });
+    const pose = () => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("at"));
+    await expect.poll(pose).toBe("-121,41,1.17");
+    const feature = page.getByRole("button", { name: "Through the Pacific", exact: true });
+    const browse = page.getByRole("button", { name: "All stories", exact: true });
     await expect(feature).toBeInViewport({ ratio: 1 });
-    await expect(feature).toHaveAccessibleDescription("Scrub Honolulu’s pressure trace");
-    await expect(page.getByRole("button", { name: "All stories", exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(feature).toHaveAccessibleDescription("From orbit to the seafloor");
+    await expect(browse).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole("button", { name: "Follow nightfall", exact: true })).toHaveCount(0);
     if (width === 320) {
       const subjects = await page.getByRole("group", { name: "Explore by subject" }).boundingBox();
@@ -21,30 +25,36 @@ for (const width of [1440, 844, 320]) {
         footer!.y,
       );
     }
+    if (width === 1440) await page.emulateMedia({ reducedMotion: "no-preference" });
     await feature.click();
 
-    const passage = page.getByRole("region", { name: "Tonga to Honolulu" });
-    if (width !== 320) {
-      await expect(passage).toHaveAttribute("data-beat", "satellite", { timeout: 30000 });
-      await passage.getByRole("button", { name: "Skip to reading" }).click();
-    }
-    const sample = passage.getByRole("slider", { name: "Scrub Honolulu’s measured pressure" });
-    await expect(sample).toBeInViewport({ ratio: 1 });
-    await expect(sample).toHaveAttribute("aria-valuetext", "08:59 UTC · 1017.75 hPa");
-    await sample.press("ArrowRight");
-    await expect(sample).toHaveValue("540");
-    await passage.getByRole("button", { name: "Open Honolulu station record" }).click();
-    const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
-    const reading = story.getByRole("region", { name: "Honolulu pressure evidence" });
-    await expect(reading.getByRole("slider", { name: "Station pressure time" })).toHaveValue("540");
-    await expect(reading.getByRole("button", { name: "Follow the full story" })).toBeInViewport();
-    await story.getByRole("button", { name: "Back to Honolulu" }).click();
-    await expect(sample).toHaveValue("540");
-    expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
-    await passage.getByRole("button", { name: "Back", exact: true }).click();
+    const descent = page.getByRole("dialog", { name: "Through the Pacific" });
+    const depth = descent.getByRole("slider", { name: "Descent position" });
+    await expect(depth).toHaveValue("0");
+    await expect(depth).toBeInViewport({ ratio: 1 });
+    if (width === 1440) {
+      const stage = (await descent.boundingBox())!;
+      await page.mouse.move(950, 160);
+      await page.mouse.down();
+      await page.mouse.move(950, 160 + stage.height * 0.65 * 0.43, { steps: 8 });
+      await page.mouse.up();
+    } else await descent.getByRole("button", { name: "Waterline" }).click();
+    await expect(descent).toHaveAttribute("data-region", "Waterline");
+    await depth.press("End");
+    await expect(depth).toHaveValue("1000");
+    await descent.getByRole("button", { name: /Recorded profile/ }).click();
+    const profile = descent.getByRole("region", { name: "Station ALOHA" });
+    await expect(profile).toContainText("1.52 °C");
+    await expect(profile).toContainText("4,802 dbar");
+    await expect(profile).toBeInViewport({ ratio: 1 });
+    await expect.poll(pose).toBe("-121,41,1.17");
+    await descent.getByRole("button", { name: "Back", exact: true }).click();
     await expect(feature).toBeFocused();
-    await page.getByRole("button", { name: "All stories", exact: true }).click();
+    expect(await canvas.evaluate((node, previous) => node === previous, original)).toBe(true);
+    await expect.poll(pose).toBe("-121,41,1.17");
+    await browse.click();
     await expect(page.getByRole("region", { name: "Story catalogue" })).toBeVisible();
+    await expect(page.locator("#open-story-tonga")).toBeVisible();
   });
 }
 
