@@ -2,6 +2,7 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 import type { PacificEntry } from "./pacific/usePacificDescent";
 import waterline from "./pacific/pacific-thumbnail.webp";
 import "./landing-stories.css";
+import "./pacific/pacific.css";
 
 export function LandingStories({ pacific, ready }: { pacific: PacificEntry; ready: boolean }) {
   const navigation = useStoryNavigation();

@@ -19,7 +19,6 @@ import approach from "./approach.webp";
 import water from "./water.webp";
 import floor from "./floor.webp";
 import instrument from "./ctd.webp";
-import "./pacific.css";
 
 export async function preparePacificArt() {
   await Promise.all([
