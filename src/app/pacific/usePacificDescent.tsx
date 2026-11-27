@@ -8,7 +8,13 @@ import { sceneEntry } from "../continuity/sceneEntry";
 import { pacificId, pacificMoment, readPacificPosition, type PacificPosition } from "./pacificMoment";
 import type { PacificDescent as Descent } from "./PacificDescent";
 
-type Visit = { origin: CameraState; map: boolean; position: PacificPosition; Scene: typeof Descent };
+type Visit = {
+  origin: CameraState;
+  originMap: boolean;
+  map: boolean;
+  position: PacificPosition;
+  Scene: typeof Descent;
+};
 export interface PacificEntry {
   visible: boolean;
   loading: boolean;
@@ -25,6 +31,7 @@ export function usePacificDescent(
   linked?: StoryMoment,
 ) {
   const [visit, setVisit] = useState<Visit | null>(null);
+  const [returnMap, setReturnMap] = useState<boolean>();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const loading = useRef(false);
@@ -46,11 +53,11 @@ export function usePacificDescent(
       setFailed(false);
       setPending(true);
       try {
-        const { PacificDescent: Scene, preparePacificArt } = await import("./PacificDescent");
-        await preparePacificArt();
+        const { PacificDescent: Scene } = await import("./PacificDescent");
         if (entry?.id !== sceneEntry()?.id || surface !== world.current) return;
         progress.current = readPacificPosition(at);
-        setVisit({ origin, map: at?.map ?? map, position: progress.current, Scene });
+        setReturnMap(undefined);
+        setVisit({ origin, originMap: map, map: at?.map ?? map, position: progress.current, Scene });
       } catch {
         setFailed(true);
       } finally {
@@ -68,13 +75,14 @@ export function usePacificDescent(
 
   function restore(saved: Visit | null) {
     if (saved) progress.current = saved.position;
+    setReturnMap(undefined);
     setVisit(saved);
   }
   const current = () => (visit ? pacificMoment(progress.current, visit.map) : initialLink.current);
   return {
     active: pending || visit !== null,
     visible: visit !== null,
-    projection: visit?.map,
+    projection: visit ? (returnMap ?? visit.map) : undefined,
     loading: pending,
     status: failed ? "Couldn’t open. Try again." : pending ? "Opening the descent…" : "",
     current,
@@ -89,6 +97,10 @@ export function usePacificDescent(
         <visit.Scene
           world={world}
           origin={visit.origin}
+          originMap={visit.originMap}
+          map={returnMap ?? visit.map}
+          onReturnMap={setReturnMap}
+          onMap={(next) => setVisit((held) => (held && held.map !== next ? { ...held, map: next } : held))}
           initial={visit.position}
           current={current}
           onProgress={(position) => {

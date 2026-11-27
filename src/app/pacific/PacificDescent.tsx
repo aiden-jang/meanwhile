@@ -3,6 +3,9 @@ import type { CSSProperties, PointerEvent, RefObject } from "react";
 import type { StoryMoment } from "../observations/storyMoment";
 import type { WorldSubject } from "../continuity/worldSubject";
 import { PacificProfile } from "./PacificProfile";
+import { PacificSection } from "./PacificSection";
+import { attachPacificCast } from "./pacificCamera";
+import { StoryProjection } from "../observations/StoryProjection";
 import { descentDrag } from "../../globe/descentInput";
 import { useDescentScrub, useDescentWheel } from "../useDescentScrub";
 import { useMedia } from "../useNarrow";
@@ -17,22 +20,6 @@ import {
 import type { CameraState } from "../../globe/controls";
 import type { PassageCamera } from "../tonga/passageSurface";
 import { alohaReading, clamp, ease, mix } from "./aloha";
-import approach from "./approach.webp";
-import water from "./water.webp";
-import floor from "./floor.webp";
-import instrument from "./ctd.webp";
-
-export async function preparePacificArt() {
-  await Promise.all([
-    ...[approach, water, floor, instrument].map((url) => {
-      const image = new Image();
-      image.src = url;
-      return image.decode();
-    }),
-    document.fonts.load('400 80px "Instrument Serif"'),
-  ]);
-}
-
 const stops = [
   { name: "Orbit", position: 0 },
   { name: "Waterline", position: 435 },
@@ -40,25 +27,12 @@ const stops = [
   { name: "Seafloor", position: 1000 },
 ];
 
-function paintCamera(world: PassageCamera | null, origin: CameraState, progress: number) {
-  if (!world) return;
-  const route = ease(0, 0.26, progress);
-  const approach = ease(0, 0.36, progress);
-  const longitude = ((((alohaStation.lon - origin.lon) % 360) + 540) % 360) - 180;
-  world.controls.setView(
-    progress === 0
-      ? origin
-      : {
-          lon: origin.lon + longitude * route,
-          lat: mix(origin.lat, alohaStation.lat, route),
-          zoom: origin.zoom * (Math.max(origin.zoom, 5.6) / origin.zoom) ** approach,
-        },
-  );
-  world.wake();
-}
-
 export function PacificDescent({
   origin,
+  originMap,
+  map,
+  onMap,
+  onReturnMap,
   world,
   onBack,
   initial,
@@ -67,6 +41,10 @@ export function PacificDescent({
   onSurface,
 }: {
   origin: CameraState;
+  originMap: boolean;
+  map: boolean;
+  onMap: (map: boolean) => void;
+  onReturnMap: (map: boolean) => void;
   world: RefObject<PassageCamera>;
   onBack: () => void;
   initial: PacificPosition;
@@ -79,6 +57,7 @@ export function PacificDescent({
   const profile = useRef<HTMLButtonElement>(null);
   const closeProfile = useRef<HTMLButtonElement>(null);
   const motionFrame = useRef(0);
+  const cast = useRef<ReturnType<typeof attachPacificCast> | null>(null);
   const livePosition = useRef(initial.position);
   const exiting = useRef<"back" | "surface">();
   const gesture = useRef<{ id: number; y: number; start: number; height: number } | null>(null);
@@ -92,12 +71,6 @@ export function PacificDescent({
     if (!exiting.current) cancelAnimationFrame(motionFrame.current);
   });
   const p = position / 1000;
-  const aerial = ease(0.1, 0.27, p);
-  const seam = ease(0.29, 0.405, p);
-  const submerge = ease(0.438, 0.635, p);
-  const blue = ease(0.505, 0.73, p);
-  const seabed = ease(0.77, 0.98, p);
-  const passing = ease(0.535, 0.9, p);
   const under = position >= underwaterStart;
   const region =
     p < 0.15
@@ -113,19 +86,7 @@ export function PacificDescent({
   const valueText = under ? `${depth} m below sea level` : region;
   const visuals = {
     "--pacific-title-rise": ease(0.04, 0.39, p),
-    "--pacific-aerial": aerial,
-    "--pacific-aerial-rise": `${mix(-4, -16, aerial)}%`,
-    "--pacific-aerial-scale": mix(1.16, 1.39, aerial),
-    "--pacific-seam": seam,
-    "--pacific-water-rise": `${mix(9, -47, submerge)}%`,
-    "--pacific-water-scale": mix(1.19, 1.65, submerge),
-    "--pacific-blue": blue,
-    "--pacific-floor": seabed,
-    "--pacific-floor-rise": `${mix(13, -2, seabed)}%`,
-    "--pacific-floor-scale": mix(1.06, 1.2, seabed),
-    "--pacific-instrument": ease(0.54, 0.655, p) * (1 - ease(0.767, 0.92, p)),
-    "--pacific-instrument-rise": `${mix(34, -46, passing)}%`,
-    "--pacific-instrument-scale": mix(0.36, 1.4, passing),
+    "--pacific-address": ease(0.12, 0.41, p),
   } as CSSProperties;
 
   useLayoutEffect(() => {
@@ -133,9 +94,14 @@ export function PacificDescent({
     node?.showModal();
     if (initial.profile) closeProfile.current?.focus({ preventScroll: true });
     else back.current?.focus({ preventScroll: true });
-    paintCamera(world.current, origin, initial.position / 1000);
+    if (node && world.current) {
+      cast.current = attachPacificCast(world.current, node, origin);
+      cast.current.seek(initial.position);
+    }
     return () => {
       cancelAnimationFrame(motionFrame.current);
+      cast.current?.dispose();
+      cast.current = null;
       node?.close();
     };
   }, [initial, origin, world]);
@@ -146,8 +112,7 @@ export function PacificDescent({
     const profile = next >= underwaterStart && profileOpen;
     if (!exiting.current) onProgress({ position: livePosition.current, profile });
     if (next < underwaterStart && !exiting.current) setProfileOpen(false);
-    if (next < 370 && exiting.current !== "surface")
-      paintCamera(world.current, origin, livePosition.current / 1000);
+    cast.current?.seek(livePosition.current);
   }
 
   function animateTo(target: number, done?: () => void) {
@@ -174,6 +139,7 @@ export function PacificDescent({
     if (exiting.current) return;
     exiting.current = "back";
     setExit("back");
+    if (map !== originMap) onReturnMap(originMap);
     setProfileOpen(false);
     animateTo(0, onBack);
   }
@@ -182,9 +148,7 @@ export function PacificDescent({
     if (exiting.current || !world.current) return;
     exiting.current = "surface";
     setExit("surface");
-    const camera = world.current;
-    camera.controls.setView({ ...alohaStation, zoom: 1.85 });
-    camera.wake();
+    cast.current?.surface();
     const subject: WorldSubject = {
       point: alohaStation,
       from: pacificTitle,
@@ -224,7 +188,6 @@ export function PacificDescent({
       aria-labelledby="pacific-title"
       data-region={region}
       data-returning={returning || undefined}
-      data-surfacing={exit === "surface" || undefined}
       style={visuals}
       onPointerDownCapture={scrub.stop}
       onKeyDownCapture={scrub.stop}
@@ -235,20 +198,7 @@ export function PacificDescent({
         } else returnToGlobe();
       }}
     >
-      <div className="pacific-plates" aria-hidden="true">
-        <div className="pacific-aerial">
-          <img src={approach} alt="" />
-        </div>
-        <div className="pacific-water">
-          <img src={water} alt="" />
-        </div>
-        <div className="pacific-blue" />
-        <div className="pacific-seabed">
-          <img src={floor} alt="" />
-        </div>
-        <img className="pacific-instrument" src={instrument} alt="" />
-        <div className="pacific-vignette" />
-      </div>
+      <PacificSection />
       <div
         className="pacific-gesture"
         aria-hidden="true"
@@ -281,6 +231,13 @@ export function PacificDescent({
         </svg>
         Back
       </button>
+      <StoryProjection
+        map={map}
+        label="Pacific projection"
+        onMap={(next) => {
+          if (!returning) onMap(next);
+        }}
+      />
       <div className="pacific-title">
         <h2 id="pacific-title">
           Through the
@@ -291,7 +248,7 @@ export function PacificDescent({
       </div>
       {p >= 0.15 && (
         <div className="pacific-reading">
-          <p className="pacific-region">{region}</p>
+          <p className="pacific-region">{position === 1000 ? "Deepest sample" : region}</p>
           {under ? (
             <p className="pacific-depth">
               {depth}
@@ -311,7 +268,10 @@ export function PacificDescent({
                 if (!profileOpen) requestAnimationFrame(() => closeProfile.current?.focus());
               }}
             >
-              Recorded profile <span>{reading[1].toFixed(1)} °C</span>
+              Recorded profile
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M2 15h16M3 12l4-1 2-5 4-2 4-1" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
             </button>
           ) : null}
         </div>
@@ -339,7 +299,9 @@ export function PacificDescent({
                     ? `${gestureVerb} up to ascend`
                     : `${gestureVerb} to change depth`}
           </label>
-          <span>{p < 0.15 ? "North Pacific" : "Illustrated descent"}</span>
+          <span data-depth-scale="" hidden={!under}>
+            Depth scale
+          </span>
         </div>
         <input
           id="pacific-depth"

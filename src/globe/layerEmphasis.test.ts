@@ -51,5 +51,9 @@ it("eases the other layers without changing which data is visible", () => {
   expect(weight.value).toBe(0);
   expect(emphasis.radar()).toBe(0);
   expect(emphasis.stars()).toBe(0.4);
+  emphasis.step("radar", 0, true, 0);
+  expect(weight.value).toBe(0);
+  emphasis.step("radar", 0, true, 1);
+  expect(weight.value).toBe(0.42);
   regroup.dispose();
 });

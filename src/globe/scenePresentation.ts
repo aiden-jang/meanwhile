@@ -1,14 +1,13 @@
 import type { Group, Object3D, PerspectiveCamera, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
-import type { LayerEmphasis, MapLayerPresentation } from "../app/weatherLayers";
+import type { LayerEmphasis } from "../app/weatherLayers";
 import type { Controls } from "./controlsTypes";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
 import { createRadarReveal } from "./radarReveal";
 import { createRadarSurface } from "./radarSurface";
 import { createLocalSkyLight } from "./localSkyLight";
-import type { FloatDiveView } from "../app/float/floatPlayback";
 import { createFloatPresentation } from "./floatPresentation";
 import { hasMoonNight, type TonightPresentation } from "./skyPresentation";
 import { createShadowChase } from "./shadowChase";
@@ -21,23 +20,10 @@ import type { createLayerEmphasis } from "./layerEmphasis";
 import { createObservationPicking } from "./observationPicking";
 import { createFijiSectionCamera } from "./fijiSectionCamera";
 import { createDaylineLabel } from "./daylineLabel";
-export type GlobePresentation =
-  "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | MapLayerPresentation | null;
+import { isLocalView, type GlobePresentation, type PassageOptics } from "./presentationMode";
+export { isLocalView, isRecordedFlight, isShadowChase } from "./presentationMode";
+export type { GlobePresentation, PassageOptics } from "./presentationMode";
 export type { LunarDeparture, TonightPresentation } from "./skyPresentation";
-type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
-
-export function isLocalView(mode: GlobePresentation): mode is LocalView {
-  return mode !== null && typeof mode === "object" && "kind" in mode && mode.kind !== "map-layers";
-}
-
-export function isShadowChase(mode: GlobePresentation): boolean {
-  return (
-    isLocalView(mode) && mode.kind === "observation" && !!(mode.shadow || mode.sky?.sunCover !== undefined)
-  );
-}
-export function isRecordedFlight(mode: GlobePresentation): boolean {
-  return isLocalView(mode) && mode.kind === "observation" && !!mode.follow;
-}
 export function createScenePresentation(
   spin: Group,
   catalogue: Group,
@@ -63,6 +49,8 @@ export function createScenePresentation(
   let radarTarget: RadarView["target"] | undefined;
   let returnCamera: ReturnType<Controls["state"]> | undefined;
   const projection = { value: 0 };
+  const optics: PassageOptics = { magnification: 1 };
+  let framed = false;
   const fiji = createFijiSectionCamera(canvas, controls);
   const arrival = createObservationArrival(controls, canvas);
   const radarReveal = createRadarReveal(controls, canvas);
@@ -93,16 +81,17 @@ export function createScenePresentation(
   let liveFocus: LayerEmphasis | null = null;
 
   function step(dt: number, reduced: boolean, elapsed = dt, cameraMoving = true) {
-    dayline.value = showDayline ? lights.reveal.value : 0;
+    const live = optics.liveWeight ?? 1;
+    dayline.value = showDayline ? lights.reveal.value * live : 0;
     veil?.trace(controls.auroraSweep());
     const zoom = controls.state().zoom;
     const detail = Math.max(0, Math.min(1, (zoom - 1) / 1.7));
     const revealingRadar = radarReveal.step(elapsed, reduced);
-    const focusingLayers = emphasis.step(liveFocus, dt, reduced);
+    const focusingLayers = emphasis.step(liveFocus, dt, reduced, live);
     const radarArriving = radar?.step(
       dt,
       reduced,
-      overviewRadar ? (0.7 + 0.3 * detail) * emphasis.radar() : 1,
+      (overviewRadar ? (0.7 + 0.3 * detail) * emphasis.radar() : 1) * live,
       radarDeparting,
     );
     const diving = dive?.step(dt, reduced, elapsed);
@@ -113,7 +102,7 @@ export function createScenePresentation(
       observations?.step(
         stormArrival ? 0 : dt,
         reduced,
-        observationTarget ? 1 : emphasis.weather(),
+        (observationTarget ? 1 : emphasis.weather()) * live,
         elapsed,
       ) ?? false;
     const orbiting = orbital.step(dt, reduced);
@@ -331,6 +320,7 @@ export function createScenePresentation(
     dayline.value = showDayline ? lights.reveal.value : 0;
   }
   return {
+    optics,
     prepareRaster: (...params: Parameters<ReturnType<typeof createObservationLayer>["prepareRaster"]>) =>
       observationLayer().prepareRaster(...params),
     set,
@@ -353,7 +343,11 @@ export function createScenePresentation(
     renderMoon(renderer: WebGLRenderer, camera: PerspectiveCamera) {
       return skyView?.moonfall?.render(renderer, camera) ?? false;
     },
-    skyOpacity(camera: PerspectiveCamera, magnification = 1, section?: { value: number }) {
+    skyOpacity(camera: PerspectiveCamera, section?: { value: number }) {
+      if (framed) {
+        controls.apply();
+        camera.updateProjectionMatrix();
+      }
       fiji.reset(camera);
       projection.value = controls.morph();
       veil?.opacity(Math.max(0, 1 - 2 * projection.value));
@@ -363,7 +357,7 @@ export function createScenePresentation(
       const zoom =
         target ** (lensReveal * lensReveal * (3 - 2 * lensReveal)) *
         orbital.magnification(controls.magnification(), projection.value) *
-        magnification;
+        optics.magnification;
       if (camera.zoom !== zoom) {
         camera.zoom = zoom;
         camera.updateProjectionMatrix();
@@ -375,6 +369,8 @@ export function createScenePresentation(
         (observationTarget?.zoom ?? 1) / controls.state().zoom,
       );
       fiji.apply(camera, section);
+      framed = !!optics.frame;
+      optics.frame?.(camera, canvas);
       observations?.positionLens(canvas, controls);
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
       placeDayline(dayline.value);

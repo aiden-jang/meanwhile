@@ -15,7 +15,7 @@ export function useSceneHistory<T>({
   flyTo,
   lastWritten,
 }: {
-  route: { key: string; capture: () => T; restore: (value: T) => void };
+  route: { key: string; capture: () => T; restore: (value: T) => boolean };
   checkpoint: MutableRefObject<() => void>;
   readCamera: MutableRefObject<() => CameraState>;
   flyTo: MutableRefObject<FlyTo>;
@@ -67,9 +67,9 @@ export function useSceneHistory<T>({
       current.index = saved.index;
       current.restoring = true;
       lastWritten.current = location.hash;
-      flushSync(() => latest.current.restore(saved.value));
+      const restoredCamera = flushSync(() => latest.current.restore(saved.value));
       current.restoring = false;
-      flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
+      if (!restoredCamera) flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
       panelReturn.restore(saved);
     };
     window.addEventListener("popstate", back);

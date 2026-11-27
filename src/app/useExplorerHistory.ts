@@ -60,6 +60,8 @@ export function useExplorerHistory(
           if (changedDay) archive.backToLive();
           readings.restore(saved.reading);
         }
+        // The cast places the camera at its held depth as it mounts, including after a reverse exit.
+        return Boolean(saved.pacific);
       },
     },
     checkpoint: observatory.checkpoint,

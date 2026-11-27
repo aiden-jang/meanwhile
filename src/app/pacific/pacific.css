@@ -46,6 +46,9 @@
   opacity: 0 !important;
 }
 
+.frame[data-pacific] :is(.fiji-locator, .passage-locator) {
+  display: none;
+}
 .pacific-preview::backdrop {
   background: transparent;
 }
@@ -63,67 +66,9 @@
   cursor: default;
 }
 
-.pacific-plates,
-.pacific-plates > div,
 .pacific-gesture {
   position: absolute;
   inset: 0;
-}
-.pacific-plates {
-  pointer-events: none;
-  overflow: clip;
-}
-.pacific-plates > div {
-  overflow: clip;
-}
-.pacific-plates div > img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.pacific-aerial {
-  opacity: var(--pacific-aerial);
-  background: #101e2a;
-}
-.pacific-aerial img {
-  object-position: center 49%;
-  transform: translateY(var(--pacific-aerial-rise)) scale(var(--pacific-aerial-scale));
-}
-.pacific-water {
-  opacity: var(--pacific-seam);
-  background: #032235;
-}
-.pacific-water img {
-  object-position: center 42%;
-  transform: translateY(var(--pacific-water-rise)) scale(var(--pacific-water-scale));
-}
-.pacific-blue {
-  opacity: var(--pacific-blue);
-  background: radial-gradient(ellipse at 52% -33%, #123952, #030f19 55%, #020810 86%);
-}
-.pacific-seabed {
-  opacity: var(--pacific-floor);
-  background: #06141c;
-}
-.pacific-seabed img {
-  object-position: 57% 72%;
-  transform: translateY(var(--pacific-floor-rise)) scale(var(--pacific-floor-scale));
-}
-.pacific-instrument {
-  position: absolute;
-  inset: 1% 11% 0 auto;
-  height: min(76%, 640px);
-  max-width: 48%;
-  object-fit: contain;
-  opacity: var(--pacific-instrument);
-  transform: translateY(var(--pacific-instrument-rise)) scale(var(--pacific-instrument-scale));
-}
-.pacific-vignette {
-  background:
-    linear-gradient(90deg, rgb(3 11 17 / 84%), transparent 46%),
-    linear-gradient(0deg, rgb(3 11 17 / 97%), transparent 35%, transparent 83%, rgb(3 11 17 / 61%));
-}
-.pacific-gesture {
   touch-action: none;
   cursor: ns-resize;
 }
@@ -204,7 +149,7 @@
   font-size: 13px;
   pointer-events: auto;
 }
-.pacific-profile-button span,
+.pacific-profile-button svg,
 .pacific-sample {
   color: var(--pacific-flare);
   font-family: var(--font-mono);
@@ -219,8 +164,18 @@
   padding: 16px;
   max-height: calc(100dvh - var(--pacific-profile-bottom) - var(--pacific-top) - 52px);
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   background: #091b26;
   font-size: 13px;
+}
+.pacific-profile > .story-onward {
+  justify-self: start;
+}
+@media (max-height: 640px), (max-width: 680px) {
+  .pacific-profile > .story-onward {
+    grid-row: 4;
+  }
 }
 .pacific-profile header {
   display: flex;
@@ -332,24 +287,14 @@
   .pacific-reading {
     bottom: 142px;
   }
-  .pacific-vignette {
-    background: linear-gradient(0deg, #030b11, transparent 39%, transparent 65%, #030b11b5);
-  }
   .frame[data-pacific] .zone-canvas {
-    mask-image: linear-gradient(#000 72%, transparent);
+    mask-image: linear-gradient(to bottom, #000 90%, transparent);
   }
   .pacific-preview:has(.pacific-profile) :is(.pacific-title p, .pacific-reading) {
     visibility: hidden;
   }
   .pacific-cast-date span {
     display: inline;
-  }
-  .pacific-water img {
-    object-position: 54% 44%;
-  }
-  .pacific-instrument {
-    right: 1%;
-    max-width: 65%;
   }
 }
 @media (max-width: 650px) and (max-height: 690px) {
@@ -392,7 +337,7 @@
     bottom: 4px;
   }
   .pacific-reading {
-    bottom: 114px;
+    bottom: 133px;
   }
   .pacific-preview {
     --pacific-profile-bottom: 112px;

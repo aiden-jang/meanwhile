@@ -682,13 +682,13 @@ times stay pinned to geography. Recorded data and model output carry separate la
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.
 
-Through the Pacific begins with the landing globe at the visitor’s current angle and zoom. Dragging
-connects the orbit to the illustrated waterline in both directions. The opening globe and the return
-use the same renderer. The foreground readout stays clear of the waterline and the recorded profile
-stays reachable on short phones. The preview, aerial, waterline, instrument and seafloor artwork are
-generated illustrations. The profile uses quality-flagged temperature samples from the 19 December
-2024 Station ALOHA cast. Displayed depth is estimated from pressure using the UNESCO conversion.
-Instrument Serif follows its bundled SIL Open Font License.
+Through the Pacific begins at the visitor’s current angle and zoom. Scrolling or dragging brings the
+shared globe or map into a section along 158° W. Station ALOHA stays at the head of the cable as
+the instrument descends. Oʻahu and the GEBCO seafloor give the cast a geographic reference.
+The screen reports the vertical exaggeration. Back retraces the cast to the entry view.
+The instrument illustration follows quality-flagged temperature and pressure samples from the
+19 December 2024 Hawaiʻi Ocean Time-series cast. Displayed depth uses the UNESCO pressure conversion.
+Visitors can open the profile or change projection at the held depth.
 
 The geographic eruption marker frames the archived infrared scans on the globe or map.
 The modeled wave leads to Honolulu, where the station trace unfolds from its geographic position.

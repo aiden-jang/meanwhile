@@ -69,9 +69,10 @@ Tap a covered place and choose **Rewind radar** to step through recent scans wit
 
 In **Through the Pacific** and **Beneath Fiji**, scroll down over the scene to descend and up to rise.
 On a phone, drag the scene in the same direction. Both depth sliders also work with a keyboard.
-**Through the Pacific** starts on the landing globe. Cross the illustrated waterline to open
-the recorded temperature profile from Station ALOHA. Back retraces
-the descent and restores the viewpoint. The temperature and pressure come from the [19 December
+**Through the Pacific** follows a ship’s instrument down its cable at Station ALOHA, north of Oʻahu.
+Scroll to trace the measured water temperature against the regional seafloor. Switch between Globe
+and Map at any depth. Back retraces the cast and restores the starting viewpoint.
+The temperature and pressure come from the [19 December
 2024 Hawaiʻi Ocean Time-series cast](https://ftp.soest.hawaii.edu/hot/ctd/hot-355/h355a0203.ctd).
 
 The Tonga marker on the globe or map follows the archived infrared scans to Honolulu.

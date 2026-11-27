@@ -1272,7 +1272,7 @@ export function App(): JSX.Element {
           <section
             id="globe-view"
             tabIndex={-1}
-            aria-label={flat ? "Map" : "Globe"}
+            aria-label={(pacific.projection ?? flat) ? "Map" : "Globe"}
             className="zone-canvas relative bg-void"
           >
             <Suspense fallback={<GlobeLoading />}>

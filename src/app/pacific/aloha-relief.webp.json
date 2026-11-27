@@ -1,0 +1,5 @@
+{
+  "source": "GEBCO Bathymetric Compilation Group (2026), GEBCO_2026 Grid. https://doi.org/10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa",
+  "grid": "https://dap.ceda.ac.uk/thredds/dodsC/bodc/gebco/global/gebco_2026/ice_surface_elevation/netcdf/GEBCO_2026.nc.ascii?elevation%5B25920%3A3%3A27840%5D%5B4080%3A3%3A6480%5D",
+  "processing": "North-up hillshade of 801 by 641 elevation samples spaced 45 arc seconds. The southwest sample is 162.9979167 W, 18.0020833 N. Elevation tint and lighting are illustrative. aloha-transect.json contains bilinear grid elevations in meters. The meridian has 193 samples from 23.55 N to 21.15 N along 158 W. The south edge continues east at 21.15 N to 156.78 W in 97 samples."
+}

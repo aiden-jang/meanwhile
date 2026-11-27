@@ -37,8 +37,11 @@ export const profileLine = profile
   .map(([pressure, temperature]) => profilePoint(pressure, temperature).join(","))
   .join(" ");
 
+export const castTrace = profile.map(([pressure, temperature]) => [temperature, depthAtPressure(pressure)]);
+
 export function alohaReading(position: number) {
   const pressure = deepestPressure * clamp((position - underwaterStart) / (1000 - underwaterStart)) ** 1.42;
-  const depth = formatReading.format(Math.round(depthAtPressure(pressure) / 10) * 10);
-  return { reading: readingAt(pressure), depth };
+  const meters = depthAtPressure(pressure);
+  const depth = formatReading.format(Math.round(meters / 10) * 10);
+  return { reading: readingAt(pressure), depth, meters };
 }

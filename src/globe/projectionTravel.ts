@@ -1,4 +1,5 @@
 interface ProjectionScene {
+  passageWorld?: { optics: { section?: boolean } };
   setMorph: (value: number) => void;
   cutawayOpen: () => boolean;
   controls: { setMorph: (value: number) => void; framingReady: () => boolean };
@@ -16,9 +17,10 @@ export function createProjectionTravel(scene: ProjectionScene, flat: boolean, se
 
   return (dt: number, flat: boolean, section: boolean, reduced: boolean): boolean => {
     const target = Number(flat);
-    // Fiji straddles the unfolding map's seam. Register both sides of the story handoff locally.
-    const registered = section || inSection;
-    inSection = section;
+    // A local section must stay over its coordinates while the world changes projection.
+    const local = section || !!scene.passageWorld?.optics.section;
+    const registered = local || inSection;
+    inSection = local;
     if (progress === target) return false;
     if (registered || reduced) progress = target;
     else if (!flat || (!scene.cutawayOpen() && scene.controls.framingReady())) {

@@ -2,7 +2,7 @@ import { createEarthBasemap, type SurfaceView } from "./earthBasemap";
 import { createRenderResolution } from "./renderResolution";
 import { DEFAULT_CAMERA } from "./framing";
 import { createNightSurface } from "./nightSurface";
-import { createScenePresentation, type GlobePresentation } from "./scenePresentation";
+import { createScenePresentation, type GlobePresentation, type PassageOptics } from "./scenePresentation";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createEventPresentation } from "./eventPresentation";
@@ -101,7 +101,7 @@ const FOV = 32;
 /** Fraction of the smaller viewport dimension the globe fills. */
 
 export interface Globe {
-  passageWorld: { spin: Group; morph: { value: number }; optics: { magnification: number } };
+  passageWorld: { spin: Group; morph: { value: number }; optics: PassageOptics };
   resize: () => void;
   foldCurtain: (complete: () => void) => boolean;
   render: (full?: boolean, view?: SurfaceView) => void;
@@ -367,7 +367,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
   }
   const regroup = createRegroup(events.object);
   catalogue.add(regroup.object);
-  const optics = { magnification: 1 };
+  const { optics } = presentation;
   return {
     passageWorld: { spin, morph, optics },
     resize,
@@ -524,7 +524,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
         aimSun(at);
       }
       const section = view?.cutaway?.descent ? atlas.fijiRegistration : undefined;
-      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, optics.magnification, section);
+      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, section);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       starfield.setOpacity(skyOpacity, emphasis.stars());
       moon.setOpacity(presentation.orbitalMoon() ? 0 : 1 - morph.value, presentation.localMoon());

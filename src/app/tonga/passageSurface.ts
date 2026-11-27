@@ -1,6 +1,7 @@
 import { CanvasTexture, LinearFilter, Mesh, ShaderMaterial, SphereGeometry, Texture, Vector2 } from "three";
 import type { Group } from "three";
 import type { Controls } from "../../globe/controlsTypes";
+import type { PassageOptics } from "../../globe/scenePresentation";
 import { attachLonLat, MORPH_GLSL, SPHERE_PHI_START } from "../../globe/morph";
 import { ORIGIN, sprite, infrared, latestScan, waveAngle } from "./tongaTimeline";
 import scanUrl from "./infrared.webp?url";
@@ -8,7 +9,7 @@ import scanUrl from "./infrared.webp?url";
 export interface PassageCamera {
   spin: Group;
   morph: { value: number };
-  optics: { magnification: number };
+  optics: PassageOptics;
   controls: Controls;
   afterRender: Set<() => void>;
   wake: () => void;

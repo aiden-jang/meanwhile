@@ -94,6 +94,51 @@ test("ALOHA carries a recorded profile into Explore and returns to the exact sam
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
+test("the Pacific cast stays registered to Station ALOHA across projections and browser history", async ({
+  page,
+}) => {
+  await page.goto("/#v=observe&at=60,-23,1.32");
+  const launch = page.getByRole("button", { name: "Through the Pacific", exact: true });
+  await launch.click();
+  const story = page.getByRole("dialog", { name: "Through the Pacific" });
+  const slider = story.getByRole("slider");
+  const pin = story.locator("[data-station] circle").first();
+  const instrument = story.locator("[data-package] image");
+  const projection = story.getByRole("group", { name: "Pacific projection" });
+  const height = async () => (await instrument.boundingBox())!.y;
+  await story.getByRole("button", { name: "Waterline", exact: true }).click();
+  await expect(pin).toBeInViewport({ ratio: 1 });
+  await expect(story.locator("[data-station] text")).toBeInViewport({ ratio: 1 });
+  const surface = await height();
+  await story.getByRole("button", { name: "Deep ocean", exact: true }).click();
+  await expect.poll(height).toBeGreaterThan(surface + 15);
+  const original = (await pin.boundingBox())!;
+  await projection.getByRole("button", { name: "Map" }).click();
+  await expect(world(page)).toHaveAttribute("aria-label", "Map");
+  await expect(slider).toHaveValue("754");
+  expect((await projection.boundingBox())!.height).toBeLessThan(62);
+  await expect(story.locator("[data-island] text")).toBeInViewport({ ratio: 1 });
+  await expect
+    .poll(async () => {
+      const mapPin = (await pin.boundingBox())!;
+      return Math.hypot(original.x - mapPin.x, original.y - mapPin.y);
+    })
+    .toBeLessThan(2);
+  await slider.press("ArrowLeft");
+  await expect(slider).toHaveValue("753");
+  await story.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(launch).toBeFocused();
+  await expect(world(page)).toHaveAttribute("aria-label", "Globe");
+  await expect.poll(() => pose(page)).toBe("60,-23,1.32");
+  await page.goForward();
+  await expect(slider).toHaveValue("753");
+  await expect(world(page)).toHaveAttribute("aria-label", "Map");
+  await expect(pin).toBeInViewport({ ratio: 1 });
+  await projection.getByRole("button", { name: "Globe" }).click();
+  await expect(story.locator(".pacific-section")).toHaveAttribute("data-located", "");
+  await expect(story.locator("[data-island] text")).toBeVisible();
+});
+
 test("Honolulu separates the recorded pressure from Explore and restores the minute and map", async ({
   page,
 }) => {

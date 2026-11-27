@@ -75,9 +75,19 @@ export function PacificProfile({
         <SaveVisit />
         <ShareMoment current={current} label="Share reading" />
       </div>
-      <a href={source} target="_blank" rel="noreferrer">
-        University of Hawaiʻi cast data
-      </a>
+      <details>
+        <summary>Data sources</summary>
+        <a href={source} target="_blank" rel="noreferrer">
+          University of Hawaiʻi cast data
+        </a>
+        <a
+          href="https://doi.org/10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GEBCO seafloor relief
+        </a>
+      </details>
     </section>
   );
 }
