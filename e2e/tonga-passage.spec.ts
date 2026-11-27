@@ -34,12 +34,29 @@ for (const motion of ["reduce", "no-preference"] as const) {
     await marker.click();
     const passage = page.getByRole("region", { name: "Tonga to Honolulu" });
     await expect(passage).toHaveAttribute("data-beat", "pressure");
+    const originClearsReading = () =>
+      passage.evaluate((panel) => {
+        const origin = panel.querySelector<HTMLElement>(".passage-origin")!;
+        const text = document.createRange();
+        text.selectNodeContents(origin);
+        const label = text.getBoundingClientRect();
+        const card = panel.querySelector(".passage-reading")!.getBoundingClientRect();
+        return (
+          Number(getComputedStyle(origin).opacity) < 0.02 ||
+          label.right <= card.left ||
+          label.left >= card.right ||
+          label.bottom <= card.top ||
+          label.top >= card.bottom
+        );
+      });
+    await expect.poll(originClearsReading).toBe(true);
     const sample = passage.getByRole("slider");
     await sample.press("End");
     await sample.press("ArrowLeft");
     await expect(passage.locator(".passage-clock")).toHaveText("09:53 UTC");
     await passage.getByRole("button", { name: "Globe", exact: true }).click();
     await expect(world).toHaveAttribute("aria-label", "Globe");
+    await expect.poll(originClearsReading).toBe(true);
     await expect(sample).toHaveValue("593");
     await sample.press("Home");
     await expect(passage).toHaveAttribute("data-minute", "495");

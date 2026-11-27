@@ -76,17 +76,23 @@ export function attachPassage(
   const surface = createPassageSurface(camera);
   let trackBounds = track.getBoundingClientRect(),
     bounds = stage.getBoundingClientRect();
+  let readingBounds = readout.getBoundingClientRect();
+  let originWidth = epicentre.offsetWidth;
   let touchX: number | undefined,
     touchY: number | undefined,
     lastT = -1;
   const measure = () => {
     bounds = stage.getBoundingClientRect();
     trackBounds = track.getBoundingClientRect();
+    readingBounds = readout.getBoundingClientRect();
+    originWidth = epicentre.offsetWidth;
     if (elapsed === DURATION) draw(elapsed, true);
   };
   const observer = new ResizeObserver(measure);
   observer.observe(stage);
   observer.observe(track);
+  observer.observe(readout);
+  observer.observe(epicentre);
   const setOpacity = (el: Element, x: number) => {
     (el as HTMLElement).style.opacity = String(Math.max(0, x));
   };
@@ -155,15 +161,22 @@ export function attachPassage(
     stage.style.setProperty("--trace-reveal", state.trace.toFixed(3));
     setOpacity(caption, state.scanCaption);
     setOpacity(waveCaption, state.waveCaption);
-    setOpacity(
-      readout,
-      depart ? depart.state.trace * (1 - between(depart.time, 0, 0.22)) : between(t, 7.36, 8.05),
-    );
+    const readingOpacity = depart
+      ? depart.state.trace * (1 - between(depart.time, 0, 0.22))
+      : between(t, 7.36, 8.05);
+    setOpacity(readout, readingOpacity);
     const utc = timeLabel(state.minute);
     const at = infrared[latestScan(infrared, state.minute)]!;
     scanClock.textContent = timeLabel(at.minute) + " UTC";
     waveClock.textContent = utc + " UTC";
-    label(epicentre, source, between(t, 5.45, 6.4) * (depart ? 1 - between(depart.time, 0.15, 0.8) : 1));
+    const originBehindReading =
+      source &&
+      source.x + originWidth >= readingBounds.left - 8 &&
+      source.x <= readingBounds.right + 8 &&
+      source.y >= readingBounds.top - 12 &&
+      source.y <= readingBounds.bottom + 12;
+    const originOpacity = between(t, 5.45, 6.4) * (depart ? 1 - between(depart.time, 0.15, 0.8) : 1);
+    label(epicentre, source, originOpacity * (originBehindReading ? 1 - readingOpacity : 1));
     label(sensor, station, between(t, 6.05, 6.83) * (depart ? 1 - between(depart.time, 0.16, 0.72) : 1));
     sensor.toggleAttribute("data-left", !!station && station.x > innerWidth - 97);
     sensor.disabled = t < 6.05 || closing;
