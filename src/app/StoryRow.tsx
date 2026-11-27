@@ -34,7 +34,7 @@ export function StoryRow({
         {story.title}
       </button>
       <small id={`${buttonId}-note`}>
-        {caption ? (
+        {caption && caption !== story.summary ? (
           <>
             <span className="story-promise">{unavailable ?? caption}</span>
             {!unavailable && <span className="sr-only">{story.summary}</span>}

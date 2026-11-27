@@ -215,7 +215,9 @@ function NearbyReports({
     .slice(0, 4);
   return (
     <>
-      {(!compact || rows.length > 0) && <p>Within 500 km · selected layers and time window</p>}
+      {(!compact || rows.length > 0) && (
+        <p>Within 500 km · selected layers and time window{!compact && ". Available reports only."}</p>
+      )}
       {rows.length > 0 ? (
         <>
           <p>
