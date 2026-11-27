@@ -74,7 +74,9 @@ for (const { width, height } of [
     const depthShortcut = subjects.getByRole("button", { name: "Below the Surface", exact: true });
     await depthShortcut.click();
     const fiji = page.getByRole("region", { name: "Beneath Fiji", exact: true });
-    await expect(fiji.getByRole("heading", { name: "Fiji", exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(fiji.getByRole("heading", { name: "Beneath Fiji", exact: true })).toBeInViewport({
+      ratio: 1,
+    });
     const depth = fiji.getByRole("slider", { name: "Descend beneath the waterline" });
     await expect(depth).toBeInViewport({ ratio: 1 });
     await depth.press("End");
