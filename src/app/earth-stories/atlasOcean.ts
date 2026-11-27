@@ -90,7 +90,8 @@ export async function aralStory(): Promise<EarthStoryData> {
     basins: ShorelineBasin[];
     frames: { year: number; image: string; missing: number; basins: BasinReadings }[];
   }>("aral");
-  const frames = data.frames.map((f): StoryFrame => ({
+  const scrubImages = data.frames.map((frame) => atlasImage(frame.image));
+  const frames = data.frames.map((f, i): StoryFrame => ({
     at: date(`${f.year}-06-01`),
     timeLabel: `${f.year} · annual water classification`,
     dateTime: String(f.year),
@@ -99,11 +100,12 @@ export async function aralStory(): Promise<EarthStoryData> {
         ? "North and south are largely separated"
         : "The early water boundary stays in place as the sea retreats",
     basins: f.basins,
-    raster: { url: atlasImage(f.image), bounds: data.bounds },
+    raster: { url: scrubImages[i]!, bounds: data.bounds },
     measurements: [{ label: "Missing observations inside reference", value: `${f.missing}%` }],
   }));
   return {
     frames,
+    scrubImages,
     target: { lon: 59.7, lat: 45.35, zoom: 2.2 },
     lens: { globe: 5.8, map: 11.4 },
     basins: data.basins,

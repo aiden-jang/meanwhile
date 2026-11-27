@@ -89,7 +89,7 @@ export function StoryPlayer({
   const index = Math.min(data.frames.length - 1, Math.floor(clock.position));
   const current = data.frames[index]!;
   const requested = useMemo(() => data.geometry?.(current) ?? current, [data, current]);
-  const image = useObservationImage(requested.raster?.url, id);
+  const image = useObservationImage(requested.raster?.url, id, data.scrubImages);
   const bloom = useBloomComparison({
     enabled: id === "bloom",
     frame: requested,

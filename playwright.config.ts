@@ -56,6 +56,7 @@ export default defineConfig({
             "**/story-recovery.spec.ts",
             "**/story-curation.spec.ts",
             "**/survey-sections.spec.ts",
+            "**/landmark-readings.spec.ts",
             "**/landmark-return.spec.ts",
           ],
           grepInvert: /@dev/,

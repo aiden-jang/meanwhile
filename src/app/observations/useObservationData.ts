@@ -77,7 +77,7 @@ export function useObservationData(source: ObservationSource, option: string, re
   return { ...state, retry: retrySource };
 }
 
-export function useObservationImage(url: string | undefined, sequence?: string) {
+export function useObservationImage(url: string | undefined, sequence?: string, prepare?: readonly string[]) {
   const [revision, setRevision] = useState(0);
   const [image, setImage] = useState<{
     url: string;
@@ -85,6 +85,30 @@ export function useObservationImage(url: string | undefined, sequence?: string) 
     last?: { sequence: string; element: HTMLImageElement };
   } | null>(null);
   const cache = useRef(new Map<string, HTMLImageElement>());
+  const hasFirstFrame = sequence !== undefined && image?.last?.sequence === sequence;
+  useEffect(() => {
+    if (!prepare || !hasFirstFrame) return;
+    // Keep the small shoreline archive in memory while open. A fast drag can cross several years
+    // within one network round trip, and the label and shoreline must advance together.
+    const store = cache.current;
+    const pending = new Map<string, HTMLImageElement>();
+    for (const src of prepare) {
+      if (store.has(src)) continue;
+      const frame = new Image();
+      frame.fetchPriority = "low";
+      frame.decoding = "async";
+      frame.onload = () => store.set(src, frame);
+      pending.set(src, frame);
+      frame.src = src;
+    }
+    return () => {
+      for (const [src, frame] of pending) {
+        frame.onload = null;
+        if (!frame.complete) frame.removeAttribute("src");
+        if (store.get(src) === frame) store.delete(src);
+      }
+    };
+  }, [prepare, hasFirstFrame]);
   useEffect(() => {
     if (!url || cache.current.has(url)) return;
     const element = new Image();
@@ -96,7 +120,8 @@ export function useObservationImage(url: string | undefined, sequence?: string) 
     const timeout = window.setTimeout(failed, 10_000);
     element.onload = () => {
       window.clearTimeout(timeout);
-      if (cache.current.size >= 8) cache.current.delete(cache.current.keys().next().value!);
+      if (cache.current.size >= Math.max(8, prepare?.length ?? 0) && !cache.current.has(url))
+        cache.current.delete(cache.current.keys().next().value!);
       cache.current.set(url, element);
       setImage({ url, failed: false, ...(sequence !== undefined ? { last: { sequence, element } } : {}) });
     };
@@ -107,7 +132,7 @@ export function useObservationImage(url: string | undefined, sequence?: string) 
       element.onload = element.onerror = null;
       if (!element.complete) element.removeAttribute("src");
     };
-  }, [url, sequence, revision]);
+  }, [url, sequence, revision, prepare]);
   const loaded = url ? cache.current.get(url) : undefined;
   const hold =
     url && sequence !== undefined && image?.last?.sequence === sequence ? image.last.element : null;

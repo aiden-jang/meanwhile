@@ -59,7 +59,8 @@ export function GroundTransect({
       place(g, p ?? null);
       const el = g?.querySelector("text");
       if (p && el) {
-        const left = p.x > frame.width - 86;
+        const otherEnd = projected[n === 0 ? projected.length - 1 : 0];
+        const left = p.x > frame.width - 86 || (p.x >= 86 && otherEnd && p.x < otherEnd.x);
         attr(el, "text-anchor", left ? "end" : "start");
         attr(el, "x", left ? "-6" : "6");
       }

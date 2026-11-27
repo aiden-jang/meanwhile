@@ -25,6 +25,7 @@ export interface StorySite {
 }
 export interface EarthStoryData {
   frames: readonly StoryFrame[];
+  scrubImages?: readonly string[];
   openingAt?: number;
   playbackDuration?: number;
   pace?: (position: number) => number;
