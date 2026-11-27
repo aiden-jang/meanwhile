@@ -34,6 +34,9 @@
   grid-area: auto;
   inset: var(--head-h) 0 0;
 }
+.frame[data-fiji] canvas[data-engine] {
+  cursor: ns-resize;
+}
 .frame[data-fiji] :is(.canvas-information, .camera-recenter, .creator-credit) {
   display: none;
 }

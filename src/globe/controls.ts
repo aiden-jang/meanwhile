@@ -1,4 +1,5 @@
 import { attachCameraInput } from "./cameraInput";
+import type { ScrubDepth } from "./descentInput";
 import { createCameraGuidance } from "./cameraGuidance";
 import { createAuroraFlight } from "./auroraFlight";
 import { createLocalSkyCamera } from "./localSkyCamera";
@@ -65,6 +66,7 @@ export function createControls(
   const aurora = createAuroraFlight(camera);
   let holdOverflight = false;
   const dive = createDepthDive(camera);
+  let depthScrub: ScrubDepth | null = null;
   const flightPose = { lon, lat, zoom },
     flightVelocity = { lon: 0, lat: 0, zoom: 0 };
   const intended = (): CameraState => (target && !target.intro ? target : { lon, lat, zoom });
@@ -167,19 +169,18 @@ export function createControls(
     const base = intended();
     const nextZoom = clampZoom(base.zoom * factor);
 
-    const wasLon = lon;
-    const wasLat = lat;
-    const wasZoom = zoom;
+    const original = state();
     const wasLens = camera.zoom;
+    const lensScale = wasLens / distance.magnification(original.zoom, morph);
     lon = base.lon;
     lat = base.lat;
     zoom = base.zoom;
-    camera.zoom = (wasLens * distance.magnification(zoom, morph)) / distance.magnification(wasZoom, morph);
+    camera.zoom = lensScale * distance.magnification(zoom, morph);
     camera.updateProjectionMatrix();
     apply();
     const before = anchored ? pick(clientX, clientY) : null;
     zoom = nextZoom;
-    camera.zoom = (wasLens * distance.magnification(zoom, morph)) / distance.magnification(wasZoom, morph);
+    camera.zoom = lensScale * distance.magnification(zoom, morph);
     camera.updateProjectionMatrix();
     apply();
 
@@ -203,9 +204,7 @@ export function createControls(
       return;
     }
 
-    lon = wasLon;
-    lat = wasLat;
-    zoom = wasZoom;
+    ({ lon, lat, zoom } = original);
     camera.zoom = wasLens;
     camera.updateProjectionMatrix();
     apply();
@@ -215,6 +214,7 @@ export function createControls(
   const attach = (onChange: () => void): (() => void) =>
     attachCameraInput(canvas, {
       blocked: horizon.active,
+      depthScrub: () => depthScrub,
       grab: () => {
         vLon = vLat = 0;
       },
@@ -313,6 +313,9 @@ export function createControls(
 
   return {
     attach,
+    setDepthScrub: (scrub) => {
+      depthScrub = scrub;
+    },
     step,
     apply,
     pick,

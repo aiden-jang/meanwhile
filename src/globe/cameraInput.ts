@@ -1,9 +1,12 @@
+import { descentDrag, scrollDescent, type ScrubDepth } from "./descentInput";
+
 interface Point {
   x: number;
   y: number;
 }
 interface CameraInput {
   blocked: () => boolean;
+  depthScrub: () => ScrubDepth | null;
   grab: () => void;
   begin: () => void;
   drag: (from: Point, to: Point, velocityFrom: Point, elapsed: number) => void;
@@ -18,6 +21,7 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
   const pointers = new Map<number, Point>();
   let start: Point | null = null;
   let dragging = false;
+  let draggingDepth = false;
   let lastMove = { x: 0, y: 0, t: 0 };
   let pinchDist = 0;
   const spread = () => {
@@ -36,10 +40,12 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
     if (pointers.size === 1) {
       start = point;
       dragging = false;
+      draggingDepth = false;
     }
     input.grab();
     lastMove = { ...point, t: performance.now() };
     if (pointers.size === 2) {
+      draggingDepth = false;
       pinchDist = spread();
       input.begin();
       dragging = true;
@@ -60,10 +66,17 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
       }
       return;
     }
+    let dy = point.y - prev.y;
     if (!dragging) {
       if (!start || Math.hypot(point.x - start.x, point.y - start.y) <= 5) return;
-      input.begin();
+      dy = point.y - start.y;
+      draggingDepth = !!input.depthScrub() && Math.abs(dy) > Math.abs(point.x - start.x);
+      if (!draggingDepth) input.begin();
       dragging = true;
+    }
+    if (draggingDepth) {
+      input.depthScrub()?.(descentDrag(dy, canvas.clientHeight), "drag");
+      return;
     }
     const t = performance.now();
     const elapsed = (t - lastMove.t) / 1000;
@@ -79,6 +92,8 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
   };
   const wheel = (event: WheelEvent) => {
     if (input.blocked()) return;
+    const scrub = input.depthScrub();
+    if (scrub && scrollDescent(event, canvas.clientHeight, scrub)) return;
     event.preventDefault();
     input.zoom(Math.exp(-event.deltaY * 0.0011), event.clientX, event.clientY);
     input.change();

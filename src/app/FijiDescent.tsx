@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { StoryOnward } from "./continuity/StoryOnward";
 import { depthRecords, type DepthRecord } from "../data/depthRecords";
-import type { CameraState } from "../globe/controls";
+import type { CameraState, Controls } from "../globe/controls";
+import { useDescentScrub, useDescentWheel } from "./useDescentScrub";
+import { useMedia } from "./useNarrow";
 import { StoryProjection } from "./observations/StoryProjection";
 import "./fiji-descent.css";
 
@@ -36,6 +38,7 @@ export function FijiDescent({
   map,
   setMap,
   readCamera,
+  controls,
   setDepth,
   closing,
   closed,
@@ -46,6 +49,7 @@ export function FijiDescent({
   map: boolean;
   setMap: (map: boolean) => void;
   readCamera: () => CameraState;
+  controls: Controls | undefined;
   setDepth: (depth: number) => void;
   closing: boolean;
   closed: boolean;
@@ -59,6 +63,15 @@ export function FijiDescent({
   const back = useRef<HTMLButtonElement>(null);
   const reached = depth >= august.depthKm;
   const record = depth >= september.depthKm ? september : august;
+  const gesture = useMedia("(pointer: coarse)") ? "Drag" : "Scroll";
+  const scrub = useDescentScrub(depth, september.depthKm, 10, !closing && !closed, setDepth);
+  useDescentWheel(stage, scrub.move);
+
+  useLayoutEffect(() => {
+    if (!controls || closed) return;
+    controls.setDepthScrub(scrub.move);
+    return () => controls.setDepthScrub(null);
+  }, [controls, closed, scrub]);
 
   useLayoutEffect(() => {
     if (!closed && !resuming) back.current?.focus({ preventScroll: true });
@@ -101,6 +114,8 @@ export function FijiDescent({
       data-closed={closed || undefined}
       aria-hidden={closed || undefined}
       aria-label="Beneath Fiji"
+      onPointerDownCapture={scrub.stop}
+      onKeyDownCapture={scrub.stop}
       data-arrived={arrived || undefined}
       data-returning={closing || undefined}
       data-reached={reached || undefined}
@@ -171,7 +186,7 @@ export function FijiDescent({
           <div className="fiji-reading">
             <p className="fiji-caption">
               {depth === 0
-                ? "Drag down to the quake"
+                ? `${gesture} down to the quake`
                 : depth < august.depthKm
                   ? "Depth below sea level"
                   : "Recorded earthquake"}

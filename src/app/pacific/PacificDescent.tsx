@@ -3,6 +3,9 @@ import type { CSSProperties, PointerEvent, RefObject } from "react";
 import type { StoryMoment } from "../observations/storyMoment";
 import type { WorldSubject } from "../continuity/worldSubject";
 import { PacificProfile } from "./PacificProfile";
+import { descentDrag } from "../../globe/descentInput";
+import { useDescentScrub, useDescentWheel } from "../useDescentScrub";
+import { useMedia } from "../useNarrow";
 import {
   alohaStation,
   castAt,
@@ -78,11 +81,16 @@ export function PacificDescent({
   const motionFrame = useRef(0);
   const livePosition = useRef(initial.position);
   const exiting = useRef<"back" | "surface">();
-  const gesture = useRef<{ id: number; y: number; start: number; travel: number } | null>(null);
+  const gesture = useRef<{ id: number; y: number; start: number; height: number } | null>(null);
   const [position, setPosition] = useState(initial.position);
   const [exit, setExit] = useState<"back" | "surface">();
   const [profileOpen, setProfileOpen] = useState(initial.profile);
   const returning = exit !== undefined;
+  const gestureVerb = useMedia("(pointer: coarse)") ? "Drag" : "Scroll";
+  const scrub = useDescentScrub(position, 1000, 1, !returning, seek);
+  useDescentWheel(dialog, scrub.move, () => {
+    if (!exiting.current) cancelAnimationFrame(motionFrame.current);
+  });
   const p = position / 1000;
   const aerial = ease(0.1, 0.27, p);
   const seam = ease(0.29, 0.405, p);
@@ -203,7 +211,7 @@ export function PacificDescent({
   function drag(event: PointerEvent<HTMLDivElement>) {
     const held = gesture.current;
     if (!held || held.id !== event.pointerId || returning) return;
-    seek(held.start + ((event.clientY - held.y) / held.travel) * 1000);
+    seek(held.start + descentDrag(event.clientY - held.y, held.height) * 1000);
   }
   function release(event: PointerEvent<HTMLDivElement>) {
     if (gesture.current?.id === event.pointerId) gesture.current = null;
@@ -218,6 +226,8 @@ export function PacificDescent({
       data-returning={returning || undefined}
       data-surfacing={exit === "surface" || undefined}
       style={visuals}
+      onPointerDownCapture={scrub.stop}
+      onKeyDownCapture={scrub.stop}
       onCancel={(event) => {
         event.preventDefault();
         if (profileOpen) {
@@ -250,7 +260,7 @@ export function PacificDescent({
             id: event.pointerId,
             y: event.clientY,
             start: livePosition.current,
-            travel: height * 0.65,
+            height,
           };
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
@@ -324,10 +334,10 @@ export function PacificDescent({
               : returning
                 ? "Returning to your globe"
                 : position === 0
-                  ? "Drag down to descend"
+                  ? `${gestureVerb} down to descend`
                   : position === 1000
-                    ? "Drag up to ascend"
-                    : "Drag to change depth"}
+                    ? `${gestureVerb} up to ascend`
+                    : `${gestureVerb} to change depth`}
           </label>
           <span>{p < 0.15 ? "North Pacific" : "Illustrated descent"}</span>
         </div>

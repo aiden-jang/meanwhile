@@ -1,9 +1,30 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
 const world = (page: Page) => page.locator("#globe-view");
 const context = (page: Page) => page.getByRole("region", { name: /^From / });
 const pose = (page: Page) => page.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("at"));
+
+async function scrubScene(page: Page, surface: Locator, depth: Locator, drag: boolean) {
+  await expect(depth).toHaveValue("0");
+  const box = (await surface.boundingBox())!;
+  const x = box.x + box.width * 0.62;
+  const y = box.y + box.height * 0.42;
+  expect(await surface.evaluate((el, p) => el === document.elementFromPoint(p.x, p.y), { x, y })).toBe(true);
+  const move = async (distance: number) => {
+    await page.mouse.move(x, y);
+    if (drag) {
+      await page.mouse.down();
+      await page.mouse.move(x, y + distance, { steps: 6 });
+      await page.mouse.up();
+    } else await page.mouse.wheel(0, distance);
+  };
+  await move(112);
+  await expect.poll(async () => Number(await depth.inputValue())).toBeGreaterThan(0);
+  const held = Number(await depth.inputValue());
+  await move(-56);
+  await expect.poll(async () => Number(await depth.inputValue())).toBeLessThan(held);
+}
 
 test.beforeEach(async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -11,13 +32,17 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 });
 
-test("ALOHA carries a recorded profile into Explore and returns to the exact sample", async ({ page }) => {
+test("ALOHA carries a recorded profile into Explore and returns to the exact sample", async ({
+  page,
+  isMobile,
+}) => {
   await page.goto("/#v=observe&at=-121,41,1.17");
   const launch = page.getByRole("button", { name: "Through the Pacific", exact: true });
   const canvas = await world(page).locator("canvas").elementHandle();
   await launch.click();
   const descent = page.getByRole("dialog", { name: "Through the Pacific" });
   const depth = descent.getByRole("slider", { name: "Descent position" });
+  await scrubScene(page, descent.locator(".pacific-gesture"), depth, isMobile);
   await depth.press("End");
   await depth.press("ArrowLeft");
   await descent.getByRole("button", { name: /Recorded profile/ }).click();
@@ -98,6 +123,7 @@ test("Honolulu separates the recorded pressure from Explore and restores the min
 
 test("Fiji carries the held earthquake to Layers and returns to its depth after switching projections", async ({
   page,
+  isMobile,
 }) => {
   await page.goto("/#v=observe&at=155,-14,1");
   const launch = page.getByRole("button", { name: "Below the Surface", exact: true });
@@ -105,6 +131,7 @@ test("Fiji carries the held earthquake to Layers and returns to its depth after 
   const fiji = page.getByRole("region", { name: "Beneath Fiji" });
   await fiji.getByRole("button", { name: "Map", exact: true }).click();
   const depth = fiji.getByRole("slider");
+  await scrubScene(page, world(page).locator("canvas[data-engine]"), depth, isMobile);
   await depth.press("End");
   const explore = fiji.getByRole("button", { name: "Explore nearby earthquakes" });
   await expect(explore).toBeInViewport({ ratio: 1 });
@@ -139,6 +166,23 @@ test("shared Pacific and Fiji readings reopen at their exact depths", async ({ p
   await expect(world(page)).toHaveAttribute("aria-label", "Map");
   await fiji.getByRole("button", { name: "Back to previous view" }).click();
   await expect(page.getByRole("button", { name: "Through the Pacific", exact: true })).toBeVisible();
+});
+
+test.describe("the Pacific reading on a short viewport", () => {
+  test.use({ viewport: { width: 390, height: 420 }, isMobile: false });
+
+  test("scrolling the cast keeps the held depth", async ({ page }) => {
+    await page.goto("/#v=observe&story=pacific&choice=917&chapter=profile");
+    const descent = page.getByRole("dialog", { name: "Through the Pacific" });
+    const profile = descent.getByRole("region", { name: "Station ALOHA" });
+    await expect(profile).toBeVisible();
+    const top = await profile.evaluate((el) => el.scrollTop);
+    const box = (await profile.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 160);
+    await expect.poll(() => profile.evaluate((el) => el.scrollTop)).toBeGreaterThan(top);
+    await expect(descent.getByRole("slider")).toHaveValue("917");
+  });
 });
 
 test("Find offers Station ALOHA as a place and a story and returns to either result", async ({ page }) => {

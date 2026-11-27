@@ -457,8 +457,7 @@ export function App(): JSX.Element {
     observatory,
     flat,
     stopTour,
-    flyTo,
-    readCamera,
+    globeCamera,
     entrances.nearby,
   );
   function returnHome() {

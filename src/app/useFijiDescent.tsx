@@ -3,16 +3,14 @@ import { FijiDescent } from "./FijiDescent";
 import { fijiFocus } from "./recordedCutaway";
 import { sceneEntry } from "./continuity/sceneEntry";
 import type { useObservatory } from "./useObservatory";
-import type { CameraState } from "../globe/controls";
+import type { useGlobeCamera } from "./useGlobeCamera";
 import type { DepthRecord } from "../data/depthRecords";
-import type { FlyTo } from "../globe/cameraTarget";
 
 export function useFijiDescent(
   observatory: ReturnType<typeof useObservatory>,
   flat: boolean,
   stopTour: () => void,
-  flyTo: { current: FlyTo },
-  readCamera: { current: () => CameraState },
+  { flyTo, read, world }: Pick<ReturnType<typeof useGlobeCamera>, "flyTo" | "read" | "world">,
   nearby: (record: DepthRecord, fromFiji?: boolean) => void,
 ) {
   const fiji = observatory.observing && observatory.depthFocus?.descent ? observatory.depthFocus : null;
@@ -59,7 +57,8 @@ export function useFijiDescent(
       onExplore={(record) => leaveFiji(() => nearby(record, true), false)}
       map={flat}
       setMap={observatory.observations.setMap}
-      readCamera={readCamera.current}
+      readCamera={read.current}
+      controls={world.current?.controls}
       setDepth={(depth) => observatory.setDepthFocus(fijiFocus(depth))}
     />
   );

@@ -59,7 +59,7 @@ export function PacificProfile({
   current: () => StoryMoment | undefined;
 }) {
   return (
-    <section className="pacific-profile" aria-labelledby="pacific-profile-title">
+    <section className="pacific-profile" aria-labelledby="pacific-profile-title" data-descent-reading="">
       <header>
         <h3 id="pacific-profile-title">Station ALOHA</h3>
         <button ref={close} type="button" onClick={onClose}>

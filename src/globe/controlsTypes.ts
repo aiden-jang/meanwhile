@@ -2,6 +2,7 @@ import type { CameraGuidance } from "./cameraGuidance";
 import type { Vector3 } from "three";
 import type { TonightView } from "../geo/tonight";
 import type { OvalPoint } from "../sources/auroraRoute";
+import type { ScrubDepth } from "./descentInput";
 
 export interface Framing {
   lon: number;
@@ -17,6 +18,7 @@ export interface CameraState {
 export interface Controls {
   /** Wires up pointer, wheel and keyboard listeners. Returns the detach function. */
   attach: (onChange: () => void) => () => void;
+  setDepthScrub: (scrub: ScrubDepth | null) => void;
   /** Advances momentum and any reset spring. Returns true while something is still moving. */
   step: (dt: number) => boolean;
   /** Writes the current orientation onto the camera. */
