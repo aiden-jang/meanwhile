@@ -93,6 +93,19 @@ for (const width of [1440, 320]) {
       else await page.getByRole("button", { name: "Back to stories", exact: true }).click();
       await expect(entry).toBeFocused();
       await expect.poll(async () => Math.abs((await rowOffset()) - before)).toBeLessThanOrEqual(1);
+      if (width === 320 && title === "Float Dive") {
+        // A late line wrap in Continue must leave the returned story at the same height.
+        const caption = rail.locator(".story-continue small");
+        const height = () => caption.evaluate((el) => el.getBoundingClientRect().height);
+        const initialHeight = await height();
+        const wrapCaption = await page.addStyleTag({
+          content: ".story-continue small { inline-size: 10ch }",
+        });
+        await expect.poll(height).toBeGreaterThan(initialHeight);
+        await expect.poll(async () => Math.abs((await rowOffset()) - before)).toBeLessThanOrEqual(1);
+        await wrapCaption.evaluate((style) => style.remove());
+        await expect.poll(async () => Math.abs((await rowOffset()) - before)).toBeLessThanOrEqual(1);
+      }
     }
     await expect(rail.locator(".story-continue")).toContainText("Kīlauea");
     await expect(search).toBeInViewport({ ratio: 1 });
