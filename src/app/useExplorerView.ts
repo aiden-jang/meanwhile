@@ -346,6 +346,7 @@ export function explorerEntrances(
   return {
     open,
     resume,
+    hasPreviousView: () => explorer.lastFree.current !== undefined,
     find,
     storm,
     nearby,

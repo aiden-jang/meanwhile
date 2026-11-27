@@ -300,7 +300,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           openStoryCatalogue(props, panelReturn.restore, !!focusSearch);
         },
         explore(opener) {
-          const subject = worldContinuation(props, active, memory.current);
+          const subject = props.explorePaths.hasPreviousView()
+            ? undefined
+            : worldContinuation(props, active, memory.current);
           if (subject) props.explorePaths.continueAt(subject, opener);
           else {
             props.explorePaths.resume();

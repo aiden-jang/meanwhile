@@ -59,6 +59,7 @@ export interface ObservatoryProps {
   explorePaths: Pick<
     ReturnType<typeof explorerEntrances>,
     | "resume"
+    | "hasPreviousView"
     | "find"
     | "findReturn"
     | "nearby"
