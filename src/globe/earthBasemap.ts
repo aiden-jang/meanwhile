@@ -6,18 +6,20 @@ import {
   type ShaderMaterial,
   type Texture,
 } from "three";
+import { createFijiRelief, fijiReliefShader } from "./fijiRelief";
 import type { GlobePresentation } from "./scenePresentation";
 import { solarOffsetMinutes, landingSolarTime } from "./landingSolarClock";
 
 export interface SurfaceView {
   globePresentation: GlobePresentation;
   landing: boolean;
-  cutaway: object | null;
+  cutaway: { descent?: true | undefined; sweepKm?: number | undefined } | null;
   inspection: object | null;
 }
 
 export function showsSatellite(view?: SurfaceView) {
-  if (!view || view.cutaway || view.inspection) return false;
+  if (!view || view.inspection) return false;
+  if (view.cutaway) return !!view.cutaway.descent;
   const mode = view.globePresentation;
   return (
     mode === null ||
@@ -42,11 +44,17 @@ export function createEarthBasemap(
   const strength = { value: 0 };
   const terrain = { value: null as Texture | null };
   const lights = { value: null as Texture | null };
+  const relief = createFijiRelief(wake);
   const compile = ocean.onBeforeCompile;
   const key = ocean.customProgramCacheKey();
   ocean.onBeforeCompile = (shader, renderer) => {
     compile.call(ocean, shader, renderer);
-    Object.assign(shader.uniforms, { uAtlasOn: strength, uAtlas: terrain, uCityLights: lights });
+    Object.assign(shader.uniforms, {
+      uAtlasOn: strength,
+      uAtlas: terrain,
+      uCityLights: lights,
+      ...relief.uniforms,
+    });
     shader.vertexShader = shader.vertexShader.replace(
       "void main() {",
       "varying vec2 vAtlas;\nvoid main() {\n vAtlas = aLonLat / vec2(360.0, 180.0) + 0.5;",
@@ -58,6 +66,7 @@ export function createEarthBasemap(
       uniform float uAtlasOn;
       uniform sampler2D uAtlas;
       uniform sampler2D uCityLights;
+      ${fijiReliefShader}
       varying vec2 vAtlas;
       vec3 atlasToLinear(vec3 x) {
         return mix(x / 12.92, pow((x + .055) / 1.055, vec3(2.4)), step(vec3(.04045), x));
@@ -83,13 +92,14 @@ export function createEarthBasemap(
         vec3 color = mix(dusk, day * 1.12, daylight);
         float facing = clamp(dot(normal, normalize(cameraPosition - vSurfaceWorld)), 0., 1.);
         color *= mix(.82, 1., mix(smoothstep(0., .70, facing), 1., uSurfaceMorph));
+        color = fijiReliefColor(color, vAtlas, normal);
         diffuseColor.rgb = atlasToLinear(clamp(color, 0., 1.));
       }
       #include <alphamap_fragment>
     `,
       );
   };
-  ocean.customProgramCacheKey = () => key + "-earth-atlas";
+  ocean.customProgramCacheKey = () => key + "-earth-atlas-fiji";
 
   let lastView: SurfaceView | undefined;
   let failed = false;
@@ -119,6 +129,7 @@ export function createEarthBasemap(
     return texture;
   }
   return {
+    fijiRegistration: relief.uniforms.uFijiRegistration,
     litAt: (at: number) => landingSolarTime(at, lastView?.landing ? solarOffsetMinutes() : 0),
     setView(view = lastView) {
       lastView = view;
@@ -129,7 +140,9 @@ export function createEarthBasemap(
         );
         lights.value = load("/earth/lights.webp");
       }
+      const hasRelief = relief.set(view?.cutaway?.descent ? (view.cutaway.sweepKm ?? 0) : undefined);
       const enabled = visible && loaded === 2;
+      coast.visible = !(enabled && hasRelief);
       if (enabled === Boolean(strength.value)) return;
       strength.value = Number(enabled);
       fill.visible = !enabled;
@@ -143,6 +156,7 @@ export function createEarthBasemap(
     },
     dispose() {
       disposed = true;
+      relief.dispose();
       delete canvas.dataset.basemap;
       release();
     },

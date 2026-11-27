@@ -41,8 +41,7 @@
   display: none;
 }
 .frame[data-fiji] [data-scale] {
-  inset: calc(var(--head-h) + 76px) clamp(18px, 4vw, 64px) auto auto;
-  margin: 0;
+  display: none;
 }
 .frame:has(.fiji-descent) .zone-head {
   z-index: 5;
@@ -72,331 +71,412 @@
 .fiji-navigation .story-projection {
   position: static;
 }
+
 .fiji-back {
   min-height: 44px;
-  padding: 0 14px 0 10px;
-  border-radius: 6px;
-  background: var(--color-deck);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px 0 6px;
+  border-radius: 5px;
+  background: #0a171fe8;
   font-size: 14px;
-}
-.fiji-back span {
-  padding-inline-end: 5px;
-  font-size: 19px;
 }
 .fiji-back:is(:hover, :focus-visible) {
   background: var(--color-raised);
-}
-
-.fiji-waterline {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  background-color: #07131b;
-}
-.fiji-waterline::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgb(5 12 18 / 74%), transparent 59%),
-    linear-gradient(0deg, #08151b, transparent 56%, rgb(7 17 25 / 25%)),
-    url("/fiji/waterline.jpg") center 52% / cover;
-  opacity: clamp(0, calc(1 - var(--fiji-progress) * 8), 1);
-  transform: scale(calc(1 + min(0.125, var(--fiji-progress)) * 0.48));
 }
 .fiji-title,
 .fiji-reading,
 .fiji-credit {
   position: absolute;
   inset-inline-start: var(--gutter);
-  text-shadow: 0 2px 20px rgb(0 0 0 / 74%);
+  text-shadow: 0 1px 8px #061017;
+}
+.fiji-descent::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #061018da, #071219ad 15%, transparent 43%);
 }
 .fiji-title {
-  inset-block-start: max(19%, calc(var(--head-h) + 80px));
+  inset-block-start: max(22%, calc(var(--head-h) + 80px));
+  max-width: 23vw;
 }
 .fiji-title h2 {
   margin: 0;
   font:
-    600 clamp(100px, 16vw, 220px)/0.74 "Alumni Sans",
+    600 clamp(58px, 7.1vw, 110px)/0.86 "Alumni Sans",
     var(--font-sans);
-  letter-spacing: -0.036em;
-  transition: font-size 300ms cubic-bezier(0.22, 0.76, 0.24, 1);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
-.fiji-descent[data-underwater] .fiji-title h2 {
-  font-size: clamp(54px, 8vw, 114px);
+.fiji-title p,
+.fiji-invitation,
+.fiji-record p {
+  margin: 0;
+  font-size: 14px;
 }
 .fiji-title p {
-  margin-top: 12px;
-  font-size: 14px;
-  color: var(--color-ink);
+  margin-block-start: 14px;
+  color: #b6c8cc;
 }
 .fiji-reading {
-  inset-block-end: clamp(58px, 9dvh, 110px);
+  bottom: max(14%, 90px);
+  width: min(25%, 310px);
   display: grid;
-  gap: 16px;
-  min-block-size: calc(clamp(60px, 8vw, 110px) * 0.7 + 108px);
-  max-inline-size: calc(100% - var(--gutter) - 78px);
   align-content: start;
+  row-gap: 15px;
+  min-height: 175px;
 }
 .fiji-caption {
   margin: 0;
   display: grid;
-  gap: 10px;
+  gap: 6px;
   font-size: 13px;
-  color: var(--color-ink);
+}
+.fiji-caption span {
+  color: #c3d2d3;
 }
 .fiji-caption strong {
-  display: block;
   color: var(--amber);
   font:
-    550 clamp(60px, 8vw, 110px)/0.7 "Alumni Sans",
+    580 clamp(52px, 6.2vw, 90px)/0.82 "Alumni Sans",
     var(--font-sans);
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .fiji-caption small {
-  font: 500 16px var(--font-sans);
+  margin-inline-start: 6px;
+  font: 500 15px var(--font-sans);
+  letter-spacing: normal;
 }
-
+.fiji-invitation {
+  color: #ecf1ed;
+  line-height: 1.35;
+}
+.fiji-record {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  display: grid;
+}
+.fiji-record p {
+  font-variant-numeric: tabular-nums;
+  color: #f4dfcd;
+}
+.fiji-record p span {
+  color: #ac9889;
+}
+.fiji-record-actions {
+  display: flex;
+  gap: 14px;
+}
+.fiji-record-actions :is(button, a),
+.fiji-credit button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.fiji-record .story-onward {
+  font-size: 13px;
+}
 .fiji-depth-control {
   position: absolute;
-  top: 54%;
-  bottom: 13%;
-  right: var(--gutter);
-  width: 78px;
-  container-type: size;
-  display: flex;
-  justify-content: end;
-  align-items: stretch;
-  animation: fiji-control-in 440ms both;
+  right: max(12px, var(--gutter));
+  top: 36%;
+  height: min(34%, 280px);
+  width: 44px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 8px;
+  color: #e3e7dd;
+  font: 11px var(--font-mono);
 }
 .fiji-depth-control input {
+  appearance: none;
+  -webkit-appearance: none;
   width: 44px;
-  height: 100cqh;
+  height: 100%;
+  min-height: 0;
   margin: 0;
   writing-mode: vertical-lr;
   direction: ltr;
-  accent-color: var(--amber);
   touch-action: none;
   background: transparent;
   cursor: ns-resize;
 }
+.fiji-depth-control input::-webkit-slider-runnable-track {
+  width: 3px;
+  border-radius: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--amber) calc(100% * var(--fiji-fraction)), #647178 0);
+}
+.fiji-depth-control input::-moz-range-track {
+  width: 3px;
+  background: #768183;
+}
 .fiji-depth-control input::-webkit-slider-thumb {
   appearance: none;
-  -webkit-appearance: none;
   width: 15px;
   height: 15px;
+  margin-left: -6px;
+  background: var(--amber);
+  border: 2px solid #192027;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--amber);
+}
+.fiji-depth-control input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #192027;
   border-radius: 50%;
   background: var(--amber);
-  border: 2px solid #251912;
-  box-shadow: 0 0 0 4px rgb(255 209 167 / 22%);
-}
-.fiji-depth-ticks {
-  position: absolute;
-  inset: 8px 46px 13%;
-  display: flex;
-  align-items: end;
-  flex-direction: column;
-  justify-content: space-between;
-  font: 10px var(--font-mono);
-  color: var(--color-ink);
-  text-shadow: 0 2px 8px #000;
-}
-.fiji-record {
-  display: grid;
-  gap: 4px;
-  font-size: 14px;
-  animation: fiji-control-in 250ms both;
-}
-.fiji-record p {
-  margin: 0;
-}
-.fiji-record p span {
-  padding-inline: 4px;
-  color: var(--color-dim);
-}
-.fiji-record div {
-  display: flex;
-  gap: 14px;
-}
-.fiji-record :is(button, a) {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  font-size: 12px;
 }
 .fiji-credit {
-  inset-block-end: max(32px, 4.5%);
-  color: var(--color-dim);
-  font-size: 10px;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  color: #becdcf;
 }
-@keyframes fiji-control-in {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
+.fiji-credit button {
+  padding-inline: 1px;
+}
+#fiji-method {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  z-index: 3;
+  width: min(340px, calc(100vw - 2 * var(--gutter)));
+  background: #0c1d25;
+  color: #e3edeb;
+  padding: 14px 16px;
+  border: 1px solid #36505a;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  pointer-events: auto;
+}
+#fiji-method p {
+  margin: 0;
+}
+#fiji-method p + p {
+  margin-top: 8px;
+  color: #b6c7c9;
+}
+.fiji-descent[data-returning] :is(.fiji-reading, .fiji-depth-control, .fiji-credit) {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+@media (orientation: landscape) {
+  .fiji-navigation {
+    justify-content: flex-start;
+    gap: 14px;
   }
 }
-@media (max-width: 599px) {
+@media (max-width: 699px) and (orientation: portrait) {
+  .fiji-descent {
+    --gutter: 16px;
+  }
+  .fiji-descent::before {
+    background: linear-gradient(
+      0deg,
+      #061018 0%,
+      #07121bea 14%,
+      transparent 37%,
+      transparent 69%,
+      #06101888 86%
+    );
+  }
+  .fiji-navigation {
+    inset-block-start: calc(var(--head-h) + 5px);
+  }
   .fiji-title {
-    inset-block-start: max(16%, calc(var(--head-h) + 80px));
+    top: calc(var(--head-h) + 66px);
+    max-width: 90%;
   }
   .fiji-title h2 {
-    font-size: 104px;
-  }
-  .fiji-waterline::before {
-    background-position:
-      center,
-      center,
-      61% center;
-  }
-  .fiji-depth-control {
-    top: 47%;
-    bottom: 24%;
-    right: 10px;
-  }
-  .fiji-reading {
-    inset-block-end: 64px;
-    gap: 10px;
-  }
-}
-@media (orientation: landscape) and (max-height: 480px) {
-  .fiji-title {
-    inset-block-start: calc(var(--head-h) + 12px);
-    inset-inline-start: calc(var(--gutter) + 90px);
-  }
-  .fiji-title h2,
-  .fiji-descent[data-underwater] .fiji-title h2 {
-    font-size: 42px;
+    font-size: clamp(44px, 12vw, 65px);
   }
   .fiji-title p {
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 12px;
   }
   .fiji-reading {
-    inset-block-end: 48px;
-    min-block-size: 0;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: end;
-    gap: 20px;
+    inset-inline-end: 16px;
+    bottom: max(62px, calc(env(safe-area-inset-bottom) + 54px));
+    width: auto;
+    min-height: 72px;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+    column-gap: 14px;
+    align-items: start;
+  }
+  .fiji-caption {
+    font-size: 11px;
+  }
+  .fiji-caption strong {
+    font-size: clamp(45px, 12vw, 64px);
+  }
+  .fiji-caption small {
+    font-size: 12px;
+    margin-left: 2px;
+  }
+  .fiji-record-actions {
+    gap: 12px;
+  }
+  .fiji-record-actions :is(button, a) {
+    font-size: 11px;
+  }
+  .fiji-record p,
+  .fiji-invitation {
+    font-size: 12px;
+  }
+  .fiji-invitation {
+    align-self: center;
+  }
+  .fiji-record .story-onward {
+    max-width: 100%;
+    width: max-content;
+    font-size: 12px;
+    padding: 4px 8px;
+    margin: 0;
+  }
+  .fiji-depth-control {
+    top: 36%;
+    right: 0;
+    height: 28%;
+    font-size: 9px;
+  }
+}
+@media (max-width: 699px) and (max-height: 710px) and (orientation: portrait) {
+  .fiji-title {
+    top: calc(var(--head-h) + 19px);
+    left: 99px;
+    max-width: calc(100% - 252px);
+  }
+  .fiji-title h2 {
+    font-size: clamp(18px, 5vw, 25px);
+    line-height: 1;
+  }
+  .fiji-title p {
+    display: none;
+  }
+  .fiji-reading {
+    column-gap: 8px;
+  }
+  .fiji-caption strong {
+    font-size: 37px;
   }
   .fiji-credit {
-    inset-block-end: max(12px, env(safe-area-inset-bottom));
+    bottom: max(2px, env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .fiji-descent {
+    --gutter: 12px;
+  }
+  .fiji-navigation {
+    top: calc(var(--head-h) + 1px);
+  }
+  .fiji-title {
+    max-width: 22vw;
+    top: calc(var(--head-h) + 55px);
+  }
+  .fiji-title h2 {
+    font-size: 34px;
+  }
+  .fiji-title p {
+    font-size: 11px;
+    margin-top: 5px;
+  }
+  .fiji-reading {
+    width: 29%;
+    bottom: 52px;
+    min-height: auto;
+    gap: 5px;
+  }
+  .fiji-caption {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    font-size: 10px;
+  }
+  .fiji-caption strong {
+    font-size: 28px;
+  }
+  .fiji-caption small {
+    font-size: 11px;
+  }
+  .fiji-invitation,
+  .fiji-record p {
+    font-size: 11px;
+  }
+  .fiji-record-actions {
+    gap: 8px;
+  }
+  .fiji-record-actions :is(button, a) {
+    font-size: 10px;
+    min-height: 27px;
+  }
+  .fiji-record .story-onward {
+    max-width: 100%;
+    font-size: 11px;
+    margin-top: 0;
+    min-height: 28px;
+    padding: 2px 6px;
+  }
+  .fiji-depth-control {
+    right: 0;
+    top: 40%;
+    height: 42%;
+  }
+  .fiji-credit {
+    bottom: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .fiji-descent * {
-    animation-duration: 0s !important;
     transition-duration: 0s !important;
   }
 }
-
-.fiji-quake-mark {
-  position: absolute;
-  visibility: hidden;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--amber);
-  font: 11px var(--font-mono);
-  transform: translate(-5px, -50%);
-  text-shadow: 0 2px 8px #000;
-}
-.fiji-quake-mark::before {
-  content: "";
-  width: 10px;
-  height: 10px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgb(255 209 167 / 19%);
-}
-.fiji-quake-mark[data-label-left] {
-  flex-direction: row-reverse;
-  transform: translate(calc(-100% + 5px), -50%);
-}
-
-.fiji-quake-mark span {
-  padding: 4px 7px;
-  background: var(--color-void);
-  white-space: nowrap;
-}
-
-@property --fiji-progress {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --fiji-aperture {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-.fiji-descent {
-  --fiji-x: 50%;
-  --fiji-y: 50%;
-}
-
-.fiji-descent .fiji-waterline {
-  /* The illustration must be fully gone before terrain shows through the field. */
-  opacity: clamp(0, calc(2 - var(--fiji-progress) * 8), 1);
-  mask-image: radial-gradient(
-    circle farthest-corner at var(--fiji-x) var(--fiji-y),
-    #000 calc(var(--fiji-aperture) * 124% - 20%),
-    transparent calc(var(--fiji-aperture) * 137%)
-  );
-}
-
-.fiji-descent[data-returning] {
-  transition: --fiji-progress 380ms ease-out;
-}
-
-.fiji-descent[data-arrived]:not([data-closed]) .fiji-waterline {
-  mask-image: none;
-}
-
-.fiji-descent[data-closed] .fiji-waterline {
-  --fiji-aperture: 0;
-  opacity: 0;
-  transition:
-    --fiji-aperture 680ms cubic-bezier(0.47, 0, 0.51, 1),
-    opacity 700ms cubic-bezier(0.7, 0, 0.81, 0.5);
-}
-
-.fiji-flight-point {
-  position: absolute;
-  top: var(--fiji-y);
-  left: var(--fiji-x);
-  width: 10px;
-  height: 10px;
-  border: 1px solid var(--amber);
-  border-radius: 50%;
-  background: var(--amber);
-  box-shadow:
-    0 0 0 5px rgb(255 209 167 / 24%),
-    0 0 22px 7px rgb(255 209 167 / 23%);
-  transform: translate(-50%, -50%);
-  opacity: calc(1 - var(--fiji-aperture));
-  visibility: hidden;
-}
-
-.fiji-descent[data-fiji-projected]:not([data-closed]) .fiji-flight-point {
-  visibility: visible;
-}
-
-.fiji-descent .fiji-title {
-  opacity: clamp(0, calc((var(--fiji-aperture) - 0.13) * 2.5), 1);
-  transform: translateY(calc((1 - var(--fiji-aperture)) * 22px));
-}
-
-.fiji-descent[data-returning]
-  :is(.fiji-title, .fiji-reading, .fiji-credit, .fiji-depth-control, .fiji-navigation),
-.fiji-descent[data-closed] :is(.fiji-title, .fiji-navigation) {
-  opacity: 0;
-  transition: opacity 250ms ease;
-}
-
-.fiji-descent[data-closed] :is(button, a, input) {
-  pointer-events: none;
+@media (max-height: 360px) and (orientation: landscape) {
+  .fiji-navigation {
+    gap: 6px;
+  }
+  .fiji-navigation .story-projection {
+    gap: 2px;
+    padding: 2px;
+  }
+  .fiji-navigation .story-projection button {
+    padding-inline: 6px;
+  }
+  .fiji-title {
+    top: calc(var(--head-h) + 63px);
+    max-width: 32vw;
+  }
+  .fiji-title h2 {
+    font-size: 25px;
+    line-height: 0.95;
+  }
+  .fiji-title p {
+    display: none;
+  }
+  .fiji-reading {
+    top: calc(var(--head-h) + 96px);
+    bottom: auto;
+    width: 32vw;
+    row-gap: 3px;
+  }
+  .fiji-credit {
+    inset-inline: auto var(--gutter);
+  }
+  #fiji-method {
+    left: auto;
+    right: 0;
+    max-height: calc(100dvh - var(--head-h) - 52px);
+    overflow-y: auto;
+  }
 }

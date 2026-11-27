@@ -453,7 +453,7 @@ export function App(): JSX.Element {
     if (!direct || scene !== "live") flyTo.current(...next.camera);
     else setScrub(LIVE);
   };
-  const { fiji, fijiClosing, openFiji, fijiStage } = useFijiDescent(
+  const { fiji, exitDepth, openFiji, fijiStage } = useFijiDescent(
     observatory,
     flat,
     stopTour,
@@ -1294,15 +1294,15 @@ export function App(): JSX.Element {
                 depthSink={observatory.depth || sinkOn}
                 cutaway={
                   observatory.observing
-                    ? fijiClosing && fiji
-                      ? fijiFocus(0)
+                    ? exitDepth !== null && fiji
+                      ? fijiFocus(exitDepth)
                       : observatory.depthFocus
                     : flat
                       ? null
                       : cutaway
                 }
                 slab={
-                  ((!observatory.observing && slabOn) || observatory.depth) && slabData.length > 0
+                  ((!observatory.observing && slabOn) || (observatory.depth && !fiji)) && slabData.length > 0
                     ? slabData
                     : null
                 }

@@ -10,6 +10,7 @@ import { type CutawayFocus } from "./cutaway";
 import type { CameraGuidance } from "./cameraGuidance";
 import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
+import { createProjectionTravel } from "./projectionTravel";
 import { animationDelta } from "./animation";
 import { createAnimationFrame } from "./animationFrame";
 import { attachMarkerInspection, type MarkerTarget } from "./markerInspection";
@@ -214,10 +215,7 @@ export function Globe({
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
     let focusFade = 0;
-    let morph = live.current.flat ? 1 : 0;
-    let projectionTravel = morph;
-    globe.setMorph(morph);
-    globe.controls.setMorph(morph);
+    const project = createProjectionTravel(globe, live.current.flat, !!live.current.cutaway?.descent);
     let plateReveal = reduced.matches ? 1 : 0;
     let revealStarted = reduced.matches;
     globe.plates.reveal(plateReveal);
@@ -280,21 +278,7 @@ export function Globe({
         globe.plates.reveal(plateReveal);
       }
 
-      const morphTarget = live.current.flat ? 1 : 0;
-      let unwrapping = false;
-      if (morph !== morphTarget) {
-        const step = reduced.matches
-          ? 1
-          : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.framingReady())
-            ? 0
-            : dt / 1.45;
-        const travel = projectionTravel + (morphTarget ? step : -step);
-        projectionTravel = Math.max(0, Math.min(1, travel));
-        morph = projectionTravel * projectionTravel * (3 - 2 * projectionTravel);
-        globe.setMorph(morph);
-        globe.controls.setMorph(morph);
-        unwrapping = morph !== morphTarget;
-      }
+      const unwrapping = project(dt, live.current.flat, !!live.current.cutaway?.descent, reduced.matches);
 
       const focusTarget = live.current.focus === null ? 0 : 1;
       let fading = false;

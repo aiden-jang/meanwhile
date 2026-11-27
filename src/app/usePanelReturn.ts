@@ -17,7 +17,45 @@ export function usePanelReturn() {
         cancel();
         frame = requestAnimationFrame(() => {
           const align = restorePanel(saved);
-          if (!align) return;
+          if (!align) {
+            const anchor = document.getElementById(saved.focus);
+            if (!anchor?.hasAttribute("data-observation-anchor")) return;
+            // A marker can receive focus, disappear during the projection change, then reappear.
+            const input = new AbortController();
+            const timeout = window.setTimeout(cancel, 3500);
+            const listen = { capture: true, passive: true, signal: input.signal };
+            const refocus = () => {
+              if (document.activeElement === anchor || !anchor.isConnected) return;
+              if (anchor.getClientRects().length && getComputedStyle(anchor).visibility === "visible") {
+                anchor.focus({ preventScroll: true });
+              }
+            };
+            const painted = new MutationObserver(refocus);
+            painted.observe(anchor, { attributes: true, attributeFilter: ["style", "data-positioned"] });
+            stopObserving = () => {
+              painted.disconnect();
+              input.abort();
+              clearTimeout(timeout);
+            };
+            for (const event of ["pointerdown", "wheel", "keydown", "popstate"])
+              window.addEventListener(event, cancel, listen);
+            window.addEventListener(
+              "focusin",
+              (event) => {
+                if (
+                  event.target !== anchor &&
+                  event.target !== document.body &&
+                  event.target !== document.documentElement &&
+                  event.target !== document.getElementById(saved.scrollTarget) &&
+                  event.target !== document.getElementById(saved.fallback ?? "")
+                )
+                  cancel();
+              },
+              listen,
+            );
+            refocus();
+            return;
+          }
           // WebKit can commit the rail's scroll after the first frame following history navigation.
           frame = requestAnimationFrame(align);
           const target = document.getElementById(saved.focus);

@@ -1,3 +1,4 @@
+import { FIJI_CENTRE } from "../globe/fijiApproach";
 import { useMemo, useState } from "react";
 import { depthRecord, depthRecords, type DepthRecord } from "../data/depthRecords";
 import type { CutawayFocus } from "../globe/cutaway";
@@ -10,9 +11,9 @@ export function recordedCutaway(archiveReading: DepthRecord = depthRecords[0]): 
 
 export function fijiFocus(depth: number): CutawayFocus {
   return {
-    lon: -176,
-    lat: -18.3,
+    ...FIJI_CENTRE,
     descent: true,
+    cameraOnly: true,
     archiveReading: depth >= depthRecords[1].depthKm ? depthRecords[1] : depthRecords[0],
     sweepKm: depth,
   };

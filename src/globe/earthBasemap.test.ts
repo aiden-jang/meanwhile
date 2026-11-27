@@ -24,5 +24,6 @@ it("releases the surface to stories, cutaways and recorded event inspections", (
   );
   expect(showsSatellite({ ...live, globePresentation: "planetarium" })).toBe(false);
   expect(showsSatellite({ ...live, cutaway: {} })).toBe(false);
+  expect(showsSatellite({ ...live, cutaway: { descent: true } })).toBe(true);
   expect(showsSatellite({ ...live, inspection: {} })).toBe(false);
 });

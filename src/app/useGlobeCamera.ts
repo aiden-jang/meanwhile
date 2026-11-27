@@ -1,4 +1,5 @@
 import type { PassageCamera } from "./tonga/passageSurface";
+import { fijiApproach } from "../globe/fijiApproach";
 import { DEFAULT_CAMERA } from "../globe/framing";
 import { useCallback, useEffect, useRef } from "react";
 import type { FlyTo } from "../globe/cameraTarget";
@@ -19,10 +20,11 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
     shared.lon !== undefined &&
     shared.lat !== undefined &&
     shared.zoom !== undefined;
+  const entry = shared.descent !== undefined ? fijiApproach(!!shared.flat) : DEFAULT_CAMERA;
   const camera = useRef<CameraState>({
-    lon: shared.lon ?? DEFAULT_CAMERA.lon,
-    lat: shared.lat ?? DEFAULT_CAMERA.lat,
-    zoom: shared.zoom ?? DEFAULT_CAMERA.zoom,
+    lon: shared.lon ?? entry.lon,
+    lat: shared.lat ?? entry.lat,
+    zoom: shared.zoom ?? entry.zoom,
   });
   const read = useRef(() => camera.current);
   useEffect(() => {
@@ -52,14 +54,14 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
       read.current = current;
       setReady(true);
       // Explore opens ready for picking. The Observatory keeps its approach to the shared viewpoint.
-      if (framedExplore && scene) {
+      if ((framedExplore || shared.descent !== undefined) && scene) {
         scene.controls.setView(camera.current);
         return true;
       }
       fly(camera.current.lon, camera.current.lat, camera.current.zoom);
       return false;
     },
-    [framedExplore, setReady],
+    [framedExplore, setReady, shared.descent],
   );
   return { flyTo, camera, read, onReady, home, world };
 }

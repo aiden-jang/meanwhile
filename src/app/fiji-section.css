@@ -1,0 +1,181 @@
+.fiji-section {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+.fiji-section[data-projected] {
+  opacity: 1;
+}
+.fiji-section
+  :is(.fiji-section-rule, .fiji-section-edge, .fiji-section-cap, .fiji-section-datum, .fiji-section-sweep) {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.fiji-section-rule {
+  stroke: #86a9b4;
+  stroke-opacity: 0.19;
+  stroke-width: 0.75;
+}
+.fiji-section-edge {
+  stroke: #7096a0;
+  stroke-opacity: 0.56;
+  stroke-width: 0.8;
+}
+.fiji-section-sweep {
+  stroke: #efaf77;
+  stroke-opacity: 0.82;
+  stroke-width: 1.1;
+}
+.fiji-section-datum {
+  stroke: #b3d8da;
+  stroke-width: 1.5;
+}
+.fiji-section-cap {
+  stroke: #b3d8da;
+  stroke-width: 1;
+}
+.fiji-section-type,
+.fiji-section-island {
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+.fiji-section-depth,
+.fiji-section-distance {
+  font-size: 10px;
+  fill: #a0afb5;
+}
+.fiji-section-quake {
+  color: #c7aa8b;
+}
+.fiji-section-quake[data-lit] {
+  color: #ffd1a7;
+}
+.fiji-section-quake text {
+  fill: currentColor;
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: #0c1921;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.fiji-event-ring {
+  stroke: currentColor;
+  stroke-width: 1.05;
+  fill: #18222a;
+}
+.fiji-event-centre {
+  fill: currentColor;
+}
+.fiji-section-quake[data-lit] .fiji-event-ring {
+  stroke-width: 1.8;
+}
+.fiji-section-island path {
+  fill: none;
+  stroke: #d0ddd9;
+  stroke-width: 1;
+}
+.fiji-section-island circle {
+  fill: #d9e9e5;
+}
+.fiji-section-island text {
+  font: 500 12px var(--font-sans);
+  fill: #e6eee9;
+  paint-order: stroke;
+  stroke: #102025;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.fiji-section-bed {
+  stroke: #8cabad;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-width: 0.7;
+}
+.fiji-section-top {
+  stroke: #aeced0;
+  stroke-opacity: 0.72;
+  stroke-width: 0.9;
+  fill: #a1c2c0;
+  fill-opacity: 0.095;
+}
+.fiji-section-wall {
+  stroke: #78989d;
+  stroke-width: 0.85;
+  stroke-opacity: 0.65;
+}
+.fiji-section-stations {
+  stroke: #dbd7ba;
+  stroke-width: 0.8;
+  opacity: 0.62;
+  fill: none;
+}
+.fiji-section-stem {
+  stroke: #c1af92;
+  stroke-width: 0.75;
+  stroke-opacity: 0.38;
+  stroke-dasharray: 2 5;
+  vector-effect: non-scaling-stroke;
+}
+.fiji-event-outer {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.85;
+  opacity: 0;
+}
+.fiji-section-quake[data-lit]:not([data-current]) {
+  color: #bca88e;
+}
+.fiji-section-quake[data-current] .fiji-event-outer {
+  opacity: 0.8;
+}
+.fiji-section-quake[data-current] .fiji-event-centre {
+  fill: #ffe0b2;
+}
+.fiji-section-distance {
+  paint-order: stroke;
+  stroke: #102025;
+  stroke-width: 3px;
+}
+.fiji-section-hit {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  visibility: hidden;
+  touch-action: none;
+  cursor: pointer;
+}
+.fiji-section[data-projected] ~ .fiji-section-hit:is([data-exposed], [data-held]) {
+  visibility: visible;
+}
+.fiji-section-hit:hover {
+  background-color: rgb(255 212 171 / 8%);
+}
+.fiji-section-hit:focus-visible {
+  outline: 2px solid #ffe2bd;
+  outline-offset: -4px;
+}
+.fiji-section-mag {
+  display: none;
+}
+.fiji-section-quake[data-current] .fiji-section-mag {
+  display: inline;
+  font-size: 10px;
+  fill: #ffe2bd;
+}
+
+@media (max-width: 360px) {
+  .fiji-section-quake[data-fiji-event="us2000h9e2"] text {
+    transform: translateX(28px);
+    text-anchor: start;
+  }
+}

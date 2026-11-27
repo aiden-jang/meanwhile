@@ -1,0 +1,8 @@
+Fiji regional relief. GEBCO Compilation Group (2026), GEBCO_2026 Grid, ice surface elevation.
+https://www.gebco.net/data_and_products/gridded_bathymetry_data/
+The image spans 168.002083 E to 167.997917 W across the date line and 26.997917 S to 11.997917 S.
+North-up shaded relief rendered from every sixth grid cell in both directions. The color and lighting are illustrative.
+Source arrays, west then east:
+https://dap.ceda.ac.uk/thredds/dodsC/bodc/gebco/global/gebco_2026/ice_surface_elevation/netcdf/GEBCO_2026.nc.ascii?elevation%5B15120%3A6%3A18720%5D%5B83520%3A6%3A86394%5D
+https://dap.ceda.ac.uk/thredds/dodsC/bodc/gebco/global/gebco_2026/ice_surface_elevation/netcdf/GEBCO_2026.nc.ascii?elevation%5B15120%3A6%3A18720%5D%5B0%3A6%3A2880%5D
+The section's seabed profile uses bilinear interpolation on these grids every 5 km along the 900 km great-circle transect.

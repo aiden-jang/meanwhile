@@ -203,19 +203,15 @@ export function createCutaway(morph: { value: number }) {
     },
     set(focus: CutawayFocus | null): void {
       cameraActive = focus?.dive === true || focus?.cameraOnly === true;
-      const event = focus?.archiveReading;
+      const event = focus?.descent ? undefined : focus?.archiveReading;
       const descent = focus?.descent === true;
       guide.visible = !descent;
       sweepDepth = focus?.cameraOnly ? undefined : focus?.sweepKm;
       const points = !event
         ? []
-        : descent
-          ? (focus?.sweepKm ?? 0) >= event.depthKm
-            ? [event]
-            : []
-          : sweepDepth === undefined
-            ? [event]
-            : depthRecords.filter((record) => record.depthKm <= sweepDepth!);
+        : sweepDepth === undefined
+          ? [event]
+          : depthRecords.filter((record) => record.depthKm <= sweepDepth!);
       const key = points.map(({ id }) => id).join(",");
       if (key !== litRecords) {
         litRecords = key;
@@ -224,7 +220,7 @@ export function createCutaway(morph: { value: number }) {
       reading.setOpacity(points.length ? 1 : 0);
       if (sweepDepth !== undefined) sweep.scale.setScalar(1 - sweepDepth / EARTH_RADIUS_KM);
       if (focus?.cameraOnly) focus = null;
-      target = focus?.descent ? Math.min(1, (focus.sweepKm ?? 0) / 365) : focus ? 1 : 0;
+      target = focus && !descent ? 1 : 0;
       if (focus && progress === 0) guideProgress = 0;
       if (focus) {
         const lat = focus.lat * DEG,

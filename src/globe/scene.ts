@@ -386,7 +386,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
     },
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
-      grat.visible = !focus?.descent;
+      grat.visible = plateLines.material.visible = plateEdge.material.visible = !focus?.descent;
       cutaway.set(focus);
       if (focus && !focus.cameraOnly && !cutaway.isOpen()) lights.begin();
     },
@@ -523,7 +523,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
         sunMinute = minute;
         aimSun(at);
       }
-      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, optics.magnification);
+      const section = view?.cutaway?.descent ? atlas.fijiRegistration : undefined;
+      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera, optics.magnification, section);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       starfield.setOpacity(skyOpacity, emphasis.stars());
       moon.setOpacity(presentation.orbitalMoon() ? 0 : 1 - morph.value, presentation.localMoon());
@@ -547,8 +548,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
         return;
       }
 
-      /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
-         are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md#srcglobescenets. */
+      // Draw only world copies intersecting the map viewport. See ARCHITECTURE.md#srcglobescenets.
       const { first, last } = visibleMapCopies(camera, period);
       renderer.autoClear = true;
       for (let k = first; k <= last; k += 1) {
