@@ -209,17 +209,17 @@ export function Globe({
 
     // Sleep when nothing moves; redraw only when motion or changed data needs a frame.
     let running = false;
-    const animation = createAnimationFrame(() => isShadowChase(live.current.globePresentation));
+    const mayStall = () => reduced.matches || isShadowChase(live.current.globePresentation);
+    const animation = createAnimationFrame(mayStall);
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
     let focusFade = 0;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let morph = live.current.flat ? 1 : 0;
     let projectionTravel = morph;
     globe.setMorph(morph);
     globe.controls.setMorph(morph);
-    let plateReveal = reducedMotion.matches ? 1 : 0;
-    let revealStarted = reducedMotion.matches;
+    let plateReveal = reduced.matches ? 1 : 0;
+    let revealStarted = reduced.matches;
     globe.plates.reveal(plateReveal);
     const startReveal = (): void => {
       if (revealStarted) return;
@@ -283,7 +283,7 @@ export function Globe({
       const morphTarget = live.current.flat ? 1 : 0;
       let unwrapping = false;
       if (morph !== morphTarget) {
-        const step = reducedMotion.matches
+        const step = reduced.matches
           ? 1
           : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.framingReady())
             ? 0
@@ -299,7 +299,7 @@ export function Globe({
       const focusTarget = live.current.focus === null ? 0 : 1;
       let fading = false;
       if (focusFade !== focusTarget) {
-        const step = reducedMotion.matches ? 1 : dt / 0.13;
+        const step = reduced.matches ? 1 : dt / 0.13;
         focusFade =
           focusTarget > focusFade
             ? Math.min(focusTarget, focusFade + step)
@@ -314,7 +314,7 @@ export function Globe({
       const zoomNow = globe.controls.state().zoom;
       if (redrawPending) syncReadings();
       else if (Math.abs(zoomNow - lastZoom) > 0.001) {
-        globe.beginRegroup(reducedMotion.matches);
+        globe.beginRegroup(reduced.matches);
         lastZoom = zoomNow;
         // Cheap: the layer decides for itself whether the change is worth a rebuild.
         globe.setMarkZoom(zoomNow);
@@ -327,7 +327,7 @@ export function Globe({
           live.current.focus,
         );
       }
-      const presenting = globe.stepPresentation(dt, reducedMotion.matches, rawDt, moving);
+      const presenting = globe.stepPresentation(dt, reduced.matches, rawDt, moving);
       draw();
       placeOverlays();
       readout.update(globe.controls.state());
@@ -418,7 +418,7 @@ export function Globe({
     figuresRef.current = (table) => {
       if (table !== null) globe.setFigures(table);
       globe.setFiguresOn(table !== null);
-      globe.stepPresentation(0, reducedMotion.matches);
+      globe.stepPresentation(0, reduced.matches);
       redraw();
     };
     presentationRef.current = globe.setPresentation;

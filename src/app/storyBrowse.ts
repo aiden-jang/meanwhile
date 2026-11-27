@@ -18,7 +18,7 @@ export function storyKind(id: string): string {
   if (["wind", "swell", "atmospheric-river", "aurora"].includes(id)) return "Forecast";
   if (id === "deep") return "Reconstruction";
   if (id === "seafloor") return "Mapped terrain";
-  if (id === "float") return "Measured profile";
+  if (id === "float" || id === "pacific") return "Measured profile";
   if (
     ["radar", "sun", "reef"].includes(id) ||
     observations[id as keyof typeof observations]?.group === "Recent observations"

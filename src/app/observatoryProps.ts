@@ -6,6 +6,7 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import type { explorerEntrances } from "./useExplorerView";
 import type { PassageCamera } from "./tonga/passageSurface";
+import type { StorySelection } from "./continuity/ExploreContext";
 import type { PacificEntry } from "./pacific/usePacificDescent";
 export interface ObservatoryProps {
   world: PassageCamera | null;
@@ -54,9 +55,20 @@ export interface ObservatoryProps {
   onScene: (scene: EarthScene, direct?: boolean) => void;
   onHome: () => void;
   onExplore: (showPanel?: boolean) => void;
+  storySelection?: StorySelection;
   explorePaths: Pick<
     ReturnType<typeof explorerEntrances>,
-    "resume" | "find" | "findReturn" | "nearby" | "cityWeather" | "pickDate"
+    | "resume"
+    | "find"
+    | "findReturn"
+    | "nearby"
+    | "cityWeather"
+    | "pickDate"
+    | "continueAt"
+    | "world"
+    | "backToWorld"
+    | "showStories"
+    | "openLayer"
   >;
   tour: {
     at: number | null;

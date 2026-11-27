@@ -1,0 +1,157 @@
+.world-context {
+  padding: 10px 0 7px;
+  border-bottom: 1px solid var(--color-hairline);
+  margin-block: 0 14px;
+}
+.context-back,
+.context-all-stories,
+.context-actions button {
+  min-height: 44px;
+  padding-inline: 2px;
+  color: var(--color-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.explorer-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 1vw, 12px);
+}
+.context-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-inline: 6px;
+  text-align: start;
+  white-space: nowrap;
+}
+.context-back:hover,
+.context-actions button:hover,
+.context-all-stories:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+.context-reading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.context-reading strong {
+  color: var(--color-ink);
+  font-weight: 550;
+}
+.context-reading time {
+  font-variant-numeric: tabular-nums;
+}
+.context-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 15px;
+  margin-top: 2px;
+}
+.context-actions button,
+.context-all-stories {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+.context-stories {
+  margin: 12px 0 18px;
+  padding-block-end: 6px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.context-stories header {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.context-stories h3 {
+  color: var(--color-dim);
+  font-size: 13px;
+  font-weight: 600;
+}
+.context-all-stories {
+  flex-shrink: 0;
+}
+.story-onward {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 12px;
+  background: var(--color-deck);
+  border: 1px solid var(--color-hairline);
+  border-radius: 5px;
+  color: var(--color-ink);
+  text-align: start;
+  font-size: 14px;
+  cursor: pointer;
+}
+.story-onward:hover {
+  background: var(--color-raised);
+}
+.story-onward svg {
+  flex: none;
+  color: var(--color-dim);
+}
+.story-onward:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.pacific-profile .story-onward {
+  border-color: #759daf5c;
+  margin-block: 8px 3px;
+  text-decoration: none;
+}
+.pacific-profile .story-onward:hover {
+  border-color: var(--color-dim);
+}
+.pacific-profile-actions {
+  display: flex;
+  gap: 0 14px;
+  flex-wrap: wrap;
+}
+.pacific-profile-actions :is(.story-share, .visit-save) {
+  margin: 0;
+}
+.pacific-profile-actions button {
+  padding-inline: 0;
+  border: 0;
+  background: transparent;
+}
+.pacific-preview[data-surfacing] :is(.pacific-title, .pacific-reading, .pacific-profile) {
+  opacity: 0;
+  pointer-events: none;
+}
+.fiji-record .story-onward {
+  width: max-content;
+  background: #091a24e6;
+  margin-top: 6px;
+  text-decoration: none;
+}
+.passage-reading .story-onward,
+.tonga-evidence .story-onward,
+.tonga-explore-reading .story-onward,
+.float-profile .story-onward {
+  margin-block: 10px 2px;
+}
+@media (max-width: 599px) {
+  .world-context {
+    padding-bottom: 8px;
+  }
+  .context-reading {
+    font-size: 11px;
+    gap: 0 9px;
+  }
+  .context-stories {
+    margin-block-start: 5px;
+  }
+}

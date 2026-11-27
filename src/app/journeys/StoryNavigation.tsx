@@ -1,7 +1,7 @@
 import type { BrowseOrigin, StoryNavigationValue } from "./storyNavigationTypes";
 import { usePanelReturn } from "../usePanelReturn";
 import { visitAction, restartVisit } from "../visitor/visitAction";
-import { refreshAnnotations } from "../../globe/annotationInput";
+import { useStoryPreviewControls } from "../discovery/useStoryPreviewControls";
 import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
 import {
   createContext,
@@ -15,7 +15,11 @@ import {
 } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
-import { storyPlace, type StoryPlace } from "../discovery/places";
+import { activeStory } from "../continuity/activeStory";
+import { worldContinuation } from "../continuity/worldContinuation";
+import { pacificId } from "../pacific/pacificMoment";
+import { captureCollection } from "../visitor/collectionReturn";
+import { storyPlace } from "../discovery/places";
 import { featuredStoryId, storyButtonId } from "../storyBrowse";
 import type { StoryId } from "../observations/useObservationDeck";
 import { currentRadarRegion, isGlobalRadar } from "../radar/radarCamera";
@@ -42,38 +46,22 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   const panelReturn = usePanelReturn();
   const [restoredCollection, setRestoredCollection] = useState<CollectionPosition | null>(null);
   const find = useFindReturn();
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
   const reportCompletion = useCallback((id: string, complete: boolean) => {
     setCompletion((previous) =>
       previous?.id === id && previous.complete === complete ? previous : { id, complete },
     );
   }, []);
-  const previewOrigin = useRef<{
-    camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
-    flat: boolean;
-    journey: boolean;
-    place?: StoryPlace | undefined;
-  } | null>(null);
+  const {
+    origin: previewOrigin,
+    open: previewOpen,
+    preview,
+    clear: closePreview,
+  } = useStoryPreviewControls(props.explorer);
   const origin = useRef<BrowseOrigin | null>(null);
-  const { observations: deck, tonight, sun, floatDive } = props.views;
-  const active =
-    deck.entry ??
-    (floatDive.active
-      ? "float"
-      : props.radar.active
-        ? "radar"
-        : tonight.active
-          ? tonight.view?.lunarDeparture || tonight.view?.moonfall
-            ? "moonfall"
-            : tonight.view?.radiantTrail
-              ? "meteors"
-              : tonight.entry.mode
-          : sun.active
-            ? "sun"
-            : props.aurora.run || props.aurora.requested
-              ? "aurora"
-              : null);
+  const { observations: deck, tonight, floatDive } = props.views;
+  const active = activeStory(props);
+  const openingPacific = useRef<CollectionPosition>();
   useJourneyAnalytics(active);
   const checkpointJourney = useRef<() => void>();
   const memory = useVisitMemory(props, active, completion?.id === active && completion.complete, () =>
@@ -108,11 +96,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       capture() {
         const source = origin.current;
         const search = find.departure.current ?? find.position;
+        const collection = openingPacific.current;
         const restoreJourney = journey.capture();
         return () => {
           origin.current = source;
           restoreJourney();
           find.restore(search);
+          if (collection) setRestoredCollection(collection);
         };
       },
       journey: () => (journey.route ? { id: journey.route.id, step: journey.route.step } : undefined),
@@ -134,18 +124,23 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   ) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
+    if (id === pacificId) {
+      openingPacific.current = captureCollection(trigger) ?? undefined;
+      props.pacific.open(document.getElementById(trigger), saved?.position.moment);
+      openingPacific.current = undefined;
+      return;
+    }
     panelReturn.cancel();
     props.views.checkpoint.current();
     rememberOrigin(trigger);
     setRestoredCollection(null);
     const previewed = previewOrigin.current?.place;
     const destination = storyPlace(id);
-    const preview =
+    const previewedPlace =
       previewed && previewed.lon === destination?.lon && previewed.lat === destination.lat
         ? previewed
         : undefined;
-    previewOrigin.current = null;
-    setPreviewOpen(false);
+    closePreview();
     reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     if (id === "katrina" && isKatrinaHandoff(trigger)) {
@@ -163,7 +158,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         id as StoryId,
         trigger,
         saved?.position.moment ?? (fresh ? null : undefined),
-        map === undefined ? arrival : { ...arrival, map, preview },
+        map === undefined ? arrival : { ...arrival, map, preview: previewedPlace },
       );
     };
     props.views.navigation.prepareStory(
@@ -225,7 +220,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       return true;
     }
     if (active === "float") floatDive.view?.depart(saved.camera);
-    if (deck.trigger === passageRecord || isWorldStoryMarker(saved.trigger) || weatherOrigin(saved.trigger)) {
+    if (
+      deck.trigger === passageRecord ||
+      isWorldStoryMarker(saved.trigger) ||
+      saved.trigger.startsWith("context-story-") ||
+      weatherOrigin(saved.trigger)
+    ) {
       props.views.visitCheckpoint.current();
       history.back();
       return true;
@@ -258,8 +258,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   }
   function leaveStory() {
     panelReturn.cancel();
-    previewOrigin.current = null;
-    setPreviewOpen(false);
+    closePreview();
     origin.current = null;
     journey.leave();
   }
@@ -294,38 +293,22 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         previewOpen,
         previewCity: props.views.skyCity.city,
         moonAboveHorizon: tonight.view ? (tonight.view.bodies[0]?.altitude ?? 0) > 0 : undefined,
-        preview(place, restore = true, keepProjection = false) {
-          if (place) {
-            previewOrigin.current ??= {
-              camera: props.explorer.read(),
-              flat: props.explorer.flat,
-              journey: keepProjection,
-            };
-            if (!keepProjection) {
-              previewOrigin.current.place =
-                "label" in place && typeof place.label === "string"
-                  ? { ...place, label: place.label }
-                  : undefined;
-              setPreviewOpen(true);
-            }
-            refreshAnnotations(place);
-          } else if (previewOrigin.current?.journey === keepProjection) {
-            const saved = previewOrigin.current;
-            previewOrigin.current = null;
-            if (!keepProjection) setPreviewOpen(false);
-            if (restore)
-              props.explorer.restore(saved.camera, keepProjection ? props.explorer.flat : saved.flat);
-          }
-        },
+        preview,
         returnLabel: storyReturnLabel(origin.current, active, deck.trigger),
         browse(focusSearch) {
           leaveStory();
           openStoryCatalogue(props, panelReturn.restore, !!focusSearch);
         },
-        explore() {
-          props.explorePaths.resume();
-          leaveStory();
+        explore(opener) {
+          const subject = worldContinuation(props, active, memory.current);
+          if (subject) props.explorePaths.continueAt(subject, opener);
+          else {
+            props.explorePaths.resume();
+            leaveStory();
+          }
         },
+        worldContinuation: () => worldContinuation(props, active, memory.current),
+        continueAt: props.explorePaths.continueAt,
         openEntrance(id) {
           const trigger = "open-observatory-find";
           journey.leave();
@@ -383,7 +366,19 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         },
         open(id, trigger, keepScene) {
           journey.leave();
-          navigate(id, trigger, undefined, keepScene);
+          const related = trigger?.startsWith("related-story-");
+          const sky = related && tonight.view && (id === "moonfall" || id === "meteors" || id === "sky");
+          navigate(
+            id,
+            trigger,
+            undefined,
+            keepScene,
+            false,
+            undefined,
+            related
+              ? { map: deck.map, ...(sky && id === "moonfall" ? { skyDeparture: true } : {}) }
+              : undefined,
+          );
         },
         tour() {
           journey.leave();

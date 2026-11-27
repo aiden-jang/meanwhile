@@ -3,6 +3,7 @@ export const storyFindings: Record<string, string> = {
     "The fault model and the station recordings describe different parts of Tōhoku’s earthquake. The waves reach each station at different times.",
   katrina:
     "The track joins NOAA’s recorded storm positions. Landfall is one point in a storm’s history; this track does not map local flooding or damage.",
+  pacific: "The December 2024 Station ALOHA cast reached 4,802 dbar. Its deepest sample measured 1.52 °C.",
   tonga:
     "The satellite sequence and ground-pressure records observe the same eruption in different ways. The pressure wave continues beyond the visible plume.",
   megaflash:

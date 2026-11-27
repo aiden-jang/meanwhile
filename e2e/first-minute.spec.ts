@@ -47,6 +47,9 @@ for (const width of [1440, 844, 320]) {
     await expect(profile).toContainText("1.52 °C");
     await expect(profile).toContainText("4,802 dbar");
     await expect(profile).toBeInViewport({ ratio: 1 });
+    await expect(profile.getByRole("button", { name: "Surface at Station ALOHA" })).toBeInViewport({
+      ratio: 1,
+    });
     await expect.poll(pose).toBe("-121,41,1.17");
     await descent.getByRole("button", { name: "Back", exact: true }).click();
     await expect(feature).toBeFocused();

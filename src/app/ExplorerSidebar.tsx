@@ -9,6 +9,7 @@ import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./SceneEntrances";
 import { resetStoryResults } from "./StorySearch";
 import { reportAnalytics } from "../../analytics/browser";
+import { ExploreContext, ExploreContextBack } from "./continuity/ExploreContext";
 import { WorldStoryMarkers } from "./discovery/WorldStoryMarkers";
 import "./explore-panel.css";
 
@@ -73,6 +74,7 @@ export function ExplorerSidebar({
   fold: ReactNode;
 }) {
   const { browser, observations } = context.views;
+  const { world, showStories, openLayer, backToWorld } = context.explorePaths;
   const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
   const panel = useRef<HTMLDivElement>(null);
   useReadingArrival(panel, browser.pane, "fade");
@@ -114,7 +116,7 @@ export function ExplorerSidebar({
   };
   return (
     <>
-      {!context.views.observing && browser.pane === "layers" && (
+      {!context.views.observing && !world && browser.pane === "layers" && (
         <WorldStoryMarkers map={context.explorer.flat} />
       )}
       <div className="explorer-tabs">
@@ -153,8 +155,19 @@ export function ExplorerSidebar({
             </button>
           ))}
         </div>
-        {fold}
+        <div className="explorer-tab-actions">
+          {!context.views.observing && world && <ExploreContextBack visit={world} back={backToWorld} />}
+          {fold}
+        </div>
       </div>
+      {!context.views.observing && world && (
+        <ExploreContext
+          visit={world}
+          onLayer={openLayer}
+          showStories={showStories}
+          stories={browser.pane === "stories"}
+        />
+      )}
       <div
         ref={browser.pane === "layers" ? panel : undefined}
         id="explorer-layers"
@@ -217,6 +230,7 @@ export function ExplorerSidebar({
               ))}
             </div>
           }
+          selection={context.storySelection}
           ready={context.ready}
           observations={observations}
           discoveries={

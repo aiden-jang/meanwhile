@@ -61,7 +61,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts`, `observatoryState.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
 | `src/app/usePresentation.ts`, `src/app/useWorldLayout.ts`, `src/app/useReadingArrival.ts` | Presentation state, interruptible globe/panel handoff and finite content arrivals without rebuilding the renderer |
-| `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
+| `src/app/useSceneHistory.ts`, `src/app/useExplorerHistory.ts` | Browser Back and Forward restore camera, projection, selected readings, panel scroll, and focus. A story handoff keeps its original return entry as visitors switch tabs. |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
@@ -74,7 +74,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/CanvasFooter.tsx`, `MapLegend.tsx` | Explorer credit, input hints and responsive map legend |
 | `src/app/journeys.ts` | Filtered reading selection, factual captions and scoped summary |
 | `src/app/journeys/` | Manual guided paths, contextual onward links, and navigation through existing story and scene controls |
-| `src/app/discovery/` | Regional story previews, filtered nearby reports, and shared discovery styling |
+| `src/app/discovery/`, `src/app/continuity/` | Regional previews, nearby reports, and story-to-Explore handoffs. The carried reading keeps its original time while Explore uses the feed’s own clock. |
 | `src/globe/annotationInput.ts`, `observationAnchors.ts`, and `PlaceLabels.tsx` | DOM annotations projected by the existing camera, bounded label collisions, and explicit Locate/hold/recenter commands |
 | `src/app/StoryThumbnail.tsx` and `src/assets/story-previews/` | Lazy recorded-view thumbnails and their origin sidecars |
 | `src/app/MeasurementSound.tsx` and `src/app/measurementVoice.ts` | Gesture-enabled measurement tones, bounded playback, and audio cleanup |

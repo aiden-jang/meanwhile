@@ -51,6 +51,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
   for (const anchor of anchors) {
     if (anchor.dataset["evidenceSource"] === "true") evidenceSource ??= anchor;
     if (anchor.hasAttribute("data-track-handle")) selected = anchor;
+    if (anchor.hasAttribute("data-priority-anchor")) selected ??= anchor;
     const parent = anchor.parentElement;
     if (parent && !parents.has(parent)) parents.set(parent, parent.getBoundingClientRect());
     if (!story && anchor.hasAttribute("data-place-label") && zoom >= Number(anchor.dataset["minZoom"])) {

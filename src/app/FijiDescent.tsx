@@ -1,23 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { depthRecords } from "../data/depthRecords";
-import type { CutawayFocus } from "../globe/cutaway";
+import { StoryOnward } from "./continuity/StoryOnward";
+import { depthRecords, type DepthRecord } from "../data/depthRecords";
 import type { CameraState } from "../globe/controls";
 import { StoryProjection } from "./observations/StoryProjection";
 import "./fiji-descent.css";
 
 const august = depthRecords[0];
 const september = depthRecords[1];
-
-export function fijiFocus(depth: number): CutawayFocus {
-  return {
-    lon: -176,
-    lat: -18.3,
-    descent: true,
-    archiveReading: depth >= september.depthKm ? september : august,
-    sweepKm: depth,
-  };
-}
 
 const recordUrl = (id: string) => `https://earthquake.usgs.gov/earthquakes/eventpage/${id}`;
 
@@ -50,6 +40,7 @@ export function FijiDescent({
   closing,
   closed,
   onBack,
+  onExplore,
 }: {
   depth: number;
   map: boolean;
@@ -59,8 +50,10 @@ export function FijiDescent({
   closing: boolean;
   closed: boolean;
   onBack: () => void;
+  onExplore: (record: DepthRecord) => void;
 }) {
-  const [arrived, setArrived] = useState(false);
+  const [resuming] = useState(depth > 0);
+  const [arrived, setArrived] = useState(resuming);
   const [entryMap] = useState(map);
   const stage = useRef<HTMLElement>(null);
   const back = useRef<HTMLButtonElement>(null);
@@ -68,11 +61,15 @@ export function FijiDescent({
   const record = depth >= september.depthKm ? september : august;
 
   useLayoutEffect(() => {
-    if (!closed) back.current?.focus({ preventScroll: true });
-  }, [closed]);
+    if (!closed && !resuming) back.current?.focus({ preventScroll: true });
+  }, [closed, resuming]);
 
   useEffect(() => {
     if (closed) return;
+    if (resuming) {
+      stage.current?.style.setProperty("--fiji-aperture", "1");
+      return;
+    }
     const start = performance.now();
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
@@ -93,7 +90,7 @@ export function FijiDescent({
     };
     frame = requestAnimationFrame(check);
     return () => cancelAnimationFrame(frame);
-  }, [closed, entryMap, readCamera]);
+  }, [closed, entryMap, readCamera, resuming]);
 
   return (
     <section
@@ -109,7 +106,7 @@ export function FijiDescent({
       data-reached={reached || undefined}
       data-map={map || undefined}
       data-underwater={depth > 0 || undefined}
-      style={{ "--fiji-progress": Math.min(1, depth / 420) } as CSSProperties}
+      style={{ "--fiji-progress": closing ? 0 : Math.min(1, depth / 420) } as CSSProperties}
     >
       <div className="fiji-waterline" aria-hidden="true" />
       <span className="fiji-flight-point" aria-hidden="true" />
@@ -199,6 +196,14 @@ export function FijiDescent({
                     USGS record
                   </a>
                 </div>
+                <StoryOnward
+                  id="fiji-explore-nearby"
+                  label="Explore nearby earthquakes"
+                  onClick={(event) => {
+                    event.currentTarget.focus({ preventScroll: true });
+                    onExplore(record);
+                  }}
+                />
               </div>
             )}
           </div>

@@ -21,6 +21,7 @@ export function CutawayReports({
   now,
   revision,
   feeds,
+  hasContext = false,
 }: PlaceContextProps & {
   record: DepthRecord;
   back: () => void;
@@ -28,6 +29,7 @@ export function CutawayReports({
   select: (key: string) => void;
   reading: ReactNode;
   onClose: () => void;
+  hasContext?: boolean;
 }) {
   const quakes = useMemo(() => {
     void revision;
@@ -66,9 +68,11 @@ export function CutawayReports({
       }}
     >
       <nav className="cutaway-report-nav" aria-label="Cutaway navigation">
-        <button id="back-to-cutaway" className="layer-story-link" type="button" onClick={back}>
-          Back to cutaway
-        </button>
+        {!hasContext && (
+          <button id="back-to-cutaway" className="layer-story-link" type="button" onClick={back}>
+            Back to cutaway
+          </button>
+        )}
         <button className="layer-story-link" type="button" onClick={allLayers}>
           All layers
         </button>
@@ -78,9 +82,11 @@ export function CutawayReports({
           </button>
         )}
       </nav>
-      <p className="held-cutaway">
-        Cutaway held · {date.format(new Date(record.at))} · {record.depthKm} km deep
-      </p>
+      {!hasContext && (
+        <p className="held-cutaway">
+          Cutaway held · {date.format(new Date(record.at))} · {record.depthKm} km deep
+        </p>
+      )}
       {inspecting ? (
         reading
       ) : (

@@ -33,7 +33,7 @@ export function captureBrowseOrigin(
     ...(previous ? { previous } : {}),
     label:
       weatherOrigin(trigger) ??
-      (isWorldStoryMarker(trigger)
+      (isWorldStoryMarker(trigger) || trigger.startsWith("context-story-")
         ? backToExplore
         : trigger === auroraHandoff
           ? "Back to the ISS finding"

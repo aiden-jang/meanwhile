@@ -128,6 +128,9 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     const revised = byReadingId.get(readingKey(reading));
     if (revised) return byKey.get(revised);
 
+    // Distinct IDs from one agency are distinct events. A single-feed seed has no cross-agency candidates.
+    if (readingCounts[reading.source] === byReadingId.size) return undefined;
+
     const b = bucketOf(reading.time);
     for (let d = -1; d <= 1; d += 1) {
       const set = buckets.get(b + d);

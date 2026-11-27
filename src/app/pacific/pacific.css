@@ -7,6 +7,9 @@
 .frame[data-pacific]
   :is(
     #chrome-head,
+    #chrome-rail,
+    #explorer-fold,
+    .explorer-sheet,
     .observatory-sidebar,
     .observatory-stage,
     .creator-credit,
@@ -20,6 +23,8 @@
   --pacific-ink: #f3f6ef;
   --pacific-flare: #ffce98;
   --pacific-gutter: clamp(20px, 4vw, 62px);
+  --pacific-top: max(18px, env(safe-area-inset-top));
+  --pacific-profile-bottom: 145px;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -128,7 +133,8 @@
 
 .pacific-back {
   position: absolute;
-  top: max(18px, env(safe-area-inset-top));
+  z-index: 1;
+  top: var(--pacific-top);
   left: var(--pacific-gutter);
   min-height: 44px;
   display: flex;
@@ -206,12 +212,12 @@
 .pacific-profile {
   position: absolute;
   right: var(--pacific-gutter);
-  bottom: 145px;
+  bottom: var(--pacific-profile-bottom);
   width: min(340px, calc(100% - 2 * var(--pacific-gutter)));
   border: 1px solid #68848e63;
   border-radius: 7px;
   padding: 16px;
-  max-height: calc(100dvh - 165px);
+  max-height: calc(100dvh - var(--pacific-profile-bottom) - var(--pacific-top) - 52px);
   overflow-y: auto;
   background: #091b26;
   font-size: 13px;
@@ -231,10 +237,10 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.pacific-profile svg {
+.pacific-profile > svg {
   display: block;
   width: 100%;
-  max-height: min(174px, 29dvh);
+  max-height: min(154px, 23dvh);
   margin-top: 8px;
   color: var(--pacific-flare);
 }
@@ -332,10 +338,7 @@
   .frame[data-pacific] .zone-canvas {
     mask-image: linear-gradient(#000 72%, transparent);
   }
-  .pacific-profile {
-    bottom: 144px;
-  }
-  .pacific-preview:has(.pacific-profile) .pacific-reading {
+  .pacific-preview:has(.pacific-profile) :is(.pacific-title p, .pacific-reading) {
     visibility: hidden;
   }
   .pacific-cast-date span {
@@ -350,11 +353,29 @@
   }
 }
 @media (max-width: 650px) and (max-height: 690px) {
+  .pacific-preview:has(.pacific-profile) .pacific-title {
+    visibility: hidden;
+  }
   .pacific-title h2 {
     font-size: 58px;
   }
   .pacific-depth {
     font-size: 54px;
+  }
+}
+@media (max-width: 650px) and (max-height: 620px) {
+  .pacific-profile > svg {
+    max-height: 92px;
+  }
+}
+@media (min-width: 651px) and (max-height: 490px) {
+  .pacific-profile {
+    max-height: calc(100dvh - var(--pacific-profile-bottom) - var(--pacific-top));
+    padding: 12px 16px;
+  }
+  .pacific-profile > svg {
+    max-height: 70px;
+    margin-top: 3px;
   }
 }
 @media (max-height: 490px) {
@@ -373,7 +394,7 @@
   .pacific-reading {
     bottom: 114px;
   }
-  .pacific-profile {
-    bottom: 112px;
+  .pacific-preview {
+    --pacific-profile-bottom: 112px;
   }
 }

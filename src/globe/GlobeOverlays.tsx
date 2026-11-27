@@ -12,7 +12,7 @@ interface OverlayRefs {
   wake: () => void;
   selected: string | null;
   marks: readonly Mark[];
-  placePin: { lon: number; lat: number } | null;
+  placePin: { lon: number; lat: number; name?: string | undefined } | null;
   orbit: RefObject<HTMLDivElement>;
   cutaway: CutawayFocus | null;
   marker: RefObject<HTMLDivElement>;

@@ -1,4 +1,4 @@
-import { useRef, useState, type MutableRefObject, type SetStateAction } from "react";
+import { useRef, useState, type SetStateAction } from "react";
 import type { DepthRecord } from "../data/depthRecords";
 import type { CameraState } from "../globe/controlsTypes";
 import type { Permalink } from "./permalink";
@@ -6,20 +6,22 @@ import { useFloatingChrome } from "./useNarrow";
 import { useStoredFlag } from "./useStored";
 import type { useObservatory } from "./useObservatory";
 import { reportAnalytics } from "../../analytics/browser";
-import { useSceneHistory } from "./useSceneHistory";
-import type { useArchive } from "./useArchive";
 import type { useGlobeCamera } from "./useGlobeCamera";
 import type { explorerReadings } from "./explorerReadings";
 import type { ExploreTarget } from "./visitor/observatorySearch";
 import { restorePanel } from "./panelReturn";
 import type { SkyCity } from "../geo/tonight";
+import { returnToScene, sceneEntry } from "./continuity/sceneEntry";
+import type { MapLayer } from "./layerVisibility";
+import type { WorldSubject, WorldVisit } from "./continuity/worldSubject";
 import type { CityWeatherLayers, CityWeatherVisit } from "./tonight/cityWeather";
 
 type SceneVisit = ReturnType<ReturnType<typeof useObservatory>["navigation"]["capture"]>;
-type Nearby = { record: DepthRecord; camera: CameraState; from: SceneVisit; map: boolean };
+type Nearby = { record: DepthRecord; map: boolean; from: SceneVisit; camera: CameraState };
 type Visit = {
   panel?: boolean | undefined;
   nearby?: Nearby;
+  world?: WorldVisit;
   city?: CityWeatherVisit;
   destination?: string | undefined;
   findEntry?: number;
@@ -45,20 +47,22 @@ export function useExplorerView(shared: Partial<Permalink>) {
   const chromeFloats = useFloatingChrome();
   const nearby = visit.nearby;
   const city = visit.city;
+  const world = visit.world;
   return {
     nearby,
     city,
+    world,
     destination: visit.destination,
     findEntry: visit.findEntry,
     backToFind: visit.backToFind,
     lastFree,
     chromeFloats,
     railOpen: visit.panel ?? railOpen,
-    mapOn: nearby?.map ?? city?.map ?? preferredMap,
+    mapOn: world?.map ?? nearby?.map ?? city?.map ?? preferredMap,
     setFlat(map: SetStateAction<boolean>) {
-      if (nearby || city) {
+      if (world || nearby || city) {
         setVisit((current) => {
-          const key = current.nearby ? "nearby" : "city";
+          const key = current.world ? "world" : current.nearby ? "nearby" : "city";
           const scope = current[key];
           return scope
             ? { ...current, [key]: { ...scope, map: typeof map === "function" ? map(scope.map) : map } }
@@ -81,8 +85,22 @@ export function useExplorerView(shared: Partial<Permalink>) {
       setVisit({});
       saveRailOpen(true);
     },
-    openNearby(record: DepthRecord, camera: CameraState, from: SceneVisit) {
-      setVisit({ panel: true, nearby: { record, camera, from, map: from.deck.map } });
+    openNearby(record: DepthRecord, camera: CameraState, from: SceneVisit, world?: WorldVisit) {
+      setVisit({
+        panel: true,
+        nearby: { record, camera, from, map: from.deck.map },
+        ...(world ? { world } : {}),
+      });
+    },
+    openWorld(world: WorldVisit) {
+      setVisit({ panel: true, world });
+    },
+    changeWorldLayer(layer: MapLayer, on: boolean) {
+      setVisit((current) =>
+        current.world
+          ? { ...current, world: { ...current.world, layers: { ...current.world.layers, [layer]: on } } }
+          : current,
+      );
     },
     openCity(city: CityWeatherVisit) {
       setVisit({ panel: true, city });
@@ -122,7 +140,9 @@ export function explorerEntrances(
   const open = (panel?: boolean) => present(panel);
   function resume() {
     const previous =
-      observatory.observing || explorer.nearby || explorer.city ? explorer.lastFree.current : undefined;
+      observatory.observing || explorer.nearby || explorer.city || explorer.world
+        ? explorer.lastFree.current
+        : undefined;
     const focus = "explorer-layers-tab";
     observatory.navigation.requestExploreFocus(focus);
     observatory.browser.show("layers");
@@ -211,22 +231,97 @@ export function explorerEntrances(
       document.getElementById("see-observing-city")?.focus({ preventScroll: true }),
     );
   }
-  function nearby(record: DepthRecord) {
+  function showStories() {
+    observatory.browser.show("stories");
+    observatory.browser.select(null);
+    observatory.browser.fold("full-catalogue", false);
+    explorer.setRailOpen(true);
+    requestAnimationFrame(() =>
+      restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "explorer-stories-tab" }),
+    );
+  }
+  function openLayer(layer: MapLayer) {
+    observatory.browser.show("layers");
+    readings.clearIsolation();
+    explorer.changeWorldLayer(layer, true);
+    readings.inspect(layer);
+    explorer.setRailOpen(true);
+    requestAnimationFrame(() =>
+      restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "layer-inspector-title" }),
+    );
+  }
+  function continueAt(
+    subject: WorldSubject,
+    opener?: HTMLElement,
+    leave?: () => void,
+    map = observatory.observing ? observatory.observations.map : explorer.mapOn,
+  ) {
+    opener?.focus({ preventScroll: true });
+    observatory.checkpoint.current();
+    const source = sceneEntry();
+    const focus = "place-title";
+    observatory.navigation.requestExploreFocus(focus);
+    observatory.browser.show("layers");
+    observatory.browser.fold("full-catalogue", false);
+    present(true, () => {
+      observatory.browser.select(null);
+      leave?.();
+      readings.clear();
+      readings.closeRadarRewind();
+      readings.clearIsolation();
+      readings.inspect(null);
+      readings.locate(subject.point);
+      returnToLive();
+      explorer.openWorld({ subject, source, map });
+    });
+    const pose = camera.read.current();
+    const point = subject.point;
+    camera.flyTo.current(point.lon, point.lat, subject.zoom ?? Math.max(1.45, Math.min(pose.zoom, 2.2)));
+    requestAnimationFrame(() => restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus }));
+  }
+  function backToWorld() {
+    if (!returnToScene(explorer.world?.source)) resume();
+  }
+  function nearby(record: DepthRecord, fromFiji = false) {
     const pose = { ...camera.read.current() };
     const from = observatory.navigation.capture(pose);
+    const fromEntry = sceneEntry();
+    const world = fromFiji
+      ? {
+          subject: {
+            point: { lon: record.lon, lat: record.lat, name: "Fiji region" },
+            from: "Fiji",
+            layer: "earthquakes" as const,
+            stories: ["rupture", "fault"],
+            reading: {
+              label: "Recorded earthquake",
+              at: Date.parse(record.at),
+              precision: "date" as const,
+              value: `${record.scale} ${record.magnitude.toFixed(1)} · ${record.depthKm} km deep`,
+            },
+          },
+          map: from.deck.map,
+          source: fromEntry,
+        }
+      : undefined;
     observatory.navigation.requestExploreFocus("cutaway-nearby-title");
     observatory.browser.show("layers");
     observatory.exploreScene(() => {
       stopTour();
+      if (world) {
+        observatory.browser.select(null);
+        observatory.browser.fold("full-catalogue", false);
+      }
       readings.clear();
       readings.inspect("earthquakes");
       returnToLive();
-      explorer.openNearby(record, pose, from);
+      explorer.openNearby(record, pose, from, world);
     });
+    if (world) camera.flyTo.current(record.lon, record.lat, Math.max(1.55, Math.min(pose.zoom, 2.1)));
   }
   function back() {
     const saved = explorer.nearby;
-    if (!saved) return;
+    if (!saved || returnToScene(explorer.world?.source)) return;
     observatory.navigation.restore(saved.from);
     readings.clear();
     explorer.open(undefined);
@@ -240,7 +335,10 @@ export function explorerEntrances(
     observatory.checkpoint.current();
     readings.clear();
     readings.inspect(null);
-    explorer.open(true);
+    if (explorer.world) {
+      explorer.openWorld(explorer.world);
+      readings.locate(explorer.world.subject.point);
+    } else explorer.open(true);
     requestAnimationFrame(() =>
       restorePanel({ scrollTarget: "chrome-rail", scroll: 0, focus: "inspect-earthquakes" }),
     );
@@ -256,62 +354,16 @@ export function explorerEntrances(
     pickDate,
     cityWeather,
     backToSky,
+    continueAt,
+    world: explorer.world,
+    hasReadingContext: (point: { lon: number; lat: number } | null) =>
+      !!explorer.world && (!!explorer.nearby || point === explorer.world.subject.point),
+    backToWorld,
+    showStories,
+    openLayer,
     findReturn:
       explorer.destination && explorer.backToFind
         ? { destination: explorer.destination, back: explorer.backToFind }
         : undefined,
   };
-}
-
-export function useExplorerHistory(
-  explorer: ReturnType<typeof useExplorerView>,
-  observatory: ReturnType<typeof useObservatory>,
-  archive: ReturnType<typeof useArchive>,
-  stopTour: () => void,
-  { read: readCamera, flyTo }: Camera,
-  lastWritten: MutableRefObject<string>,
-  readings: Readings,
-) {
-  useSceneHistory({
-    route: {
-      ...observatory.navigation,
-      key: `${observatory.navigation.key}:${explorer.findEntry ?? explorer.nearby?.record.id ?? explorer.city?.city.name ?? explorer.destination ?? ""}`,
-      capture: () => {
-        const camera = { ...readCamera.current() };
-        const reading = readings.capture();
-        const state = explorer.capture();
-        if (
-          !observatory.observing &&
-          observatory.browser.pane === "layers" &&
-          !explorer.nearby &&
-          !explorer.city &&
-          explorer.destination !== "storm"
-        )
-          explorer.lastFree.current = {
-            preferredMap: state.preferredMap,
-            camera,
-          };
-        return {
-          view: observatory.navigation.capture(camera),
-          day: archive.loadedDay,
-          explorer: state,
-          reading,
-        };
-      },
-      restore(saved) {
-        stopTour();
-        explorer.restore(saved.explorer);
-        observatory.navigation.restore(saved.view);
-        readings.restore(saved.reading);
-        if (saved.day !== archive.loadedDay || archive.archiveBusy) {
-          if (saved.day) void archive.loadArchive(saved.day);
-          else archive.backToLive();
-        }
-      },
-    },
-    checkpoint: observatory.checkpoint,
-    readCamera,
-    flyTo,
-    lastWritten,
-  });
 }

@@ -38,7 +38,7 @@ export function useArchive(
   }, []);
 
   const loadArchive = useCallback(
-    async (iso: string) => {
+    async (iso: string, restore?: () => void) => {
       const span = dayRange(iso);
       if (!span || !isArchivableDay(iso, Date.now())) return;
       setArchiveDay(iso);
@@ -65,6 +65,7 @@ export function useArchive(
         });
         setArchiveNote(said.join(" / "));
         loaded.current();
+        restore?.();
         setArchiveBusy(false);
         const hazards = await history;
         if (current.signal.aborted) return;

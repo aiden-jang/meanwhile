@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { StoryLocation } from "../continuity/StoryLocation";
 import { revealReading } from "../observations/revealReading";
 import { SaveVisit } from "../visitor/VisitShelf";
 import { searchStories } from "../storyIndex";
@@ -33,7 +34,14 @@ export function ExperienceEnding({
   showFinding = true,
   showSave = true,
   evidenceOpen = false,
-}: { id?: string; showFinding?: boolean; showSave?: boolean; evidenceOpen?: boolean } = {}) {
+  showLocation = true,
+}: {
+  id?: string;
+  showFinding?: boolean;
+  showSave?: boolean;
+  evidenceOpen?: boolean;
+  showLocation?: boolean;
+} = {}) {
   const navigation = useStoryNavigation();
   const details = useRef<HTMLDetailsElement>(null);
   const active = id ?? navigation?.active;
@@ -61,6 +69,7 @@ export function ExperienceEnding({
     return (
       <>
         {showFinding && <Finding id={active} completed={completed} />}
+        {showLocation && <StoryLocation />}
         {showSave && <SaveVisit />}
       </>
     );
@@ -68,6 +77,7 @@ export function ExperienceEnding({
   return (
     <>
       {showFinding && <Finding id={active} completed={completed} />}
+      {showLocation && <StoryLocation />}
       {showSave && <SaveVisit />}
       <details
         ref={details}

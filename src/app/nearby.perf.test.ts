@@ -39,7 +39,6 @@ function fastestMs(run: () => void, samples: number): number {
 }
 
 describe("the pinned panel's per-second cost", () => {
-  // Building a fifty-thousand-event store and sampling it takes about seven seconds.
   it("stays cheap enough to leave live, at a full buffer inside one swarm", { timeout: 30_000 }, () => {
     const random = seeded(7);
     const store = createStore(50_000);
@@ -68,7 +67,9 @@ describe("the pinned panel's per-second cost", () => {
     };
     const pinned = store.latest(1)[0]!;
 
-    for (let i = 0; i < 3; i += 1) findNearby(store, pinned, filters, NOW);
+    expect(store.size()).toBe(50_000);
+    expect(findNearby(store, pinned, filters, NOW).count).toBe(49_999);
+    for (let i = 1; i < 3; i += 1) findNearby(store, pinned, filters, NOW);
     const ref = referenceMs();
     const ms = fastestMs(() => findNearby(store, pinned, filters, NOW), 10);
     const units = ms / ref;

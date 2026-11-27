@@ -1,3 +1,5 @@
+import { alohaReading } from "../pacific/aloha";
+import { pacificId, readPacificPosition, underwaterStart } from "../pacific/pacificMoment";
 import { lunarTraverses } from "../../sources/moonfall/traverses";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { savedVisitKey, type Visit } from "./library";
@@ -25,6 +27,14 @@ export function visitNote(visit: Visit) {
     return `Optical detections · ${((moment.at - Date.parse("2017-10-22T08:56:45.834Z")) / 1000).toFixed(2)} s`;
   if (visit.id === "kilauea" && moment?.chapter === "compare")
     return `Kapoho Bay · Shoreline divider at ${moment.choice ?? "50"}%`;
+  if (visit.id === pacificId && moment) {
+    const { position } = readPacificPosition(moment);
+    if (position >= underwaterStart) {
+      const { depth, reading } = alohaReading(position);
+      return `Station ALOHA · ${depth} m · ${reading[1]!.toFixed(2)} °C`;
+    }
+    return "Station ALOHA · orbital approach";
+  }
   const at = moment?.at ?? visit.position.radar?.at;
   if (at !== undefined) return storyObservationTime(visit.id, at);
   if (visit.position.float) return "Saved float profile and depth";

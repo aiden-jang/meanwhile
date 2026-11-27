@@ -185,6 +185,19 @@ describe("revisions", () => {
 });
 
 describe("association", () => {
+  it("keeps single-agency neighbours distinct and matches the first report from the other agency", () => {
+    const store = createStore(2);
+    const first = store.ingest(reading({ id: "first" }));
+    const second = store.ingest(reading({ id: "second", magnitude: 3.1 }));
+    expect(second.isNew).toBe(true);
+    expect(store.ingest(reading({ id: "second", magnitude: 3.2 })).quake.key).toBe(second.quake.key);
+    const counterpart = store.ingest(reading({ source: "emsc", id: "first", magnitude: 3.2 }));
+    expect(counterpart.corroborated).toBe(true);
+    expect(counterpart.quake.key).toBe(second.quake.key);
+    expect(store.findByReading("usgs", "first")?.key).toBe(first.quake.key);
+    expect(store.size()).toBe(2);
+  });
+
   it("merges two agencies reporting one rupture", () => {
     const store = createStore(100);
     const a = store.ingest(reading());

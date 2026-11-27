@@ -1,3 +1,4 @@
+import { StoryLocation } from "../continuity/StoryLocation";
 import { useCallback, useMemo, useEffect, useState } from "react";
 import { WaterSourceRecord } from "../journeys/WaterSourceRecord";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
@@ -156,6 +157,7 @@ export function RiverReading({
           {attempted === key && <span role="status">{navigation?.library.notice}</span>}
         </div>
       )}
+      <StoryLocation />
       <small className="observation-note">
         River outline ·{" "}
         <a href={riverReaches.source} target="_blank" rel="noreferrer">

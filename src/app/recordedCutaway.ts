@@ -1,19 +1,30 @@
 import { useMemo, useState } from "react";
 import { depthRecord, depthRecords, type DepthRecord } from "../data/depthRecords";
 import type { CutawayFocus } from "../globe/cutaway";
+import type { Permalink } from "./permalink";
 import type { Stop } from "./tour";
 
 export function recordedCutaway(archiveReading: DepthRecord = depthRecords[0]): CutawayFocus {
   return { lon: -176, lat: -18.3, dive: true, archiveReading, sweepKm: archiveReading.depthKm };
 }
 
+export function fijiFocus(depth: number): CutawayFocus {
+  return {
+    lon: -176,
+    lat: -18.3,
+    descent: true,
+    archiveReading: depth >= depthRecords[1].depthKm ? depthRecords[1] : depthRecords[0],
+    sweepKm: depth,
+  };
+}
+
 export function useDepthCutaway(
-  { depthEvent }: { depthEvent?: DepthRecord["id"] },
+  { depthEvent, descent }: Partial<Permalink>,
   tour: Stop | null,
   { map }: { map: boolean },
 ) {
   const [focus, setFocus] = useState<CutawayFocus | null>(() =>
-    depthEvent ? recordedCutaway(depthRecord(depthEvent)) : null,
+    descent !== undefined ? fijiFocus(descent) : depthEvent ? recordedCutaway(depthRecord(depthEvent)) : null,
   );
   const depthFocus = useMemo<CutawayFocus | null>(() => {
     if (tour?.purpose === "depth") return tour;

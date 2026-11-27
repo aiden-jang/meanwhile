@@ -6,7 +6,7 @@ import type { CameraState } from "../globe/controls";
 import type { FlyTo } from "../globe/cameraTarget";
 import type { PanelReturn } from "./panelReturn";
 
-type Snapshot<T> = { value: T; camera: CameraState } & PanelReturn;
+type Snapshot<T> = { value: T; camera: CameraState; index: number } & PanelReturn;
 
 export function useSceneHistory<T>({
   route,
@@ -25,6 +25,7 @@ export function useSceneHistory<T>({
   const [state] = useState(() => ({
     session: crypto.randomUUID(),
     id: 0,
+    index: 0,
     next: 0,
     key: route.key,
     snapshots: new Map<number, Snapshot<T>>(),
@@ -44,6 +45,7 @@ export function useSceneHistory<T>({
       const panel = captureHistoryPanel();
       current.snapshots.set(current.id, {
         value: latest.current.capture(),
+        index: current.index,
         camera: { ...readCamera.current() },
         ...panel,
       });
@@ -51,14 +53,18 @@ export function useSceneHistory<T>({
     };
     checkpoint.current = () => saveSnapshot(true);
     const departing = () => saveSnapshot(true);
-    history.replaceState({ ...history.state, observatory: { session: current.session, id: current.id } }, "");
+    history.replaceState(
+      { ...history.state, observatory: { session: current.session, id: current.id, index: current.index } },
+      "",
+    );
     const back = (event: PopStateEvent) => {
       const target = event.state?.observatory;
-      if (target?.session !== current.session) return;
+      if (target?.session !== current.session || target.id === current.id) return;
       const saved = current.snapshots.get(target.id);
       if (!saved) return;
       saveSnapshot(false);
       current.id = target.id;
+      current.index = saved.index;
       current.restoring = true;
       lastWritten.current = location.hash;
       flushSync(() => latest.current.restore(saved.value));
@@ -82,11 +88,12 @@ export function useSceneHistory<T>({
       if (!current.restoring) {
         for (const id of current.snapshots.keys()) if (id > current.id) current.snapshots.delete(id);
         current.id = ++current.next;
+        current.index += 1;
         history.pushState(
           {
             ...history.state,
             observatoryPanel: undefined,
-            observatory: { session: current.session, id: current.id },
+            observatory: { session: current.session, id: current.id, index: current.index },
           },
           "",
         );

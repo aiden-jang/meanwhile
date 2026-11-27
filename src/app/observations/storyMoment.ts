@@ -6,6 +6,7 @@ import { readFloatMoment } from "../float/floatMoment";
 import { journeys } from "../journeys/catalogue";
 import type { SkyLook } from "../../geo/tonight";
 import { readTongaPosition, writeTongaPosition } from "../tonga/tongaPosition";
+import { pacificId } from "../pacific/pacificMoment";
 import type { TongaPhase } from "../tonga/TongaWorld";
 
 export interface StoryMoment {
@@ -43,6 +44,7 @@ const ids = new Set([
   "aurora",
   "sun",
   "radar",
+  pacificId,
 ]);
 const safe = (value: string | null) =>
   value && /^[\p{L}\p{N} .,:_+/-]{1,80}$/u.test(value) ? value : undefined;

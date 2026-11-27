@@ -28,8 +28,13 @@ export function useMapLayers(
   cover: boolean | "catalogue" = false,
   scope?: "nearby" | CityWeatherLayers,
   storm?: ObservationView | null,
+  visit?: {
+    layers?: Partial<ReturnType<typeof readMapLayers>>;
+    change: (layer: MapLayer, on: boolean) => void;
+  },
 ) {
   const followingStorm = !!storm;
+  const overrides = visit?.layers;
   const nearby = scope === "nearby";
   const cityLayers = nearby ? undefined : scope;
   const suspended = !!cover;
@@ -52,8 +57,11 @@ export function useMapLayers(
     () =>
       cityLayers
         ? { ...isolateLayer(savedLayers, "radar"), ...cityLayers }
-        : isolateLayer(savedLayers, nearby ? "earthquakes" : archived ? null : isolated),
-    [savedLayers, archived, isolated, cityLayers, nearby],
+        : isolateLayer(
+            overrides ? { ...savedLayers, ...overrides } : savedLayers,
+            nearby ? "earthquakes" : archived ? null : isolated,
+          ),
+    [savedLayers, archived, isolated, cityLayers, nearby, overrides],
   );
   const [rewind, setRewind] = useState<{
     point: NonNullable<SharedLayers["radarPlace"]>;
@@ -189,7 +197,24 @@ export function useMapLayers(
     isolate(layer: MapLayer | null) {
       setIsolated(layer);
     },
-    change,
+    change(layer: MapLayer, on: boolean) {
+      if (overrides?.[layer] !== undefined) {
+        setIsolated(null);
+        visit?.change(layer, on);
+      } else change(layer, on);
+    },
+    captureReading: () => ({ inspector, isolated, selectedTimes: savedTimes, rewind: rewind?.point }),
+    restoreReading(saved: {
+      inspector: MapLayer | null;
+      isolated: MapLayer | null;
+      selectedTimes: LayerTimes;
+      rewind?: NonNullable<SharedLayers["radarPlace"]> | undefined;
+    }) {
+      inspect(saved.inspector);
+      setIsolated(saved.isolated);
+      setSelectedTimes(saved.selectedTimes);
+      setRewind(saved.rewind ? { point: saved.rewind } : null);
+    },
     globeFilters,
     radar,
     rewindPoint: scope ? undefined : rewind?.point,

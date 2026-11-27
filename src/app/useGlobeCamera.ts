@@ -47,6 +47,7 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
         untouched.current = false;
         stopLocation.current();
         fly(...args);
+        camera.current = current();
       };
       read.current = current;
       setReady(true);

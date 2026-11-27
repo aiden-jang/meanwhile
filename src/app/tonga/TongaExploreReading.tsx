@@ -1,3 +1,4 @@
+import { ExploreStation } from "./ExploreStation";
 import { PressureChart } from "./PressureChart";
 import { TongaSources } from "./TongaSources";
 import { KeepPressure } from "./KeepPressure";
@@ -54,6 +55,7 @@ export function TongaExploreReading({
       </div>
       <p className="tonga-explore-help">Drag the pressure trace to move through time.</p>
       <p className="tonga-explore-help">Modeled wavefront · Measured pressure</p>
+      <ExploreStation station={station} minute={minute} />
       <details className="tonga-explore-more">
         <summary>Full story, sources &amp; reading</summary>
         <button type="button" onClick={onJourney}>

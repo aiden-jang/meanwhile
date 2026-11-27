@@ -8,19 +8,28 @@ export function PlaceLabels({
   pin,
   marks,
 }: {
-  pin: { lon: number; lat: number } | null;
+  pin: { lon: number; lat: number; name?: string | undefined } | null;
   marks: readonly Mark[];
 }) {
   const storms = marks.filter((mark) => mark.caption && mark.anchor).slice(0, 12);
   return (
     <div className="place-labels" aria-hidden="true">
       {pin && (
-        <span className="place-reticle" data-observation-anchor="" data-lon={pin.lon} data-lat={pin.lat}>
+        <span
+          className="place-reticle"
+          data-observation-anchor=""
+          data-world-story-marker={pin.name ? "" : undefined}
+          data-compact-anchor={pin.name ? "" : undefined}
+          data-priority-anchor={pin.name ? "" : undefined}
+          data-lon={pin.lon}
+          data-lat={pin.lat}
+        >
           <svg viewBox="0 0 36 36" width="36" height="36" fill="none" aria-hidden="true">
             <circle cx="18" cy="18" r="12" />
             <path d="M18 2v8m0 16v8M2 18h8m16 0h8" />
             <circle cx="18" cy="18" r="2" fill="currentColor" />
           </svg>
+          {pin.name && <span className="place-reticle-label">{pin.name}</span>}
         </span>
       )}
       {storms.map(({ anchor, caption, id }) => (

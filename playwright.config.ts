@@ -50,6 +50,7 @@ export default defineConfig({
           testMatch: [
             resilience,
             "**/continuity.spec.ts",
+            "**/linked-explore.spec.ts",
             "**/fiji-descent.spec.ts",
             "**/tonga-passage.spec.ts",
             "**/story-recovery.spec.ts",

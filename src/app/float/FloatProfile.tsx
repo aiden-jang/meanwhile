@@ -1,3 +1,4 @@
+import { StoryLocation } from "../continuity/StoryLocation";
 import { useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { FloatDiveView } from "./floatPlayback";
@@ -158,6 +159,7 @@ export function FloatProfile({ view, map }: { view: FloatDiveView; map: boolean 
       <p id={`${id}-help`} className="float-profile-help">
         Drag the chart or move the slider. Each selection is a measured sample.
       </p>
+      <StoryLocation />
       {compact && (
         <>
           <ConnectedJourney compact />

@@ -1,5 +1,6 @@
 import { observations } from "./observations/catalogue";
 import { earthStories } from "./earth-stories/catalogue";
+import { pacificId, pacificTitle } from "./pacific/pacificMoment";
 import type { EarthScene } from "./useObservatory";
 
 export interface SearchStory {
@@ -117,6 +118,14 @@ export const searchStories: readonly SearchStory[] = [
     summary: "Scrub recent radar from around the world on the globe.",
     scene: "live",
     keywords: "rain weather live",
+  },
+  {
+    id: pacificId,
+    title: pacificTitle,
+    summary: "Cross the waterline and follow measured temperature to the seafloor.",
+    scene: "depth",
+    location: "Station ALOHA · North Pacific",
+    keywords: "ocean station aloha hawaii waterline temperature depth 2024",
   },
   {
     id: "float",

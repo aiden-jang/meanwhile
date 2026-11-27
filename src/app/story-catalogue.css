@@ -119,6 +119,9 @@
 #explorer-stories .catalogue-more {
   padding-top: 14px;
 }
+#explorer-stories #catalogue-picks-title {
+  scroll-margin-top: calc(var(--explorer-tabs-height) + 10px);
+}
 #explorer-stories .catalogue-more > h3 {
   margin-bottom: 8px;
   font-size: 15px;

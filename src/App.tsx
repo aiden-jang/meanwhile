@@ -1,6 +1,7 @@
 import { EarthquakeDiscovery } from "./app/EarthquakeDiscovery";
 import { searchStories } from "./app/storyIndex";
-import { FijiLocator, fijiFocus } from "./app/FijiDescent";
+import { FijiLocator } from "./app/FijiDescent";
+import { fijiFocus } from "./app/recordedCutaway";
 import { useFijiDescent } from "./app/useFijiDescent";
 import { usePacificDescent } from "./app/pacific/usePacificDescent";
 import { useWorldLayout } from "./app/useWorldLayout";
@@ -15,7 +16,9 @@ import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { usePlaceInspection } from "./app/discovery/usePlaceInspection";
-import { explorerEntrances, useExplorerHistory, useExplorerView } from "./app/useExplorerView";
+import { explorerEntrances, useExplorerView } from "./app/useExplorerView";
+import { useExplorerHistory } from "./app/useExplorerHistory";
+import { storySelection } from "./app/continuity/storySelection";
 import { explorerReadings } from "./app/explorerReadings";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
@@ -67,7 +70,7 @@ import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCounts, hazardGroups, outsideWindowNote } from "./app/hazards";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
-import { createSiren, type Siren } from "./app/sound";
+import { useNewsSound } from "./app/useNewsSound";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import { closestTo, localZone, viewerPlace } from "./app/viewer";
 import { comparableCount, rankDay, type Span as BaselineSpan } from "./data/baseline";
@@ -114,7 +117,6 @@ export function App(): JSX.Element {
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
   const globeCamera = useGlobeCamera(shared, setGlobeReady);
   const { flyTo, camera, home, read: readCamera, onReady } = globeCamera;
-  const pacific = usePacificDescent(globeCamera.world, camera);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -169,6 +171,7 @@ export function App(): JSX.Element {
   const explorerView = useExplorerView(shared);
   const { mapOn, setFlat, railOpen, setRailOpen, chromeFloats } = explorerView;
   const flat = observatory.observing ? observatory.observations.map : mapOn;
+  const pacific = usePacificDescent(globeCamera, observatory, flat, shared.story);
   const chase = useEclipsePlayback(
     loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
     setScrub,
@@ -228,6 +231,7 @@ export function App(): JSX.Element {
     observatory.browsingStories && !observatory.localReadings ? "catalogue" : observatory.localReadings,
     explorerView.nearby ? "nearby" : explorerView.city?.layers,
     storm?.overlay,
+    { ...explorerView.world, change: explorerView.changeWorldLayer },
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.rendered), [inWindow, mapLayers.rendered]);
   const hazardTally = useMemo(() => {
@@ -309,29 +313,7 @@ export function App(): JSX.Element {
     },
     [segments],
   );
-  /* Build the AudioContext on the press. Built without a user gesture it starts suspended and drops
-  every later tone in silence: the toggle says on and nothing is heard. */
-  const [sound, setSound] = useState(false);
-  const siren = useRef<Siren | null>(null);
-  useEffect(() => {
-    if (!sound) {
-      siren.current?.close();
-      siren.current = null;
-      return undefined;
-    }
-    try {
-      siren.current = createSiren();
-    } catch {
-      siren.current = null;
-    }
-    return () => {
-      siren.current?.close();
-      siren.current = null;
-    };
-  }, [sound]);
-  const onNews = useCallback((magnitudes: number[]) => {
-    siren.current?.play(magnitudes);
-  }, []);
+  const { sound, setSound, onNews } = useNewsSound();
   const lastWritten = useRef<string>(window.location.hash);
   const { cutaway, onCutaway, onSink } = useCutaway(
     () => (selected ? feed.store.get(selected)?.primary : null) ?? camera.current,
@@ -344,6 +326,7 @@ export function App(): JSX.Element {
     [selected, setSelected],
     [markId, setMarkId],
     [sectionLine, setSectionLine],
+    [scrub, setScrub],
   );
   useExplorerHistory(
     explorerView,
@@ -353,6 +336,7 @@ export function App(): JSX.Element {
     globeCamera,
     lastWritten,
     readings,
+    pacific.history,
   );
   useSharedLocation({
     feed,
@@ -370,7 +354,11 @@ export function App(): JSX.Element {
     catalogue: (observatory.observing ? observatory.browser.open : observatory.browser.pane === "stories")
       ? (observatory.browser.category ?? "all")
       : undefined,
-    observatory,
+    observatory: {
+      ...observatory,
+      getMoment: () => pacific.current() ?? observatory.getMoment(),
+      navigation: { key: `${observatory.navigation.key}:${pacific.history.key}` },
+    },
     layers: mapLayers.enabled,
     layerTimes: mapLayers.selectedTimes,
     radarPlace: mapLayers.rewindPoint,
@@ -471,6 +459,7 @@ export function App(): JSX.Element {
     stopTour,
     flyTo,
     readCamera,
+    entrances.nearby,
   );
   function returnHome() {
     observatory.home(() => {
@@ -720,7 +709,9 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const railShown = !observatory.observing && railOpen;
   useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
-  const placePin = nearbyOrigin ?? explorerView.city?.city ?? place.point;
+  const placePin =
+    place.point ?? explorerView.world?.subject.point ?? nearbyOrigin ?? explorerView.city?.city;
+  const hidePlacePin = observatory.observing || (mapLayers.suspended && !explorerView.world);
   const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
@@ -922,6 +913,13 @@ export function App(): JSX.Element {
     onHome: returnHome,
     onExplore: entrances.open,
     explorePaths: entrances,
+    storySelection: storySelection(
+      placePin,
+      mapLayers.inspector,
+      pinned?.primary,
+      markSubject,
+      explorerView.world,
+    ),
     aurora: overflight,
     views: observatory,
     radar: observatory.radar,
@@ -1067,7 +1065,7 @@ export function App(): JSX.Element {
           {observatory.observing ? null : (
             <ExploreSheet
               {...{ flat, height: sheetCanvas }}
-              layersOverview={observatory.browser.pane === "layers" && !mapLayers.inspector}
+              layersOverview={!explorerView.world && browser.pane === "layers" && !mapLayers.inspector}
               onResize={setSheetCanvas}
               visible={railShown && !markSubject && !quakeOverlay}
             />
@@ -1119,6 +1117,7 @@ export function App(): JSX.Element {
                   ...place,
                   cutaway: nearbyOrigin,
                   backToCutaway: entrances.back,
+                  inContext: entrances.hasReadingContext(place.point),
                   allLayers: entrances.allLayers,
                   reading: nearbyOrigin && pinned && !inspection.run ? quakeDetail : null,
                   closeReading: readings.closeQuake,
@@ -1289,7 +1288,7 @@ export function App(): JSX.Element {
                 scrubAt={view.at}
                 moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
                 inspection={inspection.run}
-                flat={flat}
+                flat={pacific.projection ?? flat}
                 globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
                 landing={observatory.landing}
                 rotateLanding={observatory.rotation.enabled && !pacific.active}
@@ -1321,7 +1320,7 @@ export function App(): JSX.Element {
                 onCapture={onCapture}
                 {...(clip.recording ? { onFrame: clip.onFrame } : {})}
                 onSelectMark={selectMark}
-                placePin={observatory.observing || mapLayers.suspended ? null : placePin}
+                placePin={hidePlacePin ? null : (placePin ?? null)}
                 onPlace={
                   !observatory.observing &&
                   !mapLayers.suspended &&
@@ -1342,6 +1341,7 @@ export function App(): JSX.Element {
               />
             </Suspense>
             {!fiji &&
+            !explorerView.world &&
             observatory.ready &&
             (observatory.landing || !observatory.observing) &&
             !mapLayers.suspended ? (
@@ -1367,7 +1367,7 @@ export function App(): JSX.Element {
             </div>
           </section>
 
-          {pacific.surface}
+          {pacific.surface(entrances.continueAt)}
           {!headShown && <CanvasStamp cursor={view.at} day={snapshot.archive?.from ?? null} />}
 
           {markSubject ? (

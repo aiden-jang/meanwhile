@@ -1,3 +1,4 @@
+import type { WorldSubject } from "../continuity/worldSubject";
 import type { StoryPlace } from "../discovery/places";
 import type { ObservatoryProps } from "../observatoryProps";
 import type { useVisitMemory } from "../visitor/useVisitMemory";
@@ -37,7 +38,9 @@ export type StoryNavigationValue = {
   openRadar: (at: number | undefined, map: boolean, trigger?: string) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
-  explore: () => void;
+  explore: (opener?: HTMLElement) => void;
+  worldContinuation: () => WorldSubject | undefined;
+  continueAt: ObservatoryProps["explorePaths"]["continueAt"];
   openEntrance: (id: ObservatoryProps["scene"]) => void;
   findTarget: (target: ExploreTarget) => void;
   findReturn?: { destination: string; back: () => void } | undefined;

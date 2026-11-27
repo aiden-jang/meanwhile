@@ -223,7 +223,7 @@ export function ObservationDeck({
             )}
             {id === "river" && !water && <SharedStory />}
             <ShareMoment />
-            <ExperienceEnding showFinding={!coast} />
+            <ExperienceEnding showFinding={!coast} showLocation={id !== "river"} />
           </div>
         </StoryDockProvider>
       </div>

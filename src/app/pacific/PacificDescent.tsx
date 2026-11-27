@@ -1,20 +1,19 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
+import type { StoryMoment } from "../observations/storyMoment";
+import type { WorldSubject } from "../continuity/worldSubject";
+import { PacificProfile } from "./PacificProfile";
+import {
+  alohaStation,
+  castAt,
+  pacificId,
+  pacificTitle,
+  underwaterStart,
+  type PacificPosition,
+} from "./pacificMoment";
 import type { CameraState } from "../../globe/controls";
 import type { PassageCamera } from "../tonga/passageSurface";
-import {
-  clamp,
-  deepestPressure,
-  depthAtPressure,
-  ease,
-  formatReading,
-  mix,
-  profileLine,
-  profilePoint,
-  readingAt,
-  source,
-  station,
-} from "./aloha";
+import { alohaReading, clamp, ease, mix } from "./aloha";
 import approach from "./approach.webp";
 import water from "./water.webp";
 import floor from "./floor.webp";
@@ -42,76 +41,48 @@ function paintCamera(world: PassageCamera | null, origin: CameraState, progress:
   if (!world) return;
   const route = ease(0, 0.26, progress);
   const approach = ease(0, 0.36, progress);
-  const longitude = ((((station.lon - origin.lon) % 360) + 540) % 360) - 180;
+  const longitude = ((((alohaStation.lon - origin.lon) % 360) + 540) % 360) - 180;
   world.controls.setView(
     progress === 0
       ? origin
       : {
           lon: origin.lon + longitude * route,
-          lat: mix(origin.lat, station.lat, route),
+          lat: mix(origin.lat, alohaStation.lat, route),
           zoom: origin.zoom * (Math.max(origin.zoom, 5.6) / origin.zoom) ** approach,
         },
   );
   world.wake();
 }
 
-function Profile({ reading }: { reading: number[] }) {
-  const [pressure, temperature] = reading;
-  const [x, y] = profilePoint(pressure, temperature);
-  return (
-    <>
-      <p className="pacific-sample">
-        {temperature.toFixed(2)} °C <span>at {formatReading.format(pressure)} dbar</span>
-      </p>
-      <svg
-        viewBox="0 0 288 180"
-        role="img"
-        aria-label="Water cools as the cast descends. Temperature in degrees Celsius, pressure in decibars."
-      >
-        <g className="pacific-grid">
-          {[0, 10, 20].map((tick) => (
-            <text key={tick} x={profilePoint(0, tick)[0]} y="15">
-              {tick}°
-            </text>
-          ))}
-          {[0, 1000, 2000, 3000, deepestPressure].map((tick) => {
-            const [, height] = profilePoint(tick, 0);
-            return (
-              <g key={tick}>
-                <text x="0" y={height + 4}>
-                  {tick === deepestPressure ? "4.8k" : tick ? tick / 1000 + "k" : "0"}
-                </text>
-                <path d={`M46 ${height}H278`} />
-              </g>
-            );
-          })}
-        </g>
-        <polyline points={profileLine} fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx={x} cy={y} r="4" fill="currentColor" />
-      </svg>
-    </>
-  );
-}
-
 export function PacificDescent({
   origin,
   world,
   onBack,
+  initial,
+  current,
+  onProgress,
+  onSurface,
 }: {
   origin: CameraState;
   world: RefObject<PassageCamera>;
   onBack: () => void;
+  initial: PacificPosition;
+  current: () => StoryMoment | undefined;
+  onProgress: (position: PacificPosition) => void;
+  onSurface: (subject: WorldSubject, opener: HTMLElement) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const back = useRef<HTMLButtonElement>(null);
   const profile = useRef<HTMLButtonElement>(null);
   const closeProfile = useRef<HTMLButtonElement>(null);
   const motionFrame = useRef(0);
-  const livePosition = useRef(0);
+  const livePosition = useRef(initial.position);
+  const exiting = useRef<"back" | "surface">();
   const gesture = useRef<{ id: number; y: number; start: number; travel: number } | null>(null);
-  const [position, setPosition] = useState(0);
-  const [returning, setReturning] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [position, setPosition] = useState(initial.position);
+  const [exit, setExit] = useState<"back" | "surface">();
+  const [profileOpen, setProfileOpen] = useState(initial.profile);
+  const returning = exit !== undefined;
   const p = position / 1000;
   const aerial = ease(0.1, 0.27, p);
   const seam = ease(0.29, 0.405, p);
@@ -119,7 +90,7 @@ export function PacificDescent({
   const blue = ease(0.505, 0.73, p);
   const seabed = ease(0.77, 0.98, p);
   const passing = ease(0.535, 0.9, p);
-  const under = p >= 0.482;
+  const under = position >= underwaterStart;
   const region =
     p < 0.15
       ? "Orbit"
@@ -130,9 +101,7 @@ export function PacificDescent({
           : p < 0.91
             ? "Deep ocean"
             : "Seafloor";
-  const pressure = deepestPressure * clamp((p - 0.482) / 0.518) ** 1.42;
-  const depth = formatReading.format(Math.round(depthAtPressure(pressure) / 10) * 10);
-  const reading = readingAt(pressure);
+  const { reading, depth } = alohaReading(position);
   const valueText = under ? `${depth} m below sea level` : region;
   const visuals = {
     "--pacific-title-rise": ease(0.04, 0.39, p),
@@ -154,19 +123,23 @@ export function PacificDescent({
   useLayoutEffect(() => {
     const node = dialog.current;
     node?.showModal();
-    back.current?.focus({ preventScroll: true });
-    paintCamera(world.current, origin, 0);
+    if (initial.profile) closeProfile.current?.focus({ preventScroll: true });
+    else back.current?.focus({ preventScroll: true });
+    paintCamera(world.current, origin, initial.position / 1000);
     return () => {
       cancelAnimationFrame(motionFrame.current);
       node?.close();
     };
-  }, [origin, world]);
+  }, [initial, origin, world]);
 
   function seek(next: number) {
     livePosition.current = Math.round(clamp(next / 1000) * 1000);
     setPosition(livePosition.current);
-    if (next < 482) setProfileOpen(false);
-    if (next < 370) paintCamera(world.current, origin, livePosition.current / 1000);
+    const profile = next >= underwaterStart && profileOpen;
+    if (!exiting.current) onProgress({ position: livePosition.current, profile });
+    if (next < underwaterStart && !exiting.current) setProfileOpen(false);
+    if (next < 370 && exiting.current !== "surface")
+      paintCamera(world.current, origin, livePosition.current / 1000);
   }
 
   function animateTo(target: number, done?: () => void) {
@@ -190,10 +163,41 @@ export function PacificDescent({
   }
 
   function returnToGlobe() {
-    if (returning) return;
+    if (exiting.current) return;
+    exiting.current = "back";
+    setExit("back");
     setProfileOpen(false);
-    setReturning(true);
     animateTo(0, onBack);
+  }
+
+  function surface(opener: HTMLElement) {
+    if (exiting.current || !world.current) return;
+    exiting.current = "surface";
+    setExit("surface");
+    const camera = world.current;
+    camera.controls.setView({ ...alohaStation, zoom: 1.85 });
+    camera.wake();
+    const subject: WorldSubject = {
+      point: alohaStation,
+      from: pacificTitle,
+      storyId: pacificId,
+      layer: "wind",
+      stories: ["float", "drifter"],
+      zoom: 1.85,
+      reading: {
+        label: "Recorded profile",
+        value: `${reading[1]!.toFixed(2)} °C · ${depth} m`,
+        at: castAt,
+        precision: "date",
+      },
+    };
+    animateTo(0, () => onSurface(subject, opener));
+  }
+
+  function dismissProfile() {
+    setProfileOpen(false);
+    onProgress({ position: livePosition.current, profile: false });
+    requestAnimationFrame(() => profile.current?.focus());
   }
 
   function drag(event: PointerEvent<HTMLDivElement>) {
@@ -212,12 +216,12 @@ export function PacificDescent({
       aria-labelledby="pacific-title"
       data-region={region}
       data-returning={returning || undefined}
+      data-surfacing={exit === "surface" || undefined}
       style={visuals}
       onCancel={(event) => {
         event.preventDefault();
         if (profileOpen) {
-          setProfileOpen(false);
-          requestAnimationFrame(() => profile.current?.focus());
+          dismissProfile();
         } else returnToGlobe();
       }}
     >
@@ -291,7 +295,9 @@ export function PacificDescent({
               className="pacific-profile-button"
               aria-expanded={profileOpen}
               onClick={() => {
+                if (returning) return;
                 setProfileOpen(!profileOpen);
+                onProgress({ position: livePosition.current, profile: !profileOpen });
                 if (!profileOpen) requestAnimationFrame(() => closeProfile.current?.focus());
               }}
             >
@@ -301,39 +307,27 @@ export function PacificDescent({
         </div>
       )}
       {profileOpen && (
-        <section className="pacific-profile" aria-labelledby="pacific-profile-title">
-          <header>
-            <h3 id="pacific-profile-title">Station ALOHA</h3>
-            <button
-              ref={closeProfile}
-              type="button"
-              onClick={() => {
-                setProfileOpen(false);
-                requestAnimationFrame(() => profile.current?.focus());
-              }}
-            >
-              Close reading
-            </button>
-          </header>
-          <p className="pacific-cast-date">
-            19 December 2024 <span>{depth} m deep</span>
-          </p>
-          <Profile reading={reading} />
-          <a href={source} target="_blank" rel="noreferrer">
-            University of Hawaiʻi cast data
-          </a>
-        </section>
+        <PacificProfile
+          reading={reading}
+          depth={depth}
+          close={closeProfile}
+          current={current}
+          onClose={dismissProfile}
+          onSurface={(event) => surface(event.currentTarget)}
+        />
       )}
       <footer className="pacific-controls">
         <div className="pacific-controls-heading">
           <label htmlFor="pacific-depth">
-            {returning
-              ? "Returning to your globe"
-              : position === 0
-                ? "Drag down to descend"
-                : position === 1000
-                  ? "Drag up to ascend"
-                  : "Drag to change depth"}
+            {exit === "surface"
+              ? "Surfacing at Station ALOHA"
+              : returning
+                ? "Returning to your globe"
+                : position === 0
+                  ? "Drag down to descend"
+                  : position === 1000
+                    ? "Drag up to ascend"
+                    : "Drag to change depth"}
           </label>
           <span>{p < 0.15 ? "North Pacific" : "Illustrated descent"}</span>
         </div>

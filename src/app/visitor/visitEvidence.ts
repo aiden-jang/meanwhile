@@ -1,3 +1,5 @@
+import { alohaReading, formatReading, source as alohaSource } from "../pacific/aloha";
+import { castAt, pacificId, readPacificPosition, underwaterStart } from "../pacific/pacificMoment";
 import { discharge, gaugeUrl, riverGauge } from "../observations/riverGauges";
 import { lunarTraverses } from "../../sources/moonfall/traverses";
 import type { Visit } from "./library";
@@ -62,6 +64,22 @@ export function visitEvidence(visit: Visit): VisitEvidence {
     };
   }
   const moment = visit.position.moment;
+  if (visit.id === pacificId && moment) {
+    const { position } = readPacificPosition(moment);
+    if (position >= underwaterStart) {
+      const { depth, reading } = alohaReading(position);
+      return {
+        ...base,
+        kind: "Measured temperature",
+        place: "Station ALOHA · North Pacific",
+        time: new Date(castAt).toISOString().slice(0, 10),
+        reading: `${reading[1].toFixed(2)} °C`,
+        detail: `${depth} m estimated depth · ${formatReading.format(reading[0])} dbar measured pressure.`,
+        source: "University of Hawaiʻi · Hawaii Ocean Time-series",
+        url: alohaSource,
+      };
+    }
+  }
   if (visit.id === "tonga" && moment?.at !== undefined) {
     const station = tonga.stations.find(({ id }) => id === moment.choice);
     const minute = Math.floor((moment.at - Date.parse(`${tonga.date}T00:00:00Z`)) / 60_000);

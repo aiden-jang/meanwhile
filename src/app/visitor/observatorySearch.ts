@@ -3,6 +3,7 @@ import type { Library, Visit } from "./library";
 import { visitNote } from "./VisitShelf";
 import { mapLayerNames, type MapLayer } from "../layerVisibility";
 import { findStories, normalizeStoryQuery, searchStories } from "../storyIndex";
+import { alohaStation } from "../pacific/pacificMoment";
 import { skyCities } from "../tonight/cities";
 
 export type ExploreTarget =
@@ -40,7 +41,7 @@ export function findObservatory(query: string, library?: Library) {
     entrances: findEntrances.filter(({ terms: aliases }) =>
       aliases.some((alias) => alias === terms.join(" ")),
     ),
-    places: skyCities
+    places: [...skyCities, alohaStation]
       .filter(({ name }) => matches(normalizeStoryQuery(name)))
       .map(({ name, lon, lat }) => ({ kind: "place" as const, name, lon, lat })),
     stories,

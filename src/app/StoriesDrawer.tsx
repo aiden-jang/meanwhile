@@ -10,6 +10,7 @@ import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
 import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
 import { inStoryTopic, searchStories } from "./storyIndex";
+import { ContextStories, storiesForSelection, type StorySelection } from "./continuity/ExploreContext";
 import { StoryCatalogue } from "./StoryCatalogue";
 import "./stories.css";
 
@@ -25,10 +26,12 @@ export function StoriesDrawer({
   filter,
   sceneEntry,
   browse,
+  selection,
 }: {
   discoveries?: ReactNode;
   filter?: ReactNode;
   sceneEntry?: ReactNode;
+  selection?: StorySelection | undefined;
   browse: Pick<Observatory["browser"], "expanded" | "sections" | "expand" | "fold" | "select">;
   visible?: boolean;
   scene: EarthScene | null;
@@ -38,11 +41,14 @@ export function StoriesDrawer({
   onDismiss: () => void;
 }) {
   const navigation = useStoryNavigation();
+  const nearby = selection ? storiesForSelection(selection) : [];
   const { expanded, expand } = browse;
   const key = scene ?? "all";
   const all = scene !== null && expanded === key;
   const featured = featuredStoryId(scene);
   const showJourneys = browse.sections.includes("journeys");
+  const showRelated =
+    !scene && !!selection && nearby.length > 0 && !browse.sections.includes("full-catalogue");
   const journeyStops = scene ? undefined : navigation?.journeyProgress?.stops;
   const recent = all
     ? undefined
@@ -66,6 +72,14 @@ export function StoriesDrawer({
     if (!showJourneys) journeyScroll.current = rail()?.scrollTop ?? 0;
     browse.fold("journeys", !showJourneys);
     requestAnimationFrame(() => rail()?.scrollTo({ top: showJourneys ? journeyScroll.current : 0 }));
+  };
+  const showAll = () => {
+    browse.fold("full-catalogue", true);
+    requestAnimationFrame(() => {
+      const heading = document.getElementById("catalogue-picks-title");
+      heading?.scrollIntoView({ block: "start" });
+      heading?.focus({ preventScroll: true });
+    });
   };
   if (!visible) return null;
   return (
@@ -148,11 +162,28 @@ export function StoriesDrawer({
           </div>
           {!deck.query.trim() && !showJourneys && (
             <>
-              {sceneEntry}
-              {scene === null ? (
+              {showRelated && selection ? (
+                <ContextStories selection={selection} showAll={showAll}>
+                  {nearby.map((story) => {
+                    const trigger = `context-story-${story.id}`;
+                    return (
+                      <StoryRow
+                        key={story.id}
+                        story={story}
+                        buttonId={trigger}
+                        caption={story.summary}
+                        ready={ready}
+                        unavailable={navigation?.unavailable(story.id)}
+                        open={() => navigation?.open(story.id, trigger)}
+                      />
+                    );
+                  })}
+                </ContextStories>
+              ) : scene === null ? (
                 <StoryCatalogue ready={ready} recent={recent} />
               ) : (
                 <>
+                  {sceneEntry}
                   {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
                   <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
                     <h3

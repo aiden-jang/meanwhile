@@ -4,6 +4,7 @@ import type { Visit, VisitPosition } from "./library";
 import { skyPosition } from "../tonight/skyMoment";
 import { recordDeparture } from "./departingVisits";
 import { useVisitLibrary } from "./useVisitLibrary";
+import { pacificId } from "../pacific/pacificMoment";
 import { currentRadarRegion } from "../radar/radarCamera";
 
 // Capture before navigation disposes the player. See ARCHITECTURE.md#srcappvisitorusevisitmemoryts.
@@ -23,7 +24,7 @@ export function useVisitMemory(
     if (!active) return null;
     const position: VisitPosition = {};
     const { observations, tonight, floatDive, sun } = props.views;
-    const moment = props.views.getMoment();
+    const moment = active === pacificId ? props.pacific.current() : props.views.getMoment();
     if (moment?.id === active) position.moment = moment;
     if (active === "sun" && moment?.journey?.id === "follow-aurora") {
       const { sample, xray } = sun.selection();

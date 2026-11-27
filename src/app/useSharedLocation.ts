@@ -24,7 +24,11 @@ interface Props {
     getMoment: () => Permalink["story"];
     navigation: { key: string };
     observations: { map: boolean };
-    depthFocus: { archiveReading?: { id: NonNullable<Permalink["depthEvent"]> } } | null;
+    depthFocus: {
+      archiveReading?: { id: NonNullable<Permalink["depthEvent"]> };
+      descent?: boolean | undefined;
+      sweepKm?: number | undefined;
+    } | null;
     floatDive: { entry: VisitPosition["float"] };
   };
   layers: Permalink["layers"];
@@ -62,6 +66,7 @@ export function useSharedLocation({
   lastWritten,
 }: Props) {
   const depthEvent = depthFocus?.archiveReading?.id;
+  const descent = depthFocus?.descent ? depthFocus.sweepKm : undefined;
   const heldCursor = playing ? null : at;
   const sharedCursor = useRef(at);
   sharedCursor.current = at;
@@ -81,6 +86,7 @@ export function useSharedLocation({
         ramp,
         flat: depthEvent ? storyMap : mapOn,
         ...(depthEvent ? { depthEvent } : {}),
+        ...(descent === undefined ? {} : { descent }),
         presentation,
         ...(scene ? { scene } : {}),
         ...(catalogue && !depthEvent ? { catalogue } : {}),
@@ -117,6 +123,7 @@ export function useSharedLocation({
     presentation,
     scene,
     depthEvent,
+    descent,
     catalogue,
     navigationKey,
     storyMap,

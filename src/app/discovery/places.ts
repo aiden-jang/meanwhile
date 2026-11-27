@@ -1,3 +1,4 @@
+import { alohaStation, pacificId } from "../pacific/pacificMoment";
 import { chileTsunami } from "../journeys/coastRoute";
 
 export interface StoryPlace {
@@ -8,6 +9,7 @@ export interface StoryPlace {
 
 // Regional anchors match the story framing; they are locators, never observations.
 export const storyPlaces: Record<string, StoryPlace> = {
+  [pacificId]: { ...alohaStation, label: alohaStation.name },
   rupture: { lon: 142.37, lat: 38.3, label: "Tōhoku, Japan" },
   katrina: { lon: -89.6, lat: 29.3, label: "Gulf of Mexico · Louisiana" },
   tonga: { lon: -175.4, lat: -20.55, label: "Hunga Tonga" },

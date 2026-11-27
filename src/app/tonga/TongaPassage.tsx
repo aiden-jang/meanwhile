@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import type { CameraState } from "../../globe/controlsTypes";
 import type { ObservationView } from "../observations/types";
 import type { StoryMoment } from "../observations/storyMoment";
+import { StoryOnward } from "../continuity/StoryOnward";
 import { StoryProjection } from "../observations/StoryProjection";
 import { honolulu } from "./honolulu";
 import { timeIso } from "./tongaTimeline";
@@ -19,9 +20,11 @@ export function TongaPassage({
   onBack,
   initial,
   onInspect,
+  onExplore,
 }: {
   initial: StoryMoment | undefined;
   onInspect: (at: number) => void;
+  onExplore: (minute: number, opener: HTMLElement) => void;
   camera: PassageCamera;
   origin: CameraState & { map: boolean };
   map: boolean;
@@ -33,8 +36,8 @@ export function TongaPassage({
   const root = useRef<HTMLElement>(null);
   const actions = useRef<PassageActions>();
   const start = useRef(initial);
-  const props = useRef({ map, onBack, onMap, onInspect, remember });
-  props.current = { map, onBack, onMap, onInspect, remember };
+  const props = useRef({ map, onBack, onMap, onInspect, onExplore, remember });
+  props.current = { map, onBack, onMap, onInspect, onExplore, remember };
   const pose = useRef(origin);
   useLayoutEffect(() => {
     onView({
@@ -116,6 +119,11 @@ export function TongaPassage({
           <span>Drag the trace</span>
           <time>09:54 UTC</time>
         </div>
+        <StoryOnward
+          id="explore-honolulu-from-passage"
+          label="Explore Honolulu"
+          onClick={(event) => actions.current?.explore(event.currentTarget)}
+        />
       </div>
       <svg className="passage-graph" width="100%" height="100%" aria-hidden="true">
         <path className="passage-line" />

@@ -2,7 +2,7 @@ import { firstFloatProfile } from "./float/firstProfile";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryRow } from "./StoryRow";
 import { StoryThumbnail } from "./StoryThumbnail";
-import { browseStories, storyButtonId, storyKind } from "./storyBrowse";
+import { browseStories, storyButtonId } from "./storyBrowse";
 import { journeys } from "./journeys/catalogue";
 import { moonPathOpening } from "./tonight/moonPathOpening";
 import { ContinueVisit } from "./visitor/ContinueVisit";
@@ -15,7 +15,8 @@ const picks = [
   { id: "kilauea", title: "Kīlauea", promise: "See how lava redrew the coast." },
 ] as const;
 const catalogueLeads: Record<string, [number, string]> = {
-  tonga: [1, "Atmospheric pressure · Pacific Ocean"],
+  pacific: [1, "Dive from orbit to a recorded ocean profile."],
+  tonga: [1, "Drag the wave through a measured pressure trace."],
   rupture: [2, "Recorded shaking · Tōhoku"],
   katrina: [3, "Hurricane Katrina · Gulf of Mexico"],
   megaflash: [4, "Satellite lightning detections"],
@@ -62,7 +63,9 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
       )}
       <section className="catalogue-picks" aria-labelledby="catalogue-picks-title">
         <header className="catalogue-picks-heading">
-          <h3 id="catalogue-picks-title">Start here</h3>
+          <h3 id="catalogue-picks-title" tabIndex={-1}>
+            Start here
+          </h3>
           <button
             type="button"
             onClick={() => {
@@ -144,10 +147,7 @@ export function StoryCatalogue({ ready, recent }: { ready: boolean; recent: Visi
               buttonId={id}
               ready={ready}
               unavailable={navigation?.unavailable(story.id)}
-              caption={
-                catalogueLeads[story.id]?.[1] ??
-                (storyKind(story.id) === "Recorded story" ? story.summary : storyKind(story.id))
-              }
+              caption={catalogueLeads[story.id]?.[1] ?? story.summary}
               open={() => navigation?.open(story.id, id)}
             />
           );

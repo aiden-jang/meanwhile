@@ -22,12 +22,12 @@ import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
 import { isSkyStory } from "./tonight/skyMoment";
 import { useFloatView } from "./float/useFloatView";
+import { pacificId } from "./pacific/pacificMoment";
 import { useDepthCutaway } from "./recordedCutaway";
-
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
 export function useObservatory(shared: Partial<Permalink>) {
-  const story = shared.story;
+  const story = shared.story?.id === pacificId ? undefined : shared.story;
   const checkpoint = useRef<() => void>(() => {});
   const routeExtension = useRouteExtension();
   const loadingBackdrop = useRef<"dayline" | "planetarium">("dayline");
@@ -63,7 +63,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       ? story
       : undefined,
     before,
-    story?.map ?? (shared.depthEvent ? shared.flat : undefined),
+    shared.story?.map ?? (shared.depthEvent ? shared.flat : undefined),
     story ? linkedPose(shared) : undefined,
   );
   const cutaway = useDepthCutaway(shared, tourStop, observations);
@@ -94,11 +94,11 @@ export function useObservatory(shared: Partial<Permalink>) {
     requestExploreFocus,
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
   const [browser, setBrowser] = useState({
-    open: !!shared.story || !!shared.catalogue,
+    open: !!story || (!!shared.catalogue && shared.story?.id !== pacificId),
     expanded: null as string | null,
     sections: [] as string[],
     pane: shared.catalogue ? ("stories" as const) : ("layers" as "layers" | "stories"),
-    category: shared.story ? scene : shared.catalogue === "all" ? null : (shared.catalogue ?? null),
+    category: story ? scene : shared.catalogue === "all" ? null : (shared.catalogue ?? null),
   });
   const browserScroll = useRef(0);
   const sharedView = useRef(shared.lon !== undefined || !!shared.day || shared.cursor != null);

@@ -28,7 +28,7 @@ export interface GlobeProps {
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobepropsts. */
   onFrame?: (source: HTMLCanvasElement) => void;
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
-  placePin?: { lon: number; lat: number } | null;
+  placePin?: { lon: number; lat: number; name?: string | undefined } | null;
   onPlace?: ((point: { lon: number; lat: number }) => void) | undefined;
   onSelectMark?: (id: string | null) => void;
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;

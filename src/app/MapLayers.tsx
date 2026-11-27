@@ -70,6 +70,7 @@ export function MapLayers({
     allLayers: () => void;
     reading?: ReactNode;
     closeReading: () => void;
+    inContext?: boolean;
   };
   readCamera: () => CameraState;
   panelVisible: boolean;
@@ -200,6 +201,7 @@ export function MapLayers({
           select={onQuake}
           reading={place.reading}
           onClose={place.closeReading}
+          hasContext={place.inContext ?? false}
         />
       </section>
     );
@@ -217,6 +219,7 @@ export function MapLayers({
         <PlaceInspection
           {...reports}
           point={place.point}
+          hasContext={place.inContext ?? false}
           backLabel={!layer && findBack ? "Back to Find" : undefined}
           close={
             (!layer && findBack) ||

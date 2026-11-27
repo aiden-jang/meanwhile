@@ -37,6 +37,7 @@ export const storyOrder = [
   "sky",
   "iceberg",
   "tonga",
+  "pacific",
   "shadow",
   "kilauea",
   "megaflash",
@@ -82,6 +83,6 @@ export const storyRank = (id: string) => priority.get(id) ?? storyOrder.length;
 
 export const sceneHighlights: Record<EarthScene, readonly string[]> = {
   live: ["katrina", "iceberg", "tonga"],
-  depth: ["float", "seafloor", "nino"],
+  depth: ["float", "pacific", "seafloor"],
   night: ["sky", "aurora", "shadow"],
 };

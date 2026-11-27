@@ -11,6 +11,7 @@ export interface PassageEvents {
   map: boolean;
   onMap: (value: boolean) => void;
   onInspect: (at: number) => void;
+  onExplore: (minute: number, opener: HTMLElement) => void;
   onBack: () => void;
   remember: (part: Partial<StoryMoment>) => void;
 }
@@ -19,6 +20,7 @@ export interface PassageActions {
   skip(): void;
   replay(): void;
   inspect(): void;
+  explore(opener: HTMLElement): void;
   sample(value: number): void;
 }
 export function attachPassage(
@@ -257,6 +259,9 @@ export function attachPassage(
     },
     inspect() {
       if (!closing && elapsed === DURATION) props.current.onInspect(Date.parse(timeIso(selected)));
+    },
+    explore(opener) {
+      if (!closing && elapsed === DURATION) props.current.onExplore(selected, opener);
     },
     sample(v) {
       selected = Math.max(first, Math.min(last, Math.round(v)));

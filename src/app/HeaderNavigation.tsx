@@ -63,10 +63,10 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
         aria-label="Explore"
         aria-current={exploring && !navigation.browsingStories ? "location" : undefined}
         aria-description="Browse live layers on the globe or map"
-        onClick={() => {
+        onClick={(event) => {
           setSaved(false);
           navigation.dismissRestoration();
-          navigation.explore();
+          navigation.explore(event.currentTarget);
         }}
       >
         <svg

@@ -102,6 +102,7 @@ export function PlaceInspection({
   selectQuake,
   selectHazard,
   radarAt,
+  hasContext = false,
   onRewind,
   ...props
 }: PlaceContextProps & {
@@ -112,6 +113,7 @@ export function PlaceInspection({
   selectHazard: (id: string) => void;
   radarAt?: number | undefined;
   onRewind?: (() => void) | undefined;
+  hasContext?: boolean;
 }) {
   const coordinates = geographicCoordinates(point);
   const navigation = useStoryNavigation();
@@ -121,17 +123,25 @@ export function PlaceInspection({
       <header>
         <div>
           <h2 id="place-title" tabIndex={-1}>
-            {point.name ? `Around ${point.name}` : "Around this point"}
+            {point.name ? (hasContext ? point.name : `Around ${point.name}`) : "Around this point"}
           </h2>
           <p role="status" className="place-coordinates">
             {coordinates}
           </p>
         </div>
-        <button type="button" onClick={close} aria-label={backLabel ?? "Close place readings"}>
-          {backLabel ?? "Close"}
-        </button>
+        {!hasContext && (
+          <button type="button" onClick={close} aria-label={backLabel ?? "Close place readings"}>
+            {backLabel ?? "Close"}
+          </button>
+        )}
       </header>
-      <NearbyReports {...props} point={point} selectQuake={selectQuake} selectHazard={selectHazard} />
+      <NearbyReports
+        {...props}
+        point={point}
+        selectQuake={selectQuake}
+        selectHazard={selectHazard}
+        compact={hasContext}
+      />
       {city && navigation && (
         <button
           type="button"
@@ -169,8 +179,10 @@ function NearbyReports({
   point,
   selectQuake,
   selectHazard,
+  compact = false,
 }: PlaceContextProps & {
   point: Coordinates;
+  compact?: boolean;
   selectQuake?: (id: string) => void;
   selectHazard?: (id: string) => void;
 }) {
@@ -203,7 +215,7 @@ function NearbyReports({
     .slice(0, 4);
   return (
     <>
-      <p>Within 500 km · chosen layers and time window. Available reports only.</p>
+      {(!compact || rows.length > 0) && <p>Within 500 km · selected layers and time window</p>}
       {rows.length > 0 ? (
         <>
           <p>
@@ -229,7 +241,9 @@ function NearbyReports({
           </ul>
         </>
       ) : (
-        <p>No matching reports from the available feeds.</p>
+        <p>
+          {compact ? "No matching reports within 500 km." : "No matching reports from the available feeds."}
+        </p>
       )}
       {unavailable.length > 0 && (
         <p role="status">

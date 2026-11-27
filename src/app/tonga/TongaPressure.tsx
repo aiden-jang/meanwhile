@@ -1,3 +1,4 @@
+import { ExploreStation } from "./ExploreStation";
 import { PressureChart } from "./PressureChart";
 import { ConnectedJourney } from "../journeys/ConnectedJourney";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
@@ -76,9 +77,16 @@ export function TongaPressure({
           minute={minute}
           {...(!shared ? { onSeek: (next) => onSeek(next, station) } : {})}
         />
+        <ExploreStation station={station} minute={minute} />
         <ConnectedJourney compact />
         {!shared && !guided && !startFullStory && (
-          <ExperienceEnding id="tonga" showFinding={false} showSave={false} evidenceOpen />
+          <ExperienceEnding
+            id="tonga"
+            showFinding={false}
+            showSave={false}
+            showLocation={false}
+            evidenceOpen
+          />
         )}
         <p className="tonga-evidence-source">
           One-minute station pressure · ASOS / IEM.
