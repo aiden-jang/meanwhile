@@ -64,10 +64,10 @@ export function readTerrainSection(value: string | undefined, grid: ObservationT
     : null;
 }
 
-export function sectionSamples(grid: ObservationTerrain, line: TerrainLine) {
+export function sectionSamples(grid: ObservationTerrain, line: TerrainLine, intervals = 100) {
   const length = distanceKm(line[0].lon, line[0].lat, line[1].lon, line[1].lat);
-  return Array.from({ length: 101 }, (_, i) => {
-    const p = i / 100;
+  return Array.from({ length: intervals + 1 }, (_, i) => {
+    const p = i / intervals;
     const { lon, lat } = sectionPoint(line, p);
     const cell = terrainSample(grid, lon, lat);
     return { lon, lat, km: p * length, meters: cell?.elevation ?? null, source: cell?.tid };

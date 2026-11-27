@@ -16,6 +16,7 @@ import "../earth-stories/field-journeys.css";
 import "../earth-stories/fault-journey.css";
 import "../earth-stories/glacier-journey.css";
 import "../earth-stories/celestial.css";
+import "../earth-stories/survey/survey.css";
 import "./orbital-pass.css";
 import "./observations.css";
 import "../iceberg/iceberg.css";

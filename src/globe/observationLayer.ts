@@ -1,3 +1,4 @@
+import { projectSurvey } from "./surveyProjection";
 import { newObservationPlace } from "./observationTransition";
 import {
   BufferAttribute,
@@ -304,7 +305,8 @@ export function createObservationLayer(morph: { value: number }) {
   return {
     object,
     set,
-    positionLens(canvas: HTMLCanvasElement, controls: Controls) {
+    positionReadings(canvas: HTMLCanvasElement, controls: Controls, camera: PerspectiveCamera) {
+      projectSurvey(canvas, camera, controls, prior?.curtain, curtain.opened, curtain.folded);
       positionSurveyLens(prior?.surveyLens, canvas, controls, aperture.value);
     },
     prepareRaster(renderer: WebGLRenderer, camera: PerspectiveCamera, scene: Scene) {

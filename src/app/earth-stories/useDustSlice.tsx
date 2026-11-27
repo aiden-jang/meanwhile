@@ -3,6 +3,7 @@ import { refreshAnnotations } from "../../globe/annotationInput";
 import transect from "../../sources/earth-stories/dust-transect.json";
 import type { GeoPoint, ObservationView } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
+import { LidarPass } from "./survey/LidarPass";
 import { DustSliceControls } from "./DustSliceControls";
 import { middleLidarSample, readLidarCursor } from "./DustProfile";
 import { nearestFrame } from "./nearestFrame";
@@ -12,8 +13,9 @@ import type { useStoryClock } from "./useStoryClock";
 const observation = date("2020-06-23");
 const points = transect.points.map(point);
 const track = { points, color: 0xf1d4a2, trace: true };
-const globeTarget = { lon: -84, lat: 20, zoom: 1.32 };
-const mapTarget = { lon: -67, lat: 20, zoom: 1.5 };
+const globeTarget = { lon: -73.5, lat: 20.6, zoom: 1.68 };
+const mapTarget = { lon: -64.5, lat: 20.1, zoom: 2.45 };
+const passLens = { globe: 1.3, map: 1.5 };
 
 export function useDustSlice(
   enabled: boolean,
@@ -25,6 +27,7 @@ export function useDustSlice(
 ) {
   const [cursor, setCursor] = useState(() => (enabled ? readLidarCursor(chapter) : null));
   const [open, setOpen] = useState(enabled && (chapter === "slice" || !!cursor));
+  const [foldedProfile, setFoldedProfile] = useState(enabled && chapter?.endsWith(":world") === true);
   const [arrived, setArrived] = useState(false);
   const ready = useCallback(() => setArrived(true), []);
   const image = useObservationImage(enabled ? asset(transect.image) : undefined, "lidar");
@@ -47,35 +50,48 @@ export function useDustSlice(
         : undefined,
     [visible, image.element, cursor],
   );
+  function toggle(fromWorld = false) {
+    setFoldedProfile(fromWorld);
+    clock.pause();
+    setArrived(false);
+    if (!open) {
+      refreshAnnotations({ camera: "resume" });
+      clock.seek(nearestFrame(data, observation));
+      setCursor((current) => current ?? middleLidarSample);
+    }
+    setOpen(!open);
+  }
   return {
+    cue: enabled && (open ? "Drag through the lidar return" : "Follow the plume · lift the CALIPSO profile"),
+    world: enabled && (
+      <LidarPass
+        points={points}
+        open={open}
+        ready={visible}
+        sameDay={frameAt === observation}
+        cursor={cursor}
+        raise={() => toggle(true)}
+        select={setCursor}
+      />
+    ),
     target: open ? (map ? mapTarget : globeTarget) : undefined,
+    lens: open ? passLens : undefined,
     track: available ? track : undefined,
     curtain,
     framing,
-    chapter: open ? (cursor ? `slice:${cursor.join(":")}` : "slice") : "",
+    chapter: open ? (cursor ? `slice:${cursor.join(":")}${foldedProfile ? ":world" : ""}` : "slice") : "",
     forcedPause: open,
     action: enabled && (
       <div className="observatory-actions">
-        <button
-          type="button"
-          aria-pressed={open}
-          onClick={() => {
-            clock.pause();
-            setArrived(false);
-            if (!open) {
-              refreshAnnotations({ camera: "resume" });
-              clock.seek(nearestFrame(data, observation));
-              setCursor((current) => current ?? middleLidarSample);
-            }
-            setOpen(!open);
-          }}
-        >
+        <button type="button" aria-pressed={open} onClick={() => toggle()}>
           {open ? "Close lidar slice" : "Open lidar slice"}
         </button>
       </div>
     ),
     control: enabled && open && (
       <DustSliceControls
+        folded={foldedProfile}
+        unfold={() => setFoldedProfile(false)}
         image={image.element?.src}
         failed={image.status === "failed"}
         retry={image.retry}

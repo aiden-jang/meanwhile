@@ -1,6 +1,32 @@
 import { useEffect, useState } from "react";
 import { restorePanel, type PanelReturn } from "./panelReturn";
 
+function waitForReplayReading(saved: PanelReturn, restore: () => void) {
+  if (saved.scrollTarget !== "observatory-intro") return;
+  const stage = document.querySelector(".zones:has(.replay-region .story-loading)");
+  if (!stage) return;
+  const input = new AbortController();
+  let paint = 0;
+  const contents = new MutationObserver(() => {
+    if (stage.querySelector(".replay-region .story-loading")) return;
+    contents.disconnect();
+    paint = requestAnimationFrame(() => {
+      cancel();
+      if (stage.querySelector(".replay-region #observatory-intro")) restore();
+    });
+  });
+  const cancel = () => {
+    cancelAnimationFrame(paint);
+    contents.disconnect();
+    input.abort();
+  };
+  // The loading panel can be shorter than the saved offset. Wait for its real readings to mount.
+  contents.observe(stage, { subtree: true, childList: true });
+  for (const event of ["pointerdown", "wheel", "keydown", "popstate"])
+    window.addEventListener(event, cancel, { capture: true, passive: true, signal: input.signal });
+  return cancel;
+}
+
 export function usePanelReturn() {
   const [restoration] = useState(() => {
     let frame = 0;
@@ -18,6 +44,11 @@ export function usePanelReturn() {
         frame = requestAnimationFrame(() => {
           const align = restorePanel(saved);
           if (!align) {
+            const waiting = waitForReplayReading(saved, () => restorePanel(saved));
+            if (waiting) {
+              stopObserving = waiting;
+              return;
+            }
             const anchor = document.getElementById(saved.focus);
             if (!anchor?.hasAttribute("data-observation-anchor")) return;
             // A marker can receive focus, disappear during the projection change, then reappear.

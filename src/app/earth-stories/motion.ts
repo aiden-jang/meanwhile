@@ -14,14 +14,12 @@ export function storyCamera(
   const bank = Math.sin(p * Math.PI);
   if (id === "seafloor") {
     const point = sectionPoint(seafloorFlight, p);
-    const approach = Math.min(1, Math.max(0, (p - 0.73) / 0.21));
-    const widen = approach * approach * (3 - 2 * approach);
     return {
-      lon: point.lon + (target.lon - point.lon) * widen,
-      lat: point.lat + (target.lat - point.lat) * widen - 1.15 * bank,
-      zoom: 1.65 + 0.5 * bank - 0.4 * widen,
-      bank: -0.045 * bank,
-      pitch: 0.16 * bank,
+      lon: target.lon + (point.lon - target.lon) * bank * 0.12,
+      lat: target.lat + (point.lat - target.lat) * bank * 0.12,
+      zoom: target.zoom + 0.08 * bank,
+      bank: -0.025 * bank,
+      pitch: 0.08 * bank,
     };
   }
   if (id === "glacier")

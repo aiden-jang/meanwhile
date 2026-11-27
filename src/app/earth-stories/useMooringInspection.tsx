@@ -1,19 +1,18 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { EvidenceConnector } from "../observations/EvidenceConnector";
-import type { ObservationView, MooringSection } from "../observations/types";
+import { BuoyLine, buoyLongitude } from "./survey/BuoyLine";
+import type { ObservationFrame, ObservationView } from "../observations/types";
 import type { StoryFrame } from "./types";
 
 type Buoy = { lon: number; lat: number };
 const NO_BUOYS: Buoy[] = [];
-const longitude = (lon: number) =>
-  lon === 0 || Math.abs(lon) === 180 ? `${Math.abs(lon)}°` : `${Math.abs(lon)}° ${lon < 0 ? "W" : "E"}`;
-
 export function useMooringInspection(
-  section: MooringSection | undefined,
+  frame: ObservationFrame,
   frames: readonly StoryFrame[],
   chapter: string | undefined,
   pause: () => void,
 ) {
+  const section = frame.moorings,
+    line = frame.section?.points;
   const buoys = useMemo(() => {
     if (!frames[0]?.moorings) return NO_BUOYS;
     const sites = new Set(frames.flatMap((frame) => frame.moorings?.readings.map(({ lon }) => lon) ?? []));
@@ -30,7 +29,8 @@ export function useMooringInspection(
   const details = useRef<HTMLDetailsElement>(null);
   const reading = useRef<HTMLParagraphElement>(null);
   const observed = useMemo(() => new Set(section?.readings.map(({ lon }) => lon)), [section]);
-  const current = selected ?? buoys.find((buoy) => observed.has(buoy.lon))?.lon;
+  const defaultBuoy = buoys.find((buoy) => buoy.lon === -155)?.lon ?? buoys[0]?.lon;
+  const current = selected ?? defaultBuoy;
   const rows = useMemo(
     () => section?.readings.filter(({ lon }) => lon === current).sort((a, b) => a.depth - b.depth),
     [section, current],
@@ -52,6 +52,7 @@ export function useMooringInspection(
     [buoys, inspect],
   );
   return {
+    cue: section && "Drag across the buoys · scrub the months",
     visible: show ? section : undefined,
     selected: show ? selected : undefined,
     chapter:
@@ -59,27 +60,22 @@ export function useMooringInspection(
     picks,
     labels: section && (
       <>
-        <div className="nino-moorings" aria-label="Pacific buoys">
-          {buoys.map(({ lon, lat }) => (
-            <button
-              key={lon}
-              type="button"
-              data-observation-anchor=""
-              data-compact-anchor=""
-              data-lon={lon}
-              data-lat={lat}
-              data-mooring-gap={!observed.has(lon) || undefined}
-              data-evidence-source={show && selected === lon ? "true" : undefined}
-              data-projection-anchor={(show && selected === lon) || undefined}
-              aria-label={`Inspect buoy ${longitude(lon)}`}
-              aria-pressed={show && selected === lon}
-              onClick={() => inspect(lon)}
-            >
-              <span aria-hidden="true">{longitude(lon)}</span>
-            </button>
-          ))}
-        </div>
-        {show && selected !== undefined && <EvidenceConnector key={selected} trace />}
+        {line && buoys.length > 0 && (
+          <BuoyLine
+            points={line}
+            buoys={buoys}
+            section={section}
+            selected={current!}
+            explicit={show ? selected : undefined}
+            observed={observed}
+            inspect={inspect}
+            choose={(lon) => {
+              pause();
+              select(lon);
+              setShow(true);
+            }}
+          />
+        )}
       </>
     ),
     controls: section && (
@@ -106,13 +102,13 @@ export function useMooringInspection(
                 <select value={current} onChange={(event) => inspect(Number(event.currentTarget.value))}>
                   {buoys.map(({ lon }) => (
                     <option key={lon} value={lon}>
-                      {longitude(lon)}
+                      {buoyLongitude(lon)}
                     </option>
                   ))}
                 </select>
               </label>
               <p ref={reading} className="observation-note" data-evidence-point="">
-                {current !== undefined && longitude(current)} · Monthly temperatures
+                {current !== undefined && buoyLongitude(current)} · Monthly temperatures
               </p>
               {rows?.length ? (
                 <dl className="observation-values">

@@ -164,6 +164,7 @@ export async function ninoStory(): Promise<EarthStoryData> {
   type BuoyFrame = { day: string; image: string; observations: [number, number, number, number][] };
   const data = await atlasArchive<{ frames: BuoyFrame[]; depth: [number, number] }>("nino");
   const wrap = (lon: number) => ((lon + 540) % 360) - 180;
+  const transect = Array.from({ length: 71 }, (_, i) => ({ lon: wrap(130 + i * 2), lat: 0 }));
   const frames = data.frames.map((f): StoryFrame => ({
     at: date(f.day),
     timeLabel: `${f.day.slice(0, 7)} · monthly mean`,
@@ -179,7 +180,7 @@ export async function ninoStory(): Promise<EarthStoryData> {
     },
     section: {
       image: atlasImage(f.image),
-      points: Array.from({ length: 71 }, (_, i) => ({ lon: wrap(130 + i * 2), lat: 0 })),
+      points: transect,
       heightKm: 0.5,
       exaggeration: 4000,
       label: "1–501 m · depth exaggerated 4,000×",

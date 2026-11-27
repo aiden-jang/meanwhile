@@ -56,6 +56,7 @@ const curtainProjection = `${MORPH_GLSL}
     vec3 foot=normalize(position)*1.013;
     vec3 direction=fmNormal(foot);
     if(down) direction=normalize(vec3(0.0,-1.0,0.0)+normalize(foot)*0.45);
+    else { float lam=radians(aLonLat.x); direction=normalize(direction + vec3(cos(lam),0.,-sin(lam))*1.25); }
     vec3 vertex=fmProject(foot) + direction*rise*(1.0-uMorph);
     if(down) vertex.y -= uMorph*rise;
     else vertex.x += uMorph*rise;
@@ -159,6 +160,12 @@ export function createObservationCurtain(morph: { value: number }) {
   let finish: (() => void) | undefined;
   return {
     object,
+    get opened() {
+      return material.uniforms.opened!.value;
+    },
+    get folded() {
+      return material.uniforms.folded!.value;
+    },
     fold(complete: () => void) {
       if (!prior || amount < 0.05 || finish) return false;
       finish = complete;
@@ -194,7 +201,6 @@ export function createObservationCurtain(morph: { value: number }) {
       }
       material.uniforms.map!.value?.dispose();
       material.uniforms.map!.value = null;
-      object.geometry.dispose();
       object.visible = true;
       if (!prior) amount = 0;
       if (next) {
@@ -203,7 +209,14 @@ export function createObservationCurtain(morph: { value: number }) {
         texture.needsUpdate = true;
         material.uniforms.map!.value = texture;
         material.uniforms.down!.value = !!next.down;
-        object.geometry = curtainGeometry(next.points, next.heightKm, next.exaggeration);
+        if (
+          prior?.points !== next.points ||
+          prior.heightKm !== next.heightKm ||
+          prior.exaggeration !== next.exaggeration
+        ) {
+          object.geometry.dispose();
+          object.geometry = curtainGeometry(next.points, next.heightKm, next.exaggeration);
+        }
       }
       prior = next;
     },

@@ -34,8 +34,8 @@ export async function seafloorStory(): Promise<EarthStoryData> {
     frames,
     terrain: grid,
     timelineLabel: "Flight progress",
-    target: { lon: 145.1, lat: 14.175, zoom: 1.65 },
-    lens: { globe: 4.25, map: 6 },
+    target: { lon: 145.3, lat: 12.95, zoom: 1.65 },
+    lens: { globe: 3.35, map: 4.85 },
     chapters: [
       { at: frames[0]!.at, label: "Pacific" },
       { at: frames[50]!.at, label: "Trench" },

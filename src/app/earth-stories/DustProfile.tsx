@@ -7,7 +7,7 @@ const distance = (along: number) => `${along}% along the recorded track`;
 const height = (altitude: number) => `${((15 * altitude) / 100).toFixed(1)} km altitude`;
 
 export function readLidarCursor(chapter: string | undefined): LidarCursor | null {
-  const match = /^slice:(\d{1,3}):(\d{1,3})$/.exec(chapter ?? "");
+  const match = /^slice:(\d{1,3}):(\d{1,3})(?::world)?$/.exec(chapter ?? "");
   const along = Number(match?.[1]);
   const altitude = Number(match?.[2]);
   return along <= 100 && altitude <= 100 ? [along, altitude] : null;
@@ -15,10 +15,14 @@ export function readLidarCursor(chapter: string | undefined): LidarCursor | null
 
 export function DustProfile({
   image,
+  folded,
+  unfold,
   cursor,
   select,
 }: {
   image: string;
+  folded: boolean;
+  unfold: () => void;
   cursor: LidarCursor | null;
   select: (next: LidarCursor | null) => void;
 }) {
@@ -31,11 +35,14 @@ export function DustProfile({
     ]);
   }
   return (
-    <details className="lidar-profile" open={cursor !== null}>
+    <details className="lidar-profile" open={!folded && cursor !== null}>
       <summary
         onClick={(event) => {
           event.preventDefault();
-          select(cursor ? null : middleLidarSample);
+          if (folded) {
+            unfold();
+            if (!cursor) select(middleLidarSample);
+          } else select(cursor ? null : middleLidarSample);
         }}
       >
         Read the lidar profile

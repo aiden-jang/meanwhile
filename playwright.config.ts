@@ -55,6 +55,7 @@ export default defineConfig({
             "**/tonga-passage.spec.ts",
             "**/story-recovery.spec.ts",
             "**/story-curation.spec.ts",
+            "**/survey-sections.spec.ts",
           ],
           grepInvert: /@dev/,
           use: { ...devices["iPhone 13"], deviceScaleFactor: 1 },

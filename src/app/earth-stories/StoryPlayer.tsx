@@ -79,7 +79,7 @@ export function StoryPlayer({
     data.frames.length,
     start,
     waiting,
-    initial?.at !== undefined,
+    initial?.at !== undefined || (id === "dust" && !!initial?.chapter),
     !fault && !startLabels[id] && !surveyed,
     id === "seafloor" ? 8500 : data.playbackDuration,
     data.pace,
@@ -120,17 +120,9 @@ export function StoryPlayer({
   const { frame, element, caption, surface } = holding.current;
   const glacier = useGlacierComparison(data.glacier, initial, clock.pause, panel);
   const dust = useDustSlice(id === "dust", data, frame.at, initial?.chapter, panel.map, clock);
-  const moorings = useMooringInspection(frame.moorings, data.frames, initial?.chapter, clock.pause);
+  const moorings = useMooringInspection(frame, data.frames, initial?.chapter, clock.pause);
   const openCurtain = id !== "nino" || ready || initial?.at !== undefined;
-  const section = useTerrainSection(
-    data.terrain,
-    initial?.chapter,
-    () => {
-      clock.pause();
-      panel.onMap(true);
-    },
-    !clock.playing && index === duration,
-  );
+  const section = useTerrainSection(data.terrain, initial?.chapter, panel.onMap, clock, duration);
   const viewFrame = useMemo(() => {
     if (!data.terrain) return frame;
     return {
@@ -148,6 +140,7 @@ export function StoryPlayer({
   waiting.current = busy || !ready || status !== "ready" || bloom.status !== "ready";
   const mapTarget = useMemo(() => storyMapTarget(data), [data]);
   const target = dust.target ?? glacier.target ?? (panel.map ? mapTarget : data.target);
+  const lens = dust.lens ?? data.lens;
   const sky = useArchiveSky(
     data,
     viewFrame,
@@ -166,7 +159,7 @@ export function StoryPlayer({
   const displayCaption =
     failed && id === "reef" && choice === "Recent observations"
       ? "Recent reef data unavailable · showing previous observations"
-      : caption;
+      : section.cue || moorings.cue || dust.cue || caption;
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const settled = !busy && status === "ready" && bloom.status === "ready";
   const finished = settled && !clock.playing && clock.position >= duration;
@@ -190,7 +183,7 @@ export function StoryPlayer({
   const canFly = !(inspecting || panel.map || localSky || orbitStory || surveyed);
   const motionProgress = canFly && clock.cinematic && clock.playing ? clock.position / duration : undefined;
   const terrainProgress = data.terrain
-    ? section.inspecting || panel.map
+    ? section.inspecting
       ? 1
       : Math.min(1, (clock.position / duration) * 2.3)
     : 0;
@@ -212,7 +205,7 @@ export function StoryPlayer({
       pickOnGlobe: !!glacier.pick,
       pickMarks: shoreline.pickMarks ?? (openCurtain ? moorings.picks : undefined),
       holdGeography,
-      ...(data.lens && !localSky ? { lens: data.lens } : {}),
+      ...(lens && !localSky ? { lens } : {}),
       ...(data.terrain ? { terrain: { grid: data.terrain, progress: terrainProgress } } : {}),
       arrive,
       ...(framing ? { comparisonFrame: framing } : {}),
@@ -268,7 +261,7 @@ export function StoryPlayer({
     shoreline.chapter,
     shoreline.pickMarks,
     holdGeography,
-    data.lens,
+    lens,
     data.terrain,
     data.coastalTarget,
     arrive,
@@ -334,7 +327,7 @@ export function StoryPlayer({
       inset={
         <>
           <StoryOverlay {...{ localSky, data, frame, site, chooseSite }} inspectSites={index < duration} />
-          {glacier.world || shoreline.labels}
+          {section.world || dust.world || glacier.world || shoreline.labels}
           {openCurtain && moorings.labels}
         </>
       }

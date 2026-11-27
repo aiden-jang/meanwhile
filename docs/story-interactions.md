@@ -13,9 +13,9 @@ Back returns to the story’s launch point: Stories, Find, the geographic previe
 | Comet Return | Scrub the archive, then locate the comet in the sky | Time-specific predicted position or local bearing | Return to the archive’s held time and projection |
 | Current Rider | Scrub the buoy track | Selected geographic fix and water temperature | |
 | Deep Time | Scrub the geological timeline | Continental positions and the selected geological age | |
-| Dust Curtain | Open the lidar slice and drag the plot | Height and position of one sample on the CALIPSO transect | Close the slice to return to the plume |
+| Dust Curtain | Lift the CALIPSO profile from its Caribbean ground track and drag through it | Height and position of the selected laser return beside Hispaniola | Close the profile to return to the plume |
 | Earth’s Shadow | Scrub or jump to an eclipse contact | Lunar shadow geometry, time and local visibility | Return from the local view to the eclipse |
-| El Niño Pulse | Slice the Pacific and select a mooring | Equatorial temperature section and its available observations | Close the section to return to the basin |
+| El Niño Pulse | Tap a buoy or drag across the section, then scrub the months | The selected buoy’s temperature at 100 m, with gaps where a monthly reading is missing | The buoy stays selected when switching projection |
 | Eye of the Storm | Select a storm fix or scrub Katrina’s track | Selected position, wind speed and pressure | |
 | Fault Offset | Select a survey point or compare radar imagery | The local measured offset or interferogram | Close the comparison to return to the rupture track |
 | Fire Front | Scrub the satellite passes | Thermal detections through the selected pass | |
@@ -37,7 +37,7 @@ Back returns to the story’s launch point: Stories, Find, the geographic previe
 | Reef Heat | Select a period and inspect the regional reading | Heat-stress field and dated offshore sample | |
 | River Pulse | Select gauges and scrub the chart | In-world gauges and actual reported flows at selected times | |
 | Rupture Reveal | Select a station or scrub the shaking timeline | Rupture, station arrivals, and held wave sample | Return from the wave reading to the held rupture |
-| Seafloor Flight | Open a section and scrub distance | Bathymetric profile and location along the selected section | Close the section to return to the route |
+| Seafloor Flight | Scroll or drag toward Challenger Deep and back, then trace the seafloor | Depth from the GEBCO grid at the selected point on the transect | Resume from the held sounding. Clear a custom section to return to the route. |
 | Shadow Chase | Follow the 2027 shadow or select the saved city | Global shadow or local eclipse circumstances | Return from the city to the held global view |
 | Smoke Crossing | Scrub the satellite frames | The observed smoke footprint at that time | |
 | Spring Wave | Select a place and compare years | Date-matched greenness for that location | |

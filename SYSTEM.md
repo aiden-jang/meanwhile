@@ -256,9 +256,10 @@ subsets: originals remain the authority for scientific analysis.
 | Vanishing Sea | JRC Landsat annual surface-water classifications, 1984–2021; reference is observed 1984–1986 water, not the original pre-diversion shoreline |
 | Spring Wave | NASA Terra MODIS 16-day NDVI composites, 2023/2024; greenness, not flowers or biomass, and not instantaneous observations |
 
-Seafloor Flight uses the same line for the authored camera route, geographic trace, and sampled grid
-profile. A saved profile carries its distance sample. El Niño Pulse saves the selected buoy and
-month, including months where it reported no usable data. Ocean Bloom pairs already registered
+Seafloor Flight samples the GEBCO grid along the displayed transect. Scrolling over the scene or
+dragging the terrain advances the flight, and dragging the bed selects a depth. A saved profile
+carries its distance sample. El Niño Pulse keeps the chosen buoy and month across projections and
+shows the recorded temperature at 100 m when available. Ocean Bloom pairs already registered
 same-day Aqua MODIS imagery through the survey divider shared with Lights Return. The player keeps
 the last complete pair visible while the next comparison loads.
 

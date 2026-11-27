@@ -371,7 +371,7 @@ export function createScenePresentation(
       fiji.apply(camera, section);
       framed = !!optics.frame;
       optics.frame?.(camera, canvas);
-      observations?.positionLens(canvas, controls);
+      observations?.positionReadings(canvas, controls, camera);
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
       placeDayline(dayline.value);
       dive?.size();

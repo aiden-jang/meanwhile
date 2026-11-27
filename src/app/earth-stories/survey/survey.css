@@ -1,0 +1,158 @@
+.replay-region:has(.survey-surface) #observatory-intro {
+  overflow-anchor: none;
+}
+.survey-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  color: #f0e8cf;
+}
+.survey-surface [data-off] {
+  visibility: hidden;
+}
+.survey-surface text {
+  fill: currentColor;
+  paint-order: stroke;
+  stroke: #08141c;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  font: 500 12px/1 var(--font-mono);
+}
+.survey-surface .survey-number {
+  font-size: 14px;
+  font-weight: 650;
+}
+.survey-face,
+.survey-hit,
+.survey-action {
+  touch-action: none;
+  pointer-events: all;
+  cursor: crosshair;
+}
+.survey-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 36px;
+  pointer-events: stroke;
+}
+.survey-datum,
+.survey-sounding,
+.trench-bed,
+.trench-contours,
+.mooring-thread,
+.lidar-rim {
+  fill: none;
+  pointer-events: none;
+}
+.survey-datum {
+  stroke: #b0d5d7;
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.survey-sounding {
+  stroke: #f3d5a4;
+  stroke-width: 1.3;
+}
+.trench-bed {
+  stroke: #f3d5a4;
+  stroke-width: 1.8;
+}
+.trench-contours {
+  stroke: #8fc0c3;
+  stroke-width: 0.75;
+  opacity: 0.5;
+}
+.survey-halo {
+  fill: #0c2029b8;
+  stroke: #f6cf93;
+  stroke-width: 1;
+}
+.survey-pin {
+  fill: #ffe1aa;
+  stroke: #0b1a20;
+  stroke-width: 1.2;
+}
+.survey-surface .survey-action {
+  cursor: pointer;
+}
+.survey-action rect {
+  fill: #102027;
+  stroke: #a6bdb8;
+  stroke-width: 1;
+}
+.survey-action:focus-visible rect,
+.survey-action:hover rect {
+  stroke: #ffe1aa;
+  stroke-width: 2;
+}
+.survey-action text {
+  font-family: var(--font-sans);
+  stroke: none;
+}
+@media (max-width: 599px) {
+  .survey-surface text {
+    font-size: 10px;
+  }
+  .survey-surface .survey-number {
+    font-size: 12px;
+  }
+}
+.mooring-thread {
+  stroke: #f4dcab;
+  stroke-width: 1.2;
+}
+.mooring-samples {
+  stroke: #ffebc4;
+  stroke-width: 2;
+  fill: none;
+}
+.buoy-line [data-reading],
+.nino-moorings {
+  pointer-events: none;
+}
+.nino-journey .nino-moorings button[aria-pressed="true"]:not(:hover, :focus-visible) span {
+  visibility: hidden;
+}
+.lidar-rim {
+  stroke: #ecd6a4;
+  stroke-width: 1.1;
+}
+.survey-action[data-off] {
+  display: none;
+}
+@media (pointer: coarse) {
+  .trench-mouse-cue {
+    display: none;
+  }
+}
+@media (min-width: 900px) and (min-height: 621px) {
+  .replay-region:has(.survey-surface) .story-dock-host {
+    inset-block-end: 32px;
+  }
+}
+@media (max-width: 599px) and (min-height: 760px) {
+  .frame[data-presentation="observe"]
+    .zones:has(.survey-surface):not(:has(.terrain-section, .connected-journey-steps)) {
+    grid-template-rows: clamp(262px, 44dvh, 440px) minmax(0, 1fr);
+  }
+}
+.trench-touch-water,
+.trench-touch-cue {
+  display: none;
+}
+.nino-moorings button {
+  touch-action: none;
+}
+@media (pointer: coarse) {
+  .trench-touch-water {
+    display: block;
+    pointer-events: fill;
+    touch-action: none;
+  }
+  .trench-touch-cue {
+    display: inline;
+  }
+}

@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GeoPoint, ObservationTerrain } from "../observations/types";
 import { distanceKm } from "../../geo/sphere";
+import { interruptJourneyForReading } from "../journeyCamera";
 import {
   terrainSample,
   readTerrainSection,
@@ -8,6 +9,8 @@ import {
   sectionSamples,
   type TerrainLine,
 } from "./terrainSection";
+import type { useStoryClock } from "./useStoryClock";
+import { TrenchFlight } from "./survey/TrenchFlight";
 import { TerrainProfile } from "./TerrainProfile";
 
 const preset: TerrainLine = [
@@ -18,9 +21,20 @@ const preset: TerrainLine = [
 export function useTerrainSection(
   grid: ObservationTerrain | undefined,
   initial: string | undefined,
-  openMap: () => void,
-  completed: boolean,
+  onMap: (map: boolean) => void,
+  clock: ReturnType<typeof useStoryClock>,
+  duration: number,
 ) {
+  const position = clock.position / duration,
+    completed = !clock.playing && position >= 1;
+  const seek = (percent: number) => {
+    if (clock.playing) interruptJourneyForReading();
+    clock.seek(Math.round((percent * duration) / 100));
+  };
+  function openMap() {
+    clock.pause();
+    onMap(true);
+  }
   const [custom, setLine] = useState<TerrainLine | null | undefined>(() =>
     grid ? (readTerrainSection(initial, grid) ?? undefined) : undefined,
   );
@@ -62,7 +76,11 @@ export function useTerrainSection(
     },
     [grid, start],
   );
-  const samples = useMemo(() => (grid && line ? sectionSamples(grid, line) : null), [grid, line]);
+  const profile = useMemo(
+    () => (grid ? sectionSamples(grid, line ?? seafloorFlight, line ? 100 : duration) : null),
+    [grid, line, duration],
+  );
+  const samples = line ? profile : null;
   const active = index ?? (line === seafloorFlight ? 100 : 0);
   const paths = useMemo(
     () =>
@@ -83,6 +101,33 @@ export function useTerrainSection(
     setHint("");
   };
   return {
+    cue:
+      grid &&
+      (line ? (
+        "Drag along the measured floor"
+      ) : (
+        <>
+          <span className="trench-mouse-cue">Scroll to descend · </span>
+          <span className="trench-touch-cue">Drag down to descend · </span>Drag the transect
+        </>
+      )),
+    world: profile && !drawing && (
+      <TrenchFlight
+        samples={profile}
+        bounds={grid!.bounds}
+        flight={!line || line === seafloorFlight}
+        position={line ? active : Math.floor(clock.position)}
+        progress={line ? 1 : position}
+        select={line ? setIndex : seek}
+        fly={(value) => {
+          if (line === seafloorFlight && value < 100) {
+            setLine(undefined);
+            setIndex(undefined);
+          }
+          seek(value);
+        }}
+      />
+    ),
     pick: drawing ? pick : undefined,
     paths,
     marks,

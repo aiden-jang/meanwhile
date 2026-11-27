@@ -1,7 +1,8 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { refreshAnnotations } from "../globe/annotationInput";
 
 // Only the mounted journey owns this bridge to the shared globe's camera control.
-let owner: { resume: () => void; interrupted: boolean } | null = null;
+let owner: { interrupt: () => void; resume: () => void; interrupted: boolean } | null = null;
 const listeners = new Set<() => void>();
 const publish = () => listeners.forEach((listener) => listener());
 const read = () => owner?.interrupted ?? false;
@@ -16,6 +17,13 @@ export function useInterruptedJourney() {
   return { interrupted, resume: () => owner?.resume() };
 }
 
+export function interruptJourneyForReading() {
+  if (!owner) return;
+  refreshAnnotations({ camera: "hold" });
+  refreshAnnotations({ camera: "freeze" });
+  owner.interrupt();
+}
+
 export function useJourneyGestures(pause: () => void, resume: () => void, canResume: boolean, active = true) {
   const actions = useRef({ pause, resume });
   actions.current = { pause, resume };
@@ -23,6 +31,11 @@ export function useJourneyGestures(pause: () => void, resume: () => void, canRes
     if (!active) return;
     const control = {
       interrupted: false,
+      interrupt() {
+        actions.current.pause();
+        control.interrupted = canResume;
+        publish();
+      },
       resume() {
         control.interrupted = false;
         actions.current.resume();
@@ -33,11 +46,7 @@ export function useJourneyGestures(pause: () => void, resume: () => void, canRes
     publish();
     const canvas = document.querySelector<HTMLCanvasElement>("#globe-view canvas");
     const globe = document.getElementById("globe-view");
-    const stop = () => {
-      actions.current.pause();
-      control.interrupted = canResume;
-      publish();
-    };
+    const stop = control.interrupt;
     const key = (event: KeyboardEvent) => {
       const active = document.activeElement;
       if (event.metaKey || event.ctrlKey || event.altKey) return;

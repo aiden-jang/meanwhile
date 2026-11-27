@@ -41,7 +41,8 @@ export async function satelliteStory(
       }));
     return {
       frames,
-      target: { lon: -24, lat: 21, zoom: 1.35 },
+      openingAt: date("2020-06-23"),
+      target: { lon: -54, lat: 21, zoom: 1.35 },
       mapTarget: { lon: -54, lat: 21, zoom: 1.15 },
       timelineCues: true,
       playbackDuration: 11_500,
