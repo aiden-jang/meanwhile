@@ -34,11 +34,11 @@
   grid-area: auto;
   inset: var(--head-h) 0 0;
 }
-.frame[data-fiji] :is(.canvas-information, .camera-recenter) {
+.frame[data-fiji] :is(.canvas-information, .camera-recenter, .creator-credit) {
   display: none;
 }
 .frame[data-fiji] [data-scale] {
-  inset: 66px clamp(18px, 4vw, 64px) auto auto;
+  inset: calc(var(--head-h) + 76px) clamp(18px, 4vw, 64px) auto auto;
   margin: 0;
 }
 .frame:has(.fiji-descent) .zone-head {
@@ -106,7 +106,7 @@
   text-shadow: 0 2px 20px rgb(0 0 0 / 74%);
 }
 .fiji-title {
-  inset-block-start: 19%;
+  inset-block-start: max(19%, calc(var(--head-h) + 80px));
 }
 .fiji-title h2 {
   margin: 0;
@@ -233,7 +233,7 @@
 }
 @media (max-width: 599px) {
   .fiji-title {
-    inset-block-start: 16%;
+    inset-block-start: max(16%, calc(var(--head-h) + 80px));
   }
   .fiji-title h2 {
     font-size: 104px;
@@ -254,16 +254,28 @@
     gap: 10px;
   }
 }
-@media (max-height: 480px) {
+@media (orientation: landscape) and (max-height: 480px) {
   .fiji-title {
-    inset-block-start: 26%;
+    inset-block-start: calc(var(--head-h) + 12px);
+    inset-inline-start: calc(var(--gutter) + 90px);
   }
-  .fiji-title h2 {
-    font-size: 68px;
+  .fiji-title h2,
+  .fiji-descent[data-underwater] .fiji-title h2 {
+    font-size: 42px;
+  }
+  .fiji-title p {
+    margin-top: 4px;
+    font-size: 12px;
   }
   .fiji-reading {
-    inset-block-end: 36px;
-    gap: 10px;
+    inset-block-end: 48px;
+    min-block-size: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: 20px;
+  }
+  .fiji-credit {
+    inset-block-end: max(12px, env(safe-area-inset-bottom));
   }
 }
 @media (prefers-reduced-motion: reduce) {

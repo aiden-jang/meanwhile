@@ -61,6 +61,32 @@ test("Fiji keeps the phone map, layer panel, and camera when returning from anot
   await expect(depth).toHaveValue("0");
   await depth.press("End");
   await expect(fiji.getByText("Epicentre", { exact: true })).toBeInViewport();
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 568, height: 320 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          [
+            [".fiji-back", ".fiji-title"],
+            [".fiji-title", ".fiji-reading"],
+            [".fiji-navigation .story-projection", "[data-scale]"],
+            [".fiji-reading", ".fiji-credit"],
+          ].filter(([first, second]) => {
+            const a = document.querySelector(first)!.getBoundingClientRect();
+            const b = document.querySelector(second)!.getBoundingClientRect();
+            return (
+              a.left < b.right + 6 && a.right + 6 > b.left && a.top < b.bottom + 6 && a.bottom + 6 > b.top
+            );
+          }),
+        ),
+      )
+      .toEqual([]);
+  }
+  await expect(page.locator(".creator-credit")).toBeHidden();
   await fiji.getByRole("button", { name: "Globe", exact: true }).click();
   await expect(world).toHaveAttribute("aria-label", "Globe");
   await expect(depth).toHaveValue("670.8");
