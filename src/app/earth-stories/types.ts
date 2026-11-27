@@ -44,6 +44,7 @@ export interface EarthStoryData {
   timelineLabel?: string;
   lunarImage?: string;
   basins?: readonly ShorelineBasin[];
+  waterSamples?: Uint8Array | undefined;
   glacier?: { readings: GlacierReadings; earlier: string; later: string };
 }
 const files = import.meta.glob<string>("../../sources/earth-stories/assets/*.webp", {

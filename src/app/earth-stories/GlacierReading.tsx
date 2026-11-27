@@ -13,6 +13,8 @@ const speedText = (speed: number | undefined) => (speed === undefined ? "—" : 
 
 export function GlacierReading({
   grid,
+  showYear,
+  divider,
   sample,
   details,
   outside,
@@ -23,6 +25,8 @@ export function GlacierReading({
   onBack,
 }: {
   grid: GlacierReadings;
+  showYear: (year: "2013" | "2024") => void;
+  divider: number;
   sample: number;
   details: boolean;
   outside: boolean;
@@ -50,7 +54,17 @@ export function GlacierReading({
           const speed = speeds[index];
           return (
             <div key={year} className="glacier-speed">
-              <dt>{year}</dt>
+              <dt>
+                <button
+                  type="button"
+                  className="velocity-year"
+                  aria-label={"Show " + year + " velocity"}
+                  aria-pressed={divider === (year === "2013" ? 100 : 0)}
+                  onClick={() => showYear(year)}
+                >
+                  {year}
+                </button>
+              </dt>
               <dd>
                 {speedText(speed)}
                 <span className="sr-only">{speed === undefined ? " No usable reading" : " m/year"}</span>

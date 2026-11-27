@@ -119,6 +119,7 @@ export function StoryTimeline({
                 max={data.frames.length - 1}
                 value={index}
                 aria-valuetext={time}
+                aria-describedby={data.waterSamples ? "lakebed-reading" : undefined}
                 disabled={busy}
                 onInput={(event) => {
                   const next = event.currentTarget.valueAsNumber;

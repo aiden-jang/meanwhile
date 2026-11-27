@@ -53,8 +53,13 @@ export function createGeographicProjection(camera: PerspectiveCamera, canvas: HT
 
 export function createUnfoldCamera(camera: PerspectiveCamera) {
   const target = new Vector3();
+  const surveyNormal = new Vector3();
   let previousLon: number | null = null;
+  let localSurvey = false;
   return {
+    setLocalSurvey(active: boolean) {
+      localSurvey = active;
+    },
     reset(): void {
       previousLon = null;
     },
@@ -68,6 +73,13 @@ export function createUnfoldCamera(camera: PerspectiveCamera) {
       }
       // Choose the continuous longitude even if a flight reaches the other side of the seam mid-curl.
       previousLon = previousLon === null ? wrap(lon) : previousLon + wrap(lon - previousLon);
+      if (localSurvey) {
+        // A regional survey fills the lens. Follow the same surface normal as the raster throughout the fold.
+        unfoldPoint(target, previousLon, lat, t, 0, surveyNormal);
+        camera.position.copy(target).addScaledVector(surveyNormal, distance - (1 - t));
+        camera.lookAt(target);
+        return;
+      }
       const pullback = Math.sin(Math.PI * t);
       const viewLon = previousLon * (1 - 0.18 * pullback);
       const viewLat = lat * (1 - 0.18 * pullback);

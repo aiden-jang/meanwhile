@@ -136,6 +136,7 @@ export interface ObservationView {
   kind: "observation";
   cameraKey?: string;
   holdGeography?: boolean;
+  localSurveyProjection?: boolean;
   frame: ObservationFrame;
   target: CameraState;
   image: HTMLImageElement | null;

@@ -5,10 +5,19 @@ import { atlasImage } from "./atlasArchive";
 import type { StoryFrame } from "./types";
 import { BasinMarkers, BasinReading, type ShorelineBasin } from "./shorelineBasins";
 
+import { paintLakebed } from "./paintLakebed";
+import { WaterHistory } from "./survey/WaterHistory";
+import { closestWater, defaultWaterCell, waterPoint } from "./aralSamples";
+import type { GeoPoint } from "../observations/types";
+
 const noMotion = "(prefers-reduced-motion: reduce)";
 
 export function useShorelineComparison({
   basins,
+  archiveImage,
+  table,
+  frames,
+  seek,
   finished,
   frame,
   map,
@@ -16,6 +25,10 @@ export function useShorelineComparison({
   pause,
   playing,
 }: {
+  archiveImage: HTMLImageElement | null;
+  table: Uint8Array | undefined;
+  frames: readonly StoryFrame[];
+  seek: (i: number) => void;
   basins: readonly ShorelineBasin[] | undefined;
   finished: boolean;
   frame: Pick<StoryFrame, "at" | "raster" | "basins">;
@@ -25,6 +38,11 @@ export function useShorelineComparison({
   playing: boolean;
 }) {
   const year = new Date(frame.at).getUTCFullYear();
+  const [waterCell, setWaterCell] = useState(() => {
+    const cell = Number(/^water:(\d+)$/.exec(chapter ?? "")?.[1]);
+    return table && Number.isInteger(cell) && waterPoint(table, cell) ? cell : defaultWaterCell;
+  });
+  const [pinned, setPinned] = useState(!!chapter?.startsWith("water:"));
   const separating = !!basins && year === 1989;
   const [registered, register] = useState<ObservationView["comparisonFrame"]>();
   const [basin, setBasin] = useState(() => {
@@ -36,8 +54,8 @@ export function useShorelineComparison({
   const [reveal, showReveal] = useState(false);
   const [holding, hold] = useState(false);
   const lastReveal = useRef<number | null>(null);
-  const automatic = !!basins && (finished || (separating && playing));
-  const comparing = !!basins && (finished || !!basin || manualReference || (separating && playing));
+  const automatic = !!basins && !pinned && (finished || (separating && playing));
+  const comparing = !!basins && (automatic || !!basin || manualReference);
   const framing = useMemo(() => {
     if (!comparing) return undefined;
     const view = { map, onReady: () => register(view) };
@@ -49,6 +67,7 @@ export function useShorelineComparison({
     (id: string) => {
       pause();
       setBasin(id);
+      setPinned(false);
       setManualReference(false);
       if (id)
         requestAnimationFrame(() =>
@@ -56,6 +75,19 @@ export function useShorelineComparison({
         );
     },
     [pause],
+  );
+  const pickWater = useCallback(
+    (point: GeoPoint) => {
+      if (!table) return;
+      const cell = closestWater(table, point);
+      if (cell === undefined) return;
+      pause();
+      setBasin("");
+      setManualReference(false);
+      setPinned(true);
+      setWaterCell(cell);
+    },
+    [table, pause],
   );
   const pickMarks = useMemo(
     () => basins && { points: basins, select: (index: number) => select(basins[index]!.id) },
@@ -94,21 +126,60 @@ export function useShorelineComparison({
 
   const early = ready && !!outline.element && (reveal || manualReference);
   const waterUrl = frame.raster?.url;
+  const yearIndex = table ? frames.findIndex((f) => f.at === frame.at) : -1;
+  const surface = useMemo(
+    () =>
+      table && archiveImage && yearIndex >= 0 && !early
+        ? paintLakebed(archiveImage, table, yearIndex)
+        : undefined,
+    [archiveImage, table, yearIndex, early],
+  );
   return {
     basin,
+    surface,
     holding,
+    pickWater: table ? pickWater : undefined,
+    pinned,
     comparing,
     chapter:
       basins && (basin || manualReference)
         ? `basin:${basin || "all"}${manualReference ? ":reference" : ""}`
-        : "",
+        : pinned
+          ? "water:" + waterCell
+          : "",
     framing,
     pickMarks,
     image: early ? outline.element : null,
     labels: basins && (
       <>
+        {table && !basin && !manualReference && (
+          <WaterHistory
+            table={table}
+            frames={frames}
+            cell={waterCell}
+            index={Math.max(
+              0,
+              frames.findIndex((f) => f.at === frame.at),
+            )}
+            move={(dx, dy) => {
+              const p = waterPoint(table, waterCell)!;
+              for (let step = 1; step <= 6; step++) {
+                const next = { lon: p.lon + dx * step * 0.04, lat: p.lat + dy * step * 0.04 };
+                const cell = closestWater(table, next);
+                if (cell !== undefined && cell !== waterCell) {
+                  pickWater(next);
+                  break;
+                }
+              }
+            }}
+            seek={(i) => {
+              setPinned(true);
+              seek(i);
+            }}
+          />
+        )}
         <BasinMarkers basins={basins} selected={basin} select={select} separating={separating} />
-        {ready && (
+        {ready && (!pinned || manualReference) && (
           <div className="shoreline-labels" aria-hidden="true">
             <span data-observation-anchor="" data-lon="60.975" data-lat="45.925">
               1984–86 shoreline

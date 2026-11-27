@@ -19,7 +19,7 @@ export const atlasStories = {
   },
   glacier: {
     title: "Glacier Flow",
-    summary: "Trace Jakobshavn’s measured ice motion and compare two annual velocity maps.",
+    summary: "Follow the fast ice toward the fjord. Switch years to compare the same point.",
     location: "Jakobshavn · West Greenland",
     scene: "live",
     source: "NASA ITS_LIVE · annual velocity mosaics v2.1",
@@ -73,7 +73,7 @@ export const atlasStories = {
   },
   aral: {
     title: "Vanishing Sea",
-    summary: "Hold an early shoreline in place while the Aral Sea separates and retreats.",
+    summary: "Tap the early lakebed, then drag through the years at that spot.",
     location: "Aral Sea · 1984–2021",
     scene: "live",
     source: "European Commission JRC · Global Surface Water",

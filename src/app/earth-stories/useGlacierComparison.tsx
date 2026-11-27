@@ -7,6 +7,7 @@ import { surveyComparison } from "../observations/surveyComparison";
 import type { GeoPoint, ObservationFrame } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { GlacierReading } from "./GlacierReading";
+import { GlacierTransect } from "./GlacierTransect";
 import { GlacierWorld } from "./GlacierWorld";
 import { glacierCell, glacierPlaces, glacierPoint } from "./glacierReadings";
 import type { EarthStoryData } from "./types";
@@ -26,6 +27,27 @@ export function useGlacierComparison(
     !!grid && (!!saved || (!guided && initial?.at === undefined && initial?.choice === undefined)),
   );
   const [divider, setDivider] = useState(saved ? Math.min(100, Number(saved[2])) : 50);
+  const sweepFrame = useRef(0);
+  function moveDivider(next: number) {
+    cancelAnimationFrame(sweepFrame.current);
+    setDivider(next);
+  }
+  function showYear(year: "2013" | "2024") {
+    cancelAnimationFrame(sweepFrame.current);
+    const end = year === "2013" ? 100 : 0;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || divider === end) {
+      setDivider(end);
+      return;
+    }
+    const start = performance.now();
+    function sweep(now: number) {
+      const u = Math.min(1, (now - start) / 420);
+      setDivider(Math.round(divider + (end - divider) * u * u * (3 - 2 * u)));
+      if (u < 1) sweepFrame.current = requestAnimationFrame(sweep);
+    }
+    sweepFrame.current = requestAnimationFrame(sweep);
+  }
+  useLayoutEffect(() => () => cancelAnimationFrame(sweepFrame.current), []);
   const [sample, setSample] = useState(() => {
     if (!grid) return undefined;
     const cell = saved ? Number(saved[1]) : -1;
@@ -111,17 +133,28 @@ export function useGlacierComparison(
     pick: comparing && surface && !details ? pick : undefined,
     chapter: comparing && sample !== undefined ? `velocity:${sample},${divider}` : "",
     world: comparing && grid && sample !== undefined && (
-      <GlacierWorld
-        grid={grid}
-        sample={sample}
-        divider={divider}
-        ready={!!surface && framed}
-        inspecting={details}
-        select={select}
-        pick={pick}
-        adjust={setDivider}
-        inspect={inspect}
-      />
+      <>
+        {!!surface && framed && !details && (
+          <GlacierTransect
+            grid={grid}
+            sample={sample}
+            divider={divider}
+            select={select}
+            showYear={showYear}
+          />
+        )}
+        <GlacierWorld
+          grid={grid}
+          sample={sample}
+          divider={divider}
+          ready={!!surface && framed}
+          inspecting={details}
+          select={select}
+          pick={pick}
+          adjust={moveDivider}
+          inspect={inspect}
+        />
+      </>
     ),
     control:
       grid &&
@@ -132,6 +165,8 @@ export function useGlacierComparison(
             <span>Metres per year</span>
           </div>
           <GlacierReading
+            showYear={showYear}
+            divider={divider}
             grid={grid}
             sample={sample}
             details={details}

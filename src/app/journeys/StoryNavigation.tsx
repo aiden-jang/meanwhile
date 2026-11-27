@@ -92,9 +92,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   });
   checkpointJourney.current = journey.checkpoint;
   useLayoutEffect(() => {
+    // Nested checkpoints during departure still belong to the scene on screen.
+    const source = origin.current;
     props.views.navigation.extension.current = {
       capture() {
-        const source = origin.current;
         const search = find.departure.current ?? find.position;
         const collection = openingPacific.current;
         const restoreJourney = journey.capture();

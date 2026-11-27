@@ -2,6 +2,7 @@ import type { SkyCity } from "../../geo/tonight";
 import { atlasArchive, atlasImage } from "./atlasArchive";
 import { date, type EarthStoryData, type StoryFrame } from "./types";
 
+import { aralSamples } from "./aralSamples";
 import type { BasinReadings, ShorelineBasin } from "./shorelineBasins";
 
 type Bounds = [number, number, number, number];
@@ -103,9 +104,10 @@ export async function aralStory(): Promise<EarthStoryData> {
   }));
   return {
     frames,
-    target: { lon: 59.5, lat: 45, zoom: 2 },
-    lens: { globe: 5, map: 10 },
+    target: { lon: 59.7, lat: 45.35, zoom: 2.2 },
+    lens: { globe: 5.8, map: 11.4 },
     basins: data.basins,
+    waterSamples: await aralSamples().catch(() => undefined),
     timelineLabel: "Archive year",
     chapters: [
       { at: frames[0]!.at, label: "Early shoreline" },
@@ -115,6 +117,7 @@ export async function aralStory(): Promise<EarthStoryData> {
     legend: [
       { color: "#e6e1c5", label: "1984–1986 observed-water boundary" },
       { color: "#3987b2", label: "Permanent water" },
+      { color: "#ddb276", label: "Ochre stipple · observed exposed lakebed" },
       { color: "#70c0cb", label: "Seasonal water" },
       { color: "#b299b4", label: "Hatched · no observation inside the reference" },
     ],

@@ -1,0 +1,173 @@
+.ground-transect,
+.water-history {
+  --landmark: #f8be88;
+  z-index: 2;
+}
+.ice-transect {
+  --landmark: #a9e9f4;
+}
+.water-history {
+  --landmark: #f1d4a5;
+}
+.ground-transect path:not(.survey-hit),
+.transect-end,
+.transect-pointer,
+.water-history .water-station {
+  pointer-events: none;
+}
+.transect-bed,
+.transect-ahead,
+.transect-covered {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.transect-bed {
+  stroke: #102128;
+  stroke-width: 3.3;
+  opacity: 0.68;
+}
+.transect-ahead {
+  stroke: var(--landmark);
+  stroke-width: 1.25;
+  stroke-dasharray: 2 4;
+}
+.transect-covered {
+  stroke: var(--landmark);
+  stroke-width: 2.1;
+}
+.ground-transect:has(.survey-hit:focus-visible) .transect-ahead {
+  stroke-width: 3;
+}
+.transect-end circle,
+.transect-pointer circle,
+.water-pin {
+  stroke: var(--landmark);
+  fill: #11252d;
+  stroke-width: 1.35;
+}
+.transect-pointer .transect-dot,
+.water-centre {
+  fill: var(--landmark);
+  stroke: none;
+}
+.transect-pointer [data-lead],
+.water-history [data-lead] {
+  fill: none;
+  stroke: var(--landmark);
+  opacity: 0.78;
+}
+.ground-transect [data-paper],
+.water-history [data-paper] {
+  fill: #0c1921;
+  fill-opacity: 0.97;
+  stroke: #a0b3b549;
+  stroke-width: 0.75;
+}
+.transect-end text {
+  font-size: 10px;
+  fill: #dbe4df;
+}
+.survey-surface .landmark-caption {
+  stroke: none;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  fill: #bacecf;
+}
+.survey-surface .landmark-value {
+  stroke: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--landmark);
+}
+.transect-pointer .survey-action {
+  pointer-events: all;
+  touch-action: manipulation;
+}
+.water-history [data-water-hit] {
+  stroke-width: 34px;
+  cursor: ew-resize;
+}
+.water-history .year-cursor {
+  fill: #fcf4dd;
+  stroke: #142530;
+  stroke-width: 1;
+}
+.water-history .water-pin {
+  pointer-events: all;
+  cursor: pointer;
+}
+.water-history .water-pin:focus-visible {
+  stroke: var(--landmark);
+  stroke-width: 2;
+}
+.replay-stage:has(.ice-transect) .glacier-field-pin span {
+  display: none;
+}
+.replay-stage:has(.ice-transect) .glacier-world {
+  z-index: 3;
+}
+.replay-stage:has(.water-history) .shoreline-basins {
+  z-index: 1;
+}
+.replay-stage:has(.water-history)
+  .shoreline-basins
+  button:not([aria-pressed="true"], :hover, :focus-visible)
+  span {
+  visibility: hidden;
+}
+.glacier-speed dt button.velocity-year {
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #a3c8cf7d;
+  border-radius: 0;
+  padding: 4px 0;
+  font: inherit;
+}
+.glacier-speed dt button.velocity-year[aria-pressed="true"] {
+  color: #d6f5fa;
+  border-bottom-color: #c0eaf1;
+}
+.velocity-year:hover {
+  color: #fff;
+}
+@media (max-width: 599px) {
+  .ground-transect .transect-end text {
+    font-size: 10px;
+  }
+  .survey-surface .landmark-value {
+    font-size: 11px;
+  }
+}
+
+.ground-transect .survey-hit,
+.water-history .survey-hit {
+  stroke-linecap: round;
+}
+.replay-stage:has(.lava-transect) .stage-readout,
+.replay-stage:has(.water-history) .stage-readout {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.period-key rect {
+  fill: transparent;
+  stroke: #728e962e;
+}
+.period-key[aria-pressed="true"] rect {
+  fill: #a9e9f42b;
+  stroke: #a9e9f4a8;
+}
+.period-key[aria-pressed="true"] text {
+  fill: #d4f7fa;
+}
+.replay-stage:has(.ground-transect, .water-history),
+.ground-transect,
+.water-history {
+  touch-action: none;
+}

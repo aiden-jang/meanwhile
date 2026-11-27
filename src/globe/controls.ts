@@ -96,9 +96,7 @@ export function createControls(
   const dist = (): number => distAt(zoom);
   const clampZoom = (zoom: number): number => distance.clamp(zoom, morph);
 
-  /**
-   * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
-   */
+  /** Pixels per unit of projected height at the origin plane. */
   const focalPx = (): number => (camera.zoom * rig.framedHeight()) / (2 * Math.tan((fovDeg / 2) * DEG));
 
   const angleAt = (px: number, atZoom = zoom): number => {
@@ -341,6 +339,7 @@ export function createControls(
       apply();
     },
     project: (pLon, pLat, radius = 1, rect) => project(pLon, pLat, radius, morph, lon, rect),
+    setLocalSurveyProjection: unfold.setLocalSurvey,
     setMorph: (t) => {
       if (t > 0 && target?.intro) target = { lon: target.lon, lat: target.lat, zoom: target.zoom };
       morph = Math.max(0, Math.min(1, t));

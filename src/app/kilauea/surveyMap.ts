@@ -1,7 +1,6 @@
 import type { ObservationRaster } from "../observations/types";
 import { bounds, kapohoBay } from "./lavaTimeline";
 
-export const fissure = { lon: -154.918, lat: 19.463, zoom: 2.4 };
 export const coastalSurvey = { lon: -154.818, lat: 19.514, zoom: 2.4 };
 export const lens = { globe: 82, map: 235 };
 export const surveyLens = { globe: 100, map: 295 };

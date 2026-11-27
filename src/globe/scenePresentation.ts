@@ -158,7 +158,7 @@ export function createScenePresentation(
       !!diving ||
       !!lunar ||
       approaching ||
-      (!!lens && !holdingGeography && lensReveal < 1)
+      (!!lens && lensReveal < 1 && (!holdingGeography || arrival.ready()))
     );
   }
   function set(mode: GlobePresentation, geography: readonly Object3D[], cutawayCamera = false) {
@@ -170,6 +170,7 @@ export function createScenePresentation(
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     const hold = observation?.holdGeography === true;
+    controls.setLocalSurveyProjection(observation?.localSurveyProjection === true);
     if (hold && !holdingGeography) controls.setView(controls.state());
     const nextStorm = mapLayers?.storm?.cameraKey;
     if (nextStorm !== stormKey) {

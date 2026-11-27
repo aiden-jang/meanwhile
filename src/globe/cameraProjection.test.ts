@@ -23,3 +23,25 @@ it("keeps the geographic aim centered without jumping on the first frame", () =>
     expect(screen.y).toBeCloseTo(0, 7);
   }
 });
+
+it("keeps a lifted local survey over its ground coordinates at regional magnification", () => {
+  const camera = new PerspectiveCamera(46, 1.4, 0.01, 100);
+  camera.zoom = 235;
+  camera.updateProjectionMatrix();
+  for (const [lon, lat] of [
+    [-154.87, 19.51],
+    [59.7, 45.35],
+    [-49.55, 69.15],
+  ] as const) {
+    const view = createUnfoldCamera(camera);
+    view.setLocalSurvey(true);
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      view.place(lon, lat, 2.2, t);
+      camera.updateMatrixWorld();
+      const sample = unfoldPoint(new Vector3(), lon, lat, t, 0.009 * (1 - 0.8 * t)).project(camera);
+      expect(Math.abs(sample.x)).toBeLessThan(0.001);
+      expect(Math.abs(sample.y)).toBeLessThan(0.001);
+    }
+  }
+});

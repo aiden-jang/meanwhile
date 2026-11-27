@@ -195,8 +195,10 @@ function surveyFrame(
   ctx.fillStyle = "#112638";
   ctx.fillRect(0, 0, width, height);
   paintSurvey(ctx, { index, accent: 0.9 }, relief, projection, mode);
-  place(ctx, projection.point(vent), "Fissure 8", width, height, true);
-  place(ctx, projection.point(kapohoBay), "Kapoho Bay", width, height, true);
+  if (mode !== "dated") {
+    place(ctx, projection.point(vent), "Fissure 8", width, height, true);
+    place(ctx, projection.point(kapohoBay), "Kapoho Bay", width, height, true);
+  }
 }
 
 export function drawLavaSurface(

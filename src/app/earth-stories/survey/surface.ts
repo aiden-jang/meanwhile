@@ -8,6 +8,8 @@ export const mix = (a: Pixel, b: Pixel, t: number): Pixel => ({
   x: a.x + (b.x - a.x) * t,
   y: a.y + (b.y - a.y) * t,
 });
+// SVG attributes are case-sensitive. Preact forwards their spelling to the DOM.
+export const focusableSurvey = { tabindex: 0 };
 export const xy = (p: Pixel) => p.x.toFixed(1) + "," + p.y.toFixed(1);
 export const path = (points: Pixel[]) => (points.length ? "M" + points.map(xy).join("L") : "");
 export const facePath = (rows: Row[]) =>

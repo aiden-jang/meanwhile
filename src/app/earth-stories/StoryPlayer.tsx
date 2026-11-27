@@ -166,6 +166,10 @@ export function StoryPlayer({
   useStoryCompletion(finished && (!fault || faultMode === "replay"));
   const shoreline = useShorelineComparison({
     basins: data.basins,
+    archiveImage: element,
+    table: data.waterSamples,
+    frames: data.frames,
+    seek: clock.seek,
     finished,
     frame,
     map: panel.map,
@@ -178,7 +182,8 @@ export function StoryPlayer({
   const framing = glacier.framing ?? shoreline.framing ?? dust.framing;
   const comparingShoreline = id === "aral" && finished;
   const holdGeography =
-    ready && (glacier.holding || shoreline.holding || (!!shoreline.basin && !clock.playing));
+    ready &&
+    (glacier.holding || shoreline.holding || ((!!shoreline.basin || shoreline.pinned) && !clock.playing));
   const inspecting = dust.forcedPause || glacier.comparing || selected || shoreline.holding;
   const canFly = !(inspecting || panel.map || localSky || orbitStory || surveyed);
   const motionProgress = canFly && clock.cinematic && clock.playing ? clock.position / duration : undefined;
@@ -200,11 +205,13 @@ export function StoryPlayer({
       image: displayedImage,
       ...(bloom.comparing && surface ? { surface, surveyDivider: bloom.divider } : {}),
       ...(glacier.surface ? { surface: glacier.surface, surveyDivider: glacier.divider } : {}),
+      ...(shoreline.surface ? { surface: shoreline.surface } : {}),
       moonImage: lunarImage.element,
-      onPick: glacier.pick ?? section.pick,
-      pickOnGlobe: !!glacier.pick,
+      onPick: glacier.pick ?? shoreline.pickWater ?? section.pick,
+      pickOnGlobe: !!glacier.pick || !!shoreline.pickWater,
       pickMarks: shoreline.pickMarks ?? (openCurtain ? moorings.picks : undefined),
       holdGeography,
+      localSurveyProjection: id === "aral" || glacier.comparing,
       ...(lens && !localSky ? { lens } : {}),
       ...(data.terrain ? { terrain: { grid: data.terrain, progress: terrainProgress } } : {}),
       arrive,
@@ -260,6 +267,8 @@ export function StoryPlayer({
     framing,
     shoreline.chapter,
     shoreline.pickMarks,
+    shoreline.pickWater,
+    shoreline.surface,
     holdGeography,
     lens,
     data.terrain,
@@ -274,6 +283,7 @@ export function StoryPlayer({
     city.name,
     skyMode,
     glacier.surface,
+    glacier.comparing,
     glacier.divider,
     glacier.pick,
     glacier.chapter,
@@ -313,7 +323,7 @@ export function StoryPlayer({
       subtitle={meta.summary}
       className={storyClass(id, fieldStory, orbitStory)}
       finding={id !== "aral" && (!fault || faultMode === "replay")}
-      status={comparingShoreline || glacier.comparing ? null : (sky.status ?? displayCaption)}
+      status={id === "aral" || glacier.comparing ? null : (sky.status ?? displayCaption)}
       at={
         comparingShoreline || orbitStory || fieldStory ? undefined : (
           <time dateTime={frame.dateTime ?? new Date(frame.at).toISOString()}>{time}</time>
