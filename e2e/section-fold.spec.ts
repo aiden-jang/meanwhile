@@ -9,7 +9,6 @@ test("the drawn line becomes the depth chart hinge", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { count: 400 });
   await page.addInitScript(() => {
-    localStorage.setItem("eif.flat", "1");
     const hinges: { from: [number, number]; to: [number, number] }[] = [];
     Object.assign(window, { sectionHinges: hinges });
     const animate = Element.prototype.animate;
@@ -26,15 +25,16 @@ test("the drawn line becomes the depth chart hinge", async ({ page }) => {
       return animate.call(this, frames, options);
     };
   });
-  await page.goto("/#at=140,36,2.6&m=2&w=24");
+  await page.goto("/#v=explore&p=map&at=140,36,2.6&m=2&w=24");
   await waitForData(page);
   await expect(page.locator("[data-scale]")).toHaveCSS("opacity", "1");
-  const frame = (await page.locator("#globe-view").boundingBox())!;
-  const from = [
-    Math.round(frame.x + frame.width / 2 - 200),
-    Math.round(frame.y + frame.height * 0.42 + 100),
-  ] as const;
-  const to = [from[0] + 400, from[1] - 180] as const;
+  const tokyo = page.locator("[data-place-label]").filter({ hasText: /^Tokyo$/ });
+  await expect(tokyo).toBeVisible();
+  const label = (await tokyo.boundingBox())!;
+  const centerX = Math.round(label.x + label.width / 2);
+  const centerY = Math.round(label.y + label.height / 2);
+  const from = [centerX - 200, centerY + 90] as const;
+  const to = [centerX + 200, centerY - 90] as const;
   const draw = async (start: readonly [number, number], end: readonly [number, number]): Promise<void> => {
     await page.keyboard.down("Shift");
     await page.mouse.move(...start);
