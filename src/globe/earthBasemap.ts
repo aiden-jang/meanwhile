@@ -9,6 +9,8 @@ import {
 import { createFijiRelief, fijiReliefShader } from "./fijiRelief";
 import type { GlobePresentation } from "./scenePresentation";
 import { solarOffsetMinutes, landingSolarTime } from "./landingSolarClock";
+import type { CameraState } from "./controlsTypes";
+import { createTerrainDetail, terrainDetailShader } from "./terrainDetail";
 
 export interface SurfaceView {
   globePresentation: GlobePresentation;
@@ -45,6 +47,7 @@ export function createEarthBasemap(
   const terrain = { value: null as Texture | null };
   const lights = { value: null as Texture | null };
   const relief = createFijiRelief(wake);
+  const detail = createTerrainDetail(canvas, wake);
   const compile = ocean.onBeforeCompile;
   const key = ocean.customProgramCacheKey();
   ocean.onBeforeCompile = (shader, renderer) => {
@@ -54,6 +57,7 @@ export function createEarthBasemap(
       uAtlas: terrain,
       uCityLights: lights,
       ...relief.uniforms,
+      ...detail.uniforms,
     });
     shader.vertexShader = shader.vertexShader.replace(
       "void main() {",
@@ -67,6 +71,7 @@ export function createEarthBasemap(
       uniform sampler2D uAtlas;
       uniform sampler2D uCityLights;
       ${fijiReliefShader}
+      ${terrainDetailShader}
       varying vec2 vAtlas;
       vec3 atlasToLinear(vec3 x) {
         return mix(x / 12.92, pow((x + .055) / 1.055, vec3(2.4)), step(vec3(.04045), x));
@@ -79,6 +84,11 @@ export function createEarthBasemap(
         `
       if (uAtlasOn > 0.5) {
         vec3 source = texture2D(uAtlas, vAtlas).rgb;
+        if (uTerrainBounds.z > 0.) {
+          vec2 dx = dFdx(vAtlas), dy = dFdy(vAtlas);
+          source = sampleDetail(source, uTerrainPrevious, uTerrainPreviousBounds, vAtlas, dx, dy, 1.);
+          source = sampleDetail(source, uTerrainDetail, uTerrainBounds, vAtlas, dx, dy, uTerrainMix);
+        }
         float emission = pow(smoothstep(.065, .85, texture2D(uCityLights, vAtlas).r), 1.28);
         vec3 normal = normalize(vSurfaceDirection);
         float daylight = smoothstep(-.12, .41, dot(normal, normalize(uSurfaceSun)));
@@ -99,7 +109,7 @@ export function createEarthBasemap(
     `,
       );
   };
-  ocean.customProgramCacheKey = () => key + "-earth-atlas-fiji";
+  ocean.customProgramCacheKey = () => key + "-earth-atlas-detail-fiji";
 
   let lastView: SurfaceView | undefined;
   let failed = false;
@@ -131,7 +141,9 @@ export function createEarthBasemap(
   return {
     fijiRegistration: relief.uniforms.uFijiRegistration,
     litAt: (at: number) => landingSolarTime(at, lastView?.landing ? solarOffsetMinutes() : 0),
-    setView(view = lastView) {
+    stepDetail: detail.step,
+    setView(view: SurfaceView | undefined, camera: CameraState) {
+      view ??= lastView;
       lastView = view;
       const visible = showsSatellite(view);
       if (visible && !failed && !terrain.value) {
@@ -142,6 +154,7 @@ export function createEarthBasemap(
       }
       const hasRelief = relief.set(view?.cutaway?.descent ? (view.cutaway.sweepKm ?? 0) : undefined);
       const enabled = visible && loaded === 2;
+      detail.update(enabled && !view?.cutaway, camera);
       coast.visible = !(enabled && hasRelief);
       if (enabled === Boolean(strength.value)) return;
       strength.value = Number(enabled);
@@ -157,6 +170,7 @@ export function createEarthBasemap(
     dispose() {
       disposed = true;
       relief.dispose();
+      detail.dispose();
       delete canvas.dataset.basemap;
       release();
     },

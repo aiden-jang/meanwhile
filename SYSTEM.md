@@ -452,6 +452,8 @@ On the landing, the Day–night control offsets solar lighting independently of 
 It holds idle rotation while the visitor inspects another time. **Now** restores current sunlight.
 The landing and live explorer share the satellite basemap across projections. Specialized stories
 keep their own surfaces. The globe can draw the vector geography while satellite imagery loads.
+Close zoom loads the current region of the same August 2004 NASA Blue Marble imagery. Neighbouring
+regions overlap and fade onto the overview, which stays available while detail loads or if it fails.
 Scene-category browsing hides base layers; explicit stories own their separate source data. Guided depth stops pause background weather until the surface view returns.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.

@@ -400,7 +400,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
-      const settling = morph.value === 0 && !controls.framingReady();
+      const settling = atlas.stepDetail(dt, reduced) || (morph.value === 0 && !controls.framingReady());
       const following = inspection.step(dt, reduced, morph.value === 0);
       return cutting || tracing || grouping || illuminating || settling || following || presenting;
     },
@@ -515,7 +515,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
     setAurora,
     render: (full = false, view) => {
       if (!resolution.frame(full)) return;
-      atlas.setView(view);
+      atlas.setView(view, controls.state());
       if (presentation.renderMoon(renderer, camera)) return;
       const at = inspection.recordedAt() ?? atlas.litAt(moment ?? Date.now());
       const minute = Math.floor(at / 60_000);

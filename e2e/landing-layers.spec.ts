@@ -544,3 +544,56 @@ test("the radar footer clears the pinned credit when Explore folds and reflows",
     await expect(sources).toBeFocused();
   }
 });
+
+for (const { width, height, projection } of [
+  { width: 1440, height: 850, projection: "Globe" },
+  { width: 390, height: 844, projection: "Map" },
+]) {
+  test(`close terrain loads in place and Layers reopens from the left on ${projection}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page, { empty: true });
+    let requested = 0;
+    const detail = Promise.withResolvers<void>();
+    await page.route("**/earth/detail/*.webp", async (route) => {
+      requested++;
+      await detail.promise;
+      await route.continue();
+    });
+    const view = page.locator("#globe-view");
+    const canvas = view.locator("canvas[data-engine]");
+    try {
+      await page.goto(`/#v=explore&at=12.8,46.4,1&p=${projection.toLowerCase()}`);
+      await expect(view).toHaveAttribute("aria-label", projection);
+      await expect(canvas).toHaveAttribute("data-basemap", "satellite");
+      const original = await canvas.elementHandle();
+      await page.getByRole("button", { name: "Hide Layers", exact: true }).click();
+      const reopen = page.getByRole("button", { name: "Layers", exact: true });
+      await expect(reopen).toBeFocused();
+      await expect(reopen).toBeInViewport({ ratio: 1 });
+      expect((await reopen.boundingBox())!.x).toBeLessThanOrEqual(24);
+      expect(requested).toBe(0);
+
+      await view.focus();
+      for (let i = 0; i < 7; i++) await page.keyboard.press("=");
+      await expect.poll(() => requested).toBe(1);
+      await expect(canvas).toHaveAttribute("data-basemap", "satellite");
+      await expect(canvas).not.toHaveAttribute("data-terrain-detail");
+
+      detail.resolve();
+      await expect(canvas).toHaveAttribute("data-terrain-detail", "0-3");
+      expect(await original!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+        true,
+      );
+      await reopen.press("Enter");
+      await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
+
+      await view.focus();
+      for (let i = 0; i < 7; i++) await page.keyboard.press("-");
+      await expect(canvas).not.toHaveAttribute("data-terrain-detail");
+      await expect(canvas).toHaveAttribute("data-basemap", "satellite");
+    } finally {
+      detail.resolve();
+    }
+  });
+}
