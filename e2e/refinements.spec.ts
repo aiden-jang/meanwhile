@@ -88,8 +88,9 @@ test("forced colors keep event selection and sharing usable", async ({ page }) =
     await page.setViewportSize({ width, height: 900 });
     const copy = page.getByRole("button", { name: "Copy link", exact: true });
     await copy.focus();
-    await page.keyboard.press("Tab");
     await page.keyboard.press("Shift+Tab");
+    await expect(page.getByRole("button", { name: "Show opposite side", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
     await expect(copy).toBeFocused();
     await expect(copy).not.toHaveCSS("outline-style", "none");
     await expect(copy).toBeVisible();
