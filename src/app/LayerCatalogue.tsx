@@ -84,23 +84,22 @@ export function LayerCatalogue({
                 data-on={on || undefined}
                 hidden={controls.inspector !== null}
               >
-                <div className="layer-summary">
+                <div className="layer-summary" data-detail={!!detail || undefined}>
                   <button
                     type="button"
                     id={`inspect-${id}`}
                     className="layer-inspect"
                     aria-label={`${mapLayerNames[id]} details`}
-                    aria-describedby={`layer-${id}-coverage`}
+                    aria-describedby={
+                      detail ? `layer-${id}-detail layer-${id}-coverage` : `layer-${id}-coverage`
+                    }
                     onClick={() => onInspect(id)}
                   >
                     <span className="field-layer-icon">
                       <LayerIcon layer={id} />
                       {healthy && <i data-healthy="" aria-hidden="true" />}
                     </span>
-                    <span className="layer-name">
-                      {mapLayerNames[id]}
-                      {detail && <small className="field-layer-detail">{detail}</small>}
-                    </span>
+                    <span className="layer-name">{mapLayerNames[id]}</span>
                     <svg
                       className="layer-chevron"
                       viewBox="0 0 16 16"
@@ -111,6 +110,11 @@ export function LayerCatalogue({
                       <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
                     </svg>
                   </button>
+                  {detail && (
+                    <small id={`layer-${id}-detail`} className="field-layer-detail">
+                      {detail}
+                    </small>
+                  )}
                   <small id={`layer-${id}-coverage`} className="sr-only">
                     {disabled(id)
                       ? "Unavailable in this archive"

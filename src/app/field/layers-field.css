@@ -345,11 +345,25 @@
 .layer-row:not([data-on]) .layer-name {
   color: var(--color-dim);
 }
-.layer-name .field-layer-detail {
+.layer-summary[data-detail] {
+  position: relative;
+}
+.layer-summary[data-detail] .layer-inspect {
+  padding-block: 8px 22px;
+}
+.layer-summary[data-detail] :is(.field-layer-icon, .layer-chevron) {
+  translate: 0 7px;
+}
+.map-layers .field-layer-detail {
+  position: absolute;
+  inset: auto 36px 5px 42px;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 11px;
   line-height: 1.3;
   font-weight: 400;
-  margin-top: 3px;
   font-variant-numeric: tabular-nums;
 }
 .map-layers[data-layer="radar"]:has(.field-scan) .radar-window {
@@ -465,16 +479,4 @@
 .field-nearby li button:focus {
   background: color-mix(in srgb, var(--color-raised) 64%, transparent);
   box-shadow: inset 2px 0 var(--color-dim);
-}
-@media (min-width: 900px) {
-  .frame[data-presentation="explore"]
-    #chrome-rail:has(.map-layers[data-layer="radar"]:not([hidden]), .field-reading) {
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--reading-surface) 94%, transparent) 25%,
-      color-mix(in srgb, var(--reading-surface) 86%, transparent) 70%,
-      color-mix(in srgb, var(--reading-surface) 73%, transparent) calc(100% - 21px),
-      transparent
-    );
-  }
 }
