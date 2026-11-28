@@ -580,7 +580,7 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect(dock.getByRole("group", { name: "Projection" })).toBeInViewport({ ratio: 1 });
   await expect(fold).toBeInViewport({ ratio: 1 });
   await expect(dock.getByRole("button", { name: "Hide Layers" })).toHaveCount(0);
-  const foldBox = (await fold.boundingBox())!;
+  const railEdge = (await rail.boundingBox())!.x;
   await fold.click();
   await expect(rail).toBeHidden();
   const reopen = page.locator(".zones").getByRole("button", { name: "Layers", exact: true });
@@ -588,20 +588,22 @@ test("Explore opens Layers and nearby Fiji reports keep the same world and readi
   await expect(reopen).toBeFocused();
   await expect(reopen).toBeInViewport({ ratio: 1 });
   const reopenBox = (await reopen.boundingBox())!;
+  const reopenCenter = { x: reopenBox.x + reopenBox.width / 2, y: reopenBox.y + reopenBox.height / 2 };
+  expect(
+    await reopen.evaluate(
+      (button, { x, y }) => button.contains(document.elementFromPoint(x, y)),
+      reopenCenter,
+    ),
+  ).toBe(true);
   if (viewport.width < 768) {
+    expect(reopenBox.x).toBe(16);
     const projection = (await dock.boundingBox())!;
     const credit = (await page.locator(".creator-credit").boundingBox())!;
     expect(reopenBox.y).toBeGreaterThanOrEqual(projection.y + projection.height);
     expect(reopenBox.y + reopenBox.height).toBeLessThanOrEqual(credit.y);
     await expect.poll(async () => (await globe.boundingBox())?.height ?? 0).toBeGreaterThan(opened.height);
   } else {
-    const previousCenter = { x: foldBox.x + foldBox.width / 2, y: foldBox.y + foldBox.height / 2 };
-    expect(
-      await reopen.evaluate(
-        (button, { x, y }) => button.contains(document.elementFromPoint(x, y)),
-        previousCenter,
-      ),
-    ).toBe(true);
+    expect(reopenBox.x).toBe(Math.max(16, railEdge));
   }
   await reopen.press("Enter");
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
