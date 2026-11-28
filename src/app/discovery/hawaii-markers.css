@@ -5,7 +5,7 @@
   z-index: 3;
 }
 .island-anchor {
-  --accent: #ffc095;
+  --accent: #ead5bb;
   position: absolute;
   top: 0;
   left: 0;
@@ -13,7 +13,7 @@
   block-size: 0;
 }
 .island-anchor[data-island-place="pacific"] {
-  --accent: #94dbdf;
+  --accent: #b3dbe2;
 }
 .island-pin {
   position: absolute;
