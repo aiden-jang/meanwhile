@@ -11,6 +11,7 @@ import { CityWeatherReading } from "./app/tonight/CityWeatherReading";
 import { ExplorerFold, ExplorerSidebar } from "./app/ExplorerSidebar";
 import { StoryNavigation } from "./app/journeys/StoryNavigation";
 import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
+import { layerFieldVisit } from "./app/field/layerFieldVisit";
 import { LayerWindow } from "./app/LayerWindow";
 import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
@@ -23,7 +24,7 @@ import { explorerReadings } from "./app/explorerReadings";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
-import { hazardsInWindow, hasLegendMarks, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
+import { hazardsInWindow, hasLegendMarks, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSharedLocation } from "./app/useSharedLocation";
@@ -231,7 +232,11 @@ export function App(): JSX.Element {
     observatory.browsingStories && !observatory.localReadings ? "catalogue" : observatory.localReadings,
     explorerView.nearby ? "nearby" : explorerView.city?.layers,
     storm?.overlay,
-    { ...explorerView.world, change: explorerView.changeWorldLayer },
+    {
+      ...explorerView.world,
+      inspectingQuake: !!explorerView.layerReport,
+      change: explorerView.changeWorldLayer,
+    },
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.rendered), [inWindow, mapLayers.rendered]);
   const hazardTally = useMemo(() => {
@@ -337,6 +342,7 @@ export function App(): JSX.Element {
     lastWritten,
     readings,
     pacific.history,
+    [sheetCanvas, setSheetCanvas],
   );
   useSharedLocation({
     feed,
@@ -1064,7 +1070,11 @@ export function App(): JSX.Element {
           {observatory.observing ? null : (
             <ExploreSheet
               {...{ flat, height: sheetCanvas }}
-              layersOverview={!explorerView.world && browser.pane === "layers" && !mapLayers.inspector}
+              layersOverview={
+                !explorerView.world &&
+                browser.pane === "layers" &&
+                (!mapLayers.inspector || !!explorerView.layerListEntry)
+              }
               onResize={setSheetCanvas}
               visible={railShown && !markSubject && !quakeOverlay}
             />
@@ -1099,7 +1109,7 @@ export function App(): JSX.Element {
                 />
               )}
               <MapLayers
-                storm={storm}
+                {...{ storm, feeds, markId, flat }}
                 onCloseStorm={closeStorm}
                 cityWeather={!!explorerView.city}
                 places={{
@@ -1122,25 +1132,13 @@ export function App(): JSX.Element {
                   closeReading: readings.closeQuake,
                 }}
                 readCamera={readCamera.current}
-                panelVisible={railShown}
+                field={layerFieldVisit(explorerView, mapLayers.inspect, observatory.checkpoint)}
+                panelVisible={railShown && browser.pane === "layers"}
                 onQuake={selectQuake}
-                controls={{
-                  ...mapLayers,
-                  change: (layer, on) => {
-                    mapLayers.change(layer, on);
-                    if (!on && layer === "earthquakes") {
-                      setSelected(null);
-                      setSectionLine(null);
-                    }
-                    if (!on && markBelongsToLayer(markId, layer)) setMarkId(null);
-                  },
-                }}
-                feeds={feeds}
+                controls={{ ...mapLayers, change: readings.changeLayer }}
                 aurora={onGlobe.aurora}
                 archived={archived || archiveBusy}
-                markId={markId}
                 onHazard={selectMark}
-                flat={flat}
                 canDismiss={
                   !query && !sectionLine && scrub.at === null && !selected && !markId && tourAt === null
                 }

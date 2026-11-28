@@ -29,6 +29,7 @@ export function useMapLayers(
   scope?: "nearby" | CityWeatherLayers,
   storm?: ObservationView | null,
   visit?: {
+    inspectingQuake?: boolean;
     layers?: Partial<ReturnType<typeof readMapLayers>>;
     change: (layer: MapLayer, on: boolean) => void;
   },
@@ -148,7 +149,10 @@ export function useMapLayers(
     () => weatherOverlay(wind?.frame, lightning?.frame),
     [wind?.frame, lightning?.frame],
   );
-  const subject = scope || followingStorm ? null : emphasisLayer(rewind ? "radar" : inspector);
+  const subject =
+    scope || followingStorm
+      ? null
+      : emphasisLayer(visit?.inspectingQuake ? "earthquakes" : rewind ? "radar" : inspector);
   const emphasis = active && subject && enabled[subject] ? subject : null;
   const presentation = useMemo<MapLayerPresentation | null>(
     () =>

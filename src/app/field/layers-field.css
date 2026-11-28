@@ -1,0 +1,480 @@
+/* A single strip samples the same patch of geography across the observed scans. */
+.field-scan {
+  margin: 7px 0 0;
+}
+.field-strip {
+  position: relative;
+  height: 52px;
+  border-radius: 2px;
+}
+.field-strip canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.field-strip input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.field-strip:focus-within:has(input:focus-visible) {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 4px;
+}
+.field-playhead {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: calc(6px + (100% - 12px) * var(--scan-position));
+  width: 2px;
+  pointer-events: none;
+  background: var(--color-ink);
+  box-shadow: 1px 0 2px var(--color-void);
+}
+.field-playhead::before,
+.field-playhead::after {
+  content: "";
+  position: absolute;
+  left: -3px;
+  width: 8px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-ink);
+}
+.field-playhead::after {
+  bottom: 0;
+}
+.field-axis,
+.field-position,
+.field-agencies > div,
+.field-depth figcaption,
+.field-event-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.field-axis {
+  margin-top: 7px;
+  font: 11px/1.5 var(--font-mono, monospace);
+  color: var(--color-dim);
+}
+.field-nearby {
+  margin: 17px 0 5px;
+  padding-block: 17px 4px;
+  border-top: 1px solid var(--color-hairline);
+}
+.field-nearby h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 575;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+.field-nearby > p {
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.field-nearby ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.field-nearby li + li {
+  border-top: 1px solid var(--color-hairline);
+}
+.field-nearby li button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 3px;
+  min-height: 53px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.field-nearby li button:is(:hover, :focus-visible),
+.field-action:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+}
+.field-mag {
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 520;
+  line-height: 1;
+}
+.map-layers .field-mag small {
+  font-family: var(--font-mono, monospace);
+  line-height: 1.3;
+  margin-top: 3px;
+}
+.field-place {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.map-layers .field-place small {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.field-nearby li svg {
+  color: var(--color-dim);
+}
+.field-nearby .field-empty {
+  margin-block: 12px;
+}
+.field-source-state {
+  font-size: 11px;
+}
+.field-action,
+.field-agencies a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.field-reading {
+  padding-block: 4px 16px;
+}
+.field-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.field-header .reading-back {
+  min-height: 44px;
+  padding-inline: 0;
+  flex: none;
+  font-size: 12px;
+}
+.field-reading h2 {
+  margin: 0 0 9px;
+  max-width: 20ch;
+  color: var(--color-ink);
+  font:
+    550 clamp(32px, 3.3vw, 44px)/1.04 "Alumni Sans",
+    sans-serif;
+  text-wrap: balance;
+}
+.field-event-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  color: var(--color-dim);
+  font-size: 12px;
+}
+.field-event-meta span {
+  font-weight: 600;
+  color: var(--color-ink);
+  padding-inline-end: 5px;
+}
+.field-depth {
+  border-block: 1px solid var(--color-hairline);
+  margin: 22px 0 0;
+  padding: 14px 0 15px;
+}
+.field-depth figcaption {
+  font-size: 14px;
+  color: var(--color-dim);
+}
+.field-depth figcaption strong {
+  font:
+    550 34px/1 "Alumni Sans",
+    sans-serif;
+  color: var(--color-ink);
+}
+.map-layers .field-depth figcaption small {
+  display: inline;
+  font: 13px var(--font-sans, sans-serif);
+}
+.field-section {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  color: var(--color-dim);
+  font: 11px/1.2 var(--font-mono, monospace);
+}
+.field-depth-column {
+  position: relative;
+  height: 70px;
+  border-block: 1px solid color-mix(in srgb, var(--color-dim) 43%, transparent);
+  background: color-mix(in srgb, var(--color-raised) 44%, transparent);
+}
+.field-depth-column i {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 1px dashed var(--color-ink);
+}
+.field-depth-column i::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  bottom: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  box-shadow: 0 0 0 2px var(--color-deck);
+}
+.map-layers .layer-inspector-return[data-field-radar] {
+  grid-template-columns: auto 44px minmax(0, 1fr);
+  column-gap: 8px;
+}
+.layer-inspector-return[data-field-radar] .reading-back {
+  justify-self: end;
+}
+.map-layers .layer-inspector-return[data-field-radar] + .layer-inspector-heading > div > p {
+  margin-block: 0;
+}
+.field-position,
+.field-agencies {
+  color: var(--color-dim);
+  font-size: 12px;
+}
+.field-position {
+  margin: 3px 0 8px;
+}
+.field-action,
+.field-agencies a {
+  color: var(--color-ink);
+}
+.field-agencies {
+  border-top: 1px solid var(--color-hairline);
+}
+.field-anchors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+}
+.field-epicentre {
+  visibility: hidden;
+  position: absolute;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--color-ink);
+  background: rgb(9 18 25 / 0.18);
+}
+.field-epicentre i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-ink);
+}
+.field-epicentre b {
+  position: absolute;
+  left: calc(100% + 5px);
+  top: 50%;
+  translate: 0 -50%;
+  white-space: nowrap;
+  color: var(--color-ink);
+  background: var(--color-void);
+  border-radius: 2px;
+  padding: 4px 7px;
+  font: 550 13px/1.35 var(--font-sans, sans-serif);
+}
+.field-epicentre[data-label-left] b {
+  left: auto;
+  right: calc(100% + 5px);
+}
+.field-epicentre b span {
+  margin-inline-start: 4px;
+  color: var(--color-dim);
+  font-size: 11px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-epicentre i::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--color-ink);
+    border-radius: 50%;
+    animation: field-acquire 520ms ease-out both;
+  }
+  @keyframes field-acquire {
+    from {
+      transform: scale(1.7);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+}
+.map-layers .layer-list .layer-inspect {
+  min-height: 48px;
+}
+.field-layer-icon {
+  position: relative;
+}
+.field-layer-icon [data-healthy] {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  right: -1px;
+  bottom: -1px;
+  background: var(--color-feed-available);
+  border: 1px solid var(--color-void);
+  border-radius: 50%;
+}
+.layer-row[data-on] .layer-name {
+  color: var(--color-ink);
+  font-weight: 560;
+}
+.layer-row:not([data-on]) .layer-name {
+  color: var(--color-dim);
+}
+.layer-name .field-layer-detail {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 400;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.map-layers[data-layer="radar"]:has(.field-scan) .radar-window {
+  display: none;
+}
+.map-layers[data-layer="radar"] .layer-inspector-heading {
+  margin-bottom: 8px;
+}
+.map-layers[data-layer="radar"] .radar-inline:has(.field-scan) {
+  padding-block: 6px 0;
+}
+.map-layers[data-layer="radar"] .radar-inline:has(.field-scan) .radar-clock {
+  margin-bottom: 10px;
+}
+.map-layers[data-layer="radar"] .radar-layer .radar-transport:has(.field-player) {
+  padding-top: 6px;
+  padding-bottom: 0;
+}
+.field-player .radar-clock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.map-layers .field-player .radar-clock time {
+  display: grid;
+  align-content: center;
+  row-gap: 2px;
+  white-space: nowrap;
+}
+.map-layers .field-player .radar-clock time > strong {
+  font:
+    550 32px/1 "Alumni Sans",
+    sans-serif;
+  color: var(--color-ink);
+}
+.map-layers .field-player .radar-clock time > strong small {
+  display: inline;
+  font: 12px/1 var(--font-mono, monospace);
+}
+.field-player .radar-clock time > span {
+  color: var(--color-dim);
+  font-size: 11px;
+}
+.field-transport {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.field-transport button,
+.field-axis .field-latest {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  font: 13px/1 var(--font-sans, sans-serif);
+  color: var(--color-ink);
+}
+.field-transport .story-playback {
+  min-width: 68px;
+  gap: 6px;
+  background: var(--color-raised);
+}
+.field-transport button:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+.field-transport button:enabled:is(:hover, :focus-visible),
+.field-axis .field-latest:is(:hover, :focus-visible) {
+  background: var(--color-raised);
+}
+.field-axis {
+  column-gap: 12px;
+  margin-top: 0;
+}
+.field-axis > span:nth-child(2) {
+  margin-right: auto;
+}
+.field-axis .field-latest {
+  color: var(--color-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .field-strip {
+    height: 44px;
+  }
+  .field-nearby {
+    margin-top: 8px;
+    padding-top: 12px;
+  }
+  .field-reading {
+    padding-top: 0;
+  }
+  .field-header {
+    gap: 8px;
+  }
+  .field-depth {
+    margin-top: 13px;
+    padding-block: 9px;
+  }
+  .field-depth-column {
+    height: 46px;
+  }
+  .map-layers[data-layer="radar"]:has(.field-scan) .layer-inspector-return {
+    position: static;
+  }
+}
+
+.field-nearby li button:focus {
+  background: color-mix(in srgb, var(--color-raised) 64%, transparent);
+  box-shadow: inset 2px 0 var(--color-dim);
+}
+@media (min-width: 900px) {
+  .frame[data-presentation="explore"]
+    #chrome-rail:has(.map-layers[data-layer="radar"]:not([hidden]), .field-reading) {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--reading-surface) 94%, transparent) 25%,
+      color-mix(in srgb, var(--reading-surface) 86%, transparent) 70%,
+      color-mix(in srgb, var(--reading-surface) 73%, transparent) calc(100% - 21px),
+      transparent
+    );
+  }
+}

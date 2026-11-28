@@ -1,3 +1,4 @@
+import { markBelongsToLayer, type MapLayer } from "./layerVisibility";
 import type { Scrub } from "./scrub";
 import type { useMapLayers } from "./useMapLayers";
 import type { usePlaceInspection } from "./discovery/usePlaceInspection";
@@ -8,7 +9,7 @@ type Selection<T> = [value: T, set: (value: T) => void];
 export function explorerReadings(
   layers: Pick<
     ReturnType<typeof useMapLayers>,
-    "inspector" | "inspect" | "isolate" | "closeRewind" | "captureReading" | "restoreReading"
+    "change" | "inspector" | "inspect" | "isolate" | "closeRewind" | "captureReading" | "restoreReading"
   >,
   place: ReturnType<typeof usePlaceInspection>,
   [quake, selectQuake]: Selection<string | null>,
@@ -26,6 +27,15 @@ export function explorerReadings(
   });
   return {
     capture,
+    changeLayer(layer: MapLayer, on: boolean) {
+      layers.change(layer, on);
+      if (on) return;
+      if (layer === "earthquakes") {
+        selectQuake(null);
+        selectSection(null);
+      }
+      if (markBelongsToLayer(hazard, layer)) selectHazard(null);
+    },
     restore(saved: ReturnType<typeof capture>) {
       selectQuake(saved.quake);
       selectHazard(saved.hazard);

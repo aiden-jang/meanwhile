@@ -1,3 +1,4 @@
+import type { CameraState } from "../../globe/controls";
 import type { RadarScope } from "./RadarStage";
 import { RadarStage } from "./RadarStage";
 import type { RadarView } from "./radarCamera";
@@ -6,6 +7,7 @@ import { useCallback, type KeyboardEventHandler } from "react";
 
 export function RadarLayer({
   onView,
+  areaCamera,
   initialAt,
   onSelect,
   suspended = false,
@@ -15,6 +17,7 @@ export function RadarLayer({
   storm,
 }: {
   onView: (view: RadarView) => void;
+  areaCamera?: (() => CameraState) | undefined;
   initialAt: number | null;
   suspended?: boolean;
   rewind?: boolean;
@@ -33,6 +36,7 @@ export function RadarLayer({
     >
       <RadarStage
         global
+        areaCamera={areaCamera}
         layer
         suspended={suspended}
         rewind={rewind}

@@ -3,7 +3,6 @@ import type { CameraState } from "../../globe/controls";
 import { geographicCoordinates } from "../../globe/orbitReadout";
 import type { RadarScope } from "./RadarStage";
 import { CopyLink } from "../CopyLink";
-import type { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { useMapLayers } from "../useMapLayers";
 import type { MapLayer } from "../layerVisibility";
 import { rewindLink } from "./rewindLink";
@@ -15,30 +14,28 @@ type Controls = ReturnType<typeof useMapLayers>;
 export function LayerRadar({
   controls,
   rewindPoint,
+  fieldOpen,
   rewindAt,
   closeRewind,
   reveal,
   layer,
   flat,
-  archived,
   panelVisible,
   readCamera,
   dismissReading,
-  navigation,
   storm,
 }: {
   controls: Controls;
+  fieldOpen: boolean;
   rewindPoint: Controls["rewindPoint"];
   rewindAt: number | undefined;
   closeRewind: () => void;
   reveal: NonNullable<Controls["radar"]>["reveal"];
   layer: MapLayer | null;
   flat: boolean;
-  archived: boolean;
   panelVisible: boolean;
   readCamera: () => CameraState;
   dismissReading: KeyboardEventHandler<HTMLElement>;
-  navigation: ReturnType<typeof useStoryNavigation>;
   storm: RadarScope | undefined;
 }) {
   return (
@@ -87,11 +84,13 @@ export function LayerRadar({
       {controls.radar && (
         <Suspense fallback={reveal ? null : <p role="status">Loading radar controls…</p>}>
           <RadarLayer
-            suspended={controls.suspended || (!!(rewindPoint || storm) && !panelVisible)}
+            areaCamera={layer === "radar" && !rewindPoint && !storm && panelVisible ? readCamera : undefined}
+            suspended={fieldOpen || controls.suspended || (!!(rewindPoint || storm) && !panelVisible)}
             rewind={!!controls.rewindPoint}
             storm={storm}
             dock={
               panelVisible &&
+              !fieldOpen &&
               !controls.suspended &&
               !reveal &&
               (layer === "radar" || rewindPoint || storm?.visit.open)
@@ -110,16 +109,6 @@ export function LayerRadar({
           label="Copy radar link"
           format={(url) => rewindLink(url, readCamera(), rewindPoint, rewindAt, flat)}
         />
-      )}
-      {layer === "radar" && !archived && (
-        <button
-          type="button"
-          id="open-explorer-radar"
-          className="layer-story-link"
-          onClick={() => navigation?.openRadar(controls.radarAt, flat)}
-        >
-          Follow a radar region <span>Guided view · same available scans</span>
-        </button>
       )}
     </div>
   );

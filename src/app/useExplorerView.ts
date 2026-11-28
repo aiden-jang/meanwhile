@@ -1,4 +1,5 @@
 import { useRef, useState, type SetStateAction } from "react";
+import type { LayerReport } from "./field/QuakeReading";
 import type { DepthRecord } from "../data/depthRecords";
 import type { CameraState } from "../globe/controlsTypes";
 import type { Permalink } from "./permalink";
@@ -19,6 +20,8 @@ import type { CityWeatherLayers, CityWeatherVisit } from "./tonight/cityWeather"
 type SceneVisit = ReturnType<ReturnType<typeof useObservatory>["navigation"]["capture"]>;
 type Nearby = { record: DepthRecord; map: boolean; from: SceneVisit; camera: CameraState };
 type Visit = {
+  layerReport?: LayerReport;
+  layerListEntry?: MapLayer;
   panel?: boolean | undefined;
   nearby?: Nearby;
   world?: WorldVisit;
@@ -50,6 +53,14 @@ export function useExplorerView(shared: Partial<Permalink>) {
   const world = visit.world;
   return {
     nearby,
+    layerReport: visit.layerReport,
+    openLayerReport(report: LayerReport) {
+      setVisit((current) => ({ ...current, panel: true, layerReport: report }));
+    },
+    layerListEntry: visit.layerListEntry,
+    openLayerFromList(id: MapLayer) {
+      setVisit((current) => ({ ...current, panel: true, layerListEntry: id }));
+    },
     city,
     world,
     destination: visit.destination,

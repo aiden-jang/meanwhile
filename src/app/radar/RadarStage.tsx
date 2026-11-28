@@ -1,3 +1,5 @@
+import { FieldRadarPlayer } from "../field/FieldRadarPlayer";
+import type { CameraState } from "../../globe/controls";
 import { RadarReading, StormRadarCoverage } from "./RadarReading";
 import { RadarPlayer, shortRadarTime } from "./RadarPlayer";
 import { radarScanStatus } from "./radarScanStatus";
@@ -32,6 +34,7 @@ export type RadarScope = { id: string; lon: number; lat: number; visit: StormRad
 
 export function RadarStage({
   onView,
+  areaCamera,
   initialRegion,
   initialAt,
   initialPose,
@@ -44,6 +47,7 @@ export function RadarStage({
   storm,
 }: {
   onView: (view: RadarView) => void;
+  areaCamera?: (() => CameraState) | undefined;
   initialRegion?: string | undefined;
   initialAt?: number | undefined;
   initialPose?: RadarView["target"] | undefined;
@@ -170,7 +174,7 @@ export function RadarStage({
     setPlaying(false);
   }, [stormId]);
   useLayoutEffect(() => {
-    if (stormId && (!stormOpen || suspended)) setPlaying(false);
+    if ((stormId && !stormOpen) || suspended) setPlaying(false);
   }, [stormId, stormOpen, suspended]);
   const wasRewinding = useRef(rewind);
   useLayoutEffect(() => {
@@ -300,19 +304,37 @@ export function RadarStage({
             </button>
           </div>
         )}
-        {scans.length > 0 && (!storm || (stormOpen && coverage === true)) && (
-          <RadarPlayer
-            {...{ layer, dock, scans, index, atLatest, playing, togglePlay }}
-            displayed={!!image}
-            showLatest={!rewind || !!storm}
-            seek={(scan) => {
-              setPlaying(false);
-              seek(scan);
-            }}
-          >
-            {timeline}
-          </RadarPlayer>
-        )}
+        {scans.length > 0 &&
+          (!storm || (stormOpen && coverage === true)) &&
+          (areaCamera ? (
+            <FieldRadarPlayer
+              {...{ scans, index, images, atLatest, playing }}
+              readCamera={areaCamera}
+              displayed={!!image}
+              play={togglePlay}
+              latest={() => {
+                setPlaying(false);
+                seek(null);
+              }}
+              seek={(i) => {
+                setPlaying(false);
+                seek(scans[i] ?? null);
+              }}
+            />
+          ) : (
+            <RadarPlayer
+              {...{ layer, scans, index, atLatest, playing, togglePlay }}
+              dock={dock}
+              displayed={!!image}
+              showLatest={!rewind || !!storm}
+              seek={(scan) => {
+                setPlaying(false);
+                seek(scan);
+              }}
+            >
+              {timeline}
+            </RadarPlayer>
+          ))}
         <div className="observatory-actions radar-actions">
           {!layer && !global && (
             <button

@@ -19,11 +19,12 @@ export function useExplorerHistory(
   lastWritten: MutableRefObject<string>,
   readings: Readings,
   pacific: ReturnType<typeof usePacificDescent>["history"],
+  sheet: [number, (value: number) => void],
 ) {
   useSceneHistory({
     route: {
       ...observatory.navigation,
-      key: `${observatory.navigation.key}:${pacific.key}:${explorer.findEntry ?? explorer.nearby?.record.id ?? explorer.city?.city.name ?? (explorer.world && `world-${explorer.world.subject.point.name}`) ?? explorer.destination ?? ""}`,
+      key: `${observatory.navigation.key}:${pacific.key}:${!observatory.observing && observatory.browser.pane === "layers" ? (explorer.layerReport?.quake.key ?? "") : ""}:${explorer.findEntry ?? explorer.nearby?.record.id ?? explorer.city?.city.name ?? (explorer.world && `world-${explorer.world.subject.point.name}`) ?? explorer.destination ?? ""}`,
       capture: () => {
         const camera = { ...readCamera.current() };
         const reading = readings.capture();
@@ -44,6 +45,7 @@ export function useExplorerHistory(
           view: observatory.navigation.capture(camera),
           day: archive.loadedDay,
           explorer: state,
+          layerSheet: !observatory.observing && observatory.browser.pane === "layers" ? sheet[0] : undefined,
           reading,
           pacific: pacific.capture(),
         };
@@ -51,6 +53,7 @@ export function useExplorerHistory(
       restore(saved) {
         stopTour();
         explorer.restore(saved.explorer);
+        if (saved.layerSheet !== undefined && saved.layerSheet !== sheet[0]) sheet[1](saved.layerSheet);
         pacific.restore(saved.pacific);
         observatory.navigation.restore(saved.view);
         const changedDay = saved.day !== archive.loadedDay || archive.archiveBusy;

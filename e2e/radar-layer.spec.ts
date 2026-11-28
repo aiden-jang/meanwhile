@@ -200,11 +200,12 @@ for (const width of [1440, 390]) {
       const rail = page.locator("#chrome-rail");
       const before = (await transport.boundingBox())!;
       const reading = (await rail.boundingBox())!;
-      expect(reading.y + reading.height).toBeLessThanOrEqual(before.y + 1);
-      await rail.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
-      await expect(slider).toBeInViewport();
-      expect(await transport.boundingBox()).toEqual(before);
+      expect(before.y).toBeGreaterThanOrEqual(reading.y);
+      expect(before.y + before.height).toBeLessThanOrEqual(reading.y + reading.height);
+      await rail.evaluate((element) => element.scrollTo({ top: 70 }));
+      await expect.poll(async () => (await transport.boundingBox())?.y).toBeLessThan(before.y);
       await rail.evaluate((element) => element.scrollTo({ top: 0 }));
+      await expect(slider).toBeInViewport();
     }
     await slider.press("Home");
     await expect(time).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
@@ -233,7 +234,6 @@ for (const width of [1440, 390]) {
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-layer-${width}.png` });
     const audit = new AxeBuilder({ page }).include(".map-layers");
-    if (width === 390) audit.include(".radar-dock");
     expect((await audit.analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
     const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
@@ -318,6 +318,65 @@ for (const width of [1440, 390]) {
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );
+  });
+}
+
+for (const { width, map } of [
+  { width: 1440, map: false },
+  { width: 390, map: true },
+]) {
+  test(`Back from a nearby earthquake restores the radar reading at ${width}px @dev`, async ({ page }) => {
+    const { times } = await prepareRadar(page, width, false);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`/#v=explore&at=141,38,1.64&p=${map ? "map" : "globe"}&layers=earthquakes,radar&s=usgs`);
+    await openLayer(page, "Storm radar");
+    const controls = page.getByRole("group", { name: "Radar scan controls" });
+    const slider = controls.getByRole("slider", { name: "Radar scan time" });
+    const displayed = page.locator(".radar-canvas-credit time");
+    const selected = new Date(times[0]!).toISOString();
+    await slider.press("Home");
+    await expect(displayed).toHaveAttribute("datetime", selected);
+    const rail = page.locator("#chrome-rail");
+    const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
+    if (map) await sheet.press("Shift+ArrowUp");
+    const row = page
+      .getByRole("region", { name: "Nearby earthquakes", exact: true })
+      .getByRole("button")
+      .first();
+    await rail.evaluate((node) => node.scrollTo(0, 55));
+    await row.scrollIntoViewIfNeeded();
+    await row.focus();
+    const rowId = await row.getAttribute("id");
+    const offset = await rail.evaluate((node) => node.scrollTop);
+    const height = map ? await sheet.getAttribute("aria-valuenow") : null;
+    const pose = await camera(page);
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
+    await row.press("Enter");
+    await expect(page.locator("#field-reading-title")).toBeFocused();
+    expect(await camera(page)).toEqual(pose);
+    await page.getByRole("button", { name: map ? "Locate on map" : "Locate on globe", exact: true }).click();
+    await expect.poll(() => camera(page)).not.toEqual(pose);
+    await page.evaluate(() =>
+      (
+        window as unknown as { __globe: { flyTo: (lon: number, lat: number, zoom: number) => void } }
+      ).__globe.flyTo(90, 30, 2.5),
+    );
+    await expect.poll(async () => (await camera(page))?.lon).toBe(90);
+    if (map) {
+      await sheet.press("Shift+ArrowDown");
+      await page.goBack();
+    } else {
+      await page.getByRole("button", { name: "Back to radar", exact: true }).click();
+    }
+    await expect.poll(() => camera(page)).toEqual(pose);
+    await expect(controls.locator("time")).toHaveAttribute("datetime", selected);
+    await expect(displayed).toHaveAttribute("datetime", selected);
+    await expect(page.locator(`#${rowId}`)).toBeFocused();
+    await expect.poll(() => rail.evaluate((node) => node.scrollTop)).toBe(offset);
+    if (height) await expect(sheet).toHaveAttribute("aria-valuenow", height);
+    expect(
+      await canvas!.evaluate((element) => element === document.querySelector("#globe-view canvas")),
+    ).toBe(true);
   });
 }
 

@@ -8,6 +8,7 @@ import "./detail-panel.css";
 
 export function LayerInspectorHeading({
   layer,
+  compact = false,
   onBack,
   backLabel,
   enabled,
@@ -16,6 +17,7 @@ export function LayerInspectorHeading({
   children,
 }: {
   layer: MapLayer;
+  compact?: boolean;
   onBack: () => void;
   backLabel: string;
   enabled: boolean;
@@ -25,11 +27,12 @@ export function LayerInspectorHeading({
 }) {
   return (
     <>
-      <header className="detail-panel-heading layer-inspector-return">
+      <header className="detail-panel-heading layer-inspector-return" data-field-radar={compact || undefined}>
         <h2 id="layer-inspector-title" tabIndex={-1}>
           {layer !== "radar" && hasLayerExample(layer) && <LayerIcon layer={layer} />}
           {mapLayerNames[layer]}
         </h2>
+        {compact && <LayerVisibility layer={layer} on={enabled} disabled={disabled} onChange={onToggle} />}
         <button type="button" className="reading-back" onClick={onBack}>
           {backLabel}
         </button>
@@ -37,7 +40,7 @@ export function LayerInspectorHeading({
       <div className="layer-inspector-heading">
         <div>
           <p>{layerMetadata[layer].coverage}</p>
-          <LayerVisibility layer={layer} on={enabled} disabled={disabled} onChange={onToggle} />
+          {!compact && <LayerVisibility layer={layer} on={enabled} disabled={disabled} onChange={onToggle} />}
         </div>
         {children}
       </div>
