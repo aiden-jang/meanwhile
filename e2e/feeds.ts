@@ -585,6 +585,12 @@ export async function saveImageButton(page: Page) {
   return page.getByRole("button", { name: "Save image", exact: true });
 }
 
+export function disableNativeFileSharing(page: Page) {
+  return page.addInitScript(() => {
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: () => false });
+  });
+}
+
 export async function openEarthquakeArchives(page: Page) {
   await openLayer(page);
   await page.locator(".story-archive-actions summary").click();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openLayer, installFeeds, waitForData, saveImageButton } from "./feeds";
+import { disableNativeFileSharing, openLayer, installFeeds, waitForData, saveImageButton } from "./feeds";
 
 for (const width of [1440, 390, 320]) {
   test(`regional inspection stays usable at ${width}px`, async ({ page }) => {
@@ -137,6 +137,7 @@ test("projection motion settles with an open cutaway", async ({ page }) => {
 });
 
 test("reduced motion skips decorative effects and preserves cutaway capture", async ({ page }) => {
+  await disableNativeFileSharing(page);
   await openSceneEffects(page);
   await expect(page.locator(".pick-corners")).toHaveCSS("animation-name", "pin-settle");
   await page.emulateMedia({ reducedMotion: "reduce" });

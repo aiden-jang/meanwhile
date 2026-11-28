@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  disableNativeFileSharing,
   openLayer,
   installFeeds,
   waitForData,
@@ -283,6 +284,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
 test("a historical shortcut frames an actual archived event and keeps capture available", async ({
   page,
 }) => {
+  await disableNativeFileSharing(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await installFeeds(page, { presentation: "fresh" });
