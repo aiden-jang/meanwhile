@@ -140,7 +140,7 @@ export function App(): JSX.Element {
   const [pendingRev, setPendingRev] = useState<number | null>(null);
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   const [focusHour, setFocusHour] = useState<number | null>(null);
-  const { aurora, cyclones, fires, floods, volcanoes, answered, checked } = useHazardLayers();
+  const { aurora, cyclones, fires, floods, volcanoes, answered, checked, retry } = useHazardLayers();
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   const archived = snapshot.archive !== null;
   const initialArchiveMark = useRef(shared.day ? (shared.mark ?? null) : null);
@@ -754,7 +754,6 @@ export function App(): JSX.Element {
     revealedNow,
   ]);
   const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked }, mapLayers.feeds);
-
   const marksFilter = (
     <MagnitudeFilter
       ramp={ramp}
@@ -1138,6 +1137,7 @@ export function App(): JSX.Element {
                 controls={{ ...mapLayers, change: readings.changeLayer }}
                 aurora={onGlobe.aurora}
                 archived={archived || archiveBusy}
+                retryHazard={retry}
                 onHazard={selectMark}
                 canDismiss={
                   !query && !sectionLine && scrub.at === null && !selected && !markId && tourAt === null

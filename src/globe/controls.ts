@@ -107,7 +107,7 @@ export function createControls(
   const pick = createGeographicPicking(camera, canvas, () => morph);
   const apply = (): void => {
     if (morph > 0) {
-      unfold.place(lon, lat, dist(), morph);
+      unfold.place(lon, lat, dist(), morph, distance.region(zoom));
       rig.apply(true);
       camera.updateMatrixWorld();
       return;
@@ -340,6 +340,7 @@ export function createControls(
     },
     project: (pLon, pLat, radius = 1, rect) => project(pLon, pLat, radius, morph, lon, rect),
     setLocalSurveyProjection: unfold.setLocalSurvey,
+    setLayerProjection: distance.setLayers,
     setMorph: (t) => {
       if (t > 0 && target?.intro) target = { lon: target.lon, lat: target.lat, zoom: target.zoom };
       morph = Math.max(0, Math.min(1, t));

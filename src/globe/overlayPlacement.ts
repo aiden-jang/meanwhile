@@ -11,6 +11,7 @@ import { sectionEdges, type SectionLine } from "../app/section";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 import { matches } from "../data/filter";
 import { createLayerExample } from "./layerExample";
+import { createLocalLayerReading } from "./localLayerReading";
 import { placeSurveyHandle } from "./surveyHandle";
 
 type Target = { kind: "quake" | "mark"; id: string } | null;
@@ -25,6 +26,7 @@ type State = Pick<
   | "scrubAt"
   | "landing"
   | "globePresentation"
+  | "aurora"
 >;
 interface Placement {
   el: HTMLCanvasElement;
@@ -65,12 +67,14 @@ export function overlayPlacement({
   let tipWidth = 0;
   let tipHeight = 0;
   const placeExample = createLayerExample(el, globe);
+  const placeReading = createLocalLayerReading(el, globe.controls);
   return () => {
     const state = read();
     const hovered = hover();
     const box = el.getBoundingClientRect();
     placeSurveyHandle(el, globe.controls, state.globePresentation, box);
     placeExample(box, state);
+    placeReading(state.globePresentation, state.aurora, box, !!hovered || !!state.selected);
     const projection = globe.controls.morph();
     const moving = projection > 0 && projection < 1;
     if (projectionMoving !== moving) {

@@ -1,3 +1,4 @@
+import { createSurfaceWind } from "./surfaceWind";
 import { projectSurvey } from "./surveyProjection";
 import { newObservationPlace } from "./observationTransition";
 import {
@@ -113,6 +114,8 @@ export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: 
 
 export function createObservationLayer(morph: { value: number }) {
   const object = new Group();
+  const wind = createSurfaceWind(morph);
+  object.add(wind.mesh);
   const curtain = createObservationCurtain(morph);
   object.add(curtain.object);
   const terrain = createObservationTerrain(morph);
@@ -179,6 +182,7 @@ export function createObservationLayer(morph: { value: number }) {
         pixelRatio: { value: 1 },
         markWindow,
         reveal: { value: 1 },
+        lightning: { value: 0 },
       },
       vertexShader: /* glsl */ `
       ${MORPH_GLSL}
@@ -203,6 +207,7 @@ export function createObservationLayer(morph: { value: number }) {
       fragmentShader: /* glsl */ `
       varying vec3 tint;
       uniform float reveal;
+      uniform float lightning;
       varying float visiblePoint;
       void main() {
         float r = length(gl_PointCoord - 0.5);
@@ -210,6 +215,13 @@ export function createObservationLayer(morph: { value: number }) {
         float rim = (1.0 - smoothstep(0.38, 0.5, r)) * smoothstep(0.26, 0.34, r);
         gl_FragColor = vec4(tint, reveal * visiblePoint * (core + rim * 0.43));
         #include <colorspace_fragment>
+        if (lightning > 0.5) {
+          vec2 p = abs(gl_PointCoord - 0.5);
+          float d = p.x + p.y * 0.76;
+          float core = 1.0 - smoothstep(0.19, 0.26, d);
+          float border = 1.0 - smoothstep(0.28, 0.39, d);
+          gl_FragColor = vec4(mix(vec3(0.18,0.16,0.13), vec3(1.0,0.87,0.62), core), border * reveal);
+        }
       }
     `,
       transparent: true,
@@ -234,6 +246,8 @@ export function createObservationLayer(morph: { value: number }) {
   function set(view: ObservationView | null) {
     if (view === prior) return;
     if (!view?.departing) departure = 0;
+    wind.set(view?.frame.paths ? undefined : view?.frame.windGrid);
+    dot.material.uniforms.lightning!.value = Number(view?.frame.lightningAt !== undefined);
     curtain.set(view?.curtain);
     terrain.set(view?.terrain);
     if (view?.fault && !fault) {
@@ -321,12 +335,13 @@ export function createObservationLayer(morph: { value: number }) {
     foldCurtain: curtain.fold,
     dispose() {
       set(null);
+      wind.dispose();
       curtain.dispose();
       terrain.dispose();
       fault?.dispose();
       moon.dispose();
     },
-    step(dt: number, reduced: boolean, layerWeight = 1, elapsed = dt) {
+    step(dt: number, reduced: boolean, layerWeight = 1, elapsed = dt, viewZoom = 1) {
       const unfolding = curtain.step(dt, reduced, elapsed);
       const lifting = terrain.step(dt, reduced);
       if (!prior) return false;
@@ -335,6 +350,7 @@ export function createObservationLayer(morph: { value: number }) {
       const fade = departure * departure * (3 - 2 * departure);
       fold.value = fade;
       const strength = reveal * reveal * (3 - 2 * reveal) * (1 - fade) * layerWeight;
+      const blowing = wind.step(dt, reduced, strength, viewZoom);
       dot.material.uniforms.reveal!.value = strength;
       raster.material.opacity = strength * (prior.frame.raster?.opacity ?? 0.88);
       travel = Math.min(1, travel + dt / 1.05);
@@ -347,7 +363,13 @@ export function createObservationLayer(morph: { value: number }) {
         ? 1.1
         : (prior.traceProgress ?? (flowing ? travel * 1.03 : 1.1));
       return (
-        (prior.departing && departure < 1) || reveal < 1 || !!flowing || !!sweeping || unfolding || lifting
+        (prior.departing && departure < 1) ||
+        reveal < 1 ||
+        !!flowing ||
+        !!sweeping ||
+        unfolding ||
+        lifting ||
+        blowing
       );
     },
   };

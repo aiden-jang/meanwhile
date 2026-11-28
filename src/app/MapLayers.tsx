@@ -12,6 +12,7 @@ import { PlaceContext, PlaceInspection, type PlaceContextProps } from "./discove
 import type { usePlaceInspection } from "./discovery/usePlaceInspection";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
+import type { HazardLayer } from "./format";
 import type { FeedStatus } from "./feedStatus";
 import { weatherLayers, type WeatherLayerId } from "./weatherLayers";
 import type { Aurora } from "../sources/aurora";
@@ -20,12 +21,12 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { LayerCatalogue } from "./LayerCatalogue";
 import { LayerInspectorHeading } from "./LayerInspectorHeading";
 import { LayerSources } from "./LayerSources";
-import { HazardList } from "./HazardList";
+import { ReportedLayer } from "./field/ReportedLayer";
 import { LayerExample, hasLayerExample } from "./LayerExample";
 import { CutawayReports } from "./CutawayReports";
 import type { DepthRecord } from "../data/depthRecords";
 import { LayerRadar } from "./radar/LayerRadar";
-import { QuietCycloneLinks, StormStoryLink } from "./storm/StormLinks";
+import { StormStoryLink } from "./storm/StormLinks";
 import { useStormRadarVisit } from "./storm/useStormRadarVisit";
 import { LiveStormReading, LiveStormSources } from "./storm/LiveStormReading";
 import type { LiveStorm } from "./storm/useLiveStorm";
@@ -50,6 +51,7 @@ export function MapLayers({
   window,
   markId,
   onHazard,
+  retryHazard,
   flat,
   canDismiss,
   cityWeather,
@@ -77,6 +79,7 @@ export function MapLayers({
   window: ReactNode;
   markId: string | null;
   onHazard: (id: string) => void;
+  retryHazard: (layer: HazardLayer) => void;
   flat: boolean;
   canDismiss: boolean;
   cityWeather: boolean;
@@ -91,7 +94,7 @@ export function MapLayers({
   const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
   const { reveal, openRewind, closeRewind } = useRadarRewind(controls, readCamera);
   const panel = useRef<HTMLElement>(null);
-  const { reports, health, hazardKind, groups, quietCyclones, quakeCount, quiet } = useLayerOverview(
+  const { reports, health, reportLayer, groups, quietCyclones, quakeCount, quiet } = useLayerOverview(
     places,
     controls,
     feeds,
@@ -239,7 +242,11 @@ export function MapLayers({
               </p>
             ) : !controls.enabled[layer] ? (
               <p>This layer is hidden. Turn it on to show its observations.</p>
-            ) : layer !== "radar" && !(quietCyclones && !groups.length) && quiet(layer) ? (
+            ) : layer !== "radar" &&
+              !(layer in weatherLayers) &&
+              layer !== "aurora" &&
+              !reportLayer &&
+              quiet(layer) ? (
               <p role="status">{quiet(layer)}</p>
             ) : null}
             {exampleLayer.current === layer &&
@@ -310,25 +317,15 @@ export function MapLayers({
             </details>
           )}
           <div hidden={layer !== "earthquakes"}>{children}</div>
-          {hazardKind && (
-            <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">
+          {reportLayer && (
+            <ReportedLayer
+              layer={reportLayer}
+              {...{ groups, feeds, archived, markId, onHazard, retryHazard, quietCyclones, flat }}
+              enabled={controls.enabled[reportLayer]}
+              at={controls.radarAt}
+            >
               {window}
-              <p>
-                Reported events in the selected window. This window is shared with the earthquake reports.
-              </p>
-              {groups.length ? (
-                <HazardList hazards={groups} markId={markId} onHazard={onHazard} inline />
-              ) : quietCyclones ? (
-                <QuietCycloneLinks at={controls.radarAt} map={flat} />
-              ) : (
-                <p role="status">
-                  {!controls.enabled[layer!]
-                    ? "Enable this layer to see reports."
-                    : (health ??
-                      "No matching reports from the available sources. This does not establish an absence of activity.")}
-                </p>
-              )}
-            </section>
+            </ReportedLayer>
           )}
           {layer === "aurora" && controls.enabled.aurora && !archived && (
             <p className="layer-note">

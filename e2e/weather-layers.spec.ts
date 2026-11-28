@@ -335,3 +335,32 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await expect.poll(async () => (await camera(page))?.morph).toBe(1);
   await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
 });
+
+test("a regional wind reading holds its scale and forecast time across projections @dev", async ({
+  page,
+}) => {
+  await installFeeds(page);
+  (await sources(page)).recover();
+  await page.goto("/#v=explore&at=-10.65,51.8,5.5&p=globe&layers=wind");
+  await openLayer(page, "Surface wind");
+  await page.getByRole("button", { name: "Hide Layers", exact: true }).click();
+  const reading = page.locator('[data-field-reading="wind"]');
+  await expect(reading.locator("strong")).toBeVisible();
+  const value = await reading.innerText();
+  const span = () =>
+    page.evaluate(() => {
+      const globe = (
+        window as unknown as { __globe: { project: (lon: number, lat: number) => { x: number; y: number } } }
+      ).__globe;
+      const a = globe.project(-10.65, 51.8),
+        b = globe.project(-10.65, 52.05);
+      return Math.hypot(b.x - a.x, b.y - a.y);
+    });
+  const start = await span();
+  for (const name of ["Map", "Globe"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect.poll(async () => (await camera(page))?.morph).toBe(name === "Map" ? 1 : 0);
+    expect(Math.abs((await span()) / start - 1)).toBeLessThan(0.02);
+    expect(await reading.innerText()).toEqual(value);
+  }
+});

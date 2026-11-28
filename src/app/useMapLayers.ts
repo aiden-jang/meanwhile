@@ -155,6 +155,12 @@ export function useMapLayers(
       ? null
       : emphasisLayer(visit?.inspectingQuake ? "earthquakes" : rewind ? "radar" : inspector);
   const emphasis = active && subject && enabled[subject] ? subject : null;
+  const chosen = (Object.keys(visible) as MapLayer[]).filter((id) => visible[id]);
+  const focus = inspector ?? (chosen.length === 1 ? chosen[0] : null);
+  const reading =
+    !scope && !storm && (focus === "wind" || focus === "lightning" || focus === "aurora") && visible[focus]
+      ? focus
+      : undefined;
   const presentation = useMemo<MapLayerPresentation | null>(
     () =>
       catalogue
@@ -164,10 +170,10 @@ export function useMapLayers(
             observation: fading ? observation : null,
             emphasis: "catalogue",
           }
-        : !suspended && (radar || observation || emphasis || storm)
-          ? { kind: "map-layers", radar, observation, emphasis, storm: storm ?? undefined }
+        : !suspended && (active || radar || observation || emphasis || storm)
+          ? { kind: "map-layers", radar, observation, emphasis, reading, storm: storm ?? undefined }
           : null,
-    [catalogue, fading, radar, observation, suspended, emphasis, storm],
+    [catalogue, fading, radar, observation, suspended, emphasis, storm, active, reading],
   );
   const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [

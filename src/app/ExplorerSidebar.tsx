@@ -74,6 +74,8 @@ export function ExplorerSidebar({
   fold: ReactNode;
 }) {
   const { browser, observations } = context.views;
+  const inspected = context.storySelection?.layer;
+  const readingWeather = inspected === "wind" || inspected === "lightning" || inspected === "aurora";
   const { world, showStories, openLayer, backToWorld } = context.explorePaths;
   const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
   const panel = useRef<HTMLDivElement>(null);
@@ -116,9 +118,11 @@ export function ExplorerSidebar({
   };
   return (
     <>
-      {!context.views.observing && !context.pacific.visible && !world && browser.pane === "layers" && (
-        <WorldStoryMarkers map={context.explorer.flat} />
-      )}
+      {!readingWeather &&
+        !context.views.observing &&
+        !context.pacific.visible &&
+        !world &&
+        browser.pane === "layers" && <WorldStoryMarkers map={context.explorer.flat} />}
       <div className="explorer-tabs">
         <div
           className="explorer-tab-options"

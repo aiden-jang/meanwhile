@@ -37,6 +37,22 @@ it("sleeps while hidden and refreshes once when overdue without overlapping", as
   expect(load).toHaveBeenCalledTimes(2);
 });
 
+it("retries a settled request immediately and coalesces repeated attempts", async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal("document", Object.assign(new EventTarget(), { hidden: false }));
+  vi.stubGlobal("window", Object.assign(new EventTarget(), { setTimeout, clearTimeout }));
+  const load = vi.fn(async () => {});
+  const poll = pollVisible(load, 60_000);
+  await Promise.resolve();
+  poll.retry();
+  poll.retry();
+  expect(load).toHaveBeenCalledTimes(2);
+  await Promise.resolve();
+  await vi.advanceTimersByTimeAsync(59_000);
+  expect(load).toHaveBeenCalledTimes(2);
+  poll();
+});
+
 it("cancels the leaving page's request and starts one fresh request on return", async () => {
   vi.useFakeTimers();
   const doc = Object.assign(new EventTarget(), { hidden: false });

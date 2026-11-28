@@ -18,6 +18,10 @@ export interface PassageOptics {
   frame?: (camera: PerspectiveCamera, canvas: HTMLCanvasElement) => void;
 }
 
+export function liveLayerView(mode: GlobePresentation) {
+  return mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
+}
+
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
   return mode !== null && typeof mode === "object" && "kind" in mode && mode.kind !== "map-layers";
 }

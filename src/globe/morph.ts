@@ -70,11 +70,11 @@ export const MORPH_GLSL = /* glsl */ `
   uniform float uMorph;
   attribute vec2 aLonLat;
 
-  vec3 fmNormal(vec3 sphere) {
+  vec3 fmNormalAt(vec3 sphere, vec2 coordinates) {
     if (uMorph <= 0.0) return normalize(sphere);
     if (uMorph >= 1.0) return vec3(0.0, 0.0, 1.0);
     float r = length(sphere);
-    float theta = radians(aLonLat.x) * (1.0 - uMorph);
+    float theta = radians(coordinates.x) * (1.0 - uMorph);
     float width = mix(length(sphere.xz) / r, ${ARC_SCALE}, uMorph);
     return normalize(vec3(
       width * sin(theta),
@@ -83,13 +83,14 @@ export const MORPH_GLSL = /* glsl */ `
     ));
   }
 
-  vec3 fmProject(vec3 sphere) {
+  vec3 fmNormal(vec3 sphere) { return fmNormalAt(sphere, aLonLat); }
+  vec3 fmProjectAt(vec3 sphere, vec2 coordinates) {
     if (uMorph <= 0.0) return sphere;
     // Keep the stored seam longitude, including the two separate edges at plus and minus 180.
     float r = length(sphere);
-    float longitude = radians(aLonLat.x);
+    float longitude = radians(coordinates.x);
     float lift = (r - 1.0) * mix(1.0, ${MAP_LAYER_LIFT.toFixed(1)}, uMorph);
-    if (uMorph >= 1.0) return vec3(longitude * ${ARC_SCALE}, aLonLat.y / 90.0, lift);
+    if (uMorph >= 1.0) return vec3(longitude * ${ARC_SCALE}, coordinates.y / 90.0, lift);
     float curl = 1.0 - uMorph;
     float theta = curl * longitude;
     float cosine = length(sphere.xz) / r;
@@ -98,11 +99,12 @@ export const MORPH_GLSL = /* glsl */ `
     float halfSine = sin(theta * 0.5);
     vec3 sheet = vec3(
       width * (sin(theta) / curl),
-      mix(sphere.y / r, aLonLat.y / 90.0, uMorph),
+      mix(sphere.y / r, coordinates.y / 90.0, uMorph),
       curl * cosine - width * ((2.0 * halfSine * halfSine) / curl)
     );
-    return sheet + fmNormal(sphere) * lift;
+    return sheet + fmNormalAt(sphere, coordinates) * lift;
   }
+  vec3 fmProject(vec3 sphere) { return fmProjectAt(sphere, aLonLat); }
 `;
 
 /**

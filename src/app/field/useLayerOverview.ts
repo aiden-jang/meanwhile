@@ -29,6 +29,7 @@ export function useLayerOverview(
   };
   const health = layer && !archived ? layerHealth(layer, feeds.rows) : null;
   const hazardKind = layer && layer in hazardKinds ? hazardKinds[layer as keyof typeof hazardKinds] : null;
+  const reportLayer = hazardKind ? (layer as keyof typeof hazardKinds) : null;
   const groups = places.hazards.filter((group) => group.kind === hazardKind);
   const quietCyclones =
     layer === "cyclones" &&
@@ -51,5 +52,5 @@ export function useLayerOverview(
   if (controls.weather.lightning?.frame)
     counts.lightning = controls.weather.lightning.frame.marks?.length ?? 0;
   const quiet = (id: MapLayer) => quietLayer(id, feeds.rows, counts[id], archived);
-  return { reports, health, hazardKind, groups, quietCyclones, quakeCount, quiet };
+  return { reports, health, reportLayer, groups, quietCyclones, quakeCount, quiet };
 }

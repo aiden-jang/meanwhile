@@ -227,3 +227,25 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   await expect(entry).toBeFocused();
   await expect(allStories).toHaveAttribute("aria-pressed", "true");
 });
+
+test("an unavailable hazard feed can be retried without leaving the current region", async ({ page }) => {
+  await installFeeds(page);
+  let floods = 0;
+  await page.route(/geteventlist.*eventlist=FL/, async (route) => {
+    floods++;
+    if (floods === 1) await route.abort();
+    else await route.fulfill({ json: { type: "FeatureCollection", features: [] } });
+  });
+  await page.goto("/#v=explore&at=100.5,13.7,5.5&p=map&layers=floods");
+  await openLayer(page, "Floods");
+  const reports = page.getByRole("region", { name: "Floods reports" });
+  await expect(reports).toContainText("GDACS didn’t respond.");
+  const view = new URLSearchParams(new URL(page.url()).hash.slice(1));
+  const scene = await page.locator("canvas[data-engine]").elementHandle();
+  await reports.getByRole("button", { name: "Check again" }).click();
+  await expect(reports).toContainText("No matching reports from the available sources.");
+  expect(floods).toBe(2);
+  const restored = new URLSearchParams(new URL(page.url()).hash.slice(1));
+  for (const key of ["at", "p", "layers"]) expect(restored.get(key)).toBe(view.get(key));
+  expect(await scene!.evaluate((node) => node === document.querySelector("canvas[data-engine]"))).toBe(true);
+});

@@ -43,6 +43,12 @@ export function GlobeOverlays({
   return (
     <>
       <PlaceLabels pin={placePin} marks={marks} />
+      <div className="scene-cue scene-field-reading" data-field-reading="" hidden>
+        <span>
+          <strong />
+          <small />
+        </span>
+      </div>
       {guide ? <CameraRecenter guide={guide} wake={wake} /> : null}
       <div
         ref={orbit}

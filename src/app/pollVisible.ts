@@ -50,7 +50,7 @@ export function pollVisible(load: (signal: AbortSignal) => Promise<unknown>, int
   window.addEventListener("pageshow", returnToPage);
   if (interval !== undefined) window.addEventListener("online", reconnect);
   start();
-  return () => {
+  const stop = () => {
     alive = false;
     pause();
     document.removeEventListener("visibilitychange", visibility);
@@ -58,4 +58,5 @@ export function pollVisible(load: (signal: AbortSignal) => Promise<unknown>, int
     window.removeEventListener("pageshow", returnToPage);
     window.removeEventListener("online", reconnect);
   };
+  return Object.assign(stop, { retry: reconnect });
 }

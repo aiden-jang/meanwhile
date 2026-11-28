@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchAurora, type Aurora } from "../sources/aurora";
 import { fetchCyclones, type Cyclone } from "../sources/cyclones";
 import { fetchFloods, type Flood } from "../sources/floods";
@@ -12,6 +12,7 @@ import { pollVisible } from "./pollVisible";
 const POLL_MS = 10 * 60_000;
 
 export interface HazardLayers {
+  retry: (layer: HazardLayer) => void;
   aurora: Aurora | null;
   cyclones: readonly Cyclone[];
   fires: readonly Wildfire[];
@@ -23,6 +24,7 @@ export interface HazardLayers {
 
 /** The five layers that are polled rather than streamed, and whether each has been heard from. */
 export function useHazardLayers(): HazardLayers {
+  const retries = useRef<Partial<Record<HazardLayer, () => void>>>({});
   const [aurora, setAurora] = useState<Aurora | null>(null);
   const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
   /* Both parsers must filter on their own dates, not on `iscurrent`. Measured: every fire is flagged
@@ -63,25 +65,33 @@ export function useHazardLayers(): HazardLayers {
       );
       if (answered && !signal.aborted) apply(next);
     }
-    const stop = pollVisible(
-      (signal) =>
-        Promise.all([
-          refresh(signal, "aurora", fetchAurora, setAurora),
-          refresh(signal, "cyclones", fetchCyclones, setCyclones),
-          refresh(signal, "fires", fetchWildfires, setFires),
-          refresh(signal, "floods", fetchFloods, setFloods),
-        ]),
-      POLL_MS,
-    );
-    const stopVolcanoes = pollVisible(
-      (signal) => refresh(signal, "volcanoes", fetchVolcanoes, setVolcanoes),
-      6 * 60 * 60_000,
-    );
+    function poll<T>(
+      layer: HazardLayer,
+      fetchLayer: Parameters<typeof refresh<T>>[2],
+      apply: (next: T) => void,
+      interval = POLL_MS,
+    ) {
+      const request = pollVisible((signal) => refresh(signal, layer, fetchLayer, apply), interval);
+      retries.current[layer] = request.retry;
+      return request;
+    }
+    const requests = [
+      poll("aurora", fetchAurora, setAurora),
+      poll("cyclones", fetchCyclones, setCyclones),
+      poll("fires", fetchWildfires, setFires),
+      poll("floods", fetchFloods, setFloods),
+      poll("volcanoes", fetchVolcanoes, setVolcanoes, 6 * 60 * 60_000),
+    ];
     return () => {
-      stop();
-      stopVolcanoes();
+      for (const stop of requests) stop();
+      retries.current = {};
     };
   }, []);
 
-  return { aurora, cyclones, fires, floods, volcanoes, ...health };
+  function retry(layer: HazardLayer) {
+    if (health.answered[layer] !== "failed") return;
+    setHealth((old) => ({ ...old, answered: { ...old.answered, [layer]: "pending" } }));
+    retries.current[layer]?.();
+  }
+  return { aurora, cyclones, fires, floods, volcanoes, ...health, retry };
 }

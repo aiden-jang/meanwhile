@@ -1,6 +1,7 @@
 import type { SkyCity, SkyLook, TonightView } from "../../geo/tonight";
 import type { CameraState } from "../../globe/controls";
 
+import type { WindGrid } from "../../geo/windGrid";
 import type { SurveyLens } from "../../globe/surveyLens";
 
 export class ObservationDataError extends Error {}
@@ -67,6 +68,8 @@ export interface ObservationFrame {
   raster?: ObservationRaster;
   measurements?: readonly Measurement[];
   flow?: boolean;
+  windGrid?: WindGrid;
+  lightningAt?: number;
   pathOpacity?: number;
   modeledArrival?: GeoPoint & { at: number; sampleAt?: number };
   tide?: { observed: number; predicted?: number | undefined; min: number; max: number };

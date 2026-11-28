@@ -36,6 +36,7 @@ export interface MapLayerPresentation {
   base?: "landing" | "dayline";
   radar: RadarLayerView | null;
   emphasis?: LayerEmphasis | null;
+  reading?: "wind" | "lightning" | "aurora" | undefined;
   observation: ObservationView | null;
   storm?: ObservationView | undefined;
 }
@@ -70,9 +71,13 @@ export function weatherOverlay(
     image: null,
     frame: {
       at: wind?.at ?? lightning!.at,
-      ...(wind?.paths ? { paths: wind.paths, flow: wind.flow ?? false } : {}),
+      ...(wind?.windGrid
+        ? { windGrid: wind.windGrid }
+        : wind?.paths
+          ? { paths: wind.paths, flow: wind.flow ?? false }
+          : {}),
       pathOpacity: 0.48,
-      ...(lightning?.marks ? { marks: lightning.marks } : {}),
+      ...(lightning?.marks ? { marks: lightning.marks, lightningAt: lightning.at } : {}),
     },
   };
 }

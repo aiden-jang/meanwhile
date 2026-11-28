@@ -96,6 +96,22 @@ export const wind: ObservationSource = {
           at,
           paths,
           flow: true,
+          ...(!jet && {
+            windGrid: {
+              columns: lons.length,
+              rows: lats.length,
+              west: lons[0]!,
+              north: lats[0]!,
+              dx: lons[1]! - lons[0]!,
+              dy: lats[1]! - lats[0]!,
+              east: Float32Array.from(
+                u.slice((index * cells) / times.length, ((index + 1) * cells) / times.length),
+              ),
+              northward: Float32Array.from(
+                v.slice((index * cells) / times.length, ((index + 1) * cells) / times.length),
+              ),
+            },
+          }),
           measurements: [
             { label: "Wind level", value: jet ? "250 hPa · upper air" : "10 m above surface" },
             { label: "Fastest sampled wind", value: `${maximum.toFixed(1)} m/s` },

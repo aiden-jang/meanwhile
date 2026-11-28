@@ -1,6 +1,20 @@
 .map-layers {
   margin-bottom: 0;
 }
+.report-source-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+.report-source-state p {
+  flex: 1 1 12ch;
+  margin: 0;
+}
+.report-source-state button {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
 .layer-player {
   padding-block: 6px;
 }

@@ -36,7 +36,7 @@ export const layerMetadata: Record<
     sources: ["aurora"],
     coverage: "Polar forecast",
     meaning:
-      "Forecast auroral activity, not a guarantee of visibility. Clouds and local light affect what you can see.",
+      "Contours mark 10%, 25% and 40% forecast aurora probability. Clouds and local light affect what you can see.",
   },
   radar: {
     sources: ["radar"],
@@ -48,7 +48,7 @@ export const layerMetadata: Record<
     sources: ["wind"],
     coverage: "Global forecast · 10 m above surface",
     meaning:
-      "Sampled, modeled surface wind. Streaks show direction; animation speed does not measure wind speed.",
+      "Arrows point in the direction air moves. Local speeds are interpolated from the 6° GFS forecast grid.",
   },
   lightning: {
     sources: ["lightning"],

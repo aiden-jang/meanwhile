@@ -128,7 +128,6 @@ function WeatherPlayer({
           : null;
   return (
     <section className="weather-layer" aria-label={`${meta.label} playback`}>
-      <p>{meta.coverage}</p>
       {status && (
         <div role="status">
           <p>{status}</p>
@@ -181,11 +180,13 @@ function WeatherPlayer({
               </div>
             </>
           )}
-          {frame.measurements?.map(({ label, value }) => (
-            <p key={label}>
-              {label}: {value}
-            </p>
-          ))}
+          {frame.measurements
+            ?.filter(({ label }) => label !== "Wind level")
+            .map(({ label, value }) => (
+              <p key={label}>
+                {label}: {value}
+              </p>
+            ))}
         </>
       )}
       {state !== "ready" && frame && <p>Showing the last available data.</p>}
@@ -196,10 +197,12 @@ function WeatherPlayer({
       <details>
         <summary>Coverage &amp; source</summary>
         <p>
-          {data?.note ??
-            (id === "wind"
-              ? "Modeled surface wind on a sampled global grid, not measured gusts."
-              : "Selected 20-second scans from GOES-East, not a continuous or worldwide record. No dots outside its coverage does not mean no lightning.")}
+          {id === "wind" && frame?.windGrid
+            ? "GFS models the wind 10 m above the surface. The arrows and local reading interpolate between the forecast grid points. Arrows point downwind."
+            : (data?.note ??
+              (id === "wind"
+                ? "Modeled surface wind on a sampled global grid, not measured gusts."
+                : "Selected 20-second scans from GOES-East, not a continuous or worldwide record. No dots outside its coverage does not mean no lightning."))}
         </p>
         <a href={observations[id].url} target="_blank" rel="noreferrer" aria-describedby="external-link-hint">
           {meta.source}

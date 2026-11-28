@@ -30,10 +30,15 @@ const NIGHT_SURFACE = {
         uniform sampler2D uAurora;
         uniform float uAuroraOn;
         uniform float uAuroraWeight;
+        uniform float uForecastDetail;
         uniform vec3 uAuroraColor;
         varying vec3 vNormal;
         varying vec2 vLonLat;
 
+        float contour(float value, float level) {
+          float gradient = fwidth(value);
+          return smoothstep(0.00001,0.0002,gradient) * (1.0-smoothstep(0.2,1.35,abs(value-level)/max(gradient,0.00001)));
+        }
         void main() {
           /* On the map, rebuild the direction per fragment. Flattening stretches these triangles, and an
              interpolated normal is only exact at their corners: a crease ran along every shared diagonal.
@@ -74,7 +79,10 @@ const NIGHT_SURFACE = {
 
           /* Aurora intensity shares the geographic night mask. See ARCHITECTURE.md#srcglobenightsurfacets. */
           vec2 auv = vec2((vLonLat.x + 0.5) / ${AURORA_LON}.0, (vLonLat.y + 90.5) / ${AURORA_LAT}.0);
-          float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn * uAuroraWeight;
+          float probability = texture2D(uAurora, auv).r;
+          float glow = clamp(probability * mix(3.0, 2.04, uForecastDetail), 0.0, 1.0) * night * uAuroraOn * uAuroraWeight;
+          float bands = max(contour(probability, 0.10), max(contour(probability, 0.25), contour(probability, 0.40)));
+          bands *= night * uAuroraOn * uAuroraWeight * uForecastDetail;
 
           /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
              tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See ARCHITECTURE.md#srcglobenightsurfacets. */
@@ -82,6 +90,8 @@ const NIGHT_SURFACE = {
           float dither = (grain - 0.5) / 255.0;
           vec3 color = uDayColor * day + uAuroraColor * glow;
           float alpha = night * uDepth + day * uLift + glow * 0.30 + dither;
+          color = mix(color, vec3(0.62,0.88,0.73), bands * 0.68);
+          alpha = max(alpha, 0.66 * bands);
           if (uDayline > 0.0) {
             // Trace the contour of zero solar elevation from north to south.
             float width = clamp(fwidth(sun) * 1.65, 0.0015, 0.018);
@@ -122,6 +132,7 @@ export function createNightSurface(morph: { value: number }) {
         uAurora: { value: aurora },
         uAuroraOn: { value: 0 },
         uAuroraWeight: { value: 1 },
+        uForecastDetail: { value: 0 },
         uAuroraColor: { value: new Color(0x7fc9a6) },
       },
       transparent: true,

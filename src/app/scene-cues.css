@@ -11,6 +11,54 @@
 .scene-cue[data-visible] {
   visibility: visible;
 }
+.scene-field-reading {
+  z-index: 4;
+}
+.scene-field-reading[hidden] {
+  display: none;
+}
+.scene-field-reading::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: var(--color-deck);
+}
+.scene-field-reading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 5px;
+  height: 14px;
+  border-left: 1px solid currentColor;
+  opacity: 0.76;
+}
+.scene-field-reading > span {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  padding: 5px 9px 6px;
+  background: color-mix(in srgb, var(--color-deck) 95%, transparent);
+  border-radius: 2px;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.scene-field-reading strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.scene-field-reading small {
+  color: var(--color-dim);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
 .scene-cue-label {
   position: absolute;
   bottom: 8px;

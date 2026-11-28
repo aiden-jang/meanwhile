@@ -30,6 +30,21 @@ describe("camera zoom range", () => {
       expect(distance.at(12, t)).toBeLessThan(distance.at(12, 0));
     }
   });
+  it("keeps the same meridional scale when a live layer unfolds up close", () => {
+    const distances = createOrbitDistance(new PerspectiveCamera(32, 1.6), 32);
+    for (const fit of [4, 7.5]) {
+      distances.fit(fit, 4);
+      distances.setLayers(true);
+      for (const zoom of [3.5, 5.5, 12]) {
+        const ball = distances.magnification(zoom, 0) / (distances.at(zoom, 0) - 1);
+        const sheet = ((2 / Math.PI) * distances.magnification(zoom, 1)) / distances.at(zoom, 1);
+        expect(sheet).toBeCloseTo(ball);
+      }
+      expect(distances.region(1)).toBe(0);
+      distances.setLayers(false);
+      expect(distances.magnification(5.5, 1)).toBe(1);
+    }
+  });
   it("preserves existing story framing through the full globe-to-map transition", () => {
     const distance = createOrbitDistance(new PerspectiveCamera(32, 1.6), 32);
     distance.fit(4, 4);

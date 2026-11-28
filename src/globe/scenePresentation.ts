@@ -22,7 +22,7 @@ import { createFijiSectionCamera } from "./fijiSectionCamera";
 import { createDaylineLabel } from "./daylineLabel";
 import { createHawaiiRelief } from "./hawaiiRelief";
 import { createSurveyZoom } from "./surveyZoom";
-import { isLocalView, type GlobePresentation, type PassageOptics } from "./presentationMode";
+import { isLocalView, liveLayerView, type GlobePresentation, type PassageOptics } from "./presentationMode";
 export { isLocalView, isRecordedFlight, isShadowChase } from "./presentationMode";
 export type { GlobePresentation, PassageOptics } from "./presentationMode";
 export type { LunarDeparture, TonightPresentation } from "./skyPresentation";
@@ -41,6 +41,7 @@ export function createPresentation(
   let skyCamera: ReturnType<Controls["state"]> | undefined;
   let skyView: TonightPresentation | null = null;
   let localLight: ReturnType<typeof createLocalSkyLight> | undefined;
+  let forecastReading = false;
   let veil: ReturnType<typeof createAuroraVeil> | undefined;
   let held: AuroraRun | null = null;
   let oval: AuroraRun["route"] | null = null;
@@ -90,7 +91,7 @@ export function createPresentation(
     radar?.setCamera(camera, cameraMoving);
     const detail = Math.max(0, Math.min(1, (camera.zoom - 1) / 1.7));
     const revealingRadar = radarReveal.step(elapsed, reduced);
-    const focusingLayers = emphasis.step(liveFocus, dt, reduced, live);
+    const focusingLayers = emphasis.step(liveFocus, dt, reduced, live, forecastReading ? detail : 0);
     const radarArriving = radar?.step(
       dt,
       reduced,
@@ -101,13 +102,10 @@ export function createPresentation(
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
     stormArrival = cameraMoving && !reduced ? Math.max(0, stormArrival - elapsed) : 0;
+    const overlayWeight = (observationTarget ? 1 : emphasis.weather()) * live;
     const tracing =
-      observations?.step(
-        stormArrival ? 0 : dt,
-        reduced,
-        (observationTarget ? 1 : emphasis.weather()) * live,
-        elapsed,
-      ) ?? false;
+      observations?.step(stormArrival ? 0 : dt, reduced, overlayWeight, elapsed, controls.state().zoom) ??
+      false;
     const orbiting = orbital.step(dt, reduced);
     const zooming = lens.step(dt, elapsed, reduced, arrival.ready(), holdingGeography);
     const guided = controls.guidance.following();
@@ -165,8 +163,8 @@ export function createPresentation(
     );
   }
   function set(mode: GlobePresentation, geography: readonly Object3D[], cutawayCamera = false) {
-    const mapLayers =
-      mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
+    const mapLayers = liveLayerView(mode);
+    forecastReading = !!mapLayers && !mapLayers.base && mapLayers.reading === "aurora";
     if (mapLayers) mode = mapLayers.base ?? null;
     if (mode === "landing") mode = "dayline";
     if (mode === "planetarium" && !planetarium) skyCamera = returnCamera ?? controls.state();
@@ -174,6 +172,7 @@ export function createPresentation(
     const observation = local?.kind === "observation" ? local : null;
     const hold = observation?.holdGeography === true;
     controls.setLocalSurveyProjection(observation?.localSurveyProjection === true);
+    controls.setLayerProjection(!!mapLayers && mode === null && !cutawayCamera && !mapLayers.storm);
     if (hold && !holdingGeography) controls.setView(controls.state());
     const nextStorm = mapLayers?.storm?.cameraKey;
     if (nextStorm !== stormKey) {

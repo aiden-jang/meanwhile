@@ -29,7 +29,7 @@ export function createLayerEmphasis(
     radar: () => value.radar,
     weather: () => value.weather,
     stars: () => value.stars,
-    step(subject: LayerEmphasis | null, dt: number, reduced: boolean, live = 1) {
+    step(subject: LayerEmphasis | null, dt: number, reduced: boolean, live = 1, forecastDetail = 0) {
       if (subject === "aurora" && !nightUniforms["uAuroraOn"]!.value) subject = null;
       if (subject === "earthquakes" && events.object.geometry.drawRange.count === 0) subject = null;
       const goal = subject ? focus[subject] : neutral;
@@ -44,6 +44,13 @@ export function createLayerEmphasis(
       ringWeight.value = value.quakes * live;
       reports.opacity = reportsOpacity * value.reports * live;
       nightUniforms["uAuroraWeight"]!.value = value.aurora * live;
+      const detail = nightUniforms["uForecastDetail"];
+      if (detail) {
+        const delta = forecastDetail - (detail.value as number);
+        detail.value =
+          reduced || Math.abs(delta) < 0.002 ? forecastDetail : (detail.value as number) + delta * ease;
+        moving ||= detail.value !== forecastDetail;
+      }
       return moving;
     },
   };
