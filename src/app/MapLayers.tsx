@@ -245,7 +245,7 @@ export function MapLayers({
             ) : layer !== "radar" &&
               !(layer in weatherLayers) &&
               layer !== "aurora" &&
-              !reportLayer &&
+              (!reportLayer || (!health && !quietCyclones)) &&
               quiet(layer) ? (
               <p role="status">{quiet(layer)}</p>
             ) : null}

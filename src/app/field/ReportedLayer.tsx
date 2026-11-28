@@ -60,12 +60,6 @@ export function ReportedLayer({
         <HazardList hazards={groups} markId={markId} onHazard={onHazard} inline />
       ) : quietCyclones ? (
         <QuietCycloneLinks at={at} map={flat} />
-      ) : !failed && !pending ? (
-        <p role="status">
-          {enabled
-            ? "No matching reports from the available sources. This does not establish an absence of activity."
-            : "Enable this layer to see reports."}
-        </p>
       ) : null}
     </section>
   );

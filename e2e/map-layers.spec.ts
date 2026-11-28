@@ -243,7 +243,10 @@ test("an unavailable hazard feed can be retried without leaving the current regi
   const view = new URLSearchParams(new URL(page.url()).hash.slice(1));
   const scene = await page.locator("canvas[data-engine]").elementHandle();
   await reports.getByRole("button", { name: "Check again" }).click();
-  await expect(reports).toContainText("No matching reports from the available sources.");
+  await expect(page.locator(".layer-inspector-heading")).toContainText(
+    "No matching reports in this time window",
+  );
+  await expect(reports.getByRole("button", { name: "Check again" })).toHaveCount(0);
   expect(floods).toBe(2);
   const restored = new URLSearchParams(new URL(page.url()).hash.slice(1));
   for (const key of ["at", "p", "layers"]) expect(restored.get(key)).toBe(view.get(key));
