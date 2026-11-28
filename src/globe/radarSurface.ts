@@ -1,13 +1,16 @@
 import { DoubleSide, Mesh, MeshBasicMaterial, SRGBColorSpace, Texture } from "three";
 import { GLOBAL_RADAR_BOUNDS, radarMercatorY } from "../sources/rainviewer";
-import { RADAR_BOUNDS } from "../sources/radar";
+import { RADAR_BOUNDS, type RadarScan } from "../sources/radar";
 import { morphable } from "./morph";
 import type { createRadarReveal } from "./radarReveal";
 import { rasterGeometry } from "./observationLayer";
+import type { CameraState } from "./controlsTypes";
+import { createRadarDetail, regionalRadarMapFragment, regionalRadarShader } from "./radarDetail";
 
 export function createRadarSurface(
   morph: { value: number },
   sweep?: ReturnType<typeof createRadarReveal>["uniforms"],
+  regional?: { canvas: HTMLCanvasElement; wake: () => void },
 ) {
   const geometry = rasterGeometry(RADAR_BOUNDS);
   let worldwide = false;
@@ -58,13 +61,28 @@ export function createRadarSurface(
     };
     material.customProgramCacheKey = () => "fm-morph-storm-radar-reveal";
   }
+  const detail = regional && createRadarDetail(regional.canvas, regional.wake);
+  if (detail) {
+    const compile = material.onBeforeCompile;
+    const key = material.customProgramCacheKey();
+    material.onBeforeCompile = (shader, renderer) => {
+      compile(shader, renderer);
+      Object.assign(shader.uniforms, detail.uniforms);
+      shader.fragmentShader = `${regionalRadarShader}\n${shader.fragmentShader}`.replace(
+        "#include <map_fragment>",
+        regionalRadarMapFragment,
+      );
+    };
+    material.customProgramCacheKey = () => `${key}-regional`;
+  }
   const object = new Mesh(geometry, material);
   object.name = "storm-radar";
   object.frustumCulled = false;
   object.renderOrder = 4.5;
   object.visible = false;
 
-  function setImage(image: ImageBitmap | null, global = false) {
+  function setImage(image: ImageBitmap | null, global = false, scan?: RadarScan) {
+    detail?.setScan(image && global ? scan : undefined);
     if (global !== worldwide) {
       object.geometry.dispose();
       object.geometry = rasterGeometry(global ? GLOBAL_RADAR_BOUNDS : RADAR_BOUNDS);
@@ -96,12 +114,14 @@ export function createRadarSurface(
   return {
     object,
     setImage,
+    setCamera: (camera: CameraState, moving: boolean) => detail?.update(camera, moving),
     step(dt: number, reduced: boolean, strength = 1, departing = false): boolean {
       if (!object.visible) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 0.24);
       departure = departing ? (reduced ? 1 : Math.min(1, departure + dt / 0.26)) : 0;
       material.opacity = reveal * (1 - departure * departure * (3 - 2 * departure)) * strength;
-      return reveal < 1 || (departing && departure < 1);
+      const refining = detail?.step(dt, reduced) ?? false;
+      return reveal < 1 || (departing && departure < 1) || refining;
     },
   };
 }

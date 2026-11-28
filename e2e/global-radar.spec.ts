@@ -96,3 +96,64 @@ for (const width of [1440, 390]) {
     expect(await canvas.evaluate((node, first) => node === first, original)).toBe(true);
   });
 }
+
+test("close-up radar discards late detail from a previously selected scan", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  const latest = Math.floor(Date.now() / 600_000) * 600_000;
+  const earlier = latest - 600_000;
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) =>
+    route.fulfill({
+      json: {
+        host: "https://tilecache.rainviewer.com",
+        radar: {
+          past: [earlier, latest].map((at, i) => ({ time: at / 1000, path: `/v2/radar/frame${i}` })),
+        },
+      },
+    }),
+  );
+  let releaseOld!: () => void;
+  const holdOld = new Promise<void>((resolve) => (releaseOld = resolve));
+  const requests: string[] = [];
+  await page.route("https://tilecache.rainviewer.com/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    requests.push(path);
+    if (path.startsWith("/v2/radar/frame1/512/4/")) await holdOld;
+    await route.fulfill({ contentType: "image/png", body: pixel }).catch(() => {});
+  });
+
+  try {
+    await page.goto("/#v=explore&at=-101,42,1.8&p=globe&layers=radar");
+    const globe = page.locator("#globe-view");
+    const canvas = globe.locator("canvas[data-engine]");
+    const worldClock = page.locator(".radar-canvas-time time");
+    const previous = new Date(earlier).toISOString();
+    await expect(worldClock).toHaveAttribute("datetime", new Date(latest).toISOString());
+    const original = await canvas.elementHandle();
+    expect(requests.some((path) => path.includes("/512/4/"))).toBe(false);
+    await openLayer(page, "Storm radar");
+    const slider = page.getByRole("slider", { name: "Radar scan time" });
+    await expect(slider).toBeVisible();
+    await globe.focus();
+    for (let i = 0; i < 4; i++) await page.keyboard.press("+");
+    await expect
+      .poll(() => requests.filter((path) => path.startsWith("/v2/radar/frame1/512/4/")).length)
+      .toBe(4);
+    await expect(canvas).not.toHaveAttribute("data-radar-detail-at");
+
+    await slider.press("ArrowLeft");
+    await expect(worldClock).toHaveAttribute("datetime", previous);
+    await expect(canvas).toHaveAttribute("data-radar-detail-at", String(earlier));
+    releaseOld();
+    await page.locator("#view-projection").click();
+    await expect(page).toHaveURL(/p=map/);
+    await expect(canvas).toHaveAttribute("data-radar-detail-at", String(earlier));
+    await expect(worldClock).toHaveAttribute("datetime", previous);
+    expect(await canvas.evaluate((node, first) => node === first, original)).toBe(true);
+    await globe.focus();
+    for (let i = 0; i < 5; i++) await page.keyboard.press("-");
+    await expect(canvas).not.toHaveAttribute("data-radar-detail-at");
+  } finally {
+    releaseOld();
+  }
+});

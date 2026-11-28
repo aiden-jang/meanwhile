@@ -2,7 +2,7 @@ import { createEarthBasemap, type SurfaceView } from "./earthBasemap";
 import { createRenderResolution } from "./renderResolution";
 import { DEFAULT_CAMERA } from "./framing";
 import { createNightSurface } from "./nightSurface";
-import { createScenePresentation, type GlobePresentation, type PassageOptics } from "./scenePresentation";
+import { createPresentation, type GlobePresentation, type PassageOptics } from "./scenePresentation";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createEventPresentation } from "./eventPresentation";
@@ -340,7 +340,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000, wake =
   const controls = createControls(camera, canvas, DEFAULT_CAMERA, FOV);
   const modern = [fill, coast, plateLines, plateEdge];
   const emphasis = createLayerEmphasis(events, marks, rings, night);
-  const presentation = createScenePresentation(spin, catalogue, controls, lights, dayline, canvas, emphasis);
+  const presentation = createPresentation(spin, catalogue, controls, lights, dayline, canvas, emphasis, wake);
   const prepareRaster = () => presentation.prepareRaster(renderer, camera, scene);
   canvas.addEventListener("prepare-observation-raster", prepareRaster);
   const inspection = createEventPresentation(camera, controls, catalogue);

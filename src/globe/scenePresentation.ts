@@ -26,7 +26,7 @@ import { isLocalView, type GlobePresentation, type PassageOptics } from "./prese
 export { isLocalView, isRecordedFlight, isShadowChase } from "./presentationMode";
 export type { GlobePresentation, PassageOptics } from "./presentationMode";
 export type { LunarDeparture, TonightPresentation } from "./skyPresentation";
-export function createScenePresentation(
+export function createPresentation(
   spin: Group,
   catalogue: Group,
   controls: Controls,
@@ -34,6 +34,7 @@ export function createScenePresentation(
   dayline: { value: number },
   canvas: HTMLCanvasElement,
   emphasis: ReturnType<typeof createLayerEmphasis>,
+  wake: () => void,
 ) {
   let showDayline = false;
   let planetarium = false;
@@ -81,13 +82,13 @@ export function createScenePresentation(
   let overviewRadar = false;
   let radarDeparting = false;
   let liveFocus: LayerEmphasis | null = null;
-
   function step(dt: number, reduced: boolean, elapsed = dt, cameraMoving = true) {
     const live = optics.liveWeight ?? 1;
     dayline.value = showDayline ? lights.reveal.value * live : 0;
     veil?.trace(controls.auroraSweep());
-    const zoom = controls.state().zoom;
-    const detail = Math.max(0, Math.min(1, (zoom - 1) / 1.7));
+    const camera = controls.state();
+    radar?.setCamera(camera, cameraMoving);
+    const detail = Math.max(0, Math.min(1, (camera.zoom - 1) / 1.7));
     const revealingRadar = radarReveal.step(elapsed, reduced);
     const focusingLayers = emphasis.step(liveFocus, dt, reduced, live);
     const radarArriving = radar?.step(
@@ -315,10 +316,10 @@ export function createScenePresentation(
     overviewRadar = !weather && !!mapLayers?.radar;
     radarDeparting = weather?.departing === true;
     if (radarFrame && !radar) {
-      radar = createRadarSurface(projection, radarReveal.uniforms);
+      radar = createRadarSurface(projection, radarReveal.uniforms, { canvas, wake });
       spin.add(radar.object);
     }
-    radar?.setImage(radarFrame?.image ?? null, isGlobalRadar(radarFrame?.region));
+    radar?.setImage(radarFrame?.image ?? null, isGlobalRadar(radarFrame?.region), radarFrame?.detailScan);
     dayline.value = showDayline ? lights.reveal.value : 0;
   }
   return {

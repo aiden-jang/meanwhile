@@ -112,6 +112,7 @@ export function RadarStage({
   const shown = image ? selected : previousScan.current;
   const shownImage = shown && images.get(shown.id);
   const worldImage = !storm || coverage === true ? shownImage : null;
+  const detailScan = global && worldImage && !playing ? shown : undefined;
   const showingEarlier = !!shownImage && shown?.at !== selected?.at;
   const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const autoFocus = useMemo(
@@ -140,6 +141,7 @@ export function RadarStage({
         at: worldImage ? shown?.at : undefined,
         selectedAt: restored ? selected?.at : initialAt,
         scan: restored ? selected : undefined,
+        detailScan,
         canRewind,
         lightning: lightning?.frame ?? undefined,
         feed,
@@ -147,6 +149,7 @@ export function RadarStage({
     [
       worldImage,
       shown?.at,
+      detailScan,
       lightning,
       onView,
       target,

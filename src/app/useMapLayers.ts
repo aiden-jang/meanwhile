@@ -124,6 +124,7 @@ export function useMapLayers(
             region: "world",
             image: radarView?.image ?? null,
             at: radarView?.at,
+            detailScan: radarView?.detailScan,
             reveal: cityLayers || followingStorm ? undefined : rewind?.reveal,
           }
         : null,

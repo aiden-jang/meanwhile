@@ -18,6 +18,7 @@ export interface RadarView {
   // Selection survives navigation even while its image is loading or unavailable.
   selectedAt?: number | undefined;
   scan?: RadarScan | undefined;
+  detailScan?: RadarScan | undefined;
   departing?: boolean;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
@@ -44,7 +45,7 @@ export interface RadarReveal {
 
 export const RADAR_REVEAL_TIMEOUT = 2400;
 
-export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & {
+export type RadarLayerView = Pick<RadarView, "image" | "at" | "region" | "detailScan"> & {
   kind: "radar-layer";
   reveal?: RadarReveal | undefined;
 };

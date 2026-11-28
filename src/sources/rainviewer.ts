@@ -27,13 +27,15 @@ export function rainviewerScans(raw: unknown, now: number): RadarScan[] {
   return ordered.filter(({ at }) => at >= cutoff).slice(-13);
 }
 
-export function rainviewerTiles(path?: string): string[] {
+export function rainviewerTile(z: number, x: number, y: number, path?: string): string {
   if (path && !/^\/v2\/radar\/[a-zA-Z0-9_-]{1,64}$/.test(path)) throw new Error("Invalid radar path");
-  return [0, 1].flatMap((y) =>
-    [0, 1].map((x) =>
-      path ? `${TILES}${path}/512/1/${x}/${y}/2/1_0.png` : `${TILES}/v2/coverage/0/512/1/${x}/${y}/0/0_0.png`,
-    ),
-  );
+  return path
+    ? `${TILES}${path}/512/${z}/${x}/${y}/2/1_0.png`
+    : `${TILES}/v2/coverage/0/512/${z}/${x}/${y}/0/0_0.png`;
+}
+
+export function rainviewerTiles(path?: string): string[] {
+  return [0, 1].flatMap((y) => [0, 1].map((x) => rainviewerTile(1, x, y, path)));
 }
 
 export function radarMercatorY(lat: number): number {

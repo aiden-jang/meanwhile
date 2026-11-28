@@ -95,7 +95,13 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
     const scrub = input.depthScrub();
     if (scrub && scrollDescent(event, canvas.clientHeight, scrub)) return;
     event.preventDefault();
-    input.zoom(Math.exp(-event.deltaY * 0.0011), event.clientX, event.clientY);
+    const mode = event.deltaMode;
+    const pixels = event.deltaY * (mode === 1 ? 16 : mode === 2 ? canvas.clientHeight : 1);
+    if (!pixels) return;
+    const travel = Math.abs(pixels);
+    const sensitivity = 0.00105 + 0.00255 / (1 + travel / 40);
+    const zoom = Math.min(0.22, travel * sensitivity);
+    input.zoom(Math.exp(-Math.sign(pixels) * zoom), event.clientX, event.clientY);
     input.change();
   };
   const reset = () => {

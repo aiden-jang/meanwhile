@@ -160,6 +160,6 @@ test("successive wheel events keep the same map point anchored while the camera 
   const result = controls.project(anchor.lon, anchor.lat)!;
   expect(result.x).toBeCloseTo(700, 1);
   expect(result.y).toBeCloseTo(250, 1);
-  expect(controls.state().zoom).toBeCloseTo(Math.exp(16 * 25 * 0.0011), 2);
+  expect(controls.state().zoom).toBeCloseTo(2.85, 2);
   detach();
 });
