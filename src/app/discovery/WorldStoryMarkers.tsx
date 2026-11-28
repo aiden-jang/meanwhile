@@ -4,6 +4,7 @@ import { refreshAnnotations } from "../../globe/annotationInput";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { firstFloatProfile, floatExploreTrigger } from "../float/firstProfile";
 import { TongaLocator } from "../tonga/TongaLocator";
+import { HawaiiMarkers } from "./HawaiiMarkers";
 import { eruptionMarker, honolulu, honoluluReading, honoluluTrigger } from "../tonga/honolulu";
 import type { VisitPosition } from "../visitor/library";
 import "./world-story-markers.css";
@@ -44,6 +45,7 @@ export function WorldStoryMarkers({ map }: { map: boolean }) {
   if (!show) return null;
   return createPortal(
     <div className="world-story-markers">
+      <HawaiiMarkers map={map} />
       {markers.map(({ id, trigger, place, title, subtitle, action, prepare, position }) => {
         const warm = () => void prepare().catch(() => {});
         return (
@@ -54,6 +56,7 @@ export function WorldStoryMarkers({ map }: { map: boolean }) {
             className="world-story-marker"
             data-observation-anchor=""
             data-world-story-marker=""
+            data-station-reading={id === "tonga" ? "honolulu" : undefined}
             data-compact-anchor=""
             data-lon={place.lon}
             data-lat={place.lat}

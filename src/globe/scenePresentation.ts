@@ -20,6 +20,8 @@ import type { createLayerEmphasis } from "./layerEmphasis";
 import { createObservationPicking } from "./observationPicking";
 import { createFijiSectionCamera } from "./fijiSectionCamera";
 import { createDaylineLabel } from "./daylineLabel";
+import { createHawaiiRelief } from "./hawaiiRelief";
+import { createSurveyZoom } from "./surveyZoom";
 import { isLocalView, type GlobePresentation, type PassageOptics } from "./presentationMode";
 export { isLocalView, isRecordedFlight, isShadowChase } from "./presentationMode";
 export type { GlobePresentation, PassageOptics } from "./presentationMode";
@@ -49,7 +51,9 @@ export function createScenePresentation(
   let radarTarget: RadarView["target"] | undefined;
   let returnCamera: ReturnType<Controls["state"]> | undefined;
   const projection = { value: 0 };
-  const optics: PassageOptics = { magnification: 1 };
+  const islands = createHawaiiRelief(canvas, controls, spin, projection);
+  const lens = createSurveyZoom();
+  const optics: PassageOptics = { magnification: 1, releaseSurvey: lens.release };
   let framed = false;
   const fiji = createFijiSectionCamera(canvas, controls);
   const arrival = createObservationArrival(controls, canvas);
@@ -64,8 +68,6 @@ export function createScenePresentation(
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
   let shadow: ReturnType<typeof createShadowChase> | undefined;
   let chase: ObservationView["shadow"];
-  let lens: ObservationView["lens"];
-  let lensReveal = 0;
   let comparisonFrame: ObservationView["comparisonFrame"];
   let registeredFrame: ObservationView["comparisonFrame"];
   let replay: ObservationView["follow"];
@@ -106,7 +108,7 @@ export function createScenePresentation(
         elapsed,
       ) ?? false;
     const orbiting = orbital.step(dt, reduced);
-    if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
+    const zooming = lens.step(dt, elapsed, reduced, arrival.ready(), holdingGeography);
     const guided = controls.guidance.following();
     const bank = guided && !reduced && controls.morph() === 0 ? (replay?.bank ?? radarReveal.bank()) : 0;
     const pitch = guided && replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
@@ -140,7 +142,7 @@ export function createScenePresentation(
       registeredFrame !== comparisonFrame &&
       controls.morph() === Number(comparisonFrame.map) &&
       arrival.ready() &&
-      (!lens || lensReveal === 1) &&
+      lens.ready() &&
       (!guided || (!cameraMoving && !following && !easing))
     ) {
       registeredFrame = comparisonFrame;
@@ -148,6 +150,7 @@ export function createScenePresentation(
     }
     return (
       fiji.moving() ||
+      zooming ||
       focusingLayers ||
       revealingRadar ||
       radarArriving ||
@@ -157,8 +160,7 @@ export function createScenePresentation(
       orbiting ||
       !!diving ||
       !!lunar ||
-      approaching ||
-      (!!lens && lensReveal < 1 && (!holdingGeography || arrival.ready()))
+      approaching
     );
   }
   function set(mode: GlobePresentation, geography: readonly Object3D[], cutawayCamera = false) {
@@ -216,8 +218,7 @@ export function createScenePresentation(
     const returningFromArchive = arrival.set(observation);
     comparisonFrame = observation?.comparisonFrame;
     if (!comparisonFrame) registeredFrame = undefined;
-    if (lens !== observation?.lens) lensReveal = 0;
-    lens = observation?.lens;
+    lens.set(observation?.lens);
     replay = observation?.follow;
     if (skyView || guided || !observation?.frame.orbit)
       orbital.set(skyView ? undefined : observation?.frame.orbit);
@@ -352,11 +353,8 @@ export function createScenePresentation(
       fiji.reset(camera);
       projection.value = controls.morph();
       veil?.opacity(Math.max(0, 1 - 2 * projection.value));
-      const target = lens
-        ? (lens.globe + (lens.map - lens.globe) * projection.value) * Math.min(1, camera.aspect)
-        : 1;
       const zoom =
-        target ** (lensReveal * lensReveal * (3 - 2 * lensReveal)) *
+        lens.magnification(projection.value, camera.aspect) *
         orbital.magnification(controls.magnification(), projection.value) *
         optics.magnification;
       if (camera.zoom !== zoom) {
@@ -374,6 +372,7 @@ export function createScenePresentation(
       optics.frame?.(camera, canvas);
       observations?.positionReadings(canvas, controls, camera);
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
+      islands.draw(observationTarget, zoom);
       placeDayline(dayline.value);
       dive?.size();
       const amount = controls.localSky.amount() * (1 - projection.value);
@@ -387,6 +386,8 @@ export function createScenePresentation(
       );
     },
     dispose() {
+      lens.dispose();
+      islands.dispose();
       radar?.setImage(null);
       observations?.dispose();
       shadow?.dispose();

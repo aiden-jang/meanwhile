@@ -1,3 +1,4 @@
+import { sceneEntry } from "../continuity/sceneEntry";
 import { passageRecord } from "../tonga/honolulu";
 import type { ObservatoryProps } from "../observatoryProps";
 import { searchStories } from "../storyIndex";
@@ -79,4 +80,24 @@ export function storyReturnLabel(source: BrowseOrigin | null, active: string | n
   return active && !trigger?.startsWith("event-story-") && !trigger?.startsWith("archive-story-")
     ? "Back to stories"
     : undefined;
+}
+
+export function returnThroughWorld(
+  { views, world }: ObservatoryProps,
+  active: string | null,
+  trigger: string,
+) {
+  views.visitCheckpoint.current();
+  const entry = sceneEntry();
+  if (
+    active === "kilauea" &&
+    trigger === "world-kilauea" &&
+    entry &&
+    world?.optics.releaseSurvey?.(() => {
+      if (sceneEntry()?.id === entry.id) history.back();
+    })
+  ) {
+    world.wake();
+  } else history.back();
+  return true;
 }

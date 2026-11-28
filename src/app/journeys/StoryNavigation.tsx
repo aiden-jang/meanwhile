@@ -33,7 +33,12 @@ import type { JourneyArrival } from "./connectedStops";
 import { useJourneyNavigation } from "./useJourneyNavigation";
 import { auroraHandoff } from "./auroraJourney";
 import { openAuroraStory } from "./openAuroraStory";
-import { storyReturnLabel, captureBrowseOrigin, openStoryCatalogue } from "./storyBrowseOrigin";
+import {
+  storyReturnLabel,
+  captureBrowseOrigin,
+  openStoryCatalogue,
+  returnThroughWorld,
+} from "./storyBrowseOrigin";
 import { isKatrinaHandoff, weatherOrigin } from "../storm/weatherHandoff";
 import { passageRecord } from "../tonga/honolulu";
 import { isWorldStoryMarker } from "../discovery/worldStoryMarker";
@@ -227,9 +232,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       saved.trigger.startsWith("context-story-") ||
       weatherOrigin(saved.trigger)
     ) {
-      props.views.visitCheckpoint.current();
-      history.back();
-      return true;
+      return returnThroughWorld(props, active, saved.trigger);
     }
     journey.leave();
     origin.current = saved.previous ?? null;

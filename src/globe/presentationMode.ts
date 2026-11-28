@@ -12,6 +12,7 @@ export type GlobePresentation =
 
 export interface PassageOptics {
   magnification: number;
+  releaseSurvey?: (complete: () => void) => boolean;
   section?: boolean;
   liveWeight?: number;
   frame?: (camera: PerspectiveCamera, canvas: HTMLCanvasElement) => void;

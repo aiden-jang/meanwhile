@@ -29,6 +29,12 @@ export function GroundTransect({
 }: Props) {
   function draw(svg: SVGSVGElement, frame: SurveyFrame) {
     const projected = points.map(({ lon, lat }) => frame.ground(lon, lat, kind === "ice" ? 1.001 : 1.009));
+    if (kind === "lava") {
+      const vent = projected[0],
+        bay = projected.at(-1);
+      const span = vent && bay ? Math.hypot(bay.x - vent.x, bay.y - vent.y) : 0;
+      svg.toggleAttribute("data-island-scale", span < Math.min(66, frame.height * 0.18));
+    }
     const strokes: Row[][] = [];
     let strip: Row[] = [];
     for (const [i, p] of projected.entries()) {

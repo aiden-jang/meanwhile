@@ -32,6 +32,40 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 });
 
+test("Hawaiʻi story markers return to the same view and recover focus", async ({ page, isMobile }) => {
+  const projection = isMobile ? "map" : "globe";
+  const at = isMobile ? "-155.7,19.73,6.2" : "-155.03,19.52,1.88";
+  await page.addInitScript(() => localStorage.setItem("eif.railOpen", "0"));
+  await page.goto(`/#v=explore&p=${projection}&at=${at}&layers=earthquakes,volcanoes`);
+  const canvas = await world(page).locator("canvas[data-engine]").elementHandle();
+  const origin = () =>
+    page.evaluate(() => {
+      const params = new URLSearchParams(location.hash.slice(1));
+      return [params.get("at"), params.get("p"), params.get("layers")];
+    });
+  for (const id of ["world-kilauea", "world-aloha"]) {
+    const marker = page.locator("#" + id);
+    await expect(marker).toBeVisible();
+    if (isMobile) await marker.tap();
+    else await marker.click();
+    if (id === "world-kilauea") {
+      const story = page.getByRole("region", { name: "Kīlauea", exact: true });
+      await expect(story.getByRole("slider", { name: "Follow the mapped lava" })).toBeVisible();
+      await story.getByRole("button", { name: "Back to Explore", exact: true }).click();
+    } else {
+      const descent = page.getByRole("dialog", { name: "Through the Pacific" });
+      await expect(descent.getByRole("slider", { name: "Descent position" })).toHaveValue("0");
+      await expect(marker).toBeHidden();
+      await descent.getByRole("button", { name: "Back", exact: true }).click();
+    }
+    await expect.poll(origin).toEqual([at, projection, "earthquakes,volcanoes"]);
+    await expect(marker).toBeFocused();
+    expect(
+      await canvas!.evaluate((el) => el === document.querySelector("#globe-view canvas[data-engine]")),
+    ).toBe(true);
+  }
+});
+
 test("ALOHA carries a recorded profile into Explore and returns to the exact sample", async ({
   page,
   isMobile,

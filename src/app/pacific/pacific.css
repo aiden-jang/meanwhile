@@ -46,7 +46,7 @@
   opacity: 0 !important;
 }
 
-.frame[data-pacific] :is(.fiji-locator, .passage-locator) {
+.frame[data-pacific] :is(.fiji-locator, .passage-locator, .place-labels, .world-story-markers) {
   display: none;
 }
 .pacific-preview::backdrop {

@@ -4,7 +4,7 @@ import { toVec3 } from "../../geo/sphere";
 import type { PassageCamera } from "../tonga/passageSurface";
 import relief from "./aloha-relief.webp";
 
-export function attachPacificRelief(world: PassageCamera) {
+export function attachPacificRelief(world: Pick<PassageCamera, "morph" | "spin" | "wake">, islands = false) {
   const geo = new PlaneGeometry(1, 1, 64, 48);
   const coords = geo.getAttribute("position");
   const uv = geo.getAttribute("uv");
@@ -44,13 +44,31 @@ export function attachPacificRelief(world: PassageCamera) {
         vec2 fromStation = (sheet - vec2(.5, .594)) * vec2(1.16, 1.);
         float distanceFromCast = length(fromStation);
         float radius = mix(.075, .405, strength);
-        float cover = strength * (1. - smoothstep(radius * .60, radius, distanceFromCast));
-        gl_FragColor = vec4(texture2D(uRelief, sheet).rgb, cover);
+        vec3 rgb = texture2D(uRelief, sheet).rgb;
+        ${
+          islands
+            ? `
+          // Faint deep-water relief follows the chain. Shallow terrain carries the detail.
+          vec2 start = vec2(.14,.66), end = vec2(.76,.19), axis = end - start;
+          vec2 nearest = start + axis * clamp(dot(sheet - start,axis) / dot(axis,axis),0.,1.);
+          float nearChain = 1. - smoothstep(.035,.24,length(sheet - nearest));
+          float interior = smoothstep(0.,.12,min(min(sheet.x,1.-sheet.x),min(sheet.y,1.-sheet.y)));
+          float shoal = smoothstep(.24,.62,rgb.r);
+          float relief = nearChain * (.23 + .77 * shoal);
+          vec3 water = rgb * vec3(.36,.48,.50);
+          gl_FragColor = vec4(mix(water,rgb,shoal), strength * interior * relief);
+        `
+            : `
+          float cover = strength * (1. - smoothstep(radius * .60, radius, distanceFromCast));
+          gl_FragColor = vec4(rgb, cover);
+        `
+        }
       }`,
   });
   const mesh = new Mesh(geo, material);
   mesh.frustumCulled = false;
-  mesh.renderOrder = 7;
+  mesh.renderOrder = islands ? 2 : 7;
+  mesh.visible = false;
   world.spin.add(mesh);
   return {
     show(amount: number) {

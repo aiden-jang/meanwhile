@@ -306,3 +306,24 @@
     font-size: 12px;
   }
 }
+.lava-transect[data-island-scale]
+  :is(
+    .transect-bed,
+    .transect-ahead,
+    .transect-covered,
+    [data-end="1"],
+    [data-card],
+    [data-lead],
+    .survey-hit
+  ) {
+  visibility: hidden;
+}
+.lava-transect[data-island-scale] [data-end="0"] text {
+  paint-order: stroke fill;
+  stroke: #09171e;
+  stroke-width: 3px;
+}
+.lava-transect[data-island-scale] .transect-pointer > circle:first-of-type {
+  fill: #ffc095;
+  stroke: #152128;
+}

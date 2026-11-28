@@ -1,0 +1,146 @@
+.hawaii-markers {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+.island-anchor {
+  --accent: #ffc095;
+  position: absolute;
+  top: 0;
+  left: 0;
+  inline-size: 0;
+  block-size: 0;
+}
+.island-anchor[data-island-place="pacific"] {
+  --accent: #94dbdf;
+}
+.island-pin {
+  position: absolute;
+  inset: -3px auto auto -3px;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 3px #071218d9,
+    0 0 0 4px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.island-leader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.78;
+  stroke-width: 1;
+}
+.island-note {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 44px;
+  padding: 4px 8px;
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+  color: #f7f7ef;
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgb(6 18 26 / 0.83), rgb(6 18 26 / 0.53) 73%, transparent);
+  line-height: 1.1;
+  white-space: nowrap;
+  transition:
+    opacity 0.22s ease-out,
+    background-color 0.16s;
+}
+.island-note strong {
+  font-family: "Alumni Sans", sans-serif;
+  font-weight: 600;
+  font-size: 27px;
+  letter-spacing: 0.005em;
+}
+.island-note small {
+  color: var(--accent);
+  font-size: 10.5px;
+  line-height: 1.3;
+  transition: opacity 0.21s;
+}
+.island-anchor:not([data-nearest]):not(:focus-within):not(:hover) .island-note small {
+  opacity: 0;
+}
+.island-anchor:not([data-nearest]):not(:focus-within):not(:hover) .island-note {
+  color: #c5d2d4;
+  background: transparent;
+  text-shadow:
+    0 1px 4px #06131b,
+    0 0 8px #06131b;
+}
+.island-anchor:not([data-nearest]):not(:focus-within):not(:hover) .island-arrow {
+  opacity: 0.65;
+}
+.island-arrow {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--accent);
+  font: 14px/1 sans-serif;
+  vertical-align: middle;
+}
+.island-note:is(:hover, :focus-visible) {
+  background-color: #14252c;
+}
+.island-note:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.world-story-markers[data-hawaii] [data-station-reading="honolulu"]:not(:focus-visible):not(:hover) {
+  min-height: 22px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+.world-story-markers[data-hawaii]
+  [data-station-reading="honolulu"]:not(:focus-visible):not(:hover)
+  > span:last-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.world-story-markers[data-hawaii]
+  [data-station-reading="honolulu"]:not(:focus-visible):not(:hover)
+  .world-story-dot {
+  width: 5px;
+  height: 5px;
+  flex-basis: 5px;
+  box-shadow: none;
+}
+.hawaii-markers[data-moving] .island-note:not(:focus-visible):not(:hover),
+.hawaii-markers[data-moving] .island-leader {
+  opacity: 0.55;
+}
+@media (max-width: 700px) {
+  .island-note {
+    padding: 3px 6px;
+  }
+  .island-note strong {
+    font-size: 23px;
+  }
+  .island-note small {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .island-note,
+  .island-note small {
+    transition: none;
+  }
+}

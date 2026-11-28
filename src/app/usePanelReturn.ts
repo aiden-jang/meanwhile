@@ -50,7 +50,11 @@ export function usePanelReturn() {
               return;
             }
             const anchor = document.getElementById(saved.focus);
-            if (!anchor?.hasAttribute("data-observation-anchor")) return;
+            if (!anchor) return;
+            const pin =
+              anchor.closest<HTMLElement>("[data-island-place]") ??
+              (anchor.hasAttribute("data-observation-anchor") ? anchor : null);
+            if (!pin) return;
             // A marker can receive focus, disappear during the projection change, then reappear.
             const input = new AbortController();
             const timeout = window.setTimeout(cancel, 3500);
@@ -62,7 +66,10 @@ export function usePanelReturn() {
               }
             };
             const painted = new MutationObserver(refocus);
-            painted.observe(anchor, { attributes: true, attributeFilter: ["style", "data-positioned"] });
+            painted.observe(pin, {
+              attributes: true,
+              attributeFilter: ["style", "hidden", "data-positioned"],
+            });
             stopObserving = () => {
               painted.disconnect();
               input.abort();

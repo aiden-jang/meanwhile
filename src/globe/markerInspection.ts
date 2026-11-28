@@ -1,3 +1,4 @@
+import { openHawaiiPin } from "./hawaiiDiscovery";
 import { magnitude } from "../app/format";
 import { layerTime } from "../app/layerTime";
 import { HIT_SLOP_PX, type MarkerHit } from "./quakePicking";
@@ -128,6 +129,7 @@ export function attachMarkerInspection(
   const up = (e: PointerEvent) => {
     const morph = scene.controls.morph();
     if (!tap.up(e) || e.defaultPrevented || (morph > 0 && morph < 1)) return;
+    if (!e.shiftKey && openHawaiiPin(canvas, e)) return;
     const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
     const quakeHits: MarkerHit[] = [];
     const markHits: MarkerHit[] = [];

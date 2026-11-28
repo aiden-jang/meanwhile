@@ -161,7 +161,7 @@ export interface ObservationView {
   onPick?: ((point: GeoPoint) => void) | undefined;
   pickOnGlobe?: boolean;
   pickMarks?: { points: readonly GeoPoint[]; select: (index: number) => void } | undefined;
-  lens?: { globe: number; map: number };
+  lens?: { globe: number; map: number; approachSeconds?: number };
   sky?: TonightView | undefined;
   follow?: ReplayCamera | undefined;
   shadow?: { point: GeoPoint; pose: CameraState } | undefined;

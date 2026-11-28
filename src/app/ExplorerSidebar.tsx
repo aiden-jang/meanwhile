@@ -116,7 +116,7 @@ export function ExplorerSidebar({
   };
   return (
     <>
-      {!context.views.observing && !world && browser.pane === "layers" && (
+      {!context.views.observing && !context.pacific.visible && !world && browser.pane === "layers" && (
         <WorldStoryMarkers map={context.explorer.flat} />
       )}
       <div className="explorer-tabs">

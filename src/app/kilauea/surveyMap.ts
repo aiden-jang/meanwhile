@@ -2,8 +2,10 @@ import type { ObservationRaster } from "../observations/types";
 import { bounds, kapohoBay } from "./lavaTimeline";
 
 export const coastalSurvey = { lon: -154.818, lat: 19.514, zoom: 2.4 };
-export const lens = { globe: 82, map: 235 };
-export const surveyLens = { globe: 100, map: 295 };
+export const lens = { globe: 82, map: 235, approachSeconds: 1.16 };
+// The story sheet leaves a shallower map on short phones. Keep the two ends a drag apart.
+export const shortPhoneLens = { ...lens, globe: 132, map: 390 };
+export const surveyLens = { globe: 100, map: 295, approachSeconds: 1.16 };
 // NAD83 / UTM 5N corners of the 3DEP tile, converted to geographic coordinates.
 export const raster: ObservationRaster = {
   url: "",
@@ -36,3 +38,10 @@ export const coastHandle = {
   latitude: (bayNorth - south) / (north - south),
   reference: (bayEast - west) / (east - west),
 };
+
+export function shorelineOverlay(split: number) {
+  return {
+    surveyDivider: coastlineDivider(split),
+    surveyHandle: { ...coastHandle, fraction: split / 100 },
+  };
+}

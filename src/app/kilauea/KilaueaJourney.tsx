@@ -27,7 +27,7 @@ import { nearest } from "../../sources/observations/common";
 
 import { LavaTransect, lavaSurveyDates, lavaSurveyTarget } from "./LavaTransect";
 import { captureReplayFrame, restoreReplayFrame } from "../observations/replayReturn";
-import { coastalSurvey, coastHandle, coastlineDivider, lens, raster, surveyLens } from "./surveyMap";
+import * as survey from "./surveyMap";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 
@@ -59,6 +59,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     held ?? (index === 0 ? 0 : lavaSurveyDates.reduce((last, date, i) => (date <= index ? i : last), 0));
   const [invited, setInvited] = useState(!coast && !initial);
   const reduced = useMedia(MOTION);
+  const shortPhone = useMedia("(max-width: 680px) and (max-height: 730px)");
   const [arrived, setArrived] = useState(false);
   const [footage, setFootage] = useState(false);
   const replayIndex = useRef(index);
@@ -84,7 +85,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     () => (comparing && relief !== undefined ? drawLavaComparison(relief, surveyScale) : null),
     [comparing, relief, surveyScale],
   );
-  const target = comparing ? coastalSurvey : lavaSurveyTarget;
+  const target = comparing ? survey.coastalSurvey : lavaSurveyTarget;
   const at = snapshots[comparing ? LAST : index]!.at;
   const kept =
     comparing &&
@@ -111,17 +112,15 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       capture: !footage || panel.map,
       kind: "observation",
       localSurveyProjection: true,
-      frame: { at: Date.parse(at), raster },
+      frame: { at: Date.parse(at), raster: survey.raster },
       target,
       image: null,
       ...(relief !== undefined ? { surface: atlas ?? surface } : {}),
-      ...(split !== null && atlas
-        ? { surveyDivider: coastlineDivider(split), surveyHandle: { ...coastHandle, fraction: split / 100 } }
-        : {}),
-      lens: comparing ? surveyLens : lens,
+      ...(split !== null && atlas ? survey.shorelineOverlay(split) : {}),
+      lens: comparing ? survey.surveyLens : shortPhone ? survey.shortPhoneLens : survey.lens,
       arrive,
     });
-  }, [arrive, atlas, at, comparing, relief, footage, onView, panel.map, split, surface, target]);
+  }, [arrive, atlas, at, comparing, relief, footage, onView, panel.map, shortPhone, split, surface, target]);
 
   useLayoutEffect(() => {
     remember?.({
@@ -223,7 +222,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
       }
       inset={
         <>
-          {!comparing && !footage && arrived && relief !== undefined && (
+          {!comparing && !footage && (
             <LavaTransect
               index={index}
               point={routePoint}
