@@ -77,6 +77,10 @@ test("descent gestures share the canvas with orbit and pinch, then release it to
   owner = null;
   expect(wheel(-120)).toBe(true);
   expect(zoom).toHaveBeenCalledTimes(3);
+  expect(wheel(-240)).toBe(true);
+  expect(zoom.mock.lastCall![0]).toBeCloseTo(Math.exp(0.264), 6);
+  expect(wheel(1200)).toBe(true);
+  expect(zoom.mock.lastCall![0]).toBeCloseTo(Math.exp(-1.32), 6);
   expect(scrub).toHaveBeenCalledTimes(4);
   detach();
 });
@@ -160,6 +164,6 @@ test("successive wheel events keep the same map point anchored while the camera 
   const result = controls.project(anchor.lon, anchor.lat)!;
   expect(result.x).toBeCloseTo(700, 1);
   expect(result.y).toBeCloseTo(250, 1);
-  expect(controls.state().zoom).toBeCloseTo(2.85, 2);
+  expect(controls.state().zoom).toBeCloseTo(2.78, 2);
   detach();
 });

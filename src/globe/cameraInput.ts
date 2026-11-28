@@ -99,9 +99,10 @@ export function attachCameraInput(canvas: HTMLCanvasElement, input: CameraInput)
     const pixels = event.deltaY * (mode === 1 ? 16 : mode === 2 ? canvas.clientHeight : 1);
     if (!pixels) return;
     const travel = Math.abs(pixels);
-    const sensitivity = 0.00105 + 0.00255 / (1 + travel / 40);
-    const zoom = Math.min(0.22, travel * sensitivity);
-    input.zoom(Math.exp(-Math.sign(pixels) * zoom), event.clientX, event.clientY);
+    // Boost fine scroll deltas without capping large wheel gestures at a fraction of their travel.
+    const fineScroll = Math.max(0, 1 - travel / 160);
+    const sensitivity = 0.0011 + (0.0028 * fineScroll) / (1 + travel / 40);
+    input.zoom(Math.exp(-pixels * sensitivity), event.clientX, event.clientY);
     input.change();
   };
   const reset = () => {
